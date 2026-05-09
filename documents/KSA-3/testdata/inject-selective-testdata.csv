@@ -1,0 +1,7 @@
+test_case_id,quickpick_selection,expected_injected,expected_not_injected,expected_result,description
+TC-002,"agents,hooks","agents,hooks","steering,templates",success,Select 2 components — agents and hooks only
+TC-102,Indexer — Python,indexer-python,"agents,steering,hooks,templates",success,Select only indexer — no core components
+TC-103,"agents,steering,hooks",agents+hooks,steering,partial_success,One component fails — others continue
+TC-202,undefined,none,all,cancelled,User presses ESC — no modifications
+TC-304,"agents,hooks,steering,templates","agents,hooks,steering,templates",none,Select all core components — equivalent to injectAll minus indexer
+TC-305,undefined,none,all,cancelled,Cancel verification — workspace hash unchanged

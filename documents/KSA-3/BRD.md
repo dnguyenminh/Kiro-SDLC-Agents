@@ -1,0 +1,431 @@
+# Business Requirements Document (BRD)
+
+## Kiro SDLC Agent — KSA-3: Injector — Copy Resources to Workspace
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-3 |
+| Title | Injector — Copy Resources to Workspace |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SM Agent – Scrum Master | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-20 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-3 and linked tickets |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This change request covers the **Injector** module of the Kiro SDLC Agent VS Code extension. The Injector is responsible for copying pre-packaged resource files (agents, steering rules, hooks, and document templates) from the extension's bundled resources directory into the user's workspace. It provides both full injection (all core components + one indexer language) and selective injection (user picks which components to inject). Additionally, it provides a status check function to report which components currently exist in the workspace.
+
+The Injector supports filtered copy operations (using indexer-config to determine which files to copy for a given indexer language) and recursive directory copying with intelligent exclusion of build artifacts and version control directories.
+
+### 1.2 Out of Scope
+
+- UI for indexer language selection (covered by KSA-4: Indexer Selection UI)
+- Auto-detection of runtime environment to suggest indexer language (covered by KSA-5: Auto-detect Runtime)
+- Extension activation, command registration, and lifecycle management (covered by KSA-2: Extension Core)
+- Content of the resource files themselves (agents, steering, hooks, templates are maintained separately)
+- File watching or auto-sync after initial injection
+
+### 1.3 Preliminary Requirement
+
+- KSA-2 (Extension Core) must be implemented to provide the VS Code command infrastructure that invokes the Injector functions.
+- The extension must have a `resources/` directory containing all injectable components (agents, steering, hooks, templates, indexer scripts).
+- A valid VS Code workspace must be open for the Injector to have a target directory.
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The Injector operates as a file-copy utility within the VS Code extension. When triggered (via command or programmatically), it reads resources from the extension's installation directory and copies them into the user's workspace, creating the necessary directory structure.
+
+![Business Flow](diagrams/business-flow.png)
+*[Edit in draw.io](diagrams/business-flow.drawio)*
+
+![Sequence Flow — Inject All](diagrams/sequence-flow.png)
+*[Edit in draw.io](diagrams/sequence-flow.drawio)*
+
+![Use Case Diagram](diagrams/use-case.png)
+*[Edit in draw.io](diagrams/use-case.drawio)*
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|------------------|----------|---------------|
+| 1 | As a developer, I want to inject all SDLC resources into my workspace so that I can use the full agent pipeline immediately | MUST HAVE | KSA-3 |
+| 2 | As a developer, I want to selectively inject specific components so that I only add what I need to my workspace | SHOULD HAVE | KSA-3 |
+| 3 | As a developer, I want the injector to skip build artifacts and VCS directories so that my workspace stays clean | MUST HAVE | KSA-3 |
+| 4 | As a developer, I want to inject only the indexer scripts for my language so that I don't get unnecessary files | MUST HAVE | KSA-3 |
+| 5 | As a developer, I want to check which components are already installed so that I know what's missing | SHOULD HAVE | KSA-3 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+**Step 1:** User opens a workspace in VS Code with the Kiro SDLC Agent extension installed.
+
+**Step 2:** User triggers an inject command (either "Inject All" or "Inject Selective") via the Command Palette or programmatic API.
+
+**Step 3:** For "Inject All": The system copies all four CORE_COMPONENTS to their respective workspace paths, then copies the selected indexer language scripts using filtered copy.
+
+**Step 4:** For "Inject Selective": The system presents a QuickPick multi-select dialog listing available components. User selects desired components. System copies only selected components.
+
+**Step 5:** During copy, the system recursively copies directories while skipping excluded patterns (node_modules, __pycache__, .git, out, dist).
+
+**Step 6:** For indexer copy, the system reads the indexer-config to determine which files belong to the selected language and copies only those files.
+
+**Step 7:** System reports success/failure to the user via VS Code notification.
+
+**Step 8:** At any time, user can invoke checkStatus() to see which components exist in the workspace.
+
+> **Note:** If a component already exists in the workspace, it will be overwritten. No merge logic is applied.
+
+---
+
+#### STORY 1: Inject All Resources
+
+> As a developer, I want to inject all SDLC resources into my workspace so that I can use the full agent pipeline immediately.
+
+**Requirement Details:**
+
+1. The `injectAll()` function copies all four CORE_COMPONENTS to the workspace:
+   - `agents` → `{workspaceRoot}/.kiro/agents`
+   - `steering` → `{workspaceRoot}/.kiro/steering`
+   - `hooks` → `{workspaceRoot}/.kiro/hooks`
+   - `templates` → `{workspaceRoot}/documents/templates`
+2. After copying core components, it copies the selected indexer language scripts using filtered copy based on indexer-config.
+3. The function accepts an `indexerLanguage` parameter to determine which indexer to include.
+4. All copies are recursive — subdirectories are preserved.
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| indexerLanguage | string (enum) | Yes | The indexer language to inject | "python", "java", "powershell", "bash", "nodejs" |
+| extensionPath | string | Yes | Path to extension installation directory | `/home/user/.vscode/extensions/kiro-sdlc-1.0.0` |
+| workspaceRoot | string | Yes | Path to the open workspace root | `/home/user/projects/my-app` |
+
+**Acceptance Criteria:**
+
+1. All four CORE_COMPONENTS are copied to their correct workspace paths.
+2. Exactly one indexer language is copied based on the provided parameter.
+3. Directory structure is preserved during recursive copy.
+4. node_modules, __pycache__, .git, out, and dist directories are skipped during copy.
+5. Existing files at the destination are overwritten without error.
+6. Function completes without throwing if all paths are valid.
+
+**Validation Rules:**
+
+- `indexerLanguage` must be one of: "python", "java", "powershell", "bash", "nodejs"
+- `workspaceRoot` must be a valid, writable directory path
+- `extensionPath` must contain a `resources/` subdirectory with the expected component folders
+
+**Error Handling:**
+
+- Source directory not found: Log error, skip that component, continue with remaining
+- Destination not writable: Throw error with descriptive message indicating permission issue
+- Invalid indexer language: Throw error listing valid options
+
+---
+
+#### STORY 2: Inject Selective Components
+
+> As a developer, I want to selectively inject specific components so that I only add what I need to my workspace.
+
+**Requirement Details:**
+
+1. The `injectSelective()` function presents a VS Code QuickPick multi-select dialog.
+2. The dialog lists all available components (agents, steering, hooks, templates, and each indexer language).
+3. User can select one or more components.
+4. Only selected components are copied to the workspace.
+5. Each selected component is copied using `injectComponent()`.
+
+**UI Specifications:**
+
+| No. | Name | Type | Required | Description | Note |
+|-----|------|------|----------|-------------|------|
+| 1 | Component List | QuickPick (multi-select) | Yes | List of injectable components | Shows label + description for each |
+| 2 | Component Label | Text | Yes | Display name of component | e.g., "Agents (.kiro/agents)" |
+| 3 | Component Description | Text | No | Brief description of what the component provides | e.g., "Multi-agent SDLC pipeline definitions" |
+| 4 | OK Button | Button | Yes | Confirms selection | Standard VS Code QuickPick confirm |
+| 5 | Cancel | Action | No | Dismisses dialog without action | ESC key or click outside |
+
+**Acceptance Criteria:**
+
+1. QuickPick dialog appears with all available components listed.
+2. User can select multiple components simultaneously.
+3. Only selected components are injected — unselected components are not touched.
+4. If user cancels (ESC), no files are copied.
+5. After successful injection, a success notification is shown listing what was injected.
+
+**Error Handling:**
+
+- User cancels QuickPick: No action taken, no error shown
+- One component fails to copy: Log error for that component, continue copying remaining selections, report partial success
+
+---
+
+#### STORY 3: Skip Excluded Directories During Copy
+
+> As a developer, I want the injector to skip build artifacts and VCS directories so that my workspace stays clean.
+
+**Requirement Details:**
+
+1. The `copyDirRecursive()` function performs recursive directory copy.
+2. During traversal, it checks each directory name against an exclusion list.
+3. Excluded directories: `node_modules`, `__pycache__`, `.git`, `out`, `dist`
+4. Excluded directories and all their contents are completely skipped — not copied.
+5. Files in non-excluded directories are copied normally.
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| source | string | Yes | Source directory path | `{extensionPath}/resources/agents` |
+| destination | string | Yes | Destination directory path | `{workspaceRoot}/.kiro/agents` |
+| excludeList | string[] | Yes | Directory names to skip | `["node_modules", "__pycache__", ".git", "out", "dist"]` |
+
+**Acceptance Criteria:**
+
+1. Directories named `node_modules` are not copied.
+2. Directories named `__pycache__` are not copied.
+3. Directories named `.git` are not copied.
+4. Directories named `out` are not copied.
+5. Directories named `dist` are not copied.
+6. All other directories and files are copied correctly.
+7. Exclusion check is case-sensitive (matches exact directory name).
+
+**Validation Rules:**
+
+- Exclusion is based on directory name only, not full path
+- Exclusion applies at any depth in the directory tree
+- Files with these names (not directories) are still copied
+
+---
+
+#### STORY 4: Filtered Copy for Indexer Scripts
+
+> As a developer, I want to inject only the indexer scripts for my language so that I don't get unnecessary files.
+
+**Requirement Details:**
+
+1. The `copyFiltered()` function copies only specific items from a source directory.
+2. It reads a filter list (from indexer-config) that specifies which files/directories to include.
+3. Only items matching the filter list are copied; everything else is ignored.
+4. This is used specifically for indexer injection where each language has its own set of files.
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| source | string | Yes | Source directory containing all indexer scripts | `{extensionPath}/resources/scripts` |
+| destination | string | Yes | Target directory in workspace | `{workspaceRoot}/.analysis/code-intelligence/scripts` |
+| filterList | string[] | Yes | List of items to include | `["python"]` or `["nodejs", "package.json"]` |
+
+**Acceptance Criteria:**
+
+1. Only files/directories listed in the filter are copied.
+2. Unlisted files/directories in the source are not copied.
+3. Filter list is derived from indexer-config for the selected language.
+4. Recursive copy rules (exclusion list) still apply within filtered items.
+5. If a filtered item doesn't exist in source, it is silently skipped.
+
+**Validation Rules:**
+
+- Filter list must contain at least one item
+- Filter matching is exact (no glob/regex patterns)
+
+**Error Handling:**
+
+- Empty filter list: Log warning, copy nothing, return success
+- Filter item not found in source: Skip silently, continue with remaining items
+
+---
+
+#### STORY 5: Check Component Status
+
+> As a developer, I want to check which components are already installed so that I know what's missing.
+
+**Requirement Details:**
+
+1. The `checkStatus()` function examines the workspace to determine which components exist.
+2. It checks for the existence of each CORE_COMPONENT's target directory.
+3. It returns a status object indicating which components are present/absent.
+4. This information can be used by the UI to show installation status or by other extension features to determine if injection is needed.
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| workspaceRoot | string | Yes | Path to workspace root | `/home/user/projects/my-app` |
+
+**Output Data:**
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| agents | boolean | Whether .kiro/agents exists | true |
+| steering | boolean | Whether .kiro/steering exists | true |
+| hooks | boolean | Whether .kiro/hooks exists | false |
+| templates | boolean | Whether documents/templates exists | true |
+| indexer | boolean | Whether .analysis/code-intelligence/scripts exists | false |
+
+**Acceptance Criteria:**
+
+1. `checkStatus()` returns a status for each of the four CORE_COMPONENTS plus indexer.
+2. Status is `true` if the component's directory exists in the workspace.
+3. Status is `false` if the component's directory does not exist.
+4. Function does not modify any files — read-only operation.
+5. Function works even if workspace has no Kiro components installed (all false).
+
+**Error Handling:**
+
+- Workspace path invalid: Return all statuses as false with an error flag
+- Permission denied on directory check: Treat as "not exists" (false)
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| Extension Core | System | KSA-2 | Provides VS Code command registration that invokes Injector functions |
+| VS Code API | System | N/A | Required for QuickPick UI, workspace path resolution, notifications |
+| File System (Node.js fs) | System | N/A | Required for all file copy operations |
+| Indexer Config | Data | KSA-3 | JSON configuration defining which files belong to each indexer language |
+| Indexer Selection UI | System | KSA-4 | Provides the UI for selecting indexer language (calls injectAll with selection) |
+| Auto-detect Runtime | System | KSA-5 | Can auto-detect runtime to suggest default indexer language |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility | Source |
+|------|-------------|----------------|--------|
+| Developer | Extension Users | End users who inject resources into their workspaces | Target audience |
+| Extension Developer | Kiro SDLC Team | Implements and maintains the Injector module | KSA-3 assignee |
+| Product Owner | Kiro SDLC Team | Defines which components are injectable | Epic KSA-1 |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Overwriting user-customized files | High | Medium | Consider adding a confirmation prompt before overwriting existing files |
+| Large resource directories causing slow copy | Medium | Low | Implement progress indicator for large copy operations |
+| Permission issues on target workspace | Medium | Low | Provide clear error messages with remediation steps |
+| Extension path resolution fails on some OS | Medium | Low | Use VS Code API `extensionUri` for reliable path resolution |
+
+### 5.2 Assumptions
+
+- The extension's `resources/` directory is always present and correctly structured after installation.
+- The workspace root is always available when inject commands are triggered (commands are disabled when no workspace is open).
+- File overwrite without merge is acceptable behavior for v1.0.
+- The indexer-config file is bundled with the extension and defines all supported languages.
+- Node.js `fs` module is available in the VS Code extension host environment.
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+|----------|-------------|---------|
+| Performance | Copy operation completes within 5 seconds | For typical resource sets (< 500 files total) |
+| Reliability | Atomic component copy | If a component copy fails midway, partial files should not corrupt workspace |
+| Compatibility | Cross-platform file operations | Must work on Windows, macOS, and Linux |
+| Usability | Clear feedback on completion | User receives notification with summary of what was injected |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-3 | Injector — Copy Resources to Workspace | To Do | Task | Main ticket |
+| KSA-1 | Kiro SDLC Agent Extension | To Do | Epic | Parent epic |
+| KSA-2 | Extension Core | To Do | Task | Dependency (provides commands) |
+| KSA-4 | Indexer Selection UI | To Do | Task | Related (consumes injectAll) |
+| KSA-5 | Auto-detect Runtime | To Do | Task | Related (suggests indexer language) |
+
+---
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| CORE_COMPONENTS | The four main injectable resource sets: agents, steering, hooks, templates |
+| Injector | The module responsible for copying extension resources to the workspace |
+| Indexer | Language-specific scripts that analyze source code and generate intelligence files |
+| extensionPath | The filesystem path where the VS Code extension is installed |
+| workspaceRoot | The root directory of the currently open VS Code workspace |
+| QuickPick | VS Code's built-in multi-select dropdown UI component |
+| Filtered Copy | Copy operation that only includes items matching a whitelist |
+
+### Reference Documents
+
+| Document | Link / Location |
+|----------|-----------------|
+| VS Code Extension API | https://code.visualstudio.com/api |
+| Node.js fs module | https://nodejs.org/api/fs.html |
+| Epic: Kiro SDLC Agent | KSA-1 |
+
+### CORE_COMPONENTS Mapping
+
+| Component | Source (in extension) | Destination (in workspace) | Description |
+|-----------|----------------------|---------------------------|-------------|
+| agents | `resources/agents` | `.kiro/agents` | Multi-agent SDLC pipeline definitions |
+| steering | `resources/steering` | `.kiro/steering` | Code standards and rules |
+| hooks | `resources/hooks` | `.kiro/hooks` | Auto-trigger hook definitions |
+| templates | `resources/templates` | `documents/templates` | Document templates (BRD, FSD, TDD, etc.) |
+
+### INDEXER_OPTIONS
+
+| Language | Filter Items | Target Path |
+|----------|-------------|-------------|
+| Python | python/ | `.analysis/code-intelligence/scripts/python` |
+| Java | java/ | `.analysis/code-intelligence/scripts/java` |
+| PowerShell | powershell/ | `.analysis/code-intelligence/scripts/powershell` |
+| Bash | bash/ | `.analysis/code-intelligence/scripts/bash` |
+| Node.js | nodejs/ | `.analysis/code-intelligence/scripts/nodejs` |

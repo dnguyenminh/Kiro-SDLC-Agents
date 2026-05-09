@@ -1,0 +1,10 @@
+test_case_id,source_structure,excluded_dirs_present,expected_copied,expected_excluded,description
+TC-003,"src/a/b/file.txt,src/c/file2.txt",none,"src/a/b/file.txt,src/c/file2.txt",none,Normal recursive copy — preserves structure
+TC-303,"src/,node_modules/pkg/,__pycache__/cache.pyc,.git/HEAD,out/build.js,dist/bundle.js","node_modules,__pycache__,.git,out,dist",src/,"node_modules,__pycache__,.git,out,dist",All 5 excluded dirs present — none copied
+TC-308,"node_modules/,Node_Modules/,NODE_MODULES/",node_modules,Node_Modules/ + NODE_MODULES/,node_modules/,Case-sensitive — only exact match excluded
+TC-309,"src/lib/node_modules/pkg/index.js",node_modules at depth 2,src/ + src/lib/,src/lib/node_modules/,Exclusion at nested depth
+TC-310,"dist(file),dist/(dir)","dist(dir)",dist(file),dist/(dir),File named 'dist' copied — directory 'dist' excluded
+TC-402,"a/b/c/d/e/f/g/h/i/j/file.txt",none,a/b/c/d/e/f/g/h/i/j/file.txt,none,10-level deep nesting — no stack overflow
+TC-405,empty_dir,none,empty_dir_created,none,Empty source directory — destination created empty
+TC-204,src/file.txt,none,error,none,Destination not writable — permission denied
+TC-203,nonexistent,none,error,none,Source does not exist — throws error

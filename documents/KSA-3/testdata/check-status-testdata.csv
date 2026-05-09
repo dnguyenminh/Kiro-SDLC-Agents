@@ -1,0 +1,5 @@
+test_case_id,workspace_root,agents_exists,steering_exists,hooks_exists,templates_exists,indexer_exists,expected_result,description
+TC-005,/mock/workspace,true,true,true,true,true,all_true,All components present — all true
+TC-316,/nonexistent/workspace,false,false,false,false,false,all_false,Invalid workspace — all default false
+TC-701,/mock/workspace,true,false,true,false,false,partial,Partial components — agents+hooks true only
+TC-315,/mock/workspace,true,true,false,true,false,no_modification,Read-only check — no files modified

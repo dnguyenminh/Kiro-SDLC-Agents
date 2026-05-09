@@ -1,0 +1,96 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="n1" value="&#x26a0;&#xfe0f; Issue Detected&#xa;(Post-Deploy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="280" y="60" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="d1" value="Severity?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="290" y="200" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="n2" value="Critical:&#xa;Extension crashes&#xa;VS Code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="60" y="350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n3" value="Major:&#xa;Commands throw&#xa;unhandled errors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="280" y="350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n4" value="Minor:&#xa;UI/tooltip issue&#xa;(no rollback)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="500" y="350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n5" value="Unpublish broken&#xa;version from&#xa;Marketplace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="60" y="500" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n6" value="Checkout previous&#xa;release tag&#xa;(git checkout v0.x)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="170" y="640" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n7" value="Build previous&#xa;version&#xa;(npm ci + compile)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="170" y="780" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n8" value="Publish previous&#xa;version to&#xa;Marketplace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="170" y="920" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n9" value="Verify rollback:&#xa;Install from&#xa;Marketplace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="170" y="1060" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="d2" value="Rollback&#xa;OK?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="180" y="1200" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="n10" value="&#x2705; Rollback&#xa;Complete" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="1350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n11" value="&#x274c; Escalate:&#xa;Contact Dev Lead&#xa;+ manual fix" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="280" y="1350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n12" value="Fix in next&#xa;patch release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="500" y="500" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n13" value="Publish hotfix&#xa;version" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="280" y="500" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="n1" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="Critical" edge="1" parent="1" source="d1" target="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="Major" edge="1" parent="1" source="d1" target="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#f57c00;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="Minor" edge="1" parent="1" source="d1" target="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="n2" target="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="n5" target="n6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6b" edge="1" parent="1" source="n13" target="n6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="n6" target="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" edge="1" parent="1" source="n7" target="n8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" edge="1" parent="1" source="n8" target="n9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" edge="1" parent="1" source="n9" target="d2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" value="Yes" edge="1" parent="1" source="d2" target="n10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e12" value="No" edge="1" parent="1" source="d2" target="n11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e13" edge="1" parent="1" source="n3" target="n13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e14" edge="1" parent="1" source="n4" target="n12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

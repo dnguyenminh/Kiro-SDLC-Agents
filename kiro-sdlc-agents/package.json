@@ -1,0 +1,72 @@
+{
+  "name": "kiro-sdlc-agents",
+  "displayName": "Kiro SDLC Agents",
+  "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) into any workspace for Kiro IDE",
+  "version": "1.0.0",
+  "publisher": "dnguyenminh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/kiro-sdlc-agents"
+  },
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other", "Snippets"],
+  "keywords": ["kiro", "sdlc", "agents", "multi-agent", "BA", "QA", "DevOps", "scrum"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "kiroSdlc.injectAll",
+        "title": "Kiro SDLC: Inject All Agents"
+      },
+      {
+        "command": "kiroSdlc.injectSelective",
+        "title": "Kiro SDLC: Inject (Select Components)"
+      },
+      {
+        "command": "kiroSdlc.runIndex",
+        "title": "Kiro SDLC: Run Code Indexer"
+      },
+      {
+        "command": "kiroSdlc.update",
+        "title": "Kiro SDLC: Update Agents (Keep Customizations)"
+      },
+      {
+        "command": "kiroSdlc.status",
+        "title": "Kiro SDLC: Show Status"
+      }
+    ],
+    "configuration": {
+      "title": "Kiro SDLC Agents",
+      "properties": {
+        "kiroSdlc.autoIndex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run code indexer after injection"
+        },
+        "kiroSdlc.preferredIndexer": {
+          "type": "string",
+          "enum": ["auto", "python", "java", "nodejs", "powershell", "bash"],
+          "default": "auto",
+          "description": "Preferred indexer script (auto = detect from environment)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^2.24.0"
+  }
+}

@@ -1,0 +1,7 @@
+test_case_id,source_contents,filter_list,expected_copied,expected_not_copied,expected_result,description
+TC-004,"python/,java/,nodejs/,bash/,powershell/",python,python/,"java/,nodejs/,bash/,powershell/",success,Single filter item — only python copied
+TC-311,"python/,java/,nodejs/,bash/,powershell/,README.md","python,README.md","python/,README.md","java/,nodejs/,bash/,powershell/",success,Multiple filter items — python dir + README file
+TC-312,"python/,python3/,python-scripts/",python,python/,"python3/,python-scripts/",success,Exact matching — no partial/glob match
+TC-313,"python/",nonexistent,none,python/,success,Missing filter item — silently skipped
+TC-314,"python/(src/,node_modules/,__pycache__/)",python,python/src/,"python/node_modules/,python/__pycache__/",success,Exclusion rules apply within filtered dirs
+TC-400,"python/,java/",[],none,"python/,java/",warning,Empty filter list — nothing copied + warning logged

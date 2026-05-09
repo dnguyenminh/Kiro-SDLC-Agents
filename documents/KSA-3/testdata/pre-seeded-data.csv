@@ -1,0 +1,10 @@
+test_case_id,component,source_path,destination_path,description
+TC-001,agents,resources/agents,.kiro/agents,Pre-seeded agent component source
+TC-001,steering,resources/steering,.kiro/steering,Pre-seeded steering component source
+TC-001,hooks,resources/hooks,.kiro/hooks,Pre-seeded hooks component source
+TC-001,templates,resources/templates,documents/templates,Pre-seeded templates component source
+TC-001,indexer-python,resources/scripts/python,.analysis/code-intelligence/scripts/python,Pre-seeded python indexer source
+TC-301,indexer-java,resources/scripts/java,.analysis/code-intelligence/scripts/java,Pre-seeded java indexer source
+TC-301,indexer-nodejs,resources/scripts/nodejs,.analysis/code-intelligence/scripts/nodejs,Pre-seeded nodejs indexer source
+TC-301,indexer-bash,resources/scripts/bash,.analysis/code-intelligence/scripts/bash,Pre-seeded bash indexer source
+TC-301,indexer-powershell,resources/scripts/powershell,.analysis/code-intelligence/scripts/powershell,Pre-seeded powershell indexer source

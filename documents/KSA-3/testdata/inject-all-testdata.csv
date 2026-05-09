@@ -1,0 +1,11 @@
+test_case_id,indexer_language,workspace_root,extension_path,expected_result,expected_error_message,description
+TC-001,python,/mock/workspace,/mock/extension,success,,Valid injection — all components + python indexer
+TC-201,ruby,/mock/workspace,/mock/extension,error,"Invalid indexer language 'ruby'. Valid options: python, java, powershell, bash, nodejs",Invalid language — ruby not supported
+TC-401,,/mock/workspace,/mock/extension,error,"Invalid indexer language ''. Valid options: python, java, powershell, bash, nodejs",Empty string language — validation error
+TC-200,python,,/mock/extension,error,"Please open a workspace before injecting resources.",No workspace open — workspaceRoot undefined
+TC-301,java,/mock/workspace,/mock/extension,success,,Valid injection — java indexer only
+TC-301,nodejs,/mock/workspace,/mock/extension,success,,Valid injection — nodejs indexer only
+TC-301,bash,/mock/workspace,/mock/extension,success,,Valid injection — bash indexer only
+TC-301,powershell,/mock/workspace,/mock/extension,success,,Valid injection — powershell indexer only
+TC-100,python,/mock/workspace,/mock/extension-missing-steering,partial_success,"Component 'steering' source not found. Skipping.",One component source missing — partial success
+TC-404,python,"/tmp/my project (v2)/workspace",/mock/extension,success,,Special characters in workspace path

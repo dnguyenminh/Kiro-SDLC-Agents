@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "orchestrator": {
+      "command": "node",
+      "args": [
+        "C:/projects/kotlin/MCPOrchestration/mcp-client-bridge/dist/index.js",
+        "--url",
+        "http://localhost:9180"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "find_tools",
+        "execute_dynamic_tool",
+        "toggle_tool",
+        "reset_tools",
+        "manage_auto_approve",
+        "agent_log",
+        "stream_write_file",
+        "embed_images"
+      ]
+    }
+  }
+}
