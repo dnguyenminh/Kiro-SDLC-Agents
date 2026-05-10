@@ -1,6 +1,6 @@
 /**
  * Core injection logic — copies resources to target workspace.
- * Uses bundled checksum manifest (inside extension) to detect user modifications.
+ * Tracks per-file version so each file shows its own injected version.
  */
 
 import * as vscode from "vscode";
@@ -8,16 +8,14 @@ import * as fs from "fs";
 import * as path from "path";
 import { Component, CORE_COMPONENTS, INDEXER_BASE, INDEXER_OPTIONS } from "./config";
 import {
-    detectModifiedFiles, saveWorkspaceVersion, loadWorkspaceVersion,
-    loadBundledManifest, ModifiedFile
+    detectModifiedFiles, loadBundledManifest, buildManifestAfterInject,
+    getFileStatuses, migrateLegacyVersion, loadWorkspaceManifest,
+    isUpgradeAvailable, ModifiedFile, FileStatus
 } from "./checksum";
 
-const EXTENSION_VERSION = getExtensionVersion();
-
 export async function injectAll(root: string, extensionPath: string): Promise<string[]> {
+    migrateLegacyVersion(root, extensionPath);
     const injected: string[] = [];
-    const manifest = loadBundledManifest(extensionPath);
-    const bundledVersion = manifest?.version || EXTENSION_VERSION;
 
     for (const component of CORE_COMPONENTS) {
         if (await injectComponent(component, root, extensionPath)) {
@@ -33,11 +31,12 @@ export async function injectAll(root: string, extensionPath: string): Promise<st
         }
     }
 
-    saveWorkspaceVersion(root, bundledVersion);
+    buildManifestAfterInject(root, extensionPath);
     return injected;
 }
 
 export async function injectSelective(root: string, extensionPath: string): Promise<string[]> {
+    migrateLegacyVersion(root, extensionPath);
     const corePicks = CORE_COMPONENTS.map(c => ({
         label: c.label, description: c.description, id: c.id, picked: true
     }));
@@ -70,37 +69,28 @@ export async function injectSelective(root: string, extensionPath: string): Prom
         }
     }
 
-    saveWorkspaceVersion(root, EXTENSION_VERSION);
+    buildManifestAfterInject(root, extensionPath);
     return injected;
 }
 
 export async function safeUpdate(root: string, extensionPath: string): Promise<string[]> {
-    const wsVersion = loadWorkspaceVersion(root);
-    const manifest = loadBundledManifest(extensionPath);
-    const bundledVersion = manifest?.version || EXTENSION_VERSION;
-
-    const isVersionUpgrade = !wsVersion || wsVersion.version !== bundledVersion;
-
-    if (isVersionUpgrade) {
-        const modified = detectModifiedFiles(root, extensionPath);
-        if (modified.length === 0) {
-            return await forceUpdate(root, extensionPath);
-        }
-        const action = await promptUpgradeWithModified(modified, wsVersion?.version || "unknown", bundledVersion);
-        if (action === "cancel") { return []; }
-        if (action === "overwrite") { return await forceUpdate(root, extensionPath); }
-        if (action === "skip") { return await updateSkipModified(root, extensionPath, modified); }
-        if (action === "backup") { return await updateWithBackup(root, extensionPath, modified); }
-        return [];
-    }
+    migrateLegacyVersion(root, extensionPath);
 
     const modified = detectModifiedFiles(root, extensionPath);
     if (modified.length === 0) {
-        vscode.window.showInformationMessage("All files are up to date. No changes needed.");
+        vscode.window.showInformationMessage("All files match bundled version. No update needed.");
         return [];
     }
 
-    const action = await promptModifiedFiles(modified);
+    const statuses = getFileStatuses(root, extensionPath);
+    const outdated = statuses.filter(s => s.state === "outdated");
+    const userModified = statuses.filter(s => s.state === "modified");
+
+    if (outdated.length > 0 && userModified.length === 0) {
+        return await forceUpdate(root, extensionPath);
+    }
+
+    const action = await promptUpdateWithDetails(outdated, userModified);
     if (action === "cancel") { return []; }
     if (action === "overwrite") { return await forceUpdate(root, extensionPath); }
     if (action === "skip") { return await updateSkipModified(root, extensionPath, modified); }
@@ -119,16 +109,49 @@ export function checkStatus(workspaceRoot: string): Record<string, boolean> {
     return status;
 }
 
+/** Get per-file version report for status display. */
+export function getVersionReport(root: string, extensionPath: string): string {
+    migrateLegacyVersion(root, extensionPath);
+    const statuses = getFileStatuses(root, extensionPath);
+    const bundled = loadBundledManifest(extensionPath);
+    const bundledVersion = bundled?.version || "unknown";
+
+    const outdated = statuses.filter(s => s.state === "outdated");
+    const modified = statuses.filter(s => s.state === "modified");
+    const missing = statuses.filter(s => s.state === "missing");
+    const current = statuses.filter(s => s.state === "current");
+
+    const lines: string[] = [];
+    lines.push(`Extension version: ${bundledVersion}`);
+    lines.push(`Files: ${current.length} current, ${outdated.length} outdated, ${modified.length} modified, ${missing.length} missing`);
+
+    if (outdated.length > 0) {
+        lines.push("\n⬆️ Outdated (need update):");
+        for (const f of outdated.slice(0, 15)) {
+            lines.push(`  ${f.relativePath}  [v${f.workspaceVersion} → v${f.bundledVersion}]`);
+        }
+        if (outdated.length > 15) { lines.push(`  ...and ${outdated.length - 15} more`); }
+    }
+
+    if (modified.length > 0) {
+        lines.push("\n✏️ Modified by user (same version, different content):");
+        for (const f of modified.slice(0, 10)) {
+            lines.push(`  ${f.relativePath}  [v${f.workspaceVersion}]`);
+        }
+        if (modified.length > 10) { lines.push(`  ...and ${modified.length - 10} more`); }
+    }
+
+    return lines.join("\n");
+}
+
 async function forceUpdate(root: string, extensionPath: string): Promise<string[]> {
-    const manifest = loadBundledManifest(extensionPath);
-    const bundledVersion = manifest?.version || EXTENSION_VERSION;
     const injected: string[] = [];
     for (const component of CORE_COMPONENTS) {
         if (await injectComponent(component, root, extensionPath)) {
             injected.push(component.id);
         }
     }
-    saveWorkspaceVersion(root, bundledVersion);
+    buildManifestAfterInject(root, extensionPath);
     return injected;
 }
 
@@ -143,7 +166,7 @@ async function updateSkipModified(
             injected.push(component.id);
         }
     }
-    saveWorkspaceVersion(root, EXTENSION_VERSION);
+    buildManifestAfterInject(root, extensionPath);
     return injected;
 }
 
@@ -161,45 +184,36 @@ async function updateWithBackup(
     }
 
     vscode.window.showInformationMessage(
-        `Backed up ${modified.length} modified files to .kiro/.sdlc-backup/${timestamp}`
+        `Backed up ${modified.length} files to .kiro/.sdlc-backup/${timestamp}`
     );
     return await forceUpdate(root, extensionPath);
 }
 
-async function promptModifiedFiles(modified: ModifiedFile[]): Promise<string> {
-    const fileList = modified.slice(0, 10).map(m => `  • ${m.relativePath}`).join("\n");
-    const extra = modified.length > 10 ? `\n  ...and ${modified.length - 10} more` : "";
-
-    const action = await vscode.window.showWarningMessage(
-        `⚠️ ${modified.length} file(s) modified since last inject:\n${fileList}${extra}`,
-        { modal: true },
-        "Skip Modified", "Backup & Overwrite", "Overwrite All", "Cancel"
-    );
-
-    switch (action) {
-        case "Skip Modified": return "skip";
-        case "Backup & Overwrite": return "backup";
-        case "Overwrite All": return "overwrite";
-        default: return "cancel";
-    }
-}
-
-async function promptUpgradeWithModified(
-    modified: ModifiedFile[], oldVersion: string, newVersion: string
+async function promptUpdateWithDetails(
+    outdated: FileStatus[], userModified: FileStatus[]
 ): Promise<string> {
-    const fileList = modified.slice(0, 10).map(m => `  • ${m.relativePath}`).join("\n");
-    const extra = modified.length > 10 ? `\n  ...and ${modified.length - 10} more` : "";
+    const lines: string[] = [];
+    if (outdated.length > 0) {
+        lines.push(`⬆️ ${outdated.length} file(s) outdated:`);
+        for (const f of outdated.slice(0, 5)) {
+            lines.push(`  • ${f.relativePath} [v${f.workspaceVersion} → v${f.bundledVersion}]`);
+        }
+    }
+    if (userModified.length > 0) {
+        lines.push(`✏️ ${userModified.length} file(s) modified by you:`);
+        for (const f of userModified.slice(0, 5)) {
+            lines.push(`  • ${f.relativePath} [v${f.workspaceVersion}]`);
+        }
+    }
 
     const action = await vscode.window.showWarningMessage(
-        `🆕 Upgrading ${oldVersion} → ${newVersion}\n` +
-        `⚠️ ${modified.length} file(s) differ from new version:\n${fileList}${extra}\n\n` +
-        `These may be your customizations or simply outdated files.`,
+        lines.join("\n"),
         { modal: true },
-        "Overwrite All (recommended)", "Skip Modified", "Backup & Overwrite", "Cancel"
+        "Overwrite All", "Skip Modified", "Backup & Overwrite", "Cancel"
     );
 
     switch (action) {
-        case "Overwrite All (recommended)": return "overwrite";
+        case "Overwrite All": return "overwrite";
         case "Skip Modified": return "skip";
         case "Backup & Overwrite": return "backup";
         default: return "cancel";
@@ -304,14 +318,4 @@ function copyDirRecursiveFiltered(
 
 function shouldSkipDir(name: string): boolean {
     return ["node_modules", "__pycache__", "out", "dist", ".git"].includes(name);
-}
-
-function getExtensionVersion(): string {
-    try {
-        const pkgPath = path.join(__dirname, "..", "package.json");
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-        return pkg.version || "0.0.0";
-    } catch {
-        return "0.0.0";
-    }
 }

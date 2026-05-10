@@ -4,8 +4,8 @@
  */
 
 import * as vscode from "vscode";
-import { injectAll, injectSelective, safeUpdate, checkStatus } from "./injector";
-import { detectModifiedFiles, isUpgradeAvailable, loadWorkspaceVersion, loadBundledManifest } from "./checksum";
+import { injectAll, injectSelective, safeUpdate, checkStatus, getVersionReport } from "./injector";
+import { detectModifiedFiles, isUpgradeAvailable, loadWorkspaceManifest, loadBundledManifest, migrateLegacyVersion } from "./checksum";
 import { runIndexer } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -29,19 +29,22 @@ export function deactivate() {}
 async function checkForUpgrade(context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();
     if (!root) { return; }
+    migrateLegacyVersion(root, context.extensionPath);
     if (!isUpgradeAvailable(root, context.extensionPath)) { return; }
 
-    const wsVersion = loadWorkspaceVersion(root);
     const manifest = loadBundledManifest(context.extensionPath);
-    const currentVer = wsVersion?.version || "not installed";
     const newVer = manifest?.version || "unknown";
 
     const action = await vscode.window.showInformationMessage(
-        `🆕 SDLC Agents update available: ${currentVer} → ${newVer}`,
-        "Update Now", "Later"
+        `🆕 SDLC Agents update available → v${newVer}`,
+        "Update Now", "Show Details", "Later"
     );
     if (action === "Update Now") {
         vscode.commands.executeCommand("kiroSdlc.update");
+    } else if (action === "Show Details") {
+        const channel = vscode.window.createOutputChannel("SDLC Version Report");
+        channel.show();
+        channel.appendLine(getVersionReport(root, context.extensionPath));
     }
 }
 
@@ -95,27 +98,21 @@ async function handleStatus(context: vscode.ExtensionContext) {
     if (!root) { return; }
 
     const status = checkStatus(root);
-    const modified = detectModifiedFiles(root, context.extensionPath);
+    const report = getVersionReport(root, context.extensionPath);
     const lines = Object.entries(status).map(([id, exists]) =>
         `${exists ? "✅" : "❌"} ${id}`
     );
-    if (modified.length > 0) {
-        lines.push(`\n⚠️ ${modified.length} file(s) modified by user`);
-    }
 
     const action = await vscode.window.showInformationMessage(
         `SDLC Status:\n${lines.join("\n")}`,
-        "Inject Missing", "Show Modified", "Close"
+        "Show File Versions", "Inject Missing", "Close"
     );
-    if (action === "Inject Missing") {
-        vscode.commands.executeCommand("kiroSdlc.injectSelective");
-    } else if (action === "Show Modified" && modified.length > 0) {
-        const channel = vscode.window.createOutputChannel("SDLC Modified Files");
+    if (action === "Show File Versions") {
+        const channel = vscode.window.createOutputChannel("SDLC File Versions");
         channel.show();
-        channel.appendLine(`Modified files (${modified.length}):`);
-        for (const m of modified) {
-            channel.appendLine(`  ${m.relativePath} (injected v${m.injectedVersion})`);
-        }
+        channel.appendLine(report);
+    } else if (action === "Inject Missing") {
+        vscode.commands.executeCommand("kiroSdlc.injectSelective");
     }
 }
 

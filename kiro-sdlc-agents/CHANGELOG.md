@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.5] - 2026-05-10
+
+### Added
+- **Per-file version tracking** — each injected file now records its own version independently in `.kiro/.sdlc-manifest.json`
+- **"Show File Versions" in Status** — output channel shows every file with its version, state (current/outdated/modified/missing)
+- **"Show Details" on upgrade notification** — see exactly which files are outdated before updating
+- **`getVersionReport()`** — generates human-readable report: `file.md [v1.0.3 → v1.0.5]`
+- **Legacy migration** — auto-migrates old `.kiro/.sdlc-version` to new per-file manifest on first run
+
+### Changed
+- **Workspace tracking format** — replaced single `.kiro/.sdlc-version` (one global version) with `.kiro/.sdlc-manifest.json` (per-file version + hash + injectedAt)
+- **Update flow** — now distinguishes "outdated" (old version) from "modified" (user edited same version), shows both in prompt
+- **`safeUpdate`** — auto-overwrites when only outdated files exist (no user modifications); prompts only when user has customized files
+- **`buildManifestAfterInject`** — records exact version and hash for each file after inject/update
+
+### Removed
+- **`saveWorkspaceVersion()`** — replaced by `buildManifestAfterInject()` (no-op stub kept for compat)
+- **Version-gating in `detectModifiedFiles`** — removed the `entry.version !== checkVersion` skip that caused the overwrite bug
+
 ## [1.0.4] - 2026-05-10
 
 ### Fixed
