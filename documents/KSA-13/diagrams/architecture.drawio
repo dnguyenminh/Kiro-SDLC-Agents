@@ -1,0 +1,66 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="Architecture — SM Agent v1.0.3" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="user_layer" value="User Layer" style="swimlane;startSize=24;fillColor=#f5f5f5;strokeColor=#666666;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="50" width="720" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="kiro_ide" value="&lt;b&gt;Kiro IDE&lt;/b&gt;&#xa;(VS Code + Extension)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="user_layer">
+      <mxGeometry x="260" y="35" width="180" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="agent_layer" value="Agent Layer (Prompt-based)" style="swimlane;startSize=24;fillColor=#e8f5e9;strokeColor=#388e3c;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="170" width="720" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="sm_prompt" value="&lt;b&gt;SM Agent Prompt&lt;/b&gt;&#xa;(scrum-master-agent.md)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="agent_layer">
+      <mxGeometry x="20" y="40" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="input_parse" value="Input Parsing&#xa;Rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="agent_layer">
+      <mxGeometry x="230" y="40" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="jira_conf_mgmt" value="jira.conf&#xa;Management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="agent_layer">
+      <mxGeometry x="390" y="40" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="project_wf" value="Project-level&#xa;Workflow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="agent_layer">
+      <mxGeometry x="550" y="40" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="infra_layer" value="Infrastructure Layer" style="swimlane;startSize=24;fillColor=#f3e5f5;strokeColor=#7b1fa2;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="310" width="720" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="ts_ext" value="&lt;b&gt;TypeScript Extension&lt;/b&gt;&#xa;(compiled JS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="infra_layer">
+      <mxGeometry x="20" y="35" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="sync_script" value="&lt;b&gt;Sync Script&lt;/b&gt;&#xa;(PowerShell)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="infra_layer">
+      <mxGeometry x="220" y="35" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="checksums" value="&lt;b&gt;Checksums&lt;/b&gt;&#xa;(.sdlc-checksums.json)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="infra_layer">
+      <mxGeometry x="400" y="35" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="vsix" value="&lt;b&gt;VSIX Package&lt;/b&gt;&#xa;(distributable)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="infra_layer">
+      <mxGeometry x="580" y="35" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_layer" value="External Services" style="swimlane;startSize=24;fillColor=#fce4ec;strokeColor=#c62828;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="430" width="720" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="jira_mcp" value="&lt;b&gt;Jira MCP Server&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="ext_layer">
+      <mxGeometry x="20" y="35" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="kb_server" value="&lt;b&gt;Knowledge Base&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="ext_layer">
+      <mxGeometry x="220" y="35" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="filesystem" value="&lt;b&gt;File System&lt;/b&gt;&#xa;(jira.conf, documents/)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="ext_layer">
+      <mxGeometry x="400" y="35" width="180" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="kiro_ide" target="sm_prompt" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="sm_prompt" target="jira_mcp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="sm_prompt" target="filesystem" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

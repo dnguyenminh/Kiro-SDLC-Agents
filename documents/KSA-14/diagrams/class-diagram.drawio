@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Class Diagram — KSA-14 Checksum &amp; Injection&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="checksumManifest" value="&lt;b&gt;ChecksumManifest&lt;/b&gt;&lt;hr&gt;+ version: string&lt;br&gt;+ generatedAt: string&lt;br&gt;+ files: Record&amp;lt;string, FileChecksum&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="280" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="fileChecksum" value="&lt;b&gt;FileChecksum&lt;/b&gt;&lt;hr&gt;+ hash: string&lt;br&gt;+ version: string&lt;br&gt;+ injectedAt: string" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="220" width="280" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="workspaceManifest" value="&lt;b&gt;WorkspaceManifest&lt;/b&gt;&lt;hr&gt;+ lastUpdated: string&lt;br&gt;+ files: Record&amp;lt;string, WorkspaceFileEntry&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="400" y="60" width="280" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="workspaceFileEntry" value="&lt;b&gt;WorkspaceFileEntry&lt;/b&gt;&lt;hr&gt;+ version: string&lt;br&gt;+ hash: string&lt;br&gt;+ injectedAt: string" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="400" y="220" width="280" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="fileStatus" value="&lt;b&gt;FileStatus&lt;/b&gt;&lt;hr&gt;+ relativePath: string&lt;br&gt;+ workspaceVersion: string&lt;br&gt;+ bundledVersion: string&lt;br&gt;+ state: current | outdated | modified | missing" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="40" y="390" width="320" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="modifiedFile" value="&lt;b&gt;ModifiedFile&lt;/b&gt;&lt;hr&gt;+ relativePath: string&lt;br&gt;+ expectedHash: string&lt;br&gt;+ actualHash: string&lt;br&gt;+ injectedVersion: string" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="420" y="390" width="280" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="component" value="&lt;b&gt;Component&lt;/b&gt;&lt;hr&gt;+ id: string&lt;br&gt;+ label: string&lt;br&gt;+ description: string&lt;br&gt;+ sourcePath: string&lt;br&gt;+ targetPath: string&lt;br&gt;+ filter?: string[]" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="760" y="60" width="220" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="checksumModule" value="&lt;b&gt;checksum.ts (Module)&lt;/b&gt;&lt;hr&gt;+ computeFileHash(path): string&lt;br&gt;+ loadBundledManifest(ext): ChecksumManifest&lt;br&gt;+ loadWorkspaceManifest(root): WorkspaceManifest&lt;br&gt;+ saveWorkspaceManifest(root, m): void&lt;br&gt;+ getFileStatuses(root, ext): FileStatus[]&lt;br&gt;+ detectModifiedFiles(root, ext): ModifiedFile[]&lt;br&gt;+ isUpgradeAvailable(root, ext): boolean&lt;br&gt;+ migrateLegacyVersion(root, ext): void&lt;br&gt;+ buildManifestAfterInject(root, ext): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="40" y="570" width="340" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="injectorModule" value="&lt;b&gt;injector.ts (Module)&lt;/b&gt;&lt;hr&gt;+ injectAll(root, ext): string[]&lt;br&gt;+ injectSelective(root, ext): string[]&lt;br&gt;+ safeUpdate(root, ext): string[]&lt;br&gt;+ checkStatus(root): Record&lt;br&gt;+ getVersionReport(root, ext): string&lt;br&gt;- forceUpdate(root, ext): string[]&lt;br&gt;- updateSkipModified(root, ext, mod): string[]&lt;br&gt;- updateWithBackup(root, ext, mod): string[]" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="440" y="570" width="320" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_cm_fc" value="1:N" style="html=1;endArrow=diamond;endSize=8;endFill=1;" edge="1" source="fileChecksum" target="checksumManifest" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_wm_wfe" value="1:N" style="html=1;endArrow=diamond;endSize=8;endFill=1;" edge="1" source="workspaceFileEntry" target="workspaceManifest" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_chkmod_fs" value="produces" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="checksumModule" target="fileStatus" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_chkmod_mf" value="produces" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="checksumModule" target="modifiedFile" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_inj_chk" value="uses" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="injectorModule" target="checksumModule" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_inj_comp" value="uses" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="injectorModule" target="component" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

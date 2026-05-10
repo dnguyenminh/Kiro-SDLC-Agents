@@ -9,24 +9,24 @@ import * as path from "path";
 import { Component, CORE_COMPONENTS, INDEXER_BASE, INDEXER_OPTIONS } from "./config";
 import {
     detectModifiedFiles, loadBundledManifest, buildManifestAfterInject,
-    getFileStatuses, migrateLegacyVersion, loadWorkspaceManifest,
-    isUpgradeAvailable, ModifiedFile, FileStatus
+    getFileStatuses, migrateLegacyVersion, ModifiedFile, FileStatus
 } from "./checksum";
+import { copyDirRecursive, copyDirFiltered, copySelectedItems } from "./file-utils";
 
 export async function injectAll(root: string, extensionPath: string): Promise<string[]> {
     migrateLegacyVersion(root, extensionPath);
     const injected: string[] = [];
 
     for (const component of CORE_COMPONENTS) {
-        if (await injectComponent(component, root, extensionPath)) {
+        if (injectComponent(component, root, extensionPath)) {
             injected.push(component.id);
         }
     }
 
     const indexerChoice = await pickIndexer();
     if (indexerChoice) {
-        await injectComponent(INDEXER_BASE, root, extensionPath);
-        if (await injectComponent(indexerChoice, root, extensionPath)) {
+        injectComponent(INDEXER_BASE, root, extensionPath);
+        if (injectComponent(indexerChoice, root, extensionPath)) {
             injected.push(indexerChoice.id);
         }
     }
@@ -37,18 +37,7 @@ export async function injectAll(root: string, extensionPath: string): Promise<st
 
 export async function injectSelective(root: string, extensionPath: string): Promise<string[]> {
     migrateLegacyVersion(root, extensionPath);
-    const corePicks = CORE_COMPONENTS.map(c => ({
-        label: c.label, description: c.description, id: c.id, picked: true
-    }));
-    const indexerPick = {
-        label: "Code Intelligence Indexer (choose language next)",
-        description: "Source code indexer — will ask which language",
-        id: "indexer", picked: true
-    };
-
-    const selected = await vscode.window.showQuickPick([...corePicks, indexerPick], {
-        canPickMany: true, placeHolder: "Select components to inject into workspace"
-    });
+    const selected = await showComponentPicker();
     if (!selected || selected.length === 0) { return []; }
 
     const injected: string[] = [];
@@ -56,14 +45,14 @@ export async function injectSelective(root: string, extensionPath: string): Prom
         if (pick.id === "indexer") {
             const indexerChoice = await pickIndexer();
             if (indexerChoice) {
-                await injectComponent(INDEXER_BASE, root, extensionPath);
-                if (await injectComponent(indexerChoice, root, extensionPath)) {
+                injectComponent(INDEXER_BASE, root, extensionPath);
+                if (injectComponent(indexerChoice, root, extensionPath)) {
                     injected.push(indexerChoice.id);
                 }
             }
         } else {
             const component = CORE_COMPONENTS.find(c => c.id === pick.id);
-            if (component && await injectComponent(component, root, extensionPath)) {
+            if (component && injectComponent(component, root, extensionPath)) {
                 injected.push(component.id);
             }
         }
@@ -87,14 +76,13 @@ export async function safeUpdate(root: string, extensionPath: string): Promise<s
     const userModified = statuses.filter(s => s.state === "modified");
 
     if (outdated.length > 0 && userModified.length === 0) {
-        return await forceUpdate(root, extensionPath);
+        return forceUpdate(root, extensionPath);
     }
 
     const action = await promptUpdateWithDetails(outdated, userModified);
-    if (action === "cancel") { return []; }
-    if (action === "overwrite") { return await forceUpdate(root, extensionPath); }
-    if (action === "skip") { return await updateSkipModified(root, extensionPath, modified); }
-    if (action === "backup") { return await updateWithBackup(root, extensionPath, modified); }
+    if (action === "overwrite") { return forceUpdate(root, extensionPath); }
+    if (action === "skip") { return updateSkipModified(root, extensionPath, userModified); }
+    if (action === "backup") { return updateWithBackup(root, extensionPath, userModified); }
     return [];
 }
 
@@ -121,9 +109,10 @@ export function getVersionReport(root: string, extensionPath: string): string {
     const missing = statuses.filter(s => s.state === "missing");
     const current = statuses.filter(s => s.state === "current");
 
-    const lines: string[] = [];
-    lines.push(`Extension version: ${bundledVersion}`);
-    lines.push(`Files: ${current.length} current, ${outdated.length} outdated, ${modified.length} modified, ${missing.length} missing`);
+    const lines: string[] = [
+        `Extension version: ${bundledVersion}`,
+        `Files: ${current.length} current, ${outdated.length} outdated, ${modified.length} modified, ${missing.length} missing`
+    ];
 
     if (outdated.length > 0) {
         lines.push("\n⬆️ Outdated (need update):");
@@ -134,7 +123,7 @@ export function getVersionReport(root: string, extensionPath: string): string {
     }
 
     if (modified.length > 0) {
-        lines.push("\n✏️ Modified by user (same version, different content):");
+        lines.push("\n✏️ Modified by user:");
         for (const f of modified.slice(0, 10)) {
             lines.push(`  ${f.relativePath}  [v${f.workspaceVersion}]`);
         }
@@ -144,10 +133,10 @@ export function getVersionReport(root: string, extensionPath: string): string {
     return lines.join("\n");
 }
 
-async function forceUpdate(root: string, extensionPath: string): Promise<string[]> {
+function forceUpdate(root: string, extensionPath: string): string[] {
     const injected: string[] = [];
     for (const component of CORE_COMPONENTS) {
-        if (await injectComponent(component, root, extensionPath)) {
+        if (injectComponent(component, root, extensionPath)) {
             injected.push(component.id);
         }
     }
@@ -155,14 +144,12 @@ async function forceUpdate(root: string, extensionPath: string): Promise<string[
     return injected;
 }
 
-async function updateSkipModified(
-    root: string, extensionPath: string, modified: ModifiedFile[]
-): Promise<string[]> {
-    const modifiedPaths = new Set(modified.map(m => m.relativePath));
+function updateSkipModified(root: string, extensionPath: string, userModified: FileStatus[]): string[] {
+    const skipPaths = new Set(userModified.map(m => m.relativePath));
     const injected: string[] = [];
 
     for (const component of CORE_COMPONENTS) {
-        if (await injectComponentFiltered(component, root, extensionPath, modifiedPaths)) {
+        if (injectComponentFiltered(component, root, extensionPath, skipPaths)) {
             injected.push(component.id);
         }
     }
@@ -170,28 +157,24 @@ async function updateSkipModified(
     return injected;
 }
 
-async function updateWithBackup(
-    root: string, extensionPath: string, modified: ModifiedFile[]
-): Promise<string[]> {
+function updateWithBackup(root: string, extensionPath: string, userModified: FileStatus[]): string[] {
     const backupDir = path.join(root, ".kiro/.sdlc-backup");
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
-    for (const file of modified) {
+    for (const file of userModified) {
         const src = path.join(root, file.relativePath);
         const dest = path.join(backupDir, timestamp, file.relativePath);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.copyFileSync(src, dest);
+        if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
     }
 
     vscode.window.showInformationMessage(
-        `Backed up ${modified.length} files to .kiro/.sdlc-backup/${timestamp}`
+        `Backed up ${userModified.length} files to .kiro/.sdlc-backup/${timestamp}`
     );
-    return await forceUpdate(root, extensionPath);
+    return forceUpdate(root, extensionPath);
 }
 
-async function promptUpdateWithDetails(
-    outdated: FileStatus[], userModified: FileStatus[]
-): Promise<string> {
+async function promptUpdateWithDetails(outdated: FileStatus[], userModified: FileStatus[]): Promise<string> {
     const lines: string[] = [];
     if (outdated.length > 0) {
         lines.push(`⬆️ ${outdated.length} file(s) outdated:`);
@@ -207,8 +190,7 @@ async function promptUpdateWithDetails(
     }
 
     const action = await vscode.window.showWarningMessage(
-        lines.join("\n"),
-        { modal: true },
+        lines.join("\n"), { modal: true },
         "Overwrite All", "Skip Modified", "Backup & Overwrite", "Cancel"
     );
 
@@ -220,21 +202,33 @@ async function promptUpdateWithDetails(
     }
 }
 
+async function showComponentPicker() {
+    const corePicks = CORE_COMPONENTS.map(c => ({
+        label: c.label, description: c.description, id: c.id, picked: true
+    }));
+    const indexerPick = {
+        label: "Code Intelligence Indexer (choose language next)",
+        description: "Source code indexer — will ask which language",
+        id: "indexer", picked: true
+    };
+    return vscode.window.showQuickPick([...corePicks, indexerPick], {
+        canPickMany: true, placeHolder: "Select components to inject"
+    });
+}
+
 async function pickIndexer(): Promise<Component | undefined> {
     const picks = INDEXER_OPTIONS.map(c => ({
         label: c.label, description: c.description, component: c
     }));
     const selected = await vscode.window.showQuickPick(picks, {
-        canPickMany: false, placeHolder: "Choose ONE indexer language for this workspace"
+        canPickMany: false, placeHolder: "Choose ONE indexer language"
     });
     return selected?.component;
 }
 
-async function injectComponent(
-    component: Component, workspaceRoot: string, extensionPath: string
-): Promise<boolean> {
+function injectComponent(component: Component, root: string, extensionPath: string): boolean {
     const source = path.join(extensionPath, "resources", component.sourcePath);
-    const target = path.join(workspaceRoot, component.targetPath);
+    const target = path.join(root, component.targetPath);
 
     if (!fs.existsSync(source)) {
         vscode.window.showWarningMessage(`Source not found: ${component.sourcePath}`);
@@ -242,7 +236,7 @@ async function injectComponent(
     }
     try {
         if (component.filter) {
-            copyFiltered(source, target, component.filter);
+            copySelectedItems(source, target, component.filter);
         } else {
             copyDirRecursive(source, target);
         }
@@ -253,69 +247,18 @@ async function injectComponent(
     }
 }
 
-async function injectComponentFiltered(
-    component: Component, workspaceRoot: string, extensionPath: string, skipPaths: Set<string>
-): Promise<boolean> {
+function injectComponentFiltered(
+    component: Component, root: string, extensionPath: string, skipPaths: Set<string>
+): boolean {
     const source = path.join(extensionPath, "resources", component.sourcePath);
-    const target = path.join(workspaceRoot, component.targetPath);
+    const target = path.join(root, component.targetPath);
 
     if (!fs.existsSync(source)) { return false; }
     try {
-        copyDirRecursiveFiltered(source, target, workspaceRoot, skipPaths);
+        copyDirFiltered({ source, target, workspaceRoot: root, skipPaths });
         return true;
     } catch (err) {
         vscode.window.showErrorMessage(`Failed to inject ${component.id}: ${err}`);
         return false;
     }
-}
-
-function copyFiltered(source: string, target: string, filter: string[]): void {
-    fs.mkdirSync(target, { recursive: true });
-    for (const item of filter) {
-        const srcPath = path.join(source, item);
-        const tgtPath = path.join(target, item);
-        if (!fs.existsSync(srcPath)) { continue; }
-        if (fs.statSync(srcPath).isDirectory()) {
-            copyDirRecursive(srcPath, tgtPath);
-        } else {
-            fs.mkdirSync(path.dirname(tgtPath), { recursive: true });
-            fs.copyFileSync(srcPath, tgtPath);
-        }
-    }
-}
-
-function copyDirRecursive(source: string, target: string): void {
-    fs.mkdirSync(target, { recursive: true });
-    for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
-        const srcPath = path.join(source, entry.name);
-        const tgtPath = path.join(target, entry.name);
-        if (entry.isDirectory()) {
-            if (shouldSkipDir(entry.name)) { continue; }
-            copyDirRecursive(srcPath, tgtPath);
-        } else {
-            fs.copyFileSync(srcPath, tgtPath);
-        }
-    }
-}
-
-function copyDirRecursiveFiltered(
-    source: string, target: string, workspaceRoot: string, skipPaths: Set<string>
-): void {
-    fs.mkdirSync(target, { recursive: true });
-    for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
-        const srcPath = path.join(source, entry.name);
-        const tgtPath = path.join(target, entry.name);
-        if (entry.isDirectory()) {
-            if (shouldSkipDir(entry.name)) { continue; }
-            copyDirRecursiveFiltered(srcPath, tgtPath, workspaceRoot, skipPaths);
-        } else {
-            const rel = path.relative(workspaceRoot, tgtPath).replace(/\\/g, "/");
-            if (skipPaths.has(rel)) { continue; }
-            fs.copyFileSync(srcPath, tgtPath);
-        }
-    }
-}
-
-function shouldSkipDir(name: string): boolean {
-    return ["node_modules", "__pycache__", "out", "dist", ".git"].includes(name);
 }

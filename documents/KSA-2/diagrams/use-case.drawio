@@ -1,0 +1,51 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="sys" value="Extension Core — Commands &amp; Activation" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="40" width="500" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="UC-1: Activate on Startup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="170" y="50" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="UC-2: Inject All Agents" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="170" y="140" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="UC-3: Inject Selective" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="170" y="230" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="UC-4: Run Code Indexer" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="170" y="320" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="UC-5: Show Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="170" y="410" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor1" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="250" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor2" value="VS Code Engine" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="820" y="80" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea1" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea2" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea3" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea4" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc5" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea5" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor2" target="uc1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea6" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;" edge="1" source="uc2" target="uc1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea7" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;" edge="1" source="uc3" target="uc1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

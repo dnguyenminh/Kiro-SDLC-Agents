@@ -7,14 +7,12 @@ import * as cp from "child_process";
 import * as path from "path";
 import { INDEXER_SCRIPTS } from "./config";
 
-type IndexerKey = keyof typeof INDEXER_SCRIPTS;
-
 export async function runIndexer(workspaceRoot: string): Promise<boolean> {
     const preferred = vscode.workspace.getConfiguration("kiroSdlc").get<string>("preferredIndexer", "auto");
 
     const indexerKey = preferred === "auto"
         ? await detectAvailableIndexer()
-        : preferred as IndexerKey;
+        : preferred;
 
     if (!indexerKey) {
         vscode.window.showWarningMessage("No compatible runtime found. Install Python, Java, or Node.js.");
@@ -27,20 +25,18 @@ export async function runIndexer(workspaceRoot: string): Promise<boolean> {
     return await executeIndexer(command, workspaceRoot, indexerKey);
 }
 
-async function detectAvailableIndexer(): Promise<IndexerKey | null> {
-    const priority: IndexerKey[] = ["python", "java", "nodejs", "powershell", "bash"];
+async function detectAvailableIndexer(): Promise<string | null> {
+    const priority = ["python", "java", "nodejs", "powershell", "bash"];
     for (const key of priority) {
         const script = INDEXER_SCRIPTS[key];
-        const checkCmd = "check" in script ? script.check : null;
-        if (checkCmd && await commandExists(checkCmd)) {
+        if (script && await commandExists(script.check)) {
             return key;
         }
     }
     return isWindows() ? "powershell" : "bash";
 }
 
-function buildCommand(key: IndexerKey, workspaceRoot: string): string | null {
-    const script = INDEXER_SCRIPTS[key];
+function buildCommand(key: string, workspaceRoot: string): string | null {
     switch (key) {
         case "python":
             return `python ${path.join(workspaceRoot, ".analysis/code-intelligence/scripts/python/main.py")} "${workspaceRoot}"`;
@@ -63,7 +59,7 @@ function buildCommand(key: IndexerKey, workspaceRoot: string): string | null {
     }
 }
 
-async function executeIndexer(command: string, cwd: string, key: IndexerKey): Promise<boolean> {
+async function executeIndexer(command: string, cwd: string, key: string): Promise<boolean> {
     return new Promise((resolve) => {
         const channel = vscode.window.createOutputChannel("Kiro Code Indexer");
         channel.show();
@@ -71,7 +67,7 @@ async function executeIndexer(command: string, cwd: string, key: IndexerKey): Pr
         channel.appendLine(`[Kiro] Command: ${command}`);
         channel.appendLine("");
 
-        const proc = cp.exec(command, { cwd, timeout: 120000 }, (err, stdout, stderr) => {
+        cp.exec(command, { cwd, timeout: 120000 }, (err, stdout, stderr) => {
             if (stdout) { channel.appendLine(stdout); }
             if (stderr) { channel.appendLine(stderr); }
             if (err) {

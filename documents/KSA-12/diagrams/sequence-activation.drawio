@@ -1,0 +1,81 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="VS Code" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="80" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="extension.ts" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="260" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="checksum.ts" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="460" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Filesystem" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;" vertex="1" parent="1">
+      <mxGeometry x="660" y="40" width="80" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="User" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlActor;" vertex="1" parent="1">
+      <mxGeometry x="860" y="40" width="60" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="e1" value="activate()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="120" as="sourcePoint" />
+        <mxPoint x="310" y="120" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" value="migrateLegacyVersion()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="160" as="sourcePoint" />
+        <mxPoint x="510" y="160" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="read .sdlc-version" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="200" as="sourcePoint" />
+        <mxPoint x="700" y="200" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="isUpgradeAvailable()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="260" as="sourcePoint" />
+        <mxPoint x="510" y="260" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="loadBundledManifest()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="300" as="sourcePoint" />
+        <mxPoint x="700" y="300" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="loadWorkspaceManifest()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="340" as="sourcePoint" />
+        <mxPoint x="700" y="340" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="true (upgrade available)" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="390" as="sourcePoint" />
+        <mxPoint x="310" y="390" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="showInformationMessage(&#xa;'Update available v1.0.5')" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="440" as="sourcePoint" />
+        <mxPoint x="890" y="440" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="'Update Now'" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="890" y="500" as="sourcePoint" />
+        <mxPoint x="310" y="500" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="executeCommand('kiroSdlc.update')" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="550" as="sourcePoint" />
+        <mxPoint x="510" y="550" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -89,7 +89,12 @@ export const INDEXER_OPTIONS: Component[] = [
     }
 ];
 
-export const INDEXER_SCRIPTS = {
+export interface IndexerScript {
+    check: string;
+    label: string;
+}
+
+export const INDEXER_SCRIPTS: Record<string, IndexerScript> = {
     python: { check: "python --version", label: "Python" },
     java: { check: "java --version", label: "Java" },
     nodejs: { check: "node --version", label: "Node.js" },

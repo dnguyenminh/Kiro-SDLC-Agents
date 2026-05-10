@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture Overview — KSA-14&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="user" value="&lt;b&gt;Developer&lt;/b&gt;&lt;br&gt;(VS Code User)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="180" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="vscode" value="&lt;b&gt;VS Code&lt;/b&gt;&lt;br&gt;Extension Host" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="60" width="500" height="320" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext" value="&lt;b&gt;extension.ts&lt;/b&gt;&lt;br&gt;Commands &amp; UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="vscode">
+      <mxGeometry x="30" y="50" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="inj" value="&lt;b&gt;injector.ts&lt;/b&gt;&lt;br&gt;Injection Logic" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="vscode">
+      <mxGeometry x="30" y="160" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="chk" value="&lt;b&gt;checksum.ts&lt;/b&gt;&lt;br&gt;Manifest &amp; Hashing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="vscode">
+      <mxGeometry x="280" y="160" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="cfg" value="&lt;b&gt;config.ts&lt;/b&gt;&lt;br&gt;Component Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="vscode">
+      <mxGeometry x="280" y="50" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext" target="inj" parent="vscode">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="inj" target="chk" parent="vscode">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="ext" target="cfg" parent="vscode">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="inj" target="cfg" parent="vscode">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ws" value="&lt;b&gt;Workspace&lt;/b&gt;&lt;br&gt;File System" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;size=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="120" width="120" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="bundle" value="&lt;b&gt;Extension Bundle&lt;/b&gt;&lt;br&gt;resources/" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;size=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="260" width="120" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="vscode" target="ws" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="read" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="vscode" target="bundle" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="commands" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="user" target="vscode" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

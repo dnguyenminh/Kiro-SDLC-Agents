@@ -5,7 +5,7 @@
 
 import * as vscode from "vscode";
 import { injectAll, injectSelective, safeUpdate, checkStatus, getVersionReport } from "./injector";
-import { detectModifiedFiles, isUpgradeAvailable, loadWorkspaceManifest, loadBundledManifest, migrateLegacyVersion } from "./checksum";
+import { isUpgradeAvailable, loadBundledManifest, migrateLegacyVersion } from "./checksum";
 import { runIndexer } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {

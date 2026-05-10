@@ -11,8 +11,8 @@
 | Jira Ticket | KSA-2 |
 | Title | Extension Core — Commands & Activation |
 | Author | BA Agent |
-| Version | 1.0 |
-| Date | 2025-01-20 |
+| Version | 2.0 |
+| Date | 2025-07-14 |
 | Status | Draft |
 
 ---
@@ -31,6 +31,7 @@
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-01-20 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-2 and linked tickets |
+| 2.0 | 2025-07-14 | BA Agent | Recreated with draw.io diagrams (business-flow + use-case), removed Mermaid |
 
 ---
 

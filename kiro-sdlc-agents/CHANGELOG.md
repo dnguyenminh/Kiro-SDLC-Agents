@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.6] - 2026-05-10
+
+### Fixed (Code Review)
+- **Removed dead code** — `recordFileInjected()` and `saveWorkspaceVersion()` no-op stub deleted
+- **Removed semver sort bug** — `loadWorkspaceVersion()` used string sort for versions (1.0.9 > 1.0.10); function removed entirely
+- **Fixed `updateSkipModified` logic** — now correctly skips user-modified files (state="modified") instead of all hash-diff files
+- **Fixed unused `proc` variable** in `indexer.ts` `executeIndexer`
+- **Removed `async` from sync functions** — `injectComponent`, `injectComponentFiltered`, `forceUpdate` no longer misleadingly async
+- **Cleaned unused imports** — `detectModifiedFiles`, `loadWorkspaceManifest` removed from `extension.ts`
+
+### Added
+- **`src/file-utils.ts`** — extracted file copy utilities (single responsibility): `copyDirRecursive`, `copyDirFiltered`, `copySelectedItems`
+- **`IndexerScript` interface** in `config.ts` — proper type annotation for `INDEXER_SCRIPTS`
+
+### Changed
+- **`injector.ts` refactored** — reduced from 240 to ~190 lines by extracting file utils
+- **`checksum.ts` optimized** — `getFileStatuses` skips hash computation for outdated files (version mismatch already sufficient)
+- **`updateSkipModified` and `updateWithBackup`** now receive `FileStatus[]` (user-modified only) instead of `ModifiedFile[]`
+
 ## [1.0.5] - 2026-05-10
 
 ### Added

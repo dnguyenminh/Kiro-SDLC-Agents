@@ -1,0 +1,57 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Kiro SDLC Agents Extension" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;verticalAlign=top;align=center;" vertex="1" parent="1">
+      <mxGeometry x="200" y="40" width="500" height="520" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="250" width="40" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Inject All Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="80" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Update Agents&#xa;(Safe Update)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="170" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Show File Versions" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="260" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="Migrate Legacy&#xa;Version File" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="280" y="350" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="Build Manifest&#xa;After Inject" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="280" y="440" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Detect Modified&#xa;Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="500" y="170" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Compute File&#xa;Hash (SHA-256)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="500" y="280" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="e1" style="" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" style="" edge="1" source="3" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" style="" edge="1" source="3" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" value="&lt;&lt;include&gt;&gt;" style="dashed=1;" edge="1" source="5" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" value="&lt;&lt;include&gt;&gt;" style="dashed=1;" edge="1" source="9" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e6" value="&lt;&lt;include&gt;&gt;" style="dashed=1;" edge="1" source="4" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" value="&lt;&lt;include&gt;&gt;" style="dashed=1;" edge="1" source="5" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e8" value="&lt;&lt;include&gt;&gt;" style="dashed=1;" edge="1" source="8" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

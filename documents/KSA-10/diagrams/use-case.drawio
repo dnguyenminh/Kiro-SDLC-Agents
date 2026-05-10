@@ -1,0 +1,69 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Code Indexer Bash — Use Case Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="320" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="system" value="Code Indexer (Bash)" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="60" width="400" height="620" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="Index Project&#xa;Source Code" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="50" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="Auto-Detect&#xa;Project Type" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="150" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="Parse 7&#xa;Languages" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="250" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="Compute&#xa;Content Hash" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="350" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="Generate&#xa;KB Payloads" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="450" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc6" value="Generate&#xa;Output Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="system">
+      <mxGeometry x="120" y="540" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor1" value="Developer" style="shape=mxgraph.basic.person;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="200" width="80" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor2" value="AI Agent&#xa;(Consumer)" style="shape=mxgraph.basic.person;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="680" y="200" width="80" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor1" target="uc4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor2" target="uc5" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;" edge="1" source="actor2" target="uc6" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;fontSize=10;" edge="1" source="uc1" target="uc2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;fontSize=10;" edge="1" source="uc1" target="uc3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc3" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;fontSize=10;" edge="1" source="uc1" target="uc4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc4" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;fontSize=10;" edge="1" source="uc1" target="uc6" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext1" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;endArrow=open;endSize=6;dashed=1;fontSize=10;" edge="1" source="uc5" target="uc6" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

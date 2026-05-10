@@ -1,0 +1,96 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Code Indexer — Bash Business Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="280" y="10" width="300" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="60" width="80" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="step1" value="User runs&#xa;./index.sh &lt;project-root&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="150" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step2" value="Read index-config.json&#xa;(or use defaults)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="270" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step3" value="Detect Project Type&#xa;(find build files)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="390" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step4" value="Discover Modules&#xa;(scan directories)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="510" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step5" value="Scan Source Files&#xa;(find + filter)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="630" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step6" value="Parse Signatures&#xa;(grep -E patterns)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="750" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step7" value="Compute SHA-256 Hash&#xa;(sha256sum / shasum)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="870" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step8" value="Generate Output Files&#xa;(MD + JSON)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="990" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="step9" value="Print Summary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="1110" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="end" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="1220" width="80" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="out1" value="project-structure.md" style="shape=mxgraph.flowchart.document;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="970" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="out2" value="index-metadata.json" style="shape=mxgraph.flowchart.document;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="1030" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="out3" value="kb-payloads.json" style="shape=mxgraph.flowchart.document;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="1090" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="out4" value="modules/*.md" style="shape=mxgraph.flowchart.document;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="1150" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="start" target="step1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step1" target="step2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step2" target="step3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step3" target="step4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step4" target="step5" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step5" target="step6" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step6" target="step7" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step7" target="step8" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step8" target="step9" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step9" target="end" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="step8" target="out1" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="step8" target="out2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="step8" target="out3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="step8" target="out4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

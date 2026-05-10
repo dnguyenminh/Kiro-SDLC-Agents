@@ -1,0 +1,92 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="dev_h" value="Developer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=40;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="sm_h" value="SM Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=40;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="280" y="40" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="fs_h" value="File System" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=40;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="480" y="40" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="jira_h" value="Jira MCP" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=40;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="680" y="40" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="m1" value="KSA workflow" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="100" as="sourcePoint"/>
+        <mxPoint x="330" y="100" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="read jira.conf" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="130" as="sourcePoint"/>
+        <mxPoint x="530" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="JIRA_PROJECT_PREFIX=KSA" style="html=1;endSize=6;startSize=6;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="160" as="sourcePoint"/>
+        <mxPoint x="330" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="parse input: project=KSA, action=workflow" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="190" as="sourcePoint"/>
+        <mxPoint x="330" y="220" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="380" y="190"/>
+          <mxPoint x="380" y="220"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="jira_search(project=KSA, limit=50)" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="250" as="sourcePoint"/>
+        <mxPoint x="730" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="issues[] (14 tickets)" style="html=1;endSize=6;startSize=6;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="730" y="280" as="sourcePoint"/>
+        <mxPoint x="330" y="280" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="check STATUS.json for each ticket" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="310" as="sourcePoint"/>
+        <mxPoint x="530" y="310" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="docs status per ticket" style="html=1;endSize=6;startSize=6;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="340" as="sourcePoint"/>
+        <mxPoint x="330" y="340" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="display overview table + options" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="380" as="sourcePoint"/>
+        <mxPoint x="130" y="380" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="select option (1/2/3)" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="420" as="sourcePoint"/>
+        <mxPoint x="330" y="420" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m11" value="execute selected action" style="html=1;endSize=6;startSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="450" as="sourcePoint"/>
+        <mxPoint x="330" y="480" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="380" y="450"/>
+          <mxPoint x="380" y="480"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

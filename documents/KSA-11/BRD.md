@@ -1,0 +1,365 @@
+# Business Requirements Document (BRD)
+
+## Kiro SDLC Agents — KSA-11: Publish to VS Code Marketplace + Open VSX
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-11 |
+| Title | Publish to VS Code Marketplace + Open VSX |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-07-14 |
+| Status | Draft |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SM Agent – Scrum Master | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-07-14 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-11 |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This change request covers the end-to-end publishing pipeline for the **Kiro SDLC Agents** VS Code extension. The scope includes:
+
+- Setting up GitHub Actions CI workflow to build and validate the extension on every Pull Request
+- Setting up GitHub Actions Publish workflow triggered by version tags (`v*`)
+- Publishing the extension to **VS Code Marketplace** using `vsce`
+- Publishing the extension to **Open VSX Registry** using `ovsx` (for Kiro IDE and other open-source editors)
+- Creating a compliant 128×128 PNG icon for marketplace listings
+- Maintaining a structured CHANGELOG.md for release documentation
+
+### 1.2 Out of Scope
+
+- Extension functionality changes (no new commands or features)
+- Extension code refactoring
+- Marketplace SEO optimization beyond basic metadata
+- Paid/premium marketplace features
+- Publishing to other extension registries beyond VS Code Marketplace and Open VSX
+
+### 1.3 Preliminary Requirement
+
+- GitHub repository must be set up and accessible
+- VS Code Marketplace publisher account (`dnguyenminh`) must be active
+- Open VSX namespace must be registered
+- Personal Access Tokens (PAT) for both marketplaces must be generated and stored as GitHub Secrets
+- Extension must pass `vsce package` without errors (currently working — v1.0.5)
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The publishing pipeline follows a standard CI/CD pattern:
+
+1. Developer creates a Pull Request → CI workflow runs (build + validate)
+2. PR is merged to main branch
+3. Developer creates a version tag (`v1.0.6`) → Publish workflow triggers
+4. Publish workflow builds the VSIX package
+5. VSIX is published to VS Code Marketplace via `vsce`
+6. VSIX is published to Open VSX Registry via `ovsx`
+7. GitHub Release is created with the VSIX artifact attached
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|------------------|----------|---------------|
+| 1 | As a developer, I want CI to run on every PR so that I catch build errors before merging | MUST HAVE | KSA-11 |
+| 2 | As a maintainer, I want to publish to VS Code Marketplace by creating a tag so that releases are automated | MUST HAVE | KSA-11 |
+| 3 | As a maintainer, I want to publish to Open VSX by creating a tag so that Kiro IDE users can install the extension | MUST HAVE | KSA-11 |
+| 4 | As a user, I want to see a professional icon on the marketplace listing so that the extension looks trustworthy | MUST HAVE | KSA-11 |
+| 5 | As a user, I want to read a CHANGELOG so that I know what changed in each version | MUST HAVE | KSA-11 |
+| 6 | As a maintainer, I want a GitHub Release created automatically so that users can download VSIX directly | SHOULD HAVE | KSA-11 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+![Business Flow](diagrams/business-flow.png)
+
+**Step 1:** Developer pushes code to a feature branch and opens a Pull Request
+
+**Step 2:** GitHub Actions CI workflow triggers automatically — runs `npm install`, `npm run compile`, `vsce package --no-dependencies`
+
+**Step 3:** CI reports pass/fail status on the PR
+
+**Step 4:** After PR is approved and merged to `main`, developer bumps version in `package.json` and creates a git tag (`v1.0.6`)
+
+**Step 5:** GitHub Actions Publish workflow triggers on tag push matching `v*`
+
+**Step 6:** Publish workflow builds the VSIX, publishes to VS Code Marketplace (`vsce publish`), publishes to Open VSX (`ovsx publish`)
+
+**Step 7:** GitHub Release is created with VSIX artifact and CHANGELOG excerpt
+
+> **Note:** If either marketplace publish fails, the workflow should still attempt the other and report partial failure.
+
+---
+
+#### STORY 1: GitHub Actions CI (Build on PR)
+
+> As a developer, I want CI to run on every PR so that I catch build errors before merging
+
+**Requirement Details:**
+
+1. GitHub Actions workflow file at `.github/workflows/ci.yml`
+2. Triggers on `pull_request` events targeting `main` branch
+3. Runs on `ubuntu-latest`
+4. Steps: checkout → setup Node.js (v20) → `npm ci` → `npm run compile` → `vsce package --no-dependencies`
+5. Uploads VSIX as workflow artifact for manual testing
+
+**Acceptance Criteria:**
+
+1. CI workflow runs automatically when a PR is opened or updated against `main`
+2. CI fails if TypeScript compilation has errors
+3. CI fails if `vsce package` produces errors
+4. VSIX artifact is available for download from the workflow run
+5. CI completes within 3 minutes
+
+---
+
+#### STORY 2: GitHub Actions Publish (on tag v*)
+
+> As a maintainer, I want to publish to VS Code Marketplace by creating a tag so that releases are automated
+
+**Requirement Details:**
+
+1. GitHub Actions workflow file at `.github/workflows/publish.yml`
+2. Triggers on `push` events with tags matching `v*` (e.g., `v1.0.6`, `v2.0.0`)
+3. Runs on `ubuntu-latest`
+4. Steps: checkout → setup Node.js (v20) → `npm ci` → `npm run compile` → `vsce publish` → `ovsx publish`
+5. Uses GitHub Secrets: `VSCE_PAT` for VS Code Marketplace, `OVSX_PAT` for Open VSX
+6. Creates a GitHub Release with the VSIX file attached
+
+**Acceptance Criteria:**
+
+1. Pushing a tag `v*` triggers the publish workflow
+2. Extension is published to VS Code Marketplace successfully
+3. Extension is published to Open VSX Registry successfully
+4. GitHub Release is created with correct version number and VSIX attachment
+5. If one marketplace fails, the other still attempts publication
+6. Workflow uses secrets securely (no PAT exposure in logs)
+
+---
+
+#### STORY 3: Publish to Open VSX (ovsx) for Kiro IDE
+
+> As a maintainer, I want to publish to Open VSX by creating a tag so that Kiro IDE users can install the extension
+
+**Requirement Details:**
+
+1. Open VSX namespace `dnguyenminh` must be registered
+2. `ovsx` CLI used for publishing (`npx ovsx publish`)
+3. PAT stored as GitHub Secret `OVSX_PAT`
+4. Same VSIX package used for both marketplaces (single build)
+
+**Acceptance Criteria:**
+
+1. Extension appears on Open VSX Registry after publish
+2. Extension metadata (name, description, icon, version) matches VS Code Marketplace listing
+3. Extension is installable from Kiro IDE's extension panel
+4. OVSX_PAT is never exposed in workflow logs
+
+---
+
+#### STORY 4: Extension Icon (128×128 PNG)
+
+> As a user, I want to see a professional icon on the marketplace listing so that the extension looks trustworthy
+
+**Requirement Details:**
+
+1. Icon file at `resources/icon.png`
+2. Dimensions: exactly 128×128 pixels
+3. Format: PNG with transparency support
+4. Design: Should represent SDLC/multi-agent concept, professional appearance
+5. Referenced in `package.json` as `"icon": "resources/icon.png"`
+
+**Acceptance Criteria:**
+
+1. Icon is 128×128 PNG format
+2. Icon displays correctly on VS Code Marketplace listing
+3. Icon displays correctly on Open VSX Registry listing
+4. Icon is visually professional and relevant to the extension purpose
+5. Icon file size is under 100KB
+
+---
+
+#### STORY 5: CHANGELOG.md
+
+> As a user, I want to read a CHANGELOG so that I know what changed in each version
+
+**Requirement Details:**
+
+1. File at project root: `CHANGELOG.md`
+2. Follows [Keep a Changelog](https://keepachangelog.com/) format
+3. Sections per version: Added, Changed, Fixed, Removed (as applicable)
+4. Most recent version at the top
+5. Each entry links to relevant PR or commit when possible
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| Version | Semver | Yes | Version number matching package.json | 1.0.5 |
+| Date | ISO date | Yes | Release date | 2025-07-14 |
+| Category | Enum | Yes | Added/Changed/Fixed/Removed | Added |
+| Description | Text | Yes | What changed | New command: Inject All Agents |
+
+**Acceptance Criteria:**
+
+1. CHANGELOG.md exists at project root
+2. Follows Keep a Changelog format
+3. Contains entries for all published versions
+4. New releases include CHANGELOG updates before tagging
+5. VS Code Marketplace displays CHANGELOG content in the extension page
+
+---
+
+#### STORY 6: GitHub Release with VSIX Artifact
+
+> As a maintainer, I want a GitHub Release created automatically so that users can download VSIX directly
+
+**Requirement Details:**
+
+1. GitHub Release created by the publish workflow after successful marketplace publishing
+2. Release title: `v{version}` (e.g., `v1.0.6`)
+3. Release body: extracted from CHANGELOG.md for the current version
+4. VSIX file attached as release asset
+5. Uses `softprops/action-gh-release` or equivalent GitHub Action
+
+**Acceptance Criteria:**
+
+1. GitHub Release is created automatically after tag push
+2. Release contains the correct VSIX file as downloadable asset
+3. Release notes match the CHANGELOG entry for that version
+4. Release is marked as "latest" (not pre-release) for stable versions
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| GitHub Actions | Infrastructure | N/A | CI/CD platform for workflows |
+| VS Code Marketplace PAT | External | N/A | Personal Access Token for vsce publish |
+| Open VSX PAT | External | N/A | Personal Access Token for ovsx publish |
+| Node.js 20 | Infrastructure | N/A | Runtime for building and packaging |
+| vsce CLI | System | N/A | VS Code Extension packaging/publishing tool |
+| ovsx CLI | System | N/A | Open VSX publishing tool |
+| GitHub Secrets | Infrastructure | N/A | Secure storage for PATs |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility | Source |
+|------|-------------|----------------|--------|
+| Developer/Maintainer | dnguyenminh | Implement CI/CD, manage releases | Publisher in package.json |
+| End Users | VS Code/Kiro IDE users | Install and use extension | Marketplace consumers |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| PAT expiration causes publish failure | High | Medium | Set PAT expiry reminders, use long-lived tokens |
+| Marketplace API changes break workflow | Medium | Low | Pin action versions, monitor deprecation notices |
+| Open VSX namespace conflict | High | Low | Register namespace early, verify ownership |
+| VSIX size exceeds marketplace limits | Medium | Low | Use `.vscodeignore` to exclude unnecessary files |
+| Tag pushed before code is ready | Medium | Medium | Protect main branch, require PR reviews |
+
+### 5.2 Assumptions
+
+- GitHub repository is hosted on github.com (not GitHub Enterprise)
+- Publisher `dnguyenminh` has active VS Code Marketplace account
+- Open VSX accepts the same VSIX format as VS Code Marketplace
+- Extension currently passes `vsce package` without errors
+- GitHub Actions free tier provides sufficient minutes for CI/CD
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+|----------|-------------|---------|
+| Performance | CI completes in < 3 minutes | Build + package should be fast given small extension size |
+| Performance | Publish completes in < 5 minutes | Including both marketplace uploads |
+| Security | PATs stored as GitHub Secrets | Never exposed in logs or artifacts |
+| Security | Minimal permissions for workflow | Only `contents: write` for releases |
+| Reliability | Partial failure handling | One marketplace failure doesn't block the other |
+| Maintainability | Standard GitHub Actions patterns | Easy for any developer to understand and modify |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-11 | Publish to VS Code Marketplace + Open VSX | In Progress | Task | Main ticket |
+
+---
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| VSIX | VS Code Extension package format (ZIP with manifest) |
+| vsce | VS Code Extension CLI tool for packaging and publishing |
+| ovsx | Open VSX CLI tool for publishing to Open VSX Registry |
+| PAT | Personal Access Token for API authentication |
+| Open VSX | Open-source extension registry compatible with VS Code extensions |
+| CI | Continuous Integration — automated build/test on code changes |
+| CD | Continuous Deployment — automated publishing on version tags |
+
+### Reference Documents
+
+| Document | Link / Location |
+|----------|-----------------|
+| VS Code Publishing Guide | https://code.visualstudio.com/api/working-with-extensions/publishing-extension |
+| Open VSX Wiki | https://github.com/eclipse/openvsx/wiki |
+| Keep a Changelog | https://keepachangelog.com/ |
+| GitHub Actions Docs | https://docs.github.com/en/actions |
+| Existing CI workflow | .github/workflows/ |
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case Diagram | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |
