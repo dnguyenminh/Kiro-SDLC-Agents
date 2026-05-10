@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'kiro-sdlc-agents/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'kiro-sdlc-agents/**'
+
+defaults:
+  run:
+    working-directory: kiro-sdlc-agents
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate checksums manifest
+        run: npm run gen-checksums
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Package VSIX (verify packaging works)
+        run: npx vsce package --no-dependencies
+
+      - name: Verify VSIX created
+        run: ls -la *.vsix

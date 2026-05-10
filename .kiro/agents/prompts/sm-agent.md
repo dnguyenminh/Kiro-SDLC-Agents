@@ -500,9 +500,36 @@ SM **không dừng lại để hỏi** về template. Thông báo rồi chạy t
    ✅ Phase 2 done — FSD.md created (BA draft + TA enrichment).
    - BA: Use Cases, Business Rules, Data Specs, Diagrams
    - TA: API Contracts, Integration Specs, Pseudocode, Technical Review
-   Chuyển sang Phase 3 (Design)?
+   Chuyển sang Phase 2.5 (UI Design) hoặc Phase 3 (Design)?
    ```
 9. Wait for user confirmation.
+
+### Step 2.5: Execute Phase — UI Design (UI Agent — conditional)
+
+**Trigger:** Ticket có UI components. Detect bằng keywords trong FSD: "UI", "admin", "dashboard", "viewer", "page", "screen", "frontend", "/admin", "web interface", "visualization", "HTML"
+
+**Prerequisites:** FSD.md exists
+
+1. Kiểm tra FSD.md — tìm keywords UI
+2. Nếu KHÔNG có UI → SKIP:
+   ```
+   Report: "⏭️ Phase 2.5 skipped — No UI components detected. Chuyển sang Phase 3."
+   ```
+3. Nếu CÓ UI:
+   - Update STATUS: `ui_design.status = "in_progress"`
+   - Invoke UI agent:
+     ```
+     invokeSubAgent(
+       name: "ui-agent",
+       prompt: "{TICKET} — Phase 2.5: Tạo wireframes (draw.io) + UI-SPEC.md cho tất cả screens.
+       Đọc FSD.md để xác định screens. Export PNG từ drawio. Embed images vào UI-SPEC.md.
+       ⛔ PHẢI có hình trong UI-SPEC.md (dùng embed_images tool sau khi viết xong)."
+     )
+     ```
+   - Verify: `documents/{TICKET}/UI-SPEC.md` exists, `diagrams/ui-*.drawio` files exist
+   - Update STATUS: `ui_design.status = "done"`
+   - Report: "✅ Phase 2.5 done — UI-SPEC.md + wireframes created. Chuyển sang Phase 3?"
+4. Wait for user confirmation.
 
 ### Step 3: Execute Phase — Design (SA → TDD)
 
@@ -700,7 +727,7 @@ If review found issues:
    ```
 4. Wait for user confirmation.
 
-### Step 5: Execute Phase — Implementation (DEV → Code)
+### Step 5: Execute Phase — Implementation (UI Prototype + DEV Code)
 
 **Prerequisites:** TDD.md exists, design.status = "done", Jira ticket ở IN PROGRESS
 
@@ -713,11 +740,32 @@ If review found issues:
    git checkout -b {TICKET}  // ví dụ: SCRUM-50
    ```
 3. Update STATUS: `implementation.status = "in_progress"`
+
+#### Step 5a: UI Prototype (conditional — nếu ticket có UI)
+
+**Trigger:** `documents/{TICKET}/UI-SPEC.md` tồn tại (từ Phase 2.5)
+
+- Nếu CÓ UI-SPEC.md:
+  1. Invoke UI agent để tạo HTML/CSS prototype:
+     ```
+     invokeSubAgent(
+       name: "ui-agent",
+       prompt: "{TICKET} — Phase 5: Tạo HTML/CSS prototype cho tất cả screens trong UI-SPEC.md. 
+       Đọc UI-SPEC.md và FSD.md. Tạo static HTML files tại {module}/src/main/resources/static/.
+       Mock data hardcoded — DEV sẽ wire API calls sau."
+     )
+     ```
+  2. Verify: HTML files tồn tại, render được trong browser
+- Nếu KHÔNG có UI-SPEC.md → SKIP Step 5a
+
+#### Step 5b: DEV Implementation
+
 4. Invoke DEV agent:
    ```
    invokeSubAgent(
      name: "dev-agent",
-     prompt: "Implement code cho {TICKET} theo TDD. Đọc code intelligence data."
+     prompt: "Implement code cho {TICKET} theo TDD. Đọc code intelligence data.
+     Nếu có HTML prototype (static files) → wire API calls vào, thêm error handling + loading states."
    )
    ```
 5. Verify code created

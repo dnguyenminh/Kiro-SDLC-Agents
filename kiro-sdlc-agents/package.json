@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) into any workspace for Kiro IDE",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -58,9 +58,10 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run gen-checksums && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "gen-checksums": "node scripts/gen-checksums.js",
     "package": "vsce package"
   },
   "devDependencies": {

@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.0] - 2025-07-14
+
+### Added
+- **Checksum management system** (`src/checksum.ts`) — detects user modifications when updating agents by comparing workspace files against bundled manifest
+- **`gen-checksums.js` script** — auto-generates `.sdlc-checksums.json` from git-committed content during CI build
+- **`sync-from-source.ps1` script** — syncs extension resources from source workspace for development
+- **Node.js indexer scripts** (`.analysis/code-intelligence/scripts/nodejs`) — TypeScript-based code intelligence indexer with Vitest tests
+- **704 documents** from MCPOrchestration project (templates, workflows, QA summaries)
+- **UI Spec template** (`documents/templates/UI-SPEC-TEMPLATE.md`)
+- **Workflow documentation** (`documents/workflows/`)
+
+### Changed
+- **Refactored `injector.ts`** — uses bundled manifest (`resources/.sdlc-checksums.json`) instead of workspace manifest for tamper-proof update detection
+- **Moved GitHub Actions workflows** to repo root (`.github/workflows/`) for proper CI/CD triggering
+- **Updated `.kiro` agents** — revised SM agent architecture, updated UI agent prompts
+- **Updated `code-intelligence.md` steering** — improved indexer configuration guidance
+- **Updated `extension.ts`** — integrated checksum system into activation flow
+
+### Removed
+- Legacy `scrum-master-agent.json` and `scrum-master-agent.md` (replaced by new agent design)
+
 ## [1.0.0] - 2026-05-09
 
 ### Added

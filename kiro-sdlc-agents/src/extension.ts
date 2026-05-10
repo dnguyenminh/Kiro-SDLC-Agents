@@ -4,7 +4,8 @@
  */
 
 import * as vscode from "vscode";
-import { injectAll, injectSelective, checkStatus } from "./injector";
+import { injectAll, injectSelective, safeUpdate, checkStatus } from "./injector";
+import { detectModifiedFiles } from "./checksum";
 import { runIndexer } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -16,10 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.injectSelective", () => handleInjectSelective(context)),
         vscode.commands.registerCommand("kiroSdlc.runIndex", () => handleRunIndex()),
         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
-        vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus())
+        vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context))
     );
 
-    updateStatusBar(statusBar);
+    updateStatusBar(statusBar, context);
 }
 
 export function deactivate() {}
@@ -63,31 +64,38 @@ async function handleUpdate(context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();
     if (!root) { return; }
 
-    const confirm = await vscode.window.showWarningMessage(
-        "Update will overwrite agents/steering/templates. Custom modifications in these folders will be lost. Continue?",
-        "Update", "Cancel"
-    );
-    if (confirm !== "Update") { return; }
-
-    const injected = await injectAll(root, context.extensionPath);
-    vscode.window.showInformationMessage(`✅ Updated ${injected.length} components`);
+    const injected = await safeUpdate(root, context.extensionPath);
+    if (injected.length > 0) {
+        vscode.window.showInformationMessage(`✅ Updated ${injected.length} components`);
+    }
 }
 
-async function handleStatus() {
+async function handleStatus(context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();
     if (!root) { return; }
 
     const status = checkStatus(root);
+    const modified = detectModifiedFiles(root, context.extensionPath);
     const lines = Object.entries(status).map(([id, exists]) =>
         `${exists ? "✅" : "❌"} ${id}`
     );
+    if (modified.length > 0) {
+        lines.push(`\n⚠️ ${modified.length} file(s) modified by user`);
+    }
 
     const action = await vscode.window.showInformationMessage(
         `SDLC Status:\n${lines.join("\n")}`,
-        "Inject Missing", "Close"
+        "Inject Missing", "Show Modified", "Close"
     );
     if (action === "Inject Missing") {
         vscode.commands.executeCommand("kiroSdlc.injectSelective");
+    } else if (action === "Show Modified" && modified.length > 0) {
+        const channel = vscode.window.createOutputChannel("SDLC Modified Files");
+        channel.show();
+        channel.appendLine(`Modified files (${modified.length}):`);
+        for (const m of modified) {
+            channel.appendLine(`  ${m.relativePath} (injected v${m.injectedVersion})`);
+        }
     }
 }
 
@@ -107,7 +115,7 @@ function createStatusBar(): vscode.StatusBarItem {
     return item;
 }
 
-function updateStatusBar(item: vscode.StatusBarItem) {
+function updateStatusBar(item: vscode.StatusBarItem, context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();
     if (!root) {
         item.text = "$(circle-slash) SDLC";
