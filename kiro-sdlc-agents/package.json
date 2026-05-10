@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) into any workspace for Kiro IDE",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {

@@ -1,0 +1,68 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;fillColor=#000000;fontSize=14;fontColor=#ffffff;" vertex="1" parent="1">
+      <mxGeometry x="220" y="40" width="30" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Idle&#xa;(Injection in progress)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="140" y="120" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="QuickPick Displayed&#xa;(5 options visible)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="140" y="240" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="pickIndexer() called" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="Filtering&#xa;(User typing filter text)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="420" y="240" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="User types text" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Clears filter" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="520" y="310" />
+          <mxPoint x="240" y="310" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="10" value="Language Selected&#xa;(Component returned)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="60" y="400" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="User clicks / Enter" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="Cancelled&#xa;(undefined returned)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="320" y="400" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="ESC / click outside" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="12" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="Copying Base Config&#xa;(INDEXER_BASE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="520" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="10" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="Copying Language Scripts&#xa;(selected dir)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="640" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="14" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="Done&#xa;(injection complete)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="180" y="760" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="16" target="18" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="No indexer copied" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="12" target="18" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

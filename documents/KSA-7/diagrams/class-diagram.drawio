@@ -1,0 +1,45 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Config" style="swimlane;fontStyle=1;align=center;startSize=26;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="220" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="+ extensions: list[str]&#xa;+ exclude_dirs: list[str]&#xa;+ exclude_patterns: list[str]&#xa;+ max_file_size_kb: int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="2">
+      <mxGeometry y="26" width="220" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Signature" style="swimlane;fontStyle=1;align=center;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="380" y="60" width="220" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="+ name: str&#xa;+ kind: str&#xa;+ visibility: str&#xa;+ line: int&#xa;+ params: str&#xa;+ decorators: list[str]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="4">
+      <mxGeometry y="26" width="220" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="SourceFile" style="swimlane;fontStyle=1;align=center;startSize=26;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="680" y="60" width="220" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="+ path: Path&#xa;+ relative_path: str&#xa;+ language: str&#xa;+ lines: int&#xa;+ hash: str&#xa;+ signatures: list[Signature]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="6">
+      <mxGeometry y="26" width="220" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="Module" style="swimlane;fontStyle=1;align=center;startSize=26;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="380" y="320" width="220" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="+ name: str&#xa;+ path: Path&#xa;+ language: str&#xa;+ files: list[SourceFile]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="8">
+      <mxGeometry y="26" width="220" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="ProjectInfo" style="swimlane;fontStyle=1;align=center;startSize=26;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="80" y="320" width="220" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="+ name: str&#xa;+ root_path: Path&#xa;+ types: list[str]&#xa;+ modules: list[Module]&#xa;+ total_files: int&#xa;+ total_signatures: int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="10">
+      <mxGeometry y="26" width="220" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="1" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" edge="1" source="6" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="*" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=0;" edge="1" source="4" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="*" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" edge="1" source="8" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

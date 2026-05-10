@@ -1,0 +1,111 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="User" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlActor;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="20" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Extension" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="240" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Injector" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="420" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="FileSystem" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="600" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Checksum" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="780" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="1: Inject All command" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="120" as="sourcePoint" />
+        <mxPoint x="290" y="120" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="11" value="2: Show confirmation" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="150" as="sourcePoint" />
+        <mxPoint x="90" y="150" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="12" value="3: Confirm &quot;Yes&quot;" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="180" as="sourcePoint" />
+        <mxPoint x="290" y="180" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="13" value="4: injectAll(root, extPath)" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="210" as="sourcePoint" />
+        <mxPoint x="470" y="210" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="14" value="5: loop [each CORE_COMPONENT]&#xa;   injectComponent()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="470" y="250" as="sourcePoint" />
+        <mxPoint x="650" y="250" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="15" value="6: copyDirRecursive(src, tgt)" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="470" y="290" as="sourcePoint" />
+        <mxPoint x="650" y="290" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="16" value="7: files copied" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="650" y="320" as="sourcePoint" />
+        <mxPoint x="470" y="320" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="8: pickIndexer()" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="470" y="360" as="sourcePoint" />
+        <mxPoint x="290" y="360" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" value="9: Show QuickPick" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="390" as="sourcePoint" />
+        <mxPoint x="90" y="390" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="19" value="10: Select indexer" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="420" as="sourcePoint" />
+        <mxPoint x="290" y="420" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="11: inject indexer" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="450" as="sourcePoint" />
+        <mxPoint x="470" y="450" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="21" value="12: saveWorkspaceVersion()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="470" y="490" as="sourcePoint" />
+        <mxPoint x="830" y="490" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="22" value="13: version saved" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="830" y="520" as="sourcePoint" />
+        <mxPoint x="470" y="520" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="23" value="14: injected components list" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="470" y="550" as="sourcePoint" />
+        <mxPoint x="290" y="550" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="24" value="15: Show success message" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="580" as="sourcePoint" />
+        <mxPoint x="90" y="580" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

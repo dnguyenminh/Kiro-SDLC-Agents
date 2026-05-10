@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.4] - 2026-05-10
+
+### Fixed
+- **Critical: "Inject All" and "Update" now always overwrite outdated files** — previously `detectModifiedFiles` skipped all entries when version mismatched, causing old agent files to persist after upgrade
+- **`detectModifiedFiles` removed version-gating** — now compares ALL manifest files against workspace regardless of version, correctly identifying files that differ from bundled content
+- **`safeUpdate` distinguishes version upgrade vs same-version** — on upgrade, shows "Overwrite All (recommended)" as default; on same-version, shows standard "Skip Modified" flow
+- **`forceUpdate` and `injectAll` use bundled manifest version** instead of hardcoded `EXTENSION_VERSION` constant
+
+### Changed
+- **Upgrade prompt UX** — when upgrading (e.g., 1.0.3 → 1.0.4), dialog clearly shows version transition and recommends overwrite since files are outdated, not user-customized
+
 ## [1.0.3] - 2026-05-10
 
 ### Added

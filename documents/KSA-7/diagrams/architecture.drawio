@@ -1,0 +1,84 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Code Indexer — Pipeline Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="30" width="400" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="CLI Input&#xa;(argparse)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="80" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Config Loader&#xa;(config.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="240" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Project Detector&#xa;(detector.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="400" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Module Discovery&#xa;(discovery.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="560" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="File Scanner&#xa;(scanner.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="720" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="Parser Dispatcher&#xa;(parser.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="880" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Output Generator&#xa;(generator.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="1040" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Language Parsers" style="swimlane;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="720" y="220" width="440" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="kotlin.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="10" y="40" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="java.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="110" y="40" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="python_lang.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="210" y="40" width="100" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="typescript.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="320" y="40" width="100" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="javascript.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="10" y="100" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="go_lang.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="110" y="100" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="rust.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+      <mxGeometry x="210" y="100" width="100" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="Shared" style="swimlane;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="80" y="220" width="300" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="models.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="18">
+      <mxGeometry x="10" y="40" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="utils.py" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="18">
+      <mxGeometry x="110" y="40" width="90" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="21" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="22" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="4" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="23" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="24" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="6" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="25" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="26" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="8" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="27" value="delegates to" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="8" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

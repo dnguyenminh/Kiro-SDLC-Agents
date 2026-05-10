@@ -1,0 +1,78 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="340" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Extension Builder" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="140" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Kiro SDLC Agents Extension" style="shape=rect;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;verticalAlign=top;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="60" width="700" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="UC1: Inject All Agents" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="300" y="320" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="UC2: Inject Selective" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="300" y="410" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="UC3: Update Agents&#xa;(Keep Customizations)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="300" y="500" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="UC4: Show Status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="300" y="590" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="UC5: Sync from Source" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="300" y="100" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="UC6: Bundle Resources&#xa;(copy-resources.js)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="300" y="190" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="UC7: Generate Checksums" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="560" y="100" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="UC8: Detect Modifications" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="560" y="320" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="UC9: Backup Modified Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="560" y="410" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="UC10: Package VSIX" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="560" y="190" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="30" style="" edge="1" source="2" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="31" style="" edge="1" source="2" target="11" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="32" style="" edge="1" source="2" target="12" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="33" style="" edge="1" source="2" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="34" style="" edge="1" source="3" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="35" style="" edge="1" source="3" target="15" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="36" style="" edge="1" source="3" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="37" style="" edge="1" source="3" target="19" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="40" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="12" target="17" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="41" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="12" target="18" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="42" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="15" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

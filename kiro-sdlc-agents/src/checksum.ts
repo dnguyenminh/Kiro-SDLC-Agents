@@ -72,12 +72,8 @@ export function detectModifiedFiles(workspaceRoot: string, extensionPath: string
     const manifest = loadBundledManifest(extensionPath);
     if (!manifest) { return []; }
 
-    const wsVersion = loadWorkspaceVersion(workspaceRoot);
-    const checkVersion = wsVersion?.version || manifest.version;
-
     const modified: ModifiedFile[] = [];
     for (const [relativePath, entry] of Object.entries(manifest.files)) {
-        if (entry.version !== checkVersion) { continue; }
         const fullPath = path.join(workspaceRoot, relativePath);
         if (!fs.existsSync(fullPath)) { continue; }
         const currentHash = computeFileHash(fullPath);

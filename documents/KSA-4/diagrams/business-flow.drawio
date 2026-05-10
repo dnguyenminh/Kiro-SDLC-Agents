@@ -1,0 +1,51 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="User triggers Inject All / Inject Selective" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="240" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="System shows QuickPick&#xa;&#34;Choose ONE indexer language&#34;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="140" width="240" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="QuickPick displays 5 options:&#xa;1. Python (recommended)&#xa;2. Java&#xa;3. PowerShell&#xa;4. Bash&#xa;5. Node.js (most accurate)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="80" y="240" width="240" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="User selects ONE language" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="380" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Copy INDEXER_BASE&#xa;(index-config.json, modules/, README)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="500" width="240" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Selected" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="Copy selected language scripts&#xa;to .analysis/code-intelligence/scripts/{lang}/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="600" width="240" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="9" target="11" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="Report success:&#xa;&#34;✅ Injected indexer-{lang}&#34;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="80" y="700" width="240" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="11" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="No indexer copied&#xa;(core components still injected)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="400" y="500" width="220" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="Cancelled (ESC)" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="15" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

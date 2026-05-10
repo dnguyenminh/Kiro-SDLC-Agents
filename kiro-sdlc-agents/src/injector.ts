@@ -8,13 +8,16 @@ import * as fs from "fs";
 import * as path from "path";
 import { Component, CORE_COMPONENTS, INDEXER_BASE, INDEXER_OPTIONS } from "./config";
 import {
-    detectModifiedFiles, saveWorkspaceVersion, ModifiedFile
+    detectModifiedFiles, saveWorkspaceVersion, loadWorkspaceVersion,
+    loadBundledManifest, ModifiedFile
 } from "./checksum";
 
 const EXTENSION_VERSION = getExtensionVersion();
 
 export async function injectAll(root: string, extensionPath: string): Promise<string[]> {
     const injected: string[] = [];
+    const manifest = loadBundledManifest(extensionPath);
+    const bundledVersion = manifest?.version || EXTENSION_VERSION;
 
     for (const component of CORE_COMPONENTS) {
         if (await injectComponent(component, root, extensionPath)) {
@@ -30,7 +33,7 @@ export async function injectAll(root: string, extensionPath: string): Promise<st
         }
     }
 
-    saveWorkspaceVersion(root, EXTENSION_VERSION);
+    saveWorkspaceVersion(root, bundledVersion);
     return injected;
 }
 
@@ -72,9 +75,29 @@ export async function injectSelective(root: string, extensionPath: string): Prom
 }
 
 export async function safeUpdate(root: string, extensionPath: string): Promise<string[]> {
+    const wsVersion = loadWorkspaceVersion(root);
+    const manifest = loadBundledManifest(extensionPath);
+    const bundledVersion = manifest?.version || EXTENSION_VERSION;
+
+    const isVersionUpgrade = !wsVersion || wsVersion.version !== bundledVersion;
+
+    if (isVersionUpgrade) {
+        const modified = detectModifiedFiles(root, extensionPath);
+        if (modified.length === 0) {
+            return await forceUpdate(root, extensionPath);
+        }
+        const action = await promptUpgradeWithModified(modified, wsVersion?.version || "unknown", bundledVersion);
+        if (action === "cancel") { return []; }
+        if (action === "overwrite") { return await forceUpdate(root, extensionPath); }
+        if (action === "skip") { return await updateSkipModified(root, extensionPath, modified); }
+        if (action === "backup") { return await updateWithBackup(root, extensionPath, modified); }
+        return [];
+    }
+
     const modified = detectModifiedFiles(root, extensionPath);
     if (modified.length === 0) {
-        return await forceUpdate(root, extensionPath);
+        vscode.window.showInformationMessage("All files are up to date. No changes needed.");
+        return [];
     }
 
     const action = await promptModifiedFiles(modified);
@@ -97,13 +120,15 @@ export function checkStatus(workspaceRoot: string): Record<string, boolean> {
 }
 
 async function forceUpdate(root: string, extensionPath: string): Promise<string[]> {
+    const manifest = loadBundledManifest(extensionPath);
+    const bundledVersion = manifest?.version || EXTENSION_VERSION;
     const injected: string[] = [];
     for (const component of CORE_COMPONENTS) {
         if (await injectComponent(component, root, extensionPath)) {
             injected.push(component.id);
         }
     }
-    saveWorkspaceVersion(root, EXTENSION_VERSION);
+    saveWorkspaceVersion(root, bundledVersion);
     return injected;
 }
 
@@ -155,6 +180,28 @@ async function promptModifiedFiles(modified: ModifiedFile[]): Promise<string> {
         case "Skip Modified": return "skip";
         case "Backup & Overwrite": return "backup";
         case "Overwrite All": return "overwrite";
+        default: return "cancel";
+    }
+}
+
+async function promptUpgradeWithModified(
+    modified: ModifiedFile[], oldVersion: string, newVersion: string
+): Promise<string> {
+    const fileList = modified.slice(0, 10).map(m => `  • ${m.relativePath}`).join("\n");
+    const extra = modified.length > 10 ? `\n  ...and ${modified.length - 10} more` : "";
+
+    const action = await vscode.window.showWarningMessage(
+        `🆕 Upgrading ${oldVersion} → ${newVersion}\n` +
+        `⚠️ ${modified.length} file(s) differ from new version:\n${fileList}${extra}\n\n` +
+        `These may be your customizations or simply outdated files.`,
+        { modal: true },
+        "Overwrite All (recommended)", "Skip Modified", "Backup & Overwrite", "Cancel"
+    );
+
+    switch (action) {
+        case "Overwrite All (recommended)": return "overwrite";
+        case "Skip Modified": return "skip";
+        case "Backup & Overwrite": return "backup";
         default: return "cancel";
     }
 }

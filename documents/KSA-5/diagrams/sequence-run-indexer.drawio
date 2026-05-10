@@ -1,0 +1,81 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="dev" value="Developer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="ext" value="runIndexer()" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="260" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="cfg" value="VS Code Config" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="440" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="os" value="OS Shell" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="620" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="ch" value="Output Channel" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="800" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="m1" value="kiroSdlc.runIndex" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="dev" target="ext">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="100" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="getConfiguration(&#xa;'preferredIndexer')" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="cfg">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="140" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="'auto'" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="cfg" target="ext">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="170" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="python --version" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="os">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="220" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="exit 0 (success)" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="os" target="ext">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="260" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="create + show" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="ch">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="320" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="[Kiro] Running Python indexer..." style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="ch">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="360" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="exec(python main.py)" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="os">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="420" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="stdout + stderr" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="os" target="ext">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="480" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="appendLine(output)" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="ch">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="530" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m11" value="[Kiro] ✅ Indexing complete!" style="html=1;verticalAlign=bottom;" edge="1" parent="1" source="ext" target="ch">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="580" as="offset" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m12" value="showInformationMessage" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="ext" target="dev">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint y="630" as="offset" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

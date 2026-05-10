@@ -1,0 +1,48 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="&lt;&lt;component&gt;&gt;&#xa;extension.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="&lt;&lt;component&gt;&gt;&#xa;injector.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="200" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="&lt;&lt;component&gt;&gt;&#xa;config.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="200" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="&lt;&lt;component&gt;&gt;&#xa;indexer.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="60" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="&lt;&lt;component&gt;&gt;&#xa;checksum.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="340" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="&lt;&lt;external&gt;&gt;&#xa;VS Code QuickPick API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="340" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="&lt;&lt;external&gt;&gt;&#xa;Node.js fs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="480" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="calls injectAll()&#xa;calls injectSelective()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="imports INDEXER_OPTIONS&#xa;imports INDEXER_BASE" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="calls runIndexer()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="imports INDEXER_SCRIPTS" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="5" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="calls detectModifiedFiles()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="showQuickPick()&#xa;(pickIndexer)" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="copyFileSync()&#xa;mkdirSync()&#xa;readdirSync()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
