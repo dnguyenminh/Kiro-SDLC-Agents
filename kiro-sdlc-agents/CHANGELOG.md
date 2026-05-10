@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.3] - 2026-05-10
+
+### Added
+- **SM agent: Project-level workflow** — SM now supports `KSA workflow` syntax (project key without ticket number) to list all tickets and manage project scope
+- **SM agent: jira.conf management** — SM creates/updates `jira.conf` when invoked with project-level input; asks user before overwriting if project key differs
+
+### Changed
+- **jira.conf simplified** — removed `JIRA_BASE_URL` (unnecessary), only contains `JIRA_PROJECT_PREFIX`
+- **SM agent Input Parsing** — now distinguishes ticket-level (`KSA-1`) vs project-level (`KSA workflow`) inputs
+- **SM agent prompt** — updated in all 4 locations (agents, prompts, bundled resources)
+
+### Fixed
+- **jira.conf project key** — corrected from `ICL2` to `KSA`
+
 ## [1.1.0] - 2025-07-14
 
 ### Added
