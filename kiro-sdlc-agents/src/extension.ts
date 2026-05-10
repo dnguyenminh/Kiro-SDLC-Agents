@@ -5,7 +5,7 @@
 
 import * as vscode from "vscode";
 import { injectAll, injectSelective, safeUpdate, checkStatus } from "./injector";
-import { detectModifiedFiles } from "./checksum";
+import { detectModifiedFiles, isUpgradeAvailable, loadWorkspaceVersion, loadBundledManifest } from "./checksum";
 import { runIndexer } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -21,9 +21,29 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     updateStatusBar(statusBar, context);
+    checkForUpgrade(context);
 }
 
 export function deactivate() {}
+
+async function checkForUpgrade(context: vscode.ExtensionContext) {
+    const root = getWorkspaceRoot();
+    if (!root) { return; }
+    if (!isUpgradeAvailable(root, context.extensionPath)) { return; }
+
+    const wsVersion = loadWorkspaceVersion(root);
+    const manifest = loadBundledManifest(context.extensionPath);
+    const currentVer = wsVersion?.version || "not installed";
+    const newVer = manifest?.version || "unknown";
+
+    const action = await vscode.window.showInformationMessage(
+        `🆕 SDLC Agents update available: ${currentVer} → ${newVer}`,
+        "Update Now", "Later"
+    );
+    if (action === "Update Now") {
+        vscode.commands.executeCommand("kiroSdlc.update");
+    }
+}
 
 async function handleInjectAll(context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();

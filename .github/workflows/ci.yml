@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Copy resources from workspace
+        run: npm run copy-resources
+
       - name: Generate checksums manifest
         run: npm run gen-checksums
 
