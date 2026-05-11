@@ -308,6 +308,17 @@ Sau khi QA testing pass:
 
 1. Invoke DevOps agent
 2. Verify outputs exist
+3. **Merge & Tag (MANDATORY after deploy + sanity pass):**
+   ```
+   git checkout master && git pull origin master
+   git merge {TICKET} --no-ff -m "Merge {TICKET}: {summary}"
+   git push origin master
+   git tag -a v{VERSION} -m "{TICKET}: {summary}"
+   git push origin v{VERSION}
+   git branch -d {TICKET} && git push origin --delete {TICKET}
+   ```
+4. Transition: "Complete"
+5. Update STATUS: `deployment.releasedVersion = "v{VERSION}"`
 3. Update STATUS
 
 ## Specific Action Handling
