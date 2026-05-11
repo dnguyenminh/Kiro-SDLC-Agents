@@ -988,8 +988,26 @@ If review found issues:
    )
    ```
 3. Verify outputs exist
-4. Update STATUS: `deployment.status = "done"`
-5. Report: "✅ Phase 7 done — DPG.md + RLN.md created."
+4. **Deploy** (nếu được yêu cầu): Invoke DevOps agent để deploy theo DPG
+5. **Sau khi deploy thành công + sanity pass — Merge & Tag (MANDATORY):**
+   ```
+   git checkout master
+   git pull origin master
+   git merge {TICKET} --no-ff -m "Merge {TICKET}: {summary}"
+   git push origin master
+   
+   // Tính version mới
+   // Lấy latest tag, bump minor (hoặc theo RLN version)
+   git tag -a v{VERSION} -m "{TICKET}: {summary}"
+   git push origin v{VERSION}
+   
+   // Cleanup branch
+   git branch -d {TICKET}
+   git push origin --delete {TICKET}
+   ```
+6. **Transition Jira: READY FOR PRODUCT → DONE** (transition name: "Complete")
+7. Update STATUS: `deployment.status = "done"`, `deployment.releasedVersion = "v{VERSION}"`
+8. Report: "✅ Phase 7 done — DPG.md + RLN.md created. Branch merged to master. Tagged v{VERSION}."
 
 ## Specific Action Handling
 
@@ -1275,6 +1293,47 @@ the discovered project tracker "update issue" tool (
 - Branch name = Jira ticket key: `{TICKET}` (ví dụ: `SCRUM-50`)
 - Commit message: `{TICKET}: {short description}`
 - Push code lên branch trước khi transition sang IN REVIEW
+- **⛔ Mỗi ticket = 1 branch riêng biệt** — KHÔNG commit nhiều tickets vào cùng 1 branch
+- **⛔ Merge vào master = 1 version mới + git tag** — Sau khi deploy thành công (Phase 7), SM PHẢI merge branch vào master và tạo version tag
+
+### Git Release Process (Post-Deployment — MANDATORY)
+
+**Sau khi Phase 7 deploy thành công + sanity pass, SM PHẢI thực hiện:**
+
+1. **Merge branch vào master:**
+   ```
+   git checkout master
+   git pull origin master
+   git merge {TICKET} --no-ff -m "Merge {TICKET}: {summary}"
+   git push origin master
+   ```
+2. **Tạo version tag trên master:**
+   - Đọc version hiện tại từ `documents/{TICKET}/RLN.md` (Release Notes header)
+   - Hoặc tính version mới: lấy latest tag (`git describe --tags --abbrev=0`), bump patch version
+   - Format tag: `v{MAJOR}.{MINOR}.{PATCH}` (ví dụ: `v1.2.0`)
+   ```
+   git tag -a v{VERSION} -m "{TICKET}: {summary}"
+   git push origin v{VERSION}
+   ```
+3. **Cleanup branch (optional):**
+   ```
+   git branch -d {TICKET}
+   git push origin --delete {TICKET}
+   ```
+4. **Update STATUS.json:** Thêm `"releasedVersion": "v{VERSION}"` vào deployment phase
+5. **Report:**
+   ```
+   ✅ Release complete:
+   - Branch {TICKET} merged to master
+   - Tagged: v{VERSION}
+   - Jira: DONE
+   ```
+
+**Version Numbering Rules:**
+- MAJOR: Breaking changes, major feature release
+- MINOR: New feature (mỗi ticket implement thường là minor bump)
+- PATCH: Bug fix, hotfix
+- Nếu không chắc → bump MINOR
 
 
 ## ⛔ Document Quality Gate — Post-Phase Verification (MANDATORY)
