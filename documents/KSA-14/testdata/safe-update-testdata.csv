@@ -1,0 +1,14 @@
+test_case_id,outdated_count,modified_count,user_action,expected_behavior,expected_prompt,description
+TC-005,3,0,N/A,auto-overwrite,false,Only outdated — auto-overwrite without prompt
+TC-006,0,0,N/A,no-update,false,All current — show info message
+TC-100,2,1,Overwrite All,overwrite-all,true,User selects Overwrite All
+TC-101,2,1,Skip Modified,skip-modified,true,User selects Skip Modified — modified preserved
+TC-102,1,1,Backup & Overwrite,backup-overwrite,true,User selects Backup — backup created then overwrite
+TC-103,1,1,Cancel,no-change,true,User cancels — no files modified
+TC-303,3,0,N/A,auto-overwrite,false,BR-04 validation — auto-overwrite when only outdated
+TC-304,1,1,N/A,prompt-shown,true,BR-05 validation — Overwrite All is first option
+TC-305,1,1,Skip Modified,skip-modified,true,BR-06 validation — modified file unchanged
+TC-306,0,1,Backup & Overwrite,backup-created,true,BR-07 validation — backup in .sdlc-backup/{timestamp}/
+TC-701,3,0,N/A,auto-overwrite,false,IT — auto-overwrite end-to-end
+TC-702,2,1,Skip Modified,skip-modified,true,IT — skip modified end-to-end
+TC-703,0,1,Backup & Overwrite,backup-overwrite,true,IT — backup and overwrite end-to-end

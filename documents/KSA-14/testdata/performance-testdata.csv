@@ -1,0 +1,5 @@
+test_case_id,file_count,file_size_kb,operation,max_time_ms,expected_result,description
+TC-600,1,50,computeFileHash,100,hash_computed,Single 50KB file hash < 100ms
+TC-601,50,10,buildManifestAfterInject,500,manifest_rebuilt,50 files × 10KB rebuild < 500ms
+TC-602,50,10,getFileStatuses,200,statuses_computed,50 files status check < 200ms
+TC-603,1,1,getFileStatuses,N/A,no_traversal,Path traversal attempt: ../../etc/passwd

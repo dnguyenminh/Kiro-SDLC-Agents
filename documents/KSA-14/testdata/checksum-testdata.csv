@@ -1,0 +1,10 @@
+test_case_id,file_path,file_content,workspace_version,bundled_version,bundled_hash,expected_state,description
+TC-001,.kiro/agents/test.md,hello world,1.0.5,1.0.5,b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9,current,Known content for SHA-256 verification
+TC-002,.kiro/agents/empty.md,,1.0.5,1.0.5,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,current,Empty file hash verification
+TC-004,.kiro/agents/current.md,current content,1.0.5,1.0.5,{computed_hash},current,File at current version with matching hash
+TC-004,.kiro/agents/outdated.md,old content,1.0.3,1.0.5,{new_hash},outdated,File at older version
+TC-004,.kiro/agents/modified.md,user modified content,1.0.5,1.0.5,{original_hash},modified,File at same version but different hash
+TC-004,.kiro/agents/missing.md,N/A,0.0.0,1.0.5,{bundled_hash},missing,File does not exist in workspace
+TC-400,.kiro/agents/binary.bin,{binary_bytes_0x00_0x01_0xFF_0xFE_0x80},1.0.5,1.0.5,{computed_hash},current,Binary file for hash edge case
+TC-401,N/A,N/A,N/A,1.0.5,N/A,N/A,Empty bundled manifest (0 files)
+TC-408,/nonexistent/path/file.md,N/A,N/A,N/A,N/A,error,File does not exist — ENOENT expected

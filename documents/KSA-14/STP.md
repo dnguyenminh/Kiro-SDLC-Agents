@@ -1,0 +1,303 @@
+# Software Test Plan (STP)
+
+## Kiro SDLC Agents Extension — KSA-14: Release v1.0.5 — Fix inject overwrite bug + per-file version tracking
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-14 |
+| Title | Release v1.0.5 — Fix inject overwrite bug + per-file version tracking |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2026-05-10 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-14.docx |
+| Related FSD | FSD-v1-KSA-14.docx |
+| Related TDD | TDD-v1-KSA-14.docx |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | QA Agent – QA Engineer | Create document |
+| Peer Reviewer | BA Agent – Business Analyst | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-05-10 | QA Agent | Initiate document — auto-generated from BRD, FSD, and TDD KSA-14 |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm the test plan in this STP |
+| | ☐ I agree and confirm the test plan in this STP |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This test plan defines the testing strategy, scope, schedule, and resources for verifying the Kiro SDLC Agents VS Code extension releases v1.0.4 (inject overwrite bug fix) and v1.0.5 (per-file version tracking). It ensures all functional requirements from the FSD are validated, business rules are enforced, and the extension compiles and packages correctly.
+
+### 1.2 Test Objectives
+
+- Verify `detectModifiedFiles()` no longer has version-gating logic (v1.0.4 bug fix)
+- Validate `safeUpdate()` decision tree correctly classifies and handles outdated vs user-modified files
+- Verify per-file workspace manifest (`.kiro/.sdlc-manifest.json`) is correctly created and maintained
+- Validate `migrateLegacyVersion()` performs atomic write-before-delete migration
+- Verify `getVersionReport()` produces correctly formatted and grouped output
+- Ensure file copy operations (`copyDirRecursive`, `copyDirFiltered`, `copySelectedItems`) handle edge cases
+- Validate `isUpgradeAvailable()` version comparison logic
+- Confirm `npm run compile` and `vsce package` succeed without errors
+
+### 1.3 References
+
+| Document | Location |
+|----------|----------|
+| BRD | BRD-v1-KSA-14.docx |
+| FSD | FSD-v1-KSA-14.docx |
+| TDD | TDD-v1-KSA-14.docx |
+| Source Code | `kiro-sdlc-agents/src/checksum.ts`, `injector.ts`, `file-utils.ts`, `config.ts`, `extension.ts` |
+
+---
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+| Level | Scope | Automation | Tools |
+|-------|-------|------------|-------|
+| UT | Pure functions: `computeFileHash`, `getFileStatuses`, `detectModifiedFiles`, `isUpgradeAvailable`, `migrateLegacyVersion`, `buildManifestAfterInject`, `getVersionReport`, `copyDirRecursive`, `copyDirFiltered`, `copySelectedItems` | Automated | vitest |
+| IT | Module interactions with real file system (temp directories): inject flows, manifest read/write, migration end-to-end | Automated | vitest + Node.js fs (tmp dirs) |
+| SIT | Manual VS Code extension testing: command palette, notifications, QuickPick dialogs, status bar | Manual | VS Code + manual |
+
+![Test Execution Flow](diagrams/test-execution-flow.png)
+
+### 2.2 Test Types
+
+| Type | Description | Applicable |
+|------|-------------|------------|
+| Functional Testing | Verify features work per FSD use cases (UC-01 to UC-04) | Yes |
+| Regression Testing | Ensure existing inject/status commands still work after changes | Yes |
+| Performance Testing | Verify hash computation < 100ms per file, full manifest rebuild < 500ms | Yes |
+| Security Testing | Verify no path traversal in manifest, no data leakage | Yes |
+| Compatibility Testing | Verify VS Code 1.85+ compatibility | Yes |
+
+### 2.3 Test Approach
+
+- **Risk-based prioritization**: Focus on the v1.0.4 bug fix (version-gating removal) and migration atomicity (write-before-delete) as highest risk areas
+- **Automated-first**: All pure functions and file system interactions are tested via vitest with real temp directories — no mocks for file I/O
+- **Manual SIT**: VS Code-specific UI interactions (Command Palette, notifications, QuickPick) require manual testing in the extension host
+- **Boundary testing**: SHA-256 edge cases (empty files, large files, binary files), manifest with 0 entries, malformed JSON
+
+### 2.4 Entry Criteria
+
+| Level | Entry Criteria |
+|-------|---------------|
+| UT/IT | Source code committed; vitest configured; test data fixtures prepared |
+| SIT | `npm run compile` succeeds; VSIX packaged; VS Code dev host available |
+
+### 2.5 Exit Criteria
+
+| Level | Exit Criteria |
+|-------|--------------|
+| UT/IT | 100% test cases executed; 0 Critical/Major defects; all assertions pass |
+| SIT | All SIT scenarios executed; 0 Critical defects; ≤1 Major defect open |
+
+---
+
+## 3. Test Scope
+
+### 3.1 Features In Scope
+
+| # | Feature / Story | Priority | FSD Reference | Test Type |
+|---|----------------|----------|---------------|-----------|
+| 1 | Inject All always overwrites | High | UC-01, BR-01, BR-03 | UT + IT + SIT |
+| 2 | Safe Update with smart overwrite | High | UC-02, BR-04–BR-07 | UT + IT + SIT |
+| 3 | Per-file version tracking & report | High | UC-03, BR-08–BR-10 | UT + IT + SIT |
+| 4 | Legacy migration (atomic) | High | UC-04, BR-11–BR-13 | UT + IT |
+| 5 | detectModifiedFiles bug fix (no version-gating) | Critical | BR-02 | UT + IT |
+| 6 | File copy operations | Medium | injector.ts, file-utils.ts | UT + IT |
+| 7 | isUpgradeAvailable logic | Medium | checksum.ts | UT |
+| 8 | Clean compile + VSIX package | High | Story 5 | SIT |
+
+![Test Coverage](diagrams/test-coverage.png)
+
+### 3.2 Features Out of Scope
+
+| # | Feature | Reason |
+|---|---------|--------|
+| 1 | Agent prompt content (.md files) | Not modified in this release |
+| 2 | Code intelligence indexer | Not modified in this release |
+| 3 | VS Code Marketplace publishing | Separate process, not part of extension logic |
+| 4 | Multi-workspace support | Explicitly out of scope per BRD |
+| 5 | Remote workspace (SSH/WSL) | Explicitly out of scope per BRD |
+
+---
+
+## 4. Test Environment
+
+### 4.1 Environment Requirements
+
+| Environment | Setup | Purpose |
+|-------------|-------|---------|
+| Local Dev | Node.js 18+, VS Code 1.85+, vitest | Unit + Integration tests |
+| VS Code Extension Host | `F5` debug launch | Manual SIT testing |
+
+### 4.2 OS / Platform Requirements
+
+| Platform | Version | Required |
+|----------|---------|----------|
+| Windows | 10/11 | Yes |
+| macOS | 12+ | Optional |
+| Linux | Ubuntu 22.04+ | Optional |
+
+### 4.3 Test Data Requirements
+
+| Data Type | Description | Source | Preparation |
+|-----------|-------------|--------|-------------|
+| Bundled manifest | `.sdlc-checksums.json` with known hashes | Generated fixture | Create with known file hashes |
+| Workspace files | Agent .md files at various versions | Temp directory | Create in test setup |
+| Legacy version file | `.kiro/.sdlc-version` with JSON | Fixture | `{"version":"1.0.3"}` |
+| Malformed JSON | Invalid JSON for error handling | Fixture | `{invalid` |
+| Empty files | 0-byte files for hash edge case | Temp directory | `fs.writeFileSync(path, "")` |
+
+### 4.4 External Dependencies
+
+| System | Dependency | Mock/Stub Available |
+|--------|-----------|---------------------|
+| VS Code API | `vscode.window.showWarningMessage`, `showQuickPick` | Yes — vitest mock |
+| Node.js crypto | SHA-256 hash computation | No mock needed (stdlib) |
+| Node.js fs | File system operations | No mock — use real temp dirs |
+
+---
+
+## 5. Test Schedule
+
+| Phase | Start Date | End Date | Duration | Milestone |
+|-------|-----------|----------|----------|-----------|
+| Test Planning | 2026-05-10 | 2026-05-10 | 1 day | STP + STC approved |
+| Test Data Preparation | 2026-05-10 | 2026-05-10 | 1 day | Fixtures ready |
+| UT/IT Execution | 2026-05-11 | 2026-05-12 | 2 days | All automated tests pass |
+| SIT Execution | 2026-05-12 | 2026-05-13 | 2 days | SIT sign-off |
+| Defect Fix & Retest | 2026-05-13 | 2026-05-14 | 1 day | All Critical/Major fixed |
+| Package & Release | 2026-05-14 | 2026-05-14 | 1 day | VSIX packaged |
+
+---
+
+## 6. Resources & Responsibilities
+
+| Role | Name | Responsibility |
+|------|------|---------------|
+| Test Lead | QA Agent | Test planning, coordination, reporting |
+| QA Engineer | QA Agent | Test case design, execution, defect reporting |
+| BA | BA Agent | Acceptance criteria clarification |
+| Developer | DEV Agent | Bug fixing, unit test support |
+
+---
+
+## 7. Risk & Mitigation
+
+| # | Risk | Impact | Likelihood | Mitigation |
+|---|------|--------|------------|------------|
+| 1 | Migration deletes legacy file before new manifest written | High | Low | Test atomic write-before-delete explicitly; verify in IT |
+| 2 | Hash computation fails on binary/large files | Medium | Low | Include binary file test cases in UT |
+| 3 | VS Code API behavior differs across versions | Medium | Low | Test on minimum supported version (1.85) |
+| 4 | File permission issues on different OS | Medium | Medium | Test with read-only files in IT |
+| 5 | Concurrent VS Code windows corrupt manifest | Low | Low | Document as known limitation; single-workspace only |
+
+---
+
+## 8. Defect Management
+
+### 8.1 Severity Levels
+
+| Severity | Definition | Example |
+|----------|-----------|---------|
+| Critical | Data loss, migration failure, extension crash | Migration deletes legacy file without writing new manifest |
+| Major | Feature not working, workaround exists | safeUpdate always prompts even when only outdated files |
+| Minor | UI issue, cosmetic defect | Version report formatting slightly off |
+| Trivial | Typo, minor alignment | Typo in notification message |
+
+### 8.2 Priority Levels
+
+| Priority | Definition | SLA (Fix Time) |
+|----------|-----------|----------------|
+| P1 | Must fix immediately | 4 hours |
+| P2 | Must fix before release | 1 business day |
+| P3 | Should fix if time permits | 3 business days |
+| P4 | Nice to fix, can defer | Next release |
+
+### 8.3 Defect Lifecycle
+
+```
+New → Open → In Progress → Fixed → Ready for Retest → Verified → Closed
+                                                     → Reopened → In Progress
+```
+
+---
+
+## 9. Test Metrics & Reporting
+
+### 9.1 Metrics
+
+| Metric | Formula | Target |
+|--------|---------|--------|
+| Test Execution Rate | Executed / Total × 100% | 100% |
+| Pass Rate | Passed / Executed × 100% | ≥ 95% |
+| Defect Density | Defects / Test Cases | ≤ 0.1 |
+| Critical Defect Count | Count of Critical severity | 0 |
+| Automation Coverage | Automated / Total × 100% | ≥ 80% |
+
+### 9.2 Test Cases Summary
+
+| Level | Count | Automated | Manual |
+|-------|-------|-----------|--------|
+| UT | 28 | 28 | 0 |
+| IT | 12 | 12 | 0 |
+| SIT | 8 | 0 | 8 |
+| **Total** | **48** | **40 (83%)** | **8 (17%)** |
+
+### 9.3 Reporting Schedule
+
+| Report | Frequency | Audience |
+|--------|-----------|----------|
+| Daily Test Status | Daily during SIT | Project team |
+| Test Completion Report | End of SIT | All stakeholders |
+
+---
+
+## 10. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| SIT | System Integration Testing (manual in VS Code) |
+| UT | Unit Testing (vitest automated) |
+| IT | Integration Testing (vitest + real file system) |
+| STP | Software Test Plan |
+| STC | Software Test Cases |
+| Workspace Manifest | `.kiro/.sdlc-manifest.json` — per-file version/hash tracking |
+| Bundled Manifest | `resources/.sdlc-checksums.json` — expected hashes shipped with extension |
+
+### Assumptions
+
+- VS Code Extension Host provides stable API for commands and notifications
+- Node.js crypto module SHA-256 implementation is correct and deterministic
+- File system operations are synchronous and atomic at the OS level for small files
+- Single workspace folder only (multi-root not supported)
+- Test framework vitest needs to be set up (not currently configured in project)

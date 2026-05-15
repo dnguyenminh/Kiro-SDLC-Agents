@@ -1,0 +1,10 @@
+test_case_id,legacy_content,legacy_version,workspace_files_count,expected_manifest_version,expected_legacy_deleted,description
+TC-007,"{""version"":""1.0.3""}",1.0.3,3,1.0.3,true,Valid legacy — migrate and delete
+TC-105,N/A,N/A,0,N/A,N/A,No legacy file — no-op
+TC-204,not valid json {{,1.0.0,3,1.0.0,true,Malformed JSON — defaults to 1.0.0
+TC-205,"{""version"":""1.0.3""}",1.0.3,3,N/A,false,Cannot write manifest — legacy preserved
+TC-310,"{""version"":""1.0.3""}",1.0.3,3,1.0.3,true,Write-before-delete order verification
+TC-311,corrupted data,1.0.0,3,1.0.0,true,Malformed content — defaults to 1.0.0
+TC-312,N/A,N/A,0,N/A,N/A,No legacy + existing manifest — idempotent
+TC-704,"{""version"":""1.0.3""}",1.0.3,5,1.0.3,true,IT — full migration end-to-end
+TC-710,"{""version"":""1.0.3""}",1.0.3,5,1.0.5,true,IT — full lifecycle legacy to current

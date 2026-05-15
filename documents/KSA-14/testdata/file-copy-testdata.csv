@@ -1,0 +1,7 @@
+test_case_id,source_structure,target_exists,filter_items,skip_paths,expected_copied,expected_skipped,description
+TC-403,"file.md;node_modules/pkg.json;.git/config;sub/nested.md",false,N/A,N/A,"file.md;sub/nested.md","node_modules/pkg.json;.git/config",SKIP_DIRS filtering
+TC-404,"a.md;b.md;sub/c.md",false,N/A,".kiro/agents/b.md","a.md;sub/c.md","b.md",copyDirFiltered with skipPaths
+TC-405,"existing.md",false,"existing.md;nonexistent.md",N/A,"existing.md","nonexistent.md",copySelectedItems — missing item graceful skip
+TC-706,"a/b/c/deep.md;a/file.md;root.md",false,N/A,N/A,"root.md;a/file.md;a/b/c/deep.md",N/A,Deep nested 3-level copy
+TC-707,"file.md(new content)",true(file.md=old content),N/A,N/A,"file.md(new content)",N/A,Overwrite existing files
+TC-708,"file.md;dir/nested.md;other.md",false,"file.md;dir",N/A,"file.md;dir/nested.md","other.md",Mix of files and directories
