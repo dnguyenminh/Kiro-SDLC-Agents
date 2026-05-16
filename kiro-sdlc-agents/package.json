@@ -1,8 +1,8 @@
 {
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
-  "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) into any workspace for Kiro IDE",
-  "version": "1.1.1",
+  "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
+  "version": "1.2.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,7 @@
     "vscode": "^1.85.0"
   },
   "categories": ["Other", "Snippets"],
-  "keywords": ["kiro", "sdlc", "agents", "multi-agent", "BA", "QA", "DevOps", "scrum"],
+  "keywords": ["kiro", "sdlc", "agents", "multi-agent", "BA", "QA", "DevOps", "scrum", "mcp"],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -28,10 +28,6 @@
         "title": "Kiro SDLC: Inject (Select Components)"
       },
       {
-        "command": "kiroSdlc.runIndex",
-        "title": "Kiro SDLC: Run Code Indexer"
-      },
-      {
         "command": "kiroSdlc.update",
         "title": "Kiro SDLC: Update Agents (Keep Customizations)"
       },
@@ -42,19 +38,7 @@
     ],
     "configuration": {
       "title": "Kiro SDLC Agents",
-      "properties": {
-        "kiroSdlc.autoIndex": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically run code indexer after injection"
-        },
-        "kiroSdlc.preferredIndexer": {
-          "type": "string",
-          "enum": ["auto", "python", "java", "nodejs", "powershell", "bash"],
-          "default": "auto",
-          "description": "Preferred indexer script (auto = detect from environment)"
-        }
-      }
+      "properties": {}
     }
   },
   "scripts": {

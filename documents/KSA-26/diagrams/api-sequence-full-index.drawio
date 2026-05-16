@@ -1,0 +1,102 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="IndexingEngine" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="120" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="FileScanner" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="260" y="40" width="120" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="SignatureExtractor" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="440" y="40" width="140" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="PatternDetector" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="640" y="40" width="130" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="SQLite" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;" vertex="1" parent="1">
+      <mxGeometry x="840" y="40" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="scanWorkspace()" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="100" as="sourcePoint" />
+        <mxPoint x="320" y="100" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="8" value="ScannedFile[]" style="html=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="320" y="130" as="sourcePoint" />
+        <mxPoint x="140" y="130" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="9" value="extractSymbols(content, lang)" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="160" as="sourcePoint" />
+        <mxPoint x="510" y="160" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="10" value="ExtractedSymbol[] + imports[]" style="html=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="190" as="sourcePoint" />
+        <mxPoint x="140" y="190" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="11" value="INSERT files + symbols" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="230" as="sourcePoint" />
+        <mxPoint x="890" y="230" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="12" value="updateModules()" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="280" as="sourcePoint" />
+        <mxPoint x="890" y="280" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="13" value="--- Pattern Detection Phase ---" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#f8cecc;fontStyle=3;" vertex="1" parent="1">
+      <mxGeometry x="350" y="310" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="SELECT symbols WHERE module=?" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="350" as="sourcePoint" />
+        <mxPoint x="890" y="350" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="15" value="ClassInfo[], FunctionInfo[]" style="html=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="890" y="380" as="sourcePoint" />
+        <mxPoint x="140" y="380" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="16" value="detectPatterns(classes, functions, imports)" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="420" as="sourcePoint" />
+        <mxPoint x="705" y="420" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="DetectedPatterns" style="html=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="705" y="450" as="sourcePoint" />
+        <mxPoint x="140" y="450" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" value="inferModulePurpose(name, classes, pkgs)" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="480" as="sourcePoint" />
+        <mxPoint x="705" y="480" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="19" value="purpose string" style="html=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="705" y="510" as="sourcePoint" />
+        <mxPoint x="140" y="510" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="UPDATE modules SET patterns... WHERE name=?" style="html=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="140" y="550" as="sourcePoint" />
+        <mxPoint x="890" y="550" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

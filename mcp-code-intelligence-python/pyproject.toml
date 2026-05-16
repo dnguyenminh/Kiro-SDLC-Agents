@@ -1,0 +1,19 @@
+[project]
+name = "mcp-code-intel"
+version = "0.1.0"
+description = "MCP Code Intelligence Server — Python variant with FTS5 search"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+watch = ["watchdog>=3.0"]
+
+[project.scripts]
+mcp-code-intel = "mcp_code_intel.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.setuptools.packages.find]
+where = ["src"]

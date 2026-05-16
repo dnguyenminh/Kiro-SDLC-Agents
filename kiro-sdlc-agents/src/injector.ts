@@ -1,17 +1,20 @@
 /**
  * Core injection logic — copies resources to target workspace.
- * Tracks per-file version so each file shows its own injected version.
+ * Delegates MCP config injection to mcp-injector module.
  */
 
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { Component, CORE_COMPONENTS, INDEXER_BASE, INDEXER_OPTIONS } from "./config";
+import { Component, CORE_COMPONENTS } from "./config";
 import {
     detectModifiedFiles, loadBundledManifest, buildManifestAfterInject,
-    getFileStatuses, migrateLegacyVersion, ModifiedFile, FileStatus
+    getFileStatuses, migrateLegacyVersion, FileStatus
 } from "./checksum";
 import { copyDirRecursive, copyDirFiltered, copySelectedItems } from "./file-utils";
+import { injectMcpConfig, migrateLegacyScripts, hasMcpConfig } from "./mcp-injector";
+
+export { migrateLegacyScripts, injectMcpConfig } from "./mcp-injector";
 
 export async function injectAll(root: string, extensionPath: string): Promise<string[]> {
     migrateLegacyVersion(root, extensionPath);
@@ -23,13 +26,8 @@ export async function injectAll(root: string, extensionPath: string): Promise<st
         }
     }
 
-    const indexerChoice = await pickIndexer();
-    if (indexerChoice) {
-        injectComponent(INDEXER_BASE, root, extensionPath);
-        if (injectComponent(indexerChoice, root, extensionPath)) {
-            injected.push(indexerChoice.id);
-        }
-    }
+    const variantId = await injectMcpConfig(root);
+    if (variantId) { injected.push(`mcp-${variantId}`); }
 
     buildManifestAfterInject(root, extensionPath);
     return injected;
@@ -42,14 +40,9 @@ export async function injectSelective(root: string, extensionPath: string): Prom
 
     const injected: string[] = [];
     for (const pick of selected) {
-        if (pick.id === "indexer") {
-            const indexerChoice = await pickIndexer();
-            if (indexerChoice) {
-                injectComponent(INDEXER_BASE, root, extensionPath);
-                if (injectComponent(indexerChoice, root, extensionPath)) {
-                    injected.push(indexerChoice.id);
-                }
-            }
+        if (pick.id === "mcp-config") {
+            const variantId = await injectMcpConfig(root);
+            if (variantId) { injected.push(`mcp-${variantId}`); }
         } else {
             const component = CORE_COMPONENTS.find(c => c.id === pick.id);
             if (component && injectComponent(component, root, extensionPath)) {
@@ -64,13 +57,11 @@ export async function injectSelective(root: string, extensionPath: string): Prom
 
 export async function safeUpdate(root: string, extensionPath: string): Promise<string[]> {
     migrateLegacyVersion(root, extensionPath);
-
     const modified = detectModifiedFiles(root, extensionPath);
     if (modified.length === 0) {
         vscode.window.showInformationMessage("All files match bundled version. No update needed.");
         return [];
     }
-
     const statuses = getFileStatuses(root, extensionPath);
     const outdated = statuses.filter(s => s.state === "outdated");
     const userModified = statuses.filter(s => s.state === "modified");
@@ -91,9 +82,7 @@ export function checkStatus(workspaceRoot: string): Record<string, boolean> {
     for (const c of CORE_COMPONENTS) {
         status[c.id] = fs.existsSync(path.join(workspaceRoot, c.targetPath));
     }
-    status["indexer"] = fs.existsSync(
-        path.join(workspaceRoot, ".analysis/code-intelligence/index-config.json")
-    );
+    status["mcp-config"] = hasMcpConfig(workspaceRoot);
     return status;
 }
 
@@ -158,72 +147,50 @@ function updateSkipModified(root: string, extensionPath: string, userModified: F
 }
 
 function updateWithBackup(root: string, extensionPath: string, userModified: FileStatus[]): string[] {
-    const backupDir = path.join(root, ".kiro/.sdlc-backup");
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-
+    const backupDir = path.join(root, ".kiro/.sdlc-backup", timestamp);
     for (const file of userModified) {
         const src = path.join(root, file.relativePath);
-        const dest = path.join(backupDir, timestamp, file.relativePath);
+        const dest = path.join(backupDir, file.relativePath);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         if (fs.existsSync(src)) { fs.copyFileSync(src, dest); }
     }
-
-    vscode.window.showInformationMessage(
-        `Backed up ${userModified.length} files to .kiro/.sdlc-backup/${timestamp}`
-    );
+    vscode.window.showInformationMessage(`Backed up ${userModified.length} files to .kiro/.sdlc-backup/${timestamp}`);
     return forceUpdate(root, extensionPath);
 }
 
 async function promptUpdateWithDetails(outdated: FileStatus[], userModified: FileStatus[]): Promise<string> {
     const lines: string[] = [];
     if (outdated.length > 0) {
-        lines.push(`⬆️ ${outdated.length} file(s) outdated:`);
-        for (const f of outdated.slice(0, 5)) {
-            lines.push(`  • ${f.relativePath} [v${f.workspaceVersion} → v${f.bundledVersion}]`);
-        }
+        lines.push(`⬆️ ${outdated.length} file(s) outdated`);
+        outdated.slice(0, 5).forEach(f => lines.push(`  • ${f.relativePath}`));
     }
     if (userModified.length > 0) {
-        lines.push(`✏️ ${userModified.length} file(s) modified by you:`);
-        for (const f of userModified.slice(0, 5)) {
-            lines.push(`  • ${f.relativePath} [v${f.workspaceVersion}]`);
-        }
+        lines.push(`✏️ ${userModified.length} file(s) modified by you`);
+        userModified.slice(0, 5).forEach(f => lines.push(`  • ${f.relativePath}`));
     }
-
     const action = await vscode.window.showWarningMessage(
         lines.join("\n"), { modal: true },
         "Overwrite All", "Skip Modified", "Backup & Overwrite", "Cancel"
     );
-
-    switch (action) {
-        case "Overwrite All": return "overwrite";
-        case "Skip Modified": return "skip";
-        case "Backup & Overwrite": return "backup";
-        default: return "cancel";
-    }
+    if (action === "Overwrite All") { return "overwrite"; }
+    if (action === "Skip Modified") { return "skip"; }
+    if (action === "Backup & Overwrite") { return "backup"; }
+    return "cancel";
 }
 
 async function showComponentPicker() {
     const corePicks = CORE_COMPONENTS.map(c => ({
         label: c.label, description: c.description, id: c.id, picked: true
     }));
-    const indexerPick = {
-        label: "Code Intelligence Indexer (choose language next)",
-        description: "Source code indexer — will ask which language",
-        id: "indexer", picked: true
+    const mcpPick = {
+        label: "Code Intelligence MCP Server (choose variant next)",
+        description: "MCP server config — replaces legacy indexer scripts",
+        id: "mcp-config", picked: true
     };
-    return vscode.window.showQuickPick([...corePicks, indexerPick], {
+    return vscode.window.showQuickPick([...corePicks, mcpPick], {
         canPickMany: true, placeHolder: "Select components to inject"
     });
-}
-
-async function pickIndexer(): Promise<Component | undefined> {
-    const picks = INDEXER_OPTIONS.map(c => ({
-        label: c.label, description: c.description, component: c
-    }));
-    const selected = await vscode.window.showQuickPick(picks, {
-        canPickMany: false, placeHolder: "Choose ONE indexer language"
-    });
-    return selected?.component;
 }
 
 function injectComponent(component: Component, root: string, extensionPath: string): boolean {

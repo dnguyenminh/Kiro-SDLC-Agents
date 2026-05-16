@@ -1,0 +1,48 @@
+{
+  "name": "mcp-code-intelligence",
+  "version": "0.1.0",
+  "description": "Local Code Intelligence MCP Server — SQLite FTS5 + Semantic Search for codebase indexing and querying",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-code-intelligence": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "code-intelligence",
+    "sqlite",
+    "fts5",
+    "semantic-search",
+    "indexer",
+    "model-context-protocol"
+  ],
+  "author": "Duc Nguyen <dnguyenminh@hotmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "better-sqlite3": "^11.7.0"
+  },
+  "optionalDependencies": {
+    "chokidar": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.14.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.5.0"
+  }
+}

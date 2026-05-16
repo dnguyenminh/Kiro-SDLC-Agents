@@ -1,0 +1,54 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="scanner/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="80" y="80" width="320" height="280" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="file-scanner" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="110" y="120" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="signature-extractor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="110" y="180" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="pattern-detector&#xa;(NEW)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="110" y="240" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="indexer/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="480" y="80" width="240" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="IndexingEngine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="510" y="120" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="FileWatcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="510" y="180" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="db/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="480" y="300" width="240" height="140" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="DatabaseManager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="510" y="340" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="Schema + Migrations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="510" y="390" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="7" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="7" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="7" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="DetectedPatterns" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="260" y="250" width="100" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="ClassInfo[]&#xa;FunctionInfo[]&#xa;imports[]" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="240" y="120" width="80" height="50" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

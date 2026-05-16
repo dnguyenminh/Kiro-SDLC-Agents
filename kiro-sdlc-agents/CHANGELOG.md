@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.2.0] - 2026-05-16
+
+### Breaking Changes
+- **Removed `Kiro SDLC: Run Code Indexer` command** — MCP servers handle indexing automatically
+- **Removed `kiroSdlc.preferredIndexer` setting** — replaced by MCP variant selection
+- **Removed bundled indexer scripts** — no longer injected into workspace
+
+### Added
+- **MCP Code Intelligence integration** — extension now injects MCP server config into `.kiro/settings/mcp.json`
+- **MCP variant picker** — choose Python, Node.js, or Kotlin MCP server during injection
+- **`src/mcp-injector.ts`** — new module handling MCP config injection and legacy migration
+- **Auto-migration on upgrade** — legacy `.analysis/code-intelligence/scripts/` folder automatically removed
+
+### Changed
+- **"Inject All" flow** — now asks for MCP variant instead of indexer language
+- **"Inject Selective"** — indexer option replaced by "Code Intelligence MCP Server" option
+- **Status check** — verifies `code-intelligence` key in `mcp.json` instead of `index-config.json`
+- **Version bumped** to 1.2.0
+
+### Removed
+- **`src/indexer.ts`** — entire file deleted (deprecated)
+- **`INDEXER_BASE`, `INDEXER_OPTIONS`, `INDEXER_SCRIPTS`** from config.ts
+- **`resources/.analysis/code-intelligence/scripts/`** — no longer bundled
+
 ## [1.0.6] - 2026-05-10
 
 ### Fixed (Code Review)

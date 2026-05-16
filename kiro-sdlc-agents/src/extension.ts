@@ -4,9 +4,11 @@
  */
 
 import * as vscode from "vscode";
-import { injectAll, injectSelective, safeUpdate, checkStatus, getVersionReport } from "./injector";
+import {
+    injectAll, injectSelective, safeUpdate, checkStatus,
+    getVersionReport, migrateLegacyScripts
+} from "./injector";
 import { isUpgradeAvailable, loadBundledManifest, migrateLegacyVersion } from "./checksum";
-import { runIndexer } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -15,7 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("kiroSdlc.injectAll", () => handleInjectAll(context)),
         vscode.commands.registerCommand("kiroSdlc.injectSelective", () => handleInjectSelective(context)),
-        vscode.commands.registerCommand("kiroSdlc.runIndex", () => handleRunIndex()),
         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
         vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context))
     );
@@ -30,6 +31,15 @@ async function checkForUpgrade(context: vscode.ExtensionContext) {
     const root = getWorkspaceRoot();
     if (!root) { return; }
     migrateLegacyVersion(root, context.extensionPath);
+
+    // Migrate legacy scripts on upgrade
+    const migration = migrateLegacyScripts(root);
+    if (migration.removed) {
+        vscode.window.showInformationMessage(
+            "🧹 Legacy indexer scripts removed. Use MCP server config instead (Kiro SDLC: Inject All)."
+        );
+    }
+
     if (!isUpgradeAvailable(root, context.extensionPath)) { return; }
 
     const manifest = loadBundledManifest(context.extensionPath);
@@ -53,18 +63,13 @@ async function handleInjectAll(context: vscode.ExtensionContext) {
     if (!root) { return; }
 
     const confirm = await vscode.window.showInformationMessage(
-        "Inject all SDLC agents, steering, hooks, templates, and indexer into this workspace?",
+        "Inject all SDLC agents, steering, hooks, templates, and MCP config into this workspace?",
         "Yes", "Cancel"
     );
     if (confirm !== "Yes") { return; }
 
     const injected = await injectAll(root, context.extensionPath);
     vscode.window.showInformationMessage(`✅ Injected ${injected.length} components: ${injected.join(", ")}`);
-
-    const autoIndex = vscode.workspace.getConfiguration("kiroSdlc").get<boolean>("autoIndex", true);
-    if (autoIndex && injected.some(id => id.startsWith("indexer"))) {
-        await runIndexer(root);
-    }
 }
 
 async function handleInjectSelective(context: vscode.ExtensionContext) {
@@ -75,12 +80,6 @@ async function handleInjectSelective(context: vscode.ExtensionContext) {
     if (injected.length > 0) {
         vscode.window.showInformationMessage(`✅ Injected: ${injected.join(", ")}`);
     }
-}
-
-async function handleRunIndex() {
-    const root = getWorkspaceRoot();
-    if (!root) { return; }
-    await runIndexer(root);
 }
 
 async function handleUpdate(context: vscode.ExtensionContext) {

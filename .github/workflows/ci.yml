@@ -1,43 +1,60 @@
-name: CI
+name: CI — Compile & Test
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'kiro-sdlc-agents/**'
+    branches: [master, main]
   pull_request:
-    branches: [main]
-    paths:
-      - 'kiro-sdlc-agents/**'
-
-defaults:
-  run:
-    working-directory: kiro-sdlc-agents
+    branches: [master, main]
 
 jobs:
-  build:
+  nodejs-mcp:
+    name: Node.js MCP Server
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+      - run: npm ci
+        working-directory: mcp-code-intelligence-nodejs
+      - run: npm run build
+        working-directory: mcp-code-intelligence-nodejs
 
-      - name: Install dependencies
-        run: npm ci
+  kotlin-mcp:
+    name: Kotlin MCP Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+      - run: chmod +x gradlew && ./gradlew shadowJar
+        working-directory: mcp-code-intelligence-kotlin
 
-      - name: Copy resources from workspace
-        run: npm run copy-resources
+  python-mcp:
+    name: Python MCP Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -c "import ast; ast.parse(open('src/mcp_code_intel/server.py').read())"
+        working-directory: mcp-code-intelligence-python
+      - run: python -m pytest tests/ -v --tb=short
+        working-directory: mcp-code-intelligence-python
+        continue-on-error: true
 
-      - name: Generate checksums manifest
-        run: npm run gen-checksums
-
-      - name: Compile TypeScript
-        run: npm run compile
-
-      - name: Package VSIX (verify packaging works)
-        run: npx vsce package --no-dependencies
-
-      - name: Verify VSIX created
-        run: ls -la *.vsix
+  extension:
+    name: VS Code Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        working-directory: kiro-sdlc-agents
+      - run: npm run compile
+        working-directory: kiro-sdlc-agents

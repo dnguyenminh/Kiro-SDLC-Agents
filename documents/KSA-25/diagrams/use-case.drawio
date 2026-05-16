@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="sys" value="Code Intelligence System" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="20" width="500" height="420" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="Persist Pattern Metadata" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="60" y="50" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="Auto-Migrate Schema&#xa;on Startup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="60" y="150" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="Read Module Info&#xa;with Patterns" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="60" y="250" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="Maintain Backward&#xa;Compatibility" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="280" y="100" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="Cross-Variant&#xa;Schema Consistency" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="sys">
+      <mxGeometry x="280" y="250" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor1" value="MCP Server&#xa;(6 variants)" style="shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="180" width="40" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor2" value="AI Agent&#xa;(Consumer)" style="shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="780" y="180" width="40" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor3" value="DEV Agent&#xa;(Implementer)" style="shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="360" width="40" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="actor1" target="uc1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="actor1" target="uc2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" edge="1" parent="1" source="actor1" target="uc3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="actor2" target="uc3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="actor3" target="uc5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="uc2" target="uc4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endSize=6;" value="includes">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="uc1" target="uc5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endSize=6;" value="includes">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

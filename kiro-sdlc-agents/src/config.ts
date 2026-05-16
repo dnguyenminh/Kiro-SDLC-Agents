@@ -1,5 +1,5 @@
 /**
- * Extension configuration — component definitions and paths.
+ * Extension configuration — component definitions, paths, and MCP variants.
  */
 
 export interface Component {
@@ -10,6 +10,31 @@ export interface Component {
     targetPath: string;
     filter?: string[];
 }
+
+export type McpDelivery = "registry" | "download";
+
+export interface McpVariant {
+    id: string;
+    label: string;
+    description: string;
+    delivery: McpDelivery;
+    config: McpServerConfig;
+    downloadUrl?: string;
+    downloadAsset?: string;
+}
+
+export interface McpServerConfig {
+    command: string;
+    args: string[];
+    cwd?: string;
+    transportType?: string;
+}
+
+/** Where downloaded MCP servers are stored (global, shared across workspaces). */
+export const MCP_SERVERS_DIR = ".kiro/mcp-servers/code-intelligence";
+
+/** GitHub repo for release downloads. */
+export const GITHUB_RELEASE_REPO = "dnguyenminh/mcp-code-intelligence";
 
 export const CORE_COMPONENTS: Component[] = [
     {
@@ -42,62 +67,36 @@ export const CORE_COMPONENTS: Component[] = [
     }
 ];
 
-export const INDEXER_BASE: Component = {
-    id: "indexer-config",
-    label: "Code Intelligence — Config (always included)",
-    description: "index-config.json + output folder structure",
-    sourcePath: ".analysis/code-intelligence",
-    targetPath: ".analysis/code-intelligence",
-    filter: ["index-config.json", "modules", "scripts/README.md"]
-};
-
-export const INDEXER_OPTIONS: Component[] = [
+export const MCP_VARIANTS: McpVariant[] = [
     {
-        id: "indexer-python",
-        label: "Python Indexer (recommended — zero dependency)",
-        description: "Python 3.7+ standard library only",
-        sourcePath: ".analysis/code-intelligence/scripts/python",
-        targetPath: ".analysis/code-intelligence/scripts/python"
+        id: "python",
+        label: "Python (recommended — zero install)",
+        description: "uvx auto-downloads from PyPI. Python 3.11+",
+        delivery: "registry",
+        config: {
+            command: "uvx",
+            args: ["mcp-code-intelligence@latest", "--workspace", "${workspaceFolder}"]
+        }
     },
     {
-        id: "indexer-java",
-        label: "Java Indexer",
-        description: "Java 17+ (for JVM projects)",
-        sourcePath: ".analysis/code-intelligence/scripts/java",
-        targetPath: ".analysis/code-intelligence/scripts/java"
+        id: "nodejs",
+        label: "Node.js (full-featured — zero install)",
+        description: "npx auto-downloads from npm. Node.js 20+",
+        delivery: "registry",
+        config: {
+            command: "npx",
+            args: ["mcp-code-intelligence@latest", "--workspace", "${workspaceFolder}"]
+        }
     },
     {
-        id: "indexer-powershell",
-        label: "PowerShell Indexer",
-        description: "PowerShell 5.1+ (Windows built-in)",
-        sourcePath: ".analysis/code-intelligence/scripts/powershell",
-        targetPath: ".analysis/code-intelligence/scripts/powershell"
-    },
-    {
-        id: "indexer-bash",
-        label: "Bash Indexer",
-        description: "Bash 4+ (Linux/Mac built-in)",
-        sourcePath: ".analysis/code-intelligence/scripts/bash",
-        targetPath: ".analysis/code-intelligence/scripts/bash"
-    },
-    {
-        id: "indexer-nodejs",
-        label: "Node.js Indexer (most accurate)",
-        description: "Node.js 18+ (needs npm install)",
-        sourcePath: ".analysis/code-intelligence/scripts/nodejs",
-        targetPath: ".analysis/code-intelligence/scripts/nodejs"
+        id: "kotlin",
+        label: "Kotlin/JVM (enterprise)",
+        description: "Downloads JAR from GitHub Release. JDK 21+",
+        delivery: "download",
+        downloadAsset: "mcp-code-intelligence.jar",
+        config: {
+            command: "java",
+            args: ["-jar", "${mcpServersDir}/mcp-code-intelligence.jar", "--workspace", "${workspaceFolder}"]
+        }
     }
 ];
-
-export interface IndexerScript {
-    check: string;
-    label: string;
-}
-
-export const INDEXER_SCRIPTS: Record<string, IndexerScript> = {
-    python: { check: "python --version", label: "Python" },
-    java: { check: "java --version", label: "Java" },
-    nodejs: { check: "node --version", label: "Node.js" },
-    powershell: { check: "powershell -Command \"$PSVersionTable.PSVersion\"", label: "PowerShell" },
-    bash: { check: "bash --version", label: "Bash" }
-};

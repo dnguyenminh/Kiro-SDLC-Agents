@@ -1,0 +1,54 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="&lt;&lt;interface&gt;&gt;&#xa;PatternDetector" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="350" y="40" width="320" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="+ detectPatterns(classes, functions, imports): DetectedPatterns&#xa;+ inferModulePurpose(name, classes, packages): string&#xa;- detectDiStyle(classes, functions, imports): string&#xa;- detectErrorHandling(classes, imports): string&#xa;- detectNaming(classes): string&#xa;- detectLogging(imports): string&#xa;- detectTesting(imports): string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" vertex="1" parent="2">
+      <mxGeometry y="40" width="320" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="DetectedPatterns" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="220" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="+ diStyle: string&#xa;+ errorHandling: string&#xa;+ naming: string&#xa;+ logging: string&#xa;+ testing: string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" vertex="1" parent="4">
+      <mxGeometry y="26" width="220" height="134" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="IndexingEngine" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="350" y="260" width="320" height="140" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="+ runFullIndex(): void&#xa;+ indexSingleFile(path): void&#xa;- updateModules(): void&#xa;- detectAndStorePatterns(imports): void&#xa;- collectModuleImports(): Map&lt;string, string[]&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" vertex="1" parent="6">
+      <mxGeometry y="26" width="320" height="114" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="ClassInfo" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="80" y="260" width="200" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="+ name: string&#xa;+ visibility: string&#xa;+ annotations: string[]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" vertex="1" parent="8">
+      <mxGeometry y="26" width="200" height="74" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="FunctionInfo" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="80" y="400" width="200" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="+ name: string&#xa;+ visibility: string&#xa;+ parameters: ParameterInfo[]&#xa;+ annotations: string[]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" vertex="1" parent="10">
+      <mxGeometry y="26" width="200" height="94" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;" edge="1" source="6" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="uses" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="480" y="220" width="40" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;dashed=1;" edge="1" source="2" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="produces" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="300" y="80" width="60" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;dashed=1;" edge="1" source="2" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;dashed=1;" edge="1" source="2" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

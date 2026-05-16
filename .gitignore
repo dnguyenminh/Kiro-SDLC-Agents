@@ -1,0 +1,22 @@
+# MCP Code Intelligence database (generated at runtime)
+.code-intel/
+
+# MCP settings (contains local paths, tokens)
+.kiro/settings/mcp.json
+
+# Node.js MCP server build output
+mcp-code-intelligence-nodejs/dist/
+mcp-code-intelligence-nodejs/node_modules/
+
+# Kotlin MCP server build output
+mcp-code-intelligence-kotlin/build/
+mcp-code-intelligence-kotlin/.gradle/
+mcp-code-intelligence-kotlin/.kotlin/
+
+# Python bytecode
+mcp-code-intelligence-python/src/mcp_code_intel/__pycache__/
+
+# Extension build output
+kiro-sdlc-agents/out/
+kiro-sdlc-agents/node_modules/
+kiro-sdlc-agents/*.vsix

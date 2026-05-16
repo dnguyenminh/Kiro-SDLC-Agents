@@ -1,0 +1,16 @@
+[versions]
+kotlin = "2.0.21"
+coroutines = "1.9.0"
+serialization = "1.7.3"
+sqlite = "3.46.1.0"
+shadow = "8.1.1"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
