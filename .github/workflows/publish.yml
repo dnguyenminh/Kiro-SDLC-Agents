@@ -1,4 +1,4 @@
-name: Publish Extension
+name: Publish — MCP Servers + Extension
 
 on:
   push:
@@ -8,84 +8,151 @@ on:
       target:
         description: 'Publish target'
         required: true
-        default: 'both'
+        default: 'all'
         type: choice
         options:
-          - both
-          - vscode-only
-          - openvsx-only
+          - all
+          - mcp-only
+          - extension-only
 
-defaults:
-  run:
-    working-directory: kiro-sdlc-agents
+permissions:
+  contents: write
 
 jobs:
-  build:
+  # --- Version gate: extract version from tag and verify it matches source ---
+  version-check:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      should_publish: ${{ steps.check.outputs.should_publish }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Extract version from tag
+        id: extract
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=$(jq -r .version mcp-code-intelligence-nodejs/package.json)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Version: $VERSION"
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Verify all modules have same version
+        id: check
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          NODE_VER=$(jq -r .version mcp-code-intelligence-nodejs/package.json)
+          PY_VER=$(grep -oP 'version = "\K[^"]+' mcp-code-intelligence-python/pyproject.toml)
+          KT_VER=$(grep -oP 'version = "\K[^"]+' mcp-code-intelligence-kotlin/build.gradle.kts)
 
-      - name: Copy resources from workspace
-        run: npm run copy-resources
+          echo "Node.js: $NODE_VER | Python: $PY_VER | Kotlin: $KT_VER | Tag: $VERSION"
 
-      - name: Generate checksums manifest
-        run: npm run gen-checksums
+          if [[ "$NODE_VER" != "$VERSION" ]] || [[ "$PY_VER" != "$VERSION" ]] || [[ "$KT_VER" != "$VERSION" ]]; then
+            echo "❌ Version mismatch! All MCP servers must have version $VERSION"
+            echo "   Node.js=$NODE_VER Python=$PY_VER Kotlin=$KT_VER"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
 
-      - name: Compile TypeScript
-        run: npm run compile
+          echo "✅ All versions match: $VERSION"
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
 
-      - name: Package VSIX
-        run: npx vsce package --no-dependencies
-
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix
-          path: 'kiro-sdlc-agents/*.vsix'
-
-  publish-vscode:
-    needs: build
+  # --- Build + Publish MCP Node.js to npm ---
+  publish-nodejs:
+    needs: version-check
+    if: |
+      needs.version-check.outputs.should_publish == 'true' &&
+      (github.event.inputs.target != 'extension-only')
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event.inputs.target == 'both' ||
-      github.event.inputs.target == 'vscode-only'
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: vsix
-
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+        working-directory: mcp-code-intelligence-nodejs
+      - run: npm run build
+        working-directory: mcp-code-intelligence-nodejs
+      - run: npm publish --access public
+        working-directory: mcp-code-intelligence-nodejs
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # --- Build + Publish MCP Python to PyPI ---
+  publish-python:
+    needs: version-check
+    if: |
+      needs.version-check.outputs.should_publish == 'true' &&
+      (github.event.inputs.target != 'extension-only')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install build twine
+      - run: python -m build
+        working-directory: mcp-code-intelligence-python
+      - run: twine upload dist/*
+        working-directory: mcp-code-intelligence-python
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  # --- Build Kotlin JAR + Upload to GitHub Release ---
+  publish-kotlin:
+    needs: version-check
+    if: |
+      needs.version-check.outputs.should_publish == 'true' &&
+      (github.event.inputs.target != 'extension-only')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+      - run: chmod +x gradlew && ./gradlew shadowJar
+        working-directory: mcp-code-intelligence-kotlin
+      - name: Upload JAR to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mcp-code-intelligence-kotlin/build/libs/mcp-code-intelligence-*.jar
+
+  # --- Build + Publish VS Code Extension ---
+  publish-extension:
+    needs: [version-check, publish-nodejs, publish-python, publish-kotlin]
+    if: |
+      always() &&
+      needs.version-check.outputs.should_publish == 'true' &&
+      (github.event.inputs.target != 'mcp-only')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kiro-sdlc-agents
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run copy-resources
+      - run: npm run gen-checksums
+      - run: npm run compile
+      - run: npx vsce package --no-dependencies
+
+      - name: Upload VSIX to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: kiro-sdlc-agents/*.vsix
 
       - name: Publish to VS Code Marketplace
         run: npx vsce publish --packagePath *.vsix -p ${{ secrets.VSCE_PAT }}
-        working-directory: .
-
-  publish-openvsx:
-    needs: build
-    runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'push' ||
-      github.event.inputs.target == 'both' ||
-      github.event.inputs.target == 'openvsx-only'
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: vsix
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+        continue-on-error: true
 
       - name: Publish to Open VSX (Kiro IDE)
         run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_TOKEN }}
-        working-directory: .
+        continue-on-error: true
