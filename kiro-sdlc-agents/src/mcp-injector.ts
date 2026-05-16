@@ -98,14 +98,15 @@ async function pickOllamaModel(ollamaUrl: string): Promise<string | null> {
         const selected = await vscode.window.showQuickPick(picks, {
             placeHolder: "Choose embedding model (recommend: nomic-embed-text)"
         });
-        return selected?.label ?? null;
+        return selected?.label || null;
     } catch (err) {
         vscode.window.showErrorMessage(`Cannot connect to Ollama: ${err}`);
         // Offer manual input as fallback
-        return vscode.window.showInputBox({
+        const manual = await vscode.window.showInputBox({
             prompt: "Ollama model name (manual input — server unreachable)",
             value: "nomic-embed-text"
-        }) ?? null;
+        });
+        return manual ?? null;
     }
 }
 
@@ -212,30 +213,14 @@ async function downloadFile(url: string, dest: string): Promise<void> {
     fs.writeFileSync(dest, buffer);
 }
 
-/** Extract a zip file to a directory (using yauzl already in deps). */
+/** Extract a zip file to a directory using Node.js child_process. */
 async function extractZip(zipPath: string, destDir: string): Promise<void> {
-    const yauzl = await import("yauzl");
+    const { execSync } = await import("child_process");
     fs.mkdirSync(destDir, { recursive: true });
-    return new Promise((resolve, reject) => {
-        yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
-            if (err || !zipfile) { return reject(err); }
-            zipfile.readEntry();
-            zipfile.on("entry", (entry) => {
-                const entryPath = path.join(destDir, entry.fileName);
-                if (entry.fileName.endsWith("/")) {
-                    fs.mkdirSync(entryPath, { recursive: true });
-                    zipfile.readEntry();
-                } else {
-                    fs.mkdirSync(path.dirname(entryPath), { recursive: true });
-                    zipfile.openReadStream(entry, (e, stream) => {
-                        if (e || !stream) { return reject(e); }
-                        stream.pipe(fs.createWriteStream(entryPath));
-                        stream.on("end", () => zipfile.readEntry());
-                    });
-                }
-            });
-            zipfile.on("end", resolve);
-            zipfile.on("error", reject);
-        });
-    });
+    // Use PowerShell Expand-Archive on Windows, unzip on Unix
+    if (process.platform === "win32") {
+        execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`, { stdio: "ignore" });
+    } else {
+        execSync(`unzip -o "${zipPath}" -d "${destDir}"`, { stdio: "ignore" });
+    }
 }
