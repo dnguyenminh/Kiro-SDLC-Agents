@@ -9,6 +9,7 @@ from .response_helpers import (
     to_entry_response, to_detail_response, to_graph_node,
     send_json, send_error, first_param,
 )
+from .session_routes import handle_sessions, handle_session_events
 
 
 def handle_api_route(
@@ -43,6 +44,10 @@ def _dispatch_api(
         _handle_get_entry(api_path, handler, engine)
     elif api_path == "/entries":
         _handle_list_entries(query, handler, engine)
+    elif api_path == "/sessions":
+        handle_sessions(query, handler, engine)
+    elif re.match(r"^/sessions/[^/]+/events$", api_path):
+        handle_session_events(api_path, query, handler, engine)
     elif re.match(r"^/graph/\d+/neighbors$", api_path):
         _handle_neighbors(api_path, handler, engine, graph)
     elif api_path == "/graph/data":
@@ -106,14 +111,44 @@ def _handle_list_entries(
     handler: BaseHTTPRequestHandler,
     engine: MemoryEngine | None,
 ) -> None:
-    """GET /api/memory/entries?tier=X&limit=Y."""
+    """GET /api/memory/entries?tier=X&type=Y&limit=Z&offset=W&sort=S."""
     if not engine:
         send_error(handler, 503, "Memory not initialized")
         return
-    tier = first_param(query, "tier", "WORKING")
+    tier = first_param(query, "tier", "")
+    type_ = first_param(query, "type", "")
     limit = int(first_param(query, "limit", "20"))
-    entries = engine.knowledge.find_by_tier(tier, limit)
+    offset = int(first_param(query, "offset", "0"))
+    sort = first_param(query, "sort", "created_at")
+    after_id = first_param(query, "after_id", "")
+    entries = _query_entries(engine, tier, type_, limit, offset, sort, after_id)
     send_json(handler, [to_entry_response(e) for e in entries])
+
+
+def _query_entries(
+    engine: MemoryEngine, tier: str, type_: str,
+    limit: int, offset: int, sort: str, after_id: str,
+) -> list[dict]:
+    """Build and execute filtered entry query."""
+    sort_col = {"access_count": "access_count", "confidence": "confidence"}.get(
+        sort, "created_at"
+    )
+    clauses = ["1=1"]
+    params: list = []
+    if tier:
+        clauses.append("tier = ?")
+        params.append(tier)
+    if type_:
+        clauses.append("type = ?")
+        params.append(type_)
+    if after_id:
+        clauses.append("id > ?")
+        params.append(int(after_id))
+    where = " AND ".join(clauses)
+    sql = f"SELECT * FROM knowledge_entries WHERE {where} ORDER BY {sort_col} DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+    cur = engine._conn.execute(sql, params)
+    return [dict(r) for r in cur.fetchall()]
 
 
 def _handle_get_entry(
@@ -142,10 +177,7 @@ def _handle_neighbors(
         return
     entry_id = int(api_path.split("/")[2])
     neighbor_ids = graph.get_connected(entry_id)
-    entries = [
-        engine.knowledge.find_by_id(nid)
-        for nid in neighbor_ids
-    ]
+    entries = [engine.knowledge.find_by_id(nid) for nid in neighbor_ids]
     send_json(handler, [to_entry_response(e) for e in entries if e])
 
 

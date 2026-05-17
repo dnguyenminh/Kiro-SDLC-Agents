@@ -1,0 +1,18 @@
+{
+  "ticket": "KSA-39",
+  "title": "Embedding Engine — Local ONNX model (all-MiniLM-L6-v2)",
+  "currentPhase": "implementation",
+  "phases": {
+    "design": { "status": "skipped", "reason": "Technical/infrastructure ticket" },
+    "implementation": { "status": "done", "completedAt": "2025-01-20" }
+  },
+  "files": [
+    "src/main/kotlin/com/codeintel/memory/embedding/EmbeddingProvider.kt",
+    "src/main/kotlin/com/codeintel/memory/embedding/OnnxEmbeddingProvider.kt",
+    "src/main/kotlin/com/codeintel/memory/embedding/Tokenizer.kt",
+    "src/main/kotlin/com/codeintel/memory/embedding/EmbeddingService.kt",
+    "src/main/kotlin/com/codeintel/memory/embedding/ModelDownloader.kt"
+  ],
+  "buildVerified": true,
+  "lastUpdated": "2025-01-20"
+}

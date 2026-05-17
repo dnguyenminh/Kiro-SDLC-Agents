@@ -2,7 +2,7 @@
 package com.codeintel.http
 
 private val JS = """
-const API='/api/memory';
+const API='api/memory';
 const COLORS={CONTEXT:'#38bdf8',DECISION:'#f472b6',ERROR_PATTERN:'#fb923c',ARCHITECTURE:'#a78bfa',REQUIREMENT:'#34d399',PROCEDURE:'#facc15',LESSON_LEARNED:'#f87171',CODE_ENTITY:'#e2e8f0'};
 function nodeColor(t){return COLORS[t]||'#38bdf8'}
 function nodeSize(e){return e.type==='CODE_ENTITY'?3:e.tier==='PROCEDURAL'?6:e.tier==='SEMANTIC'?5:4}
@@ -19,8 +19,12 @@ async function initGraph(){
 let selectedId=null;
 function showTip(n){
   selectedId=n.id;
-  graph3d.nodeColor(nd=>nd.id===selectedId?'#00ff88':nodeColor(nd.type));
-  graph3d.nodeVal(nd=>nd.id===selectedId?8:nodeSize(nd));
+  graph3d.nodeColor(nd=>nd.id===selectedId?'#ffffff':nodeColor(nd.type));
+  graph3d.nodeVal(nd=>nd.id===selectedId?10:nodeSize(nd));
+  graph3d.linkWidth(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?4:1.2});
+  graph3d.linkColor(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?'#ffffff':'rgba(100,150,200,0.35)'});
+  graph3d.linkDirectionalParticles(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?4:1});
+  graph3d.linkDirectionalParticleWidth(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?3:1.2});
   const tt=document.getElementById('tooltip');
   tt.style.display='none';
   if(graph3d)graph3d.cameraPosition({x:n.x+100,y:n.y+80,z:n.z+100},{x:n.x,y:n.y,z:n.z},800);
@@ -51,7 +55,7 @@ document.getElementById('bf').addEventListener('click',()=>{if(graph3d)graph3d.z
 document.getElementById('br').addEventListener('click',()=>{if(graph3d)graph3d.cameraPosition({x:0,y:0,z:500},{x:0,y:0,z:0},800)});
 async function loadStatus(){try{const r=await fetch(API+'/status');const d=await r.json();document.getElementById('stats').innerHTML='<div class="sc"><div class="v">'+d.totalEntries+'</div><div class="l">Entries</div><div class="t">Documents + code symbols + decisions + patterns</div></div><div class="sc"><div class="v">'+d.totalEdges+'</div><div class="l">Edges</div><div class="t">SIBLING (same doc) + IMPLEMENTED_BY (code↔doc)</div></div><div class="sc"><div class="v">'+d.totalVectors+'</div><div class="l">Vectors</div><div class="t">Semantic embeddings (all-MiniLM-L6-v2). 0=model loading or not yet generated. Vectors enable AI similarity search.</div></div><div class="sc"><div class="v">'+Object.keys(d.tierBreakdown||{}).length+'</div><div class="l">Tiers</div><div class="t">WORKING=active session, SEMANTIC=code entities (long-term), EPISODIC=events, PROCEDURAL=patterns</div></div>'}catch(e){}}
 async function loadEntries(){try{const r=await fetch(API+'/entries?tier=WORKING&limit=15');const d=await r.json();document.getElementById('entries').innerHTML=d.map(e=>'<li class="ei" onclick="fe('+e.id+')"><span class="tp" style="color:'+nodeColor(e.type)+'">'+e.type+'</span><span class="tb tier-'+e.tier+'">'+e.tier+'</span><div class="sm">'+esc(e.summary)+'</div></li>').join('')}catch(e){}}
-function fe(id){if(!graph3d)return;const n=graph3d.graphData().nodes.find(x=>x.id===id);if(n)showTip(n)}
+function fe(id){if(!graph3d)return;const n=graph3d.graphData().nodes.find(x=>x.id===id);if(n){showTip(n)}else{loadNodeDetail(id);fetch(API+'/entries/'+id).then(r=>r.json()).then(e=>{const nd={id:e.id,name:e.summary,type:e.type,tier:e.tier,source:e.source||''};const d=graph3d.graphData();d.nodes.push(nd);graph3d.graphData(d);setTimeout(()=>{const added=graph3d.graphData().nodes.find(x=>x.id===id);if(added)showTip(added)},500)}).catch(()=>{})}}
 function esc(s){return(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,100)}
 document.getElementById('search').addEventListener('keyup',async function(ev){if(ev.key!=='Enter')return;const q=this.value;if(!q)return;try{const r=await fetch(API+'/search?q='+encodeURIComponent(q));const d=await r.json();document.getElementById('entries').innerHTML=d.map(e=>'<li class="ei" onclick="fe('+e.id+')"><span class="tp" style="color:'+nodeColor(e.type)+'">'+e.type+'</span><span class="tb tier-'+e.tier+'">'+e.tier+'</span><div class="sm">'+esc(e.summary)+'</div></li>').join('')}catch(e){}});
 loadStatus();loadEntries();initGraph();

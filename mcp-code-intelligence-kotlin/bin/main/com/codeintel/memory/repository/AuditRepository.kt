@@ -55,6 +55,19 @@ class AuditRepository(private val db: MemoryDatabaseManager) {
         return results
     }
 
+    /** List audit entries for a specific session. */
+    fun listBySession(sessionId: String, limit: Int = 200): List<AuditEntry> {
+        val sql = "SELECT * FROM memory_audit WHERE session_id = ? ORDER BY created_at ASC LIMIT ?"
+        val results = mutableListOf<AuditEntry>()
+        db.conn.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, sessionId)
+            stmt.setInt(2, limit)
+            val rs = stmt.executeQuery()
+            while (rs.next()) results.add(mapRow(rs))
+        }
+        return results
+    }
+
     /** Count operations by type. */
     fun countByOperation(): Map<String, Int> {
         val sql = "SELECT operation, COUNT(*) as cnt FROM memory_audit GROUP BY operation"

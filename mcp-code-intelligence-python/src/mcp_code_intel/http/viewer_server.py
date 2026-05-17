@@ -62,6 +62,8 @@ def _route_get(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
 
     if path == "/" or path == "":
         _serve_html(handler)
+    elif path.endswith((".css", ".js")) and not path.startswith("/api"):
+        _serve_static(handler, path, server.workspace)
     elif path == "/api/health":
         handle_health(handler, server.memory_engine)
     elif path.startswith("/api/memory"):
@@ -104,6 +106,32 @@ def _handle_cors_preflight(handler: BaseHTTPRequestHandler) -> None:
     handler.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
     handler.send_header("Access-Control-Allow-Headers", "Content-Type")
     handler.end_headers()
+
+
+def _serve_static(
+    handler: BaseHTTPRequestHandler, path: str, workspace: str
+) -> None:
+    """Serve static CSS/JS files from shared/viewer directory."""
+    filename = os.path.basename(path)
+    if ".." in filename or "/" in filename:
+        _send_404(handler)
+        return
+    static_path = os.path.join(workspace, "shared", "viewer", filename)
+    if not os.path.isfile(static_path):
+        _send_404(handler)
+        return
+    content_type = "text/css" if filename.endswith(".css") else "application/javascript"
+    try:
+        with open(static_path, "r", encoding="utf-8") as f:
+            body = f.read().encode("utf-8")
+        handler.send_response(200)
+        handler.send_header("Content-Type", f"{content_type}; charset=utf-8")
+        handler.send_header("Access-Control-Allow-Origin", "*")
+        handler.send_header("Content-Length", str(len(body)))
+        handler.end_headers()
+        handler.wfile.write(body)
+    except OSError:
+        _send_404(handler)
 
 
 def _send_404(handler: BaseHTTPRequestHandler) -> None:

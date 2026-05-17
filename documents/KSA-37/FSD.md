@@ -1,0 +1,476 @@
+# Functional Specification Document (FSD)
+
+## SDLC Memory Engine — KSA-37: [Memory] Project Setup — Kotlin MCP Server skeleton with dual-transport (stdio + HTTP)
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-37 |
+| Title | [Memory] Project Setup — Kotlin MCP Server skeleton with dual-transport (stdio + HTTP) |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | documents/KSA-37/BRD.md |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-20 | BA Agent | Initiate document — auto-generated from BRD |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+Đặc tả chức năng chi tiết cho SDLC Memory MCP Server skeleton — bao gồm dual-transport (stdio + HTTP), CLI configuration, và MCP protocol handshake.
+
+### 1.2 Scope
+
+- Kotlin MCP Server với Gradle build system
+- stdio JSON-RPC 2.0 transport cho Kiro agent communication
+- Ktor HTTP server cho Web Viewer API
+- CLI argument parsing (--workspace, --viewer-port)
+- Basic MCP handshake methods (initialize, tools/list, tools/call, ping)
+- Health check endpoint
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+|------|------------|
+| MCP | Model Context Protocol — AI tool communication standard |
+| JSON-RPC 2.0 | Remote procedure call protocol using JSON encoding |
+| stdio | Standard input/output streams for process communication |
+| Ktor | Kotlin async web framework by JetBrains |
+| Netty | High-performance async network application framework |
+
+### 1.4 References
+
+| Document | Location |
+|----------|----------|
+| BRD | documents/KSA-37/BRD.md |
+| MCP Protocol Spec | https://modelcontextprotocol.io/ |
+| Reference Implementation | mcp-code-intelligence-kotlin/ |
+
+---
+
+## 2. System Overview
+
+### 2.1 System Context Diagram
+
+![System Context](diagrams/system-context.png)
+
+The SDLC Memory MCP Server operates as a standalone process with two communication interfaces:
+- **stdio**: Kiro IDE connects via process stdin/stdout using JSON-RPC 2.0
+- **HTTP**: Web Viewer connects via HTTP REST API on configurable port
+
+### 2.2 System Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│              SDLC Memory MCP Server              │
+├─────────────────────────────────────────────────┤
+│  ┌──────────────┐    ┌──────────────────────┐   │
+│  │ stdio        │    │ Ktor HTTP Server     │   │
+│  │ Transport    │    │ (Netty engine)       │   │
+│  │ (JSON-RPC)   │    │ Port: --viewer-port  │   │
+│  └──────┬───────┘    └──────────┬───────────┘   │
+│         │                       │               │
+│         └───────────┬───────────┘               │
+│                     │                           │
+│         ┌───────────▼───────────┐               │
+│         │    Request Router     │               │
+│         └───────────┬───────────┘               │
+│                     │                           │
+│         ┌───────────▼───────────┐               │
+│         │   Tool Dispatcher     │               │
+│         └───────────────────────┘               │
+├─────────────────────────────────────────────────┤
+│  Config: --workspace, --viewer-port             │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Functional Requirements
+
+### 3.1 Feature: MCP stdio Transport
+
+**Source:** BRD Story 1
+
+#### 3.1.1 Description
+
+Server reads JSON-RPC 2.0 messages from stdin (one per line) and writes responses to stdout. All diagnostic logging goes to stderr to keep the protocol channel clean.
+
+#### 3.1.2 Use Case
+
+**Use Case ID:** UC-01
+**Actor:** Kiro Agent
+**Preconditions:** Server process is running
+**Postconditions:** Agent receives valid JSON-RPC response
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Sends JSON-RPC request via stdin | | Agent writes one-line JSON to server's stdin |
+| 2 | | Parses JSON-RPC message | Validates JSON structure and extracts method |
+| 3 | | Dispatches to handler | Routes to appropriate method handler |
+| 4 | | Writes response to stdout | Returns JSON-RPC response object |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Notification (no id) | System processes but does not respond |
+| AF-2 | Unknown method | System returns error -32601 |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Invalid JSON | Return parse error -32700 |
+| EF-2 | Server not initialized | Return error -32603 for tools/call |
+
+#### 3.1.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-01 | All stdout output must be valid JSON-RPC 2.0 | MCP Protocol Spec |
+| BR-02 | Diagnostic logs go to stderr only | MCP Protocol Spec |
+| BR-03 | One JSON object per line (newline-delimited) | MCP Protocol Spec |
+| BR-04 | Notifications (no id field) receive no response | JSON-RPC 2.0 Spec |
+
+#### 3.1.4 Data Specifications
+
+**Input Data (JSON-RPC Request):**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| jsonrpc | string | Y | Must be "2.0" | Protocol version |
+| id | number/string | N | Any value | Request identifier (absent for notifications) |
+| method | string | Y | Non-empty | Method name to invoke |
+| params | object | N | Valid JSON object | Method parameters |
+
+**Output Data (JSON-RPC Response):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| jsonrpc | string | Always "2.0" |
+| id | number/string | Matches request id |
+| result | object | Success result (mutually exclusive with error) |
+| error | object | Error object with code and message |
+
+---
+
+### 3.2 Feature: MCP Handshake Methods
+
+**Source:** BRD Story 1
+
+#### 3.2.1 Method: initialize
+
+**Purpose:** Establish MCP session, exchange capabilities
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| protocolVersion | string | Y | Client's protocol version |
+| capabilities | object | N | Client capabilities |
+| clientInfo | object | N | Client name and version |
+| roots | array | N | Workspace roots (file:// URIs) |
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| protocolVersion | string | "2024-11-05" |
+| capabilities | object | Server capabilities (tools.listChanged: false) |
+| serverInfo | object | {name: "sdlc-memory", version: "0.1.0"} |
+
+#### 3.2.2 Method: tools/list
+
+**Purpose:** Return available tools
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| tools | array | Empty array for skeleton (tools added in later tickets) |
+
+#### 3.2.3 Method: tools/call
+
+**Purpose:** Execute a named tool
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | string | Y | Tool name |
+| arguments | object | N | Tool arguments |
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| content | array | Array of {type: "text", text: "..."} |
+
+**Business Error Scenarios:**
+
+| Scenario | Error Code | Message |
+|----------|-----------|---------|
+| Server not initialized | -32603 | "Server not initialized" |
+| Unknown tool name | N/A | Returns content with "Unknown tool: {name}" |
+
+#### 3.2.4 Method: ping
+
+**Purpose:** Heartbeat check
+
+**Output:** Empty JSON object `{}`
+
+---
+
+### 3.3 Feature: CLI Configuration
+
+**Source:** BRD Story 2
+
+#### 3.3.1 Description
+
+Server accepts command-line arguments for workspace path and HTTP viewer port configuration.
+
+#### 3.3.2 Use Case
+
+**Use Case ID:** UC-02
+**Actor:** Developer
+**Preconditions:** JAR file built and available
+**Postconditions:** Server starts with configured settings
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Runs `java -jar sdlc-memory.jar --workspace . --viewer-port 3200` | | Developer starts server |
+| 2 | | Parses CLI arguments | Extracts workspace and port |
+| 3 | | Resolves workspace to absolute path | Converts relative to absolute |
+| 4 | | Starts dual transport | Initializes stdio + HTTP |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Missing --workspace | Print usage, exit code 1 |
+| EF-2 | Invalid port number | Print error, exit code 1 |
+| EF-3 | Port already in use | Print error, exit code 1 |
+
+#### 3.3.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-05 | --workspace is required | Ticket AC |
+| BR-06 | --viewer-port defaults to 3200 | Ticket description |
+| BR-07 | Workspace path resolved to absolute | Best practice |
+| BR-08 | Port must be 1024-65535 | Network standards |
+
+---
+
+### 3.4 Feature: HTTP Health Endpoint
+
+**Source:** BRD Story 4
+
+#### 3.4.1 Description
+
+Ktor HTTP server exposes a health check endpoint for monitoring and Web Viewer connectivity verification.
+
+#### 3.4.2 API Contract
+
+**Endpoint:** `GET /api/health`
+**Purpose:** Server health and status check
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | string | "ok" |
+| version | string | Server version (e.g., "0.1.0") |
+| workspace | string | Configured workspace absolute path |
+
+**Response Example:**
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "workspace": "/path/to/workspace"
+}
+```
+
+**Business Error Scenarios:**
+
+| Scenario | HTTP Status | Message |
+|----------|-------------|---------|
+| Server starting up | 503 | Service Unavailable |
+
+---
+
+## 4. Data Model
+
+### 4.1 Configuration Model
+
+| Attribute | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| workspace | String | Y | N/A | Absolute path to workspace root |
+| viewerPort | Int | N | 3200 | HTTP server port |
+
+> Note: No persistent data model for this skeleton task. Database schema will be defined in KSA-38.
+
+---
+
+## 5. Integration Specifications
+
+### 5.1 External System: Kiro IDE
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | AI agent tool communication |
+| Direction | Bidirectional |
+| Protocol | JSON-RPC 2.0 over stdio |
+| Data Format | JSON (newline-delimited) |
+| Frequency | Real-time |
+
+### 5.2 External System: Web Viewer (Future)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Knowledge Graph visualization |
+| Direction | Inbound (viewer reads from server) |
+| Protocol | HTTP REST |
+| Data Format | JSON |
+| Frequency | On-demand |
+
+---
+
+## 6. Processing Logic
+
+### 6.1 Server Startup Process
+
+**Trigger:** `java -jar sdlc-memory.jar` command execution
+**Input:** CLI arguments
+**Output:** Running server with dual transport
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Parse CLI arguments | Exit with usage message if invalid |
+| 2 | Resolve workspace to absolute path | Exit if path doesn't exist |
+| 3 | Create Config object | N/A |
+| 4 | Launch Ktor HTTP server (coroutine) | Log error, exit |
+| 5 | Start stdio read loop (main thread) | Log error, continue |
+| 6 | Process requests until EOF | Graceful shutdown on EOF |
+
+### 6.2 Request Dispatch Process
+
+**Trigger:** JSON-RPC message received on stdin
+**Input:** Raw JSON string
+**Output:** JSON-RPC response
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Parse JSON string | Return -32700 parse error |
+| 2 | Extract method, id, params | Return -32600 invalid request |
+| 3 | Check if notification (no id) | Skip response |
+| 4 | Dispatch to method handler | Return -32601 method not found |
+| 5 | Execute handler | Return -32603 internal error |
+| 6 | Build success response | N/A |
+| 7 | Write to stdout + flush | Log to stderr |
+
+---
+
+## 7. Security Requirements
+
+### 7.1 Authentication & Authorization
+
+| Aspect | Requirement |
+|--------|-------------|
+| Authentication | None (Phase 1 — local development only) |
+| Authorization | None (all methods accessible) |
+| Network | HTTP server binds to localhost only (default) |
+
+### 7.2 Data Sensitivity
+
+| Data Type | Classification | Note |
+|-----------|---------------|------|
+| Workspace path | Internal | Exposed in health endpoint |
+| MCP messages | Internal | May contain code context in future |
+
+---
+
+## 8. Non-Functional Requirements
+
+| Category | Requirement | Acceptance Criteria |
+|----------|-------------|---------------------|
+| Performance | Fast startup | Server ready < 3 seconds |
+| Performance | Low latency | MCP response < 50ms for handshake |
+| Code Quality | File size limit | Max 200 lines per .kt file |
+| Code Quality | Function size | Max 20 lines per function |
+| Reliability | Graceful shutdown | Clean exit on stdin EOF |
+| Portability | JVM compatibility | Runs on JDK 11+ |
+
+---
+
+## 9. Error Handling
+
+### 9.1 JSON-RPC Error Codes
+
+| Code | Meaning | When |
+|------|---------|------|
+| -32700 | Parse error | Invalid JSON received |
+| -32600 | Invalid request | Missing required fields |
+| -32601 | Method not found | Unknown method name |
+| -32603 | Internal error | Handler throws exception |
+
+### 9.2 HTTP Error Codes
+
+| Code | Meaning | When |
+|------|---------|------|
+| 200 | OK | Health check success |
+| 404 | Not Found | Unknown endpoint |
+| 503 | Service Unavailable | Server not ready |
+
+---
+
+## 10. Testing Considerations
+
+### 10.1 Test Scenarios
+
+| ID | Scenario | Input | Expected Output | Priority |
+|----|----------|-------|-----------------|----------|
+| TC-01 | Server starts with valid args | `--workspace . --viewer-port 3200` | Server running, both transports active | High |
+| TC-02 | MCP initialize handshake | `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}` | Valid initialize response | High |
+| TC-03 | MCP tools/list | `{"jsonrpc":"2.0","id":2,"method":"tools/list"}` | `{"tools":[]}` | High |
+| TC-04 | MCP ping | `{"jsonrpc":"2.0","id":3,"method":"ping"}` | `{}` | Medium |
+| TC-05 | Health endpoint | `GET /api/health` | 200 with status JSON | High |
+| TC-06 | Invalid JSON | `not json` | Error -32700 | Medium |
+| TC-07 | Unknown method | `{"jsonrpc":"2.0","id":4,"method":"unknown"}` | Error -32601 | Medium |
+| TC-08 | Missing workspace arg | No --workspace | Exit code 1 with usage | Medium |
+| TC-09 | Port conflict | Port already in use | Error message, exit | Low |
+
+---
+
+## 11. Appendix
+
+### Diagrams
+
+| Diagram | File |
+|---------|------|
+| System Context | [system-context.drawio](diagrams/system-context.drawio) |
+| Sequence — MCP Handshake | [sequence-mcp-handshake.drawio](diagrams/sequence-mcp-handshake.drawio) |
+| State — Server Lifecycle | [state-server-lifecycle.drawio](diagrams/state-server-lifecycle.drawio) |
