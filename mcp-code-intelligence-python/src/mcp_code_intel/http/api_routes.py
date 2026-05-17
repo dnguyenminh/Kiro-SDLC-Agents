@@ -155,15 +155,13 @@ def _handle_graph_data(
     engine: MemoryEngine | None,
     graph: KnowledgeGraph | None,
 ) -> None:
-    """GET /api/memory/graph/data?limit=X — returns ALL entries as nodes."""
+    """GET /api/memory/graph/data?limit=X — all entries as nodes."""
     if not engine or not graph:
         send_error(handler, 503, "Not initialized")
         return
     limit = int(first_param(query, "limit", "500"))
-    # Load ALL entries as nodes (not just those with edges)
     all_entries = engine.knowledge.find_all(limit)
     nodes = [to_graph_node(e) for e in all_entries]
-    # Load edges
     edges = engine.graph_repo.find_all(limit)
     edge_list = [
         {"source": e["source_id"], "target": e["target_id"], "relation": e["relation"]}

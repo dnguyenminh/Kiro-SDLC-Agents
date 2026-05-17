@@ -11,7 +11,9 @@ async function initGraph(){
   try{const r=await fetch(API+'/graph/data?limit=500');const d=await r.json();
   allNodes=d.nodes.map(n=>({id:n.id,name:n.summary,type:n.type,tier:n.tier,source:n.source||''}));
   const links=d.edges.map(e=>({source:e.source,target:e.target}));
-  graph3d=ForceGraph3D()(el).graphData({nodes:allNodes,links}).nodeColor(n=>nodeColor(n.type)).nodeVal(n=>nodeSize(n)).nodeLabel(n=>'['+n.type+'] '+n.name).nodeOpacity(0.9).linkColor(()=>'rgba(100,150,200,0.35)').linkWidth(1.2).linkDirectionalParticles(1).linkDirectionalParticleWidth(1.2).backgroundColor('#0f172a').width(el.clientWidth).height(el.clientHeight).onNodeClick(n=>showTip(n));
+  graph3d=ForceGraph3D()(el).graphData({nodes:allNodes,links}).nodeColor(n=>nodeColor(n.type)).nodeVal(n=>nodeSize(n)).nodeLabel(n=>'['+n.type+'] '+n.name).nodeOpacity(0.9).linkColor(()=>'rgba(100,150,200,0.35)').linkWidth(1.2).linkDirectionalParticles(1).linkDirectionalParticleWidth(1.2).backgroundColor('#0f172a').width(el.clientWidth).height(el.clientHeight).onNodeClick(n=>showTip(n)).d3AlphaDecay(0.02).d3VelocityDecay(0.3);
+  graph3d.d3Force('charge').strength(-30).distanceMax(300);
+  graph3d.d3Force('center').strength(1);
   populateClusters();setTimeout(drawMinimap,3000);setInterval(drawMinimap,5000);
   }catch(e){console.error(e)}
 }
