@@ -16,6 +16,13 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.sqlite.jdbc)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.server.cors)
+    implementation(libs.ktor.server.websockets)
+    implementation(libs.onnxruntime)
 }
 
 application {
@@ -40,6 +47,6 @@ tasks.withType<JavaCompile> {
 tasks.shadowJar {
     archiveBaseName.set("mcp-code-intelligence")
     archiveClassifier.set("")
-    archiveVersion.set(version.toString())
+    archiveVersion.set("latest")
     mergeServiceFiles()
 }

@@ -41,6 +41,7 @@ class DatabaseManager(private val dbPath: String) {
             stmt.execute("PRAGMA cache_size = -64000")
             stmt.execute("PRAGMA foreign_keys = ON")
             stmt.execute("PRAGMA temp_store = MEMORY")
+            stmt.execute("PRAGMA busy_timeout = 5000")
         }
     }
 

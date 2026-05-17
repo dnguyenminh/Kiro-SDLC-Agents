@@ -29,6 +29,7 @@ data class FileConfig(
 data class Config(
     val workspace: String,
     val dbPath: String,
+    val viewerPort: Int = 3200,
     val watchEnabled: Boolean,
     val watchDebounceMs: Long,
     val ollamaUrl: String?,
@@ -62,10 +63,22 @@ data class Config(
             return buildConfig(workspace)
         }
 
+        /** Parse --viewer-port from CLI args. */
+        fun resolveViewerPort(): Int {
+            val idx = cliArgs.indexOf("--viewer-port")
+            if (idx >= 0 && idx + 1 < cliArgs.size) {
+                return cliArgs[idx + 1].toIntOrNull() ?: 3200
+            }
+            return System.getenv("VIEWER_PORT")?.toIntOrNull() ?: 3200
+        }
+
         private fun resolveWorkspaceFromCli(): String? {
             val idx = cliArgs.indexOf("--workspace")
             if (idx >= 0 && idx + 1 < cliArgs.size) {
-                return Path.of(cliArgs[idx + 1]).toAbsolutePath().toString()
+                val raw = cliArgs[idx + 1]
+                // Skip unresolved variables (e.g. ${workspaceFolder})
+                if (raw.contains("\${")) return null
+                return Path.of(raw).toAbsolutePath().toString()
             }
             return null
         }
@@ -110,6 +123,7 @@ private fun buildConfig(workspace: String): Config {
     return Config(
         workspace = workspace,
         dbPath = codeIntelDir.resolve("index.db").toString(),
+        viewerPort = Config.resolveViewerPort(),
         watchEnabled = envBool("CODE_INTEL_WATCH", fileCfg.watchEnabled),
         watchDebounceMs = envLong("CODE_INTEL_DEBOUNCE", fileCfg.watchDebounceMs),
         ollamaUrl = System.getenv("OLLAMA_URL") ?: fileCfg.ollamaUrl,
