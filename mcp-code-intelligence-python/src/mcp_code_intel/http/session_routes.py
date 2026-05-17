@@ -28,7 +28,7 @@ def handle_sessions(
         clauses.append("status = ?")
         params.append(status)
     where = " AND ".join(clauses)
-    sql = f"SELECT * FROM memory_sessions WHERE {where} ORDER BY observation_count DESC, started_at DESC LIMIT ?"
+    sql = f"SELECT * FROM memory_sessions WHERE {where} AND observation_count > 0 ORDER BY observation_count DESC, started_at DESC LIMIT ?"
     params.append(limit)
     cur = engine._conn.execute(sql, params)
     sessions = [dict(r) for r in cur.fetchall()]
