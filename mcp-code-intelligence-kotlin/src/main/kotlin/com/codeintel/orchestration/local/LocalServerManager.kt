@@ -1,0 +1,105 @@
+/**
+ * Manages multiple child MCP server processes — start, stop, health monitoring, tool routing.
+ * Provides unified interface for calling tools on any child server.
+ */
+package com.codeintel.orchestration.local
+
+import com.codeintel.log
+import com.codeintel.orchestration.OrchestrationConfig
+import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+
+class LocalServerManager(
+    private val config: OrchestrationConfig,
+    private val scope: CoroutineScope
+) {
+    private val servers = mutableMapOf<String, ServerProcess>()
+    private var healthJob: Job? = null
+
+    /** Start all enabled servers from config. Returns count of successfully started servers. */
+    suspend fun startAll(): Int {
+        val entries = config.enabledServers()
+        log("Starting ${entries.size} child servers...")
+        var started = 0
+        for ((name, entry) in entries) {
+            val server = ServerProcess(name, entry, scope)
+            servers[name] = server
+            if (server.start()) started++ else log("[$name] Failed to start")
+        }
+        startHealthMonitor()
+        return started
+    }
+
+    /** Stop all child servers gracefully. */
+    fun stopAll() {
+        healthJob?.cancel()
+        servers.values.forEach { it.stop() }
+        servers.clear()
+        log("All child servers stopped")
+    }
+
+    /** Call a tool on the server that owns it. */
+    suspend fun callTool(serverName: String, toolName: String, args: JsonObject, timeoutMs: Long): JsonElement? {
+        val server = servers[serverName]
+            ?: throw RuntimeException("Server '$serverName' not found")
+        if (server.state != ServerState.ACTIVE) {
+            throw RuntimeException("Server '$serverName' is ${server.state}")
+        }
+        return server.callTool(toolName, args, timeoutMs)
+    }
+
+    /** Find which server owns a given tool name. Returns server name or null. */
+    fun findServerForTool(toolName: String): String? {
+        for ((name, server) in servers) {
+            if (server.state != ServerState.ACTIVE) continue
+            if (server.tools.any { it["name"]?.toString()?.trim('"') == toolName }) {
+                return name
+            }
+        }
+        return null
+    }
+
+    /** Get all tools from all active child servers. */
+    fun getAllTools(): List<Pair<String, JsonObject>> {
+        return servers.flatMap { (name, server) ->
+            if (server.state == ServerState.ACTIVE) {
+                server.tools.map { name to it }
+            } else emptyList()
+        }
+    }
+
+    /** Get status of all managed servers. */
+    fun getStatus(): Map<String, ServerState> =
+        servers.mapValues { it.value.state }
+
+    private fun startHealthMonitor() {
+        val intervalMs = config.settings.healthCheckIntervalMs
+        healthJob = scope.launch {
+            while (isActive) {
+                delay(intervalMs)
+                checkHealth()
+            }
+        }
+    }
+
+    private suspend fun checkHealth() {
+        for ((name, server) in servers) {
+            if (server.state != ServerState.ACTIVE) continue
+            if (!server.isAlive()) {
+                log("[$name] Process died — attempting restart")
+                handleCrash(server)
+            } else if (!server.healthCheck()) {
+                log("[$name] Health check failed — attempting restart")
+                handleCrash(server)
+            }
+        }
+    }
+
+    private suspend fun handleCrash(server: ServerProcess) {
+        val maxRetries = config.settings.maxRestartRetries
+        if (!server.restart(maxRetries)) {
+            log("[${server.name}] Permanently dead after $maxRetries retries")
+        }
+    }
+}

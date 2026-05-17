@@ -40,10 +40,38 @@ data class Config(
 ) {
     companion object {
         private var cliArgs: Array<String> = emptyArray()
+        private var configPath: String? = null
+        private var depth: Int = 0
+        private var maxDepth: Int = 5
 
-        /** Store CLI args for workspace resolution. */
+        /** Orchestration config file path (--config arg). Null = no orchestration. */
+        val orchestrationConfigPath: String? get() = configPath
+
+        /** Current recursion depth in process tree (--depth arg). */
+        val currentDepth: Int get() = depth
+
+        /** Maximum allowed recursion depth (--max-depth arg). */
+        val maxRecursionDepth: Int get() = maxDepth
+
+        /** Store CLI args for workspace resolution + orchestration config. */
         fun setCliArgs(args: Array<String>) {
             cliArgs = args
+            parseOrchestrationArgs(args)
+        }
+
+        private fun parseOrchestrationArgs(args: Array<String>) {
+            val configIdx = args.indexOf("--config")
+            if (configIdx >= 0 && configIdx + 1 < args.size) {
+                configPath = args[configIdx + 1]
+            }
+            val depthIdx = args.indexOf("--depth")
+            if (depthIdx >= 0 && depthIdx + 1 < args.size) {
+                depth = args[depthIdx + 1].toIntOrNull() ?: 0
+            }
+            val maxDepthIdx = args.indexOf("--max-depth")
+            if (maxDepthIdx >= 0 && maxDepthIdx + 1 < args.size) {
+                maxDepth = args[maxDepthIdx + 1].toIntOrNull() ?: 5
+            }
         }
 
         /** Load initial config — checks CLI args, env, then cwd. */
