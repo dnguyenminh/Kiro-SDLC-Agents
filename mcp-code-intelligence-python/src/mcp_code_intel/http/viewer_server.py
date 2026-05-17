@@ -65,7 +65,7 @@ def _route_get(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
     elif path.endswith((".css", ".js")) and not path.startswith("/api"):
         _serve_static(handler, path, server.workspace)
     elif path == "/api/health":
-        handle_health(handler, server.memory_engine)
+        handle_health(handler, server.memory_engine, server.workspace)
     elif path.startswith("/api/memory"):
         handle_api_route(
             path, query, handler,

@@ -40,6 +40,7 @@
   <button class="tab-btn" data-tab="sessions" onclick="switchTab('sessions',this)">📋 Sessions</button>
   <button class="tab-btn" data-tab="browser" onclick="switchTab('browser',this)">🔍 Browser</button>
   <button class="tab-btn" data-tab="stream" onclick="switchTab('stream',this)">⚡ Stream</button>
+  <span id="workspace-info" style="margin-left:auto;font-size:.6rem;opacity:.5;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title=""></span>
 </div>
 
 <!-- Graph Tab -->
@@ -169,6 +170,11 @@ function graphSearchKey(ev) {
 async function loadStats() {
   try { const r = await fetch(API + '/status'); const d = await r.json();
     document.title = 'SDLC Memory (' + d.totalEntries + ' entries)';
+  } catch(e) {}
+  try { const r = await fetch('api/health'); const h = await r.json();
+    const ws = h.workspace || 'unknown';
+    const el = document.getElementById('workspace-info');
+    if (el) { el.textContent = '📂 ' + ws; el.title = ws; }
   } catch(e) {}
 }
 loadStats(); initGraph();

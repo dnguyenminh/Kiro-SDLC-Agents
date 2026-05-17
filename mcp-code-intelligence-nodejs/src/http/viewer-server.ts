@@ -99,7 +99,9 @@ export class ViewerServer {
   private serveHealth(res: http.ServerResponse): void {
     this.sendJson(res, {
       status: 'ok',
-      version: '0.1.0',
+      version: '0.2.0',
+      workspace: this.workspace,
+      viewerPort: this.port,
       memoryEnabled: this.memoryEngine !== null,
     });
   }

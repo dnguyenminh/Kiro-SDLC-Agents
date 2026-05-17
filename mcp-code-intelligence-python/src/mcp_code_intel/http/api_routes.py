@@ -57,12 +57,14 @@ def _dispatch_api(
 
 
 def handle_health(
-    handler: BaseHTTPRequestHandler, engine: MemoryEngine | None
+    handler: BaseHTTPRequestHandler, engine: MemoryEngine | None,
+    workspace: str = ""
 ) -> None:
     """GET /api/health — health check endpoint."""
     send_json(handler, {
         "status": "ok",
-        "version": "0.1.0",
+        "version": "0.2.0",
+        "workspace": workspace,
         "memoryEnabled": engine is not None,
     })
 
