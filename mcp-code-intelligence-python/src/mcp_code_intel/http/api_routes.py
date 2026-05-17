@@ -48,6 +48,8 @@ def _dispatch_api(
         handle_sessions(query, handler, engine)
     elif re.match(r"^/sessions/[^/]+/events$", api_path):
         handle_session_events(api_path, query, handler, engine)
+    elif api_path == "/audit":
+        _handle_audit(query, handler, engine)
     elif re.match(r"^/graph/\d+/neighbors$", api_path):
         _handle_neighbors(api_path, handler, engine, graph)
     elif api_path == "/graph/data":
@@ -214,3 +216,32 @@ def _handle_graph_data(
         for e in edges
     ]
     send_json(handler, {"nodes": nodes, "edges": edge_list})
+
+
+def _handle_audit(
+    query: dict[str, list[str]],
+    handler: BaseHTTPRequestHandler,
+    engine: MemoryEngine | None,
+) -> None:
+    """GET /api/memory/audit?limit=20&after_id=X — recent audit events."""
+    if not engine:
+        send_error(handler, 503, "Memory not initialized")
+        return
+    limit = int(first_param(query, "limit", "20"))
+    after_id = first_param(query, "after_id", "")
+    if after_id:
+        cur = engine._conn.execute(
+            "SELECT * FROM memory_audit WHERE id > ? ORDER BY id DESC LIMIT ?",
+            (int(after_id), limit),
+        )
+    else:
+        cur = engine._conn.execute(
+            "SELECT * FROM memory_audit ORDER BY id DESC LIMIT ?", (limit,)
+        )
+    events = [dict(r) for r in cur.fetchall()]
+    send_json(handler, [
+        {"id": e["id"], "operation": e["operation"], "entryId": e.get("entry_id"),
+         "sessionId": e.get("session_id"), "details": e.get("details"),
+         "createdAt": e["created_at"]}
+        for e in events
+    ])

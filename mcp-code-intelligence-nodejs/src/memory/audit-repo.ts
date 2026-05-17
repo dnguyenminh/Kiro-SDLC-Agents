@@ -31,11 +31,18 @@ export class AuditRepository {
   listRecent(limit = 20, operation?: string): AuditEntry[] {
     if (operation) {
       return this.db.prepare(
-        'SELECT * FROM memory_audit WHERE operation = ? ORDER BY created_at DESC LIMIT ?'
+        'SELECT * FROM memory_audit WHERE operation = ? ORDER BY id DESC LIMIT ?'
       ).all(operation, limit) as AuditEntry[];
     }
     return this.db.prepare(
-      'SELECT * FROM memory_audit ORDER BY created_at DESC LIMIT ?'
+      'SELECT * FROM memory_audit ORDER BY id DESC LIMIT ?'
     ).all(limit) as AuditEntry[];
+  }
+
+  /** List audit entries after a given ID (for streaming). */
+  listRecentAfterId(afterId: number, limit = 20): AuditEntry[] {
+    return this.db.prepare(
+      'SELECT * FROM memory_audit WHERE id > ? ORDER BY id DESC LIMIT ?'
+    ).all(afterId, limit) as AuditEntry[];
   }
 }

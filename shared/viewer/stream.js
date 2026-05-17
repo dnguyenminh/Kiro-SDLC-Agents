@@ -1,5 +1,5 @@
-/* Stream Tab — Live Observation Stream via polling */
-let streamEntries = [];
+/* Stream Tab — Live Operations Stream via audit log polling */
+let streamEvents = [];
 let streamLastId = 0;
 let streamPaused = false;
 let streamTimer = null;
@@ -19,17 +19,16 @@ function stopStream() {
 async function pollStream() {
   if (streamPaused) return;
   try {
-    const url = API + '/entries?limit=10&sort=created_at' +
-      (streamLastId ? '&after_id=' + streamLastId : '');
+    const url = API + '/audit?limit=20' + (streamLastId ? '&after_id=' + streamLastId : '');
     const r = await fetch(url);
     const data = await r.json();
     if (!data.length) return;
 
-    const newEntries = data.filter(e => e.id > streamLastId);
-    if (!newEntries.length) return;
+    const newEvents = data.filter(e => e.id > streamLastId);
+    if (!newEvents.length) return;
 
-    streamLastId = Math.max(...newEntries.map(e => e.id));
-    streamEntries = newEntries.reverse().concat(streamEntries).slice(0, STREAM_MAX);
+    streamLastId = Math.max(...newEvents.map(e => e.id));
+    streamEvents = newEvents.reverse().concat(streamEvents).slice(0, STREAM_MAX);
     renderStream();
     flashIndicator();
   } catch (e) { console.error('[stream]', e); }
@@ -38,17 +37,26 @@ async function pollStream() {
 function renderStream() {
   const el = document.getElementById('stream-list');
   if (!el) return;
-  el.innerHTML = streamEntries.map(e =>
+  el.innerHTML = streamEvents.map(e =>
     '<div class="stream-item">' +
     '<div class="stream-time">' + formatTime(e.createdAt || '') + '</div>' +
     '<div style="display:flex;gap:6px;align-items:center">' +
-    '<span class="entry-type" style="color:' + nodeColor(e.type) + '">' + e.type + '</span>' +
-    '<span class="badge badge-' + e.tier + '">' + e.tier + '</span></div>' +
-    '<div class="entry-summary">' + esc(e.summary) + '</div>' +
-    (e.source ? '<div class="entry-meta">' + esc(e.source) + '</div>' : '') + '</div>'
-  ).join('') || '<div style="padding:12px;opacity:.5;font-size:.7rem">Waiting for new entries...</div>';
+    '<span class="entry-type" style="color:' + opColor(e.operation) + '">' + e.operation + '</span>' +
+    (e.sessionId ? '<span class="entry-meta">session:' + e.sessionId.substring(0, 8) + '</span>' : '') +
+    '</div>' +
+    (e.details ? '<div class="entry-summary">' + esc(e.details) + '</div>' : '') +
+    (e.entryId ? '<div class="entry-meta">Entry #' + e.entryId + '</div>' : '') +
+    '</div>'
+  ).join('') || '<div style="padding:12px;opacity:.5;font-size:.7rem">Waiting for operations...</div>';
 
   if (!streamPaused) el.scrollTop = 0;
+}
+
+function opColor(op) {
+  const map = { INGEST: '#34d399', INGEST_FILE: '#34d399', SEARCH: '#38bdf8',
+    DELETE: '#f87171', ACCESS: '#facc15', SESSION_START: '#a78bfa',
+    SESSION_END: '#94a3b8', CONSOLIDATE: '#fb923c', SYNC_CODE: '#f472b6' };
+  return map[op] || '#e2e8f0';
 }
 
 function toggleStreamPause() {
@@ -65,6 +73,7 @@ function flashIndicator() {
 }
 
 function clearStream() {
-  streamEntries = [];
+  streamEvents = [];
+  streamLastId = 0;
   renderStream();
 }

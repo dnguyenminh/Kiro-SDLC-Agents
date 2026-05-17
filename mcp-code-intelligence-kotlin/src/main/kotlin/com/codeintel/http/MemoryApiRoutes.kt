@@ -20,6 +20,7 @@ fun Route.memoryApiRoutes(engineProvider: () -> MemoryEngine?, graphProvider: ()
         get("/entries/{id}") { handleGet(engineProvider()) }
         get("/graph/{id}/neighbors") { handleGraphNeighbors(engineProvider(), graphProvider()) }
         get("/graph/data") { handleGraphData(engineProvider(), graphProvider()) }
+        get("/audit") { handleAudit(engineProvider()) }
     }
 }
 
@@ -91,6 +92,14 @@ private suspend fun RoutingContext.handleGraphData(engine: MemoryEngine?, graph:
     }
     val edgeList = edges.map { GraphEdgeResponse(it.sourceId, it.targetId, it.relation) }
     call.respond(GraphDataResponse(nodes, edgeList))
+}
+
+private suspend fun RoutingContext.handleAudit(engine: MemoryEngine?) {
+    if (engine == null) { call.respond(HttpStatusCode.ServiceUnavailable, "Memory not initialized"); return }
+    val limit = call.parameters["limit"]?.toIntOrNull() ?: 20
+    val afterId = call.parameters["after_id"]?.toLongOrNull()
+    val events = engine.audit.listRecent(limit, afterId = afterId)
+    call.respond(events.map { EventResponse(it.id, it.operation, it.entryId, it.sessionId, it.details, it.createdAt) })
 }
 
 @Serializable

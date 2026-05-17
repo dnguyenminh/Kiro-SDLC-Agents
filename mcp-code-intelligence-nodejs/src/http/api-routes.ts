@@ -25,6 +25,7 @@ export function handleApiRoute(
   else if (path.match(/^\/sessions\/[^/]+\/events$/)) handleSessionEvents(path, url, res, engine);
   else if (path.match(/^\/graph\/\d+\/neighbors$/)) handleNeighbors(path, res, engine, graph);
   else if (path === '/graph/data') handleGraphData(url, res, engine, graph);
+  else if (path === '/audit') handleAudit(url, res, engine);
   else sendError(res, 404, 'Route not found');
 }
 
@@ -164,6 +165,20 @@ function toGraphNode(e: KnowledgeEntry) {
 function sendJson(res: http.ServerResponse, data: unknown): void {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
+}
+
+function handleAudit(url: URL, res: http.ServerResponse, engine: MemoryEngine | null): void {
+  if (!engine) { sendError(res, 503, 'Memory not initialized'); return; }
+  const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+  const afterId = url.searchParams.get('after_id');
+  const events = afterId
+    ? engine.audit.listRecentAfterId(parseInt(afterId, 10), limit)
+    : engine.audit.listRecent(limit);
+  sendJson(res, events.map(e => ({
+    id: e.id, operation: e.operation,
+    entryId: e.entry_id, sessionId: e.session_id,
+    details: e.details, createdAt: e.created_at,
+  })));
 }
 
 function sendError(res: http.ServerResponse, code: number, message: string): void {

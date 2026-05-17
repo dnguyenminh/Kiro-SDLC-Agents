@@ -38,16 +38,20 @@ class AuditRepository(private val db: MemoryDatabaseManager) {
     }
 
     /** List recent audit entries. */
-    fun listRecent(limit: Int = 50, operation: String? = null): List<AuditEntry> {
+    fun listRecent(limit: Int = 50, operation: String? = null, afterId: Long? = null): List<AuditEntry> {
+        val clauses = mutableListOf<String>()
+        if (operation != null) clauses.add("operation = ?")
+        if (afterId != null) clauses.add("id > ?")
         val sql = buildString {
             append("SELECT * FROM memory_audit")
-            if (operation != null) append(" WHERE operation = ?")
-            append(" ORDER BY created_at DESC LIMIT ?")
+            if (clauses.isNotEmpty()) append(" WHERE ${clauses.joinToString(" AND ")}")
+            append(" ORDER BY id DESC LIMIT ?")
         }
         val results = mutableListOf<AuditEntry>()
         db.conn.prepareStatement(sql).use { stmt ->
             var idx = 1
             if (operation != null) stmt.setString(idx++, operation)
+            if (afterId != null) stmt.setLong(idx++, afterId)
             stmt.setInt(idx, limit)
             val rs = stmt.executeQuery()
             while (rs.next()) results.add(mapRow(rs))
