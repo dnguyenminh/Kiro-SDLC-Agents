@@ -100,6 +100,7 @@ class McpServer(args: Array<String> = emptyArray()) {
         putJsonArray("tools") {
             ToolDefinitions.ALL.forEach { add(it) }
             MemoryToolDefinitions.ALL.forEach { add(it) }
+            orchestrationEngine?.metaToolDispatcher?.getToolDefinitions()?.forEach { add(it) }
             orchestrationEngine?.getAllTools()?.forEach { add(it) }
         }
     }

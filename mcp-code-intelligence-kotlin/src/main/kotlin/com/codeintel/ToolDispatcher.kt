@@ -1,5 +1,5 @@
 /**
- * Tool dispatcher — routes tool calls to native handlers or orchestration layer.
+ * Tool dispatcher — routes tool calls to native handlers, meta-tools, or orchestration layer.
  * Extracted from McpServer to keep file sizes under 200 lines.
  */
 package com.codeintel
@@ -20,10 +20,11 @@ class ToolDispatcher(
     private val memoryDispatcher: MemoryToolDispatcher?,
     private val orchestrationEngine: OrchestrationEngine?
 ) {
-    /** Dispatch a tool call — tries memory, native, then orchestration. */
+    /** Dispatch a tool call — tries memory, native, meta-tools, then orchestration. */
     fun dispatch(name: String, args: JsonObject): String {
         memoryDispatcher?.dispatch(name, args)?.let { return it }
         dispatchNative(name, args)?.let { return it }
+        dispatchMeta(name, args)?.let { return it }
         return routeToOrchestration(name, args)
     }
 
@@ -40,8 +41,15 @@ class ToolDispatcher(
         }
     }
 
+    private fun dispatchMeta(name: String, args: JsonObject): String? {
+        val engine = orchestrationEngine ?: return null
+        if (!engine.isEnabled()) return null
+        return engine.metaToolDispatcher.dispatch(name, args)
+    }
+
     private fun routeToOrchestration(name: String, args: JsonObject): String {
         val engine = orchestrationEngine ?: return "Unknown tool: $name"
+        if (!engine.isEnabled()) return "Unknown tool: $name"
         return try {
             runBlocking { engine.route(name, args) }
         } catch (e: Exception) {

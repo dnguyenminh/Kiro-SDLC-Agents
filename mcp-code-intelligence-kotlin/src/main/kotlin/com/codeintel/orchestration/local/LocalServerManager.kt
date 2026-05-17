@@ -11,11 +11,14 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 class LocalServerManager(
-    private val config: OrchestrationConfig,
+    private var config: OrchestrationConfig,
     private val scope: CoroutineScope
 ) {
     private val servers = mutableMapOf<String, ServerProcess>()
     private var healthJob: Job? = null
+
+    /** Update config reference (used by hot-reload). */
+    fun updateConfig(newConfig: OrchestrationConfig) { config = newConfig }
 
     /** Start all enabled servers from config. Returns count of successfully started servers. */
     suspend fun startAll(): Int {
