@@ -74,7 +74,8 @@ async function main(): Promise<void> {
       initMemoryDispatcher(memoryEngine, config.workspace, embeddingService);
 
       // Start viewer server
-      const viewerServer = new ViewerServer(3202, config.workspace);
+      const viewerPort = parseInt(process.env.CODE_INTEL_VIEWER_PORT ?? '3202', 10);
+      const viewerServer = new ViewerServer(viewerPort, config.workspace);
       viewerServer.memoryEngine = memoryEngine;
       viewerServer.knowledgeGraph = memoryEngine.graph;
       viewerServer.start();
