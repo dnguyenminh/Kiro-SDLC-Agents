@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Stream User Prompt",
+  "description": "When user submits a prompt, call HTTP ingest endpoint via curl to log chat activity.",
+  "version": "2",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A user prompt was submitted. Use the shell tool to run: curl -s -X POST http://localhost:3200/api/memory/ingest -H \"Content-Type: application/json\" -d with JSON body {\"content\": \"<user message summarized to max 200 chars>\", \"type\": \"CONTEXT\", \"source\": \"chat-prompt\", \"tags\": \"chat,stream,user\"}. Do NOT use mem_ingest MCP tool — use curl only. Do NOT add commentary."
+  }
+}

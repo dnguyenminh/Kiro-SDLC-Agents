@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Stream MCP Tool Calls",
+  "description": "After MCP tool execution (read, web, spec categories), log tool name and brief result to memory via HTTP. Uses askAgent to access tool context. Excludes write/shell to avoid infinite loops.",
+  "version": "3",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "read",
+      "web",
+      "spec"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A tool just executed. Use the shell tool to run curl to POST http://localhost:3200/api/memory/ingest with JSON body: {\"content\": \"<tool_name>: <brief 1-line description of what was done, max 100 chars>\", \"type\": \"CONTEXT\", \"source\": \"hook-tool-stream\", \"tags\": \"tool,stream,hook\"}. Extract the tool name and a meaningful summary from the tool result you see in context. Do NOT use mem_ingest MCP tool. Keep it concise."
+  }
+}
