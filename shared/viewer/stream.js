@@ -19,7 +19,7 @@ function stopStream() {
 async function pollStream() {
   if (streamPaused) return;
   try {
-    const url = API + '/audit?limit=20' + (streamLastId ? '&after_id=' + streamLastId : '');
+    const url = API + '/audit?limit=20' + (streamLastId ? '&after_id=' + streamLastId : '') + '&exclude=SESSION_START,SESSION_END';
     const r = await fetch(url);
     const data = await r.json();
     if (!data.length) return;

@@ -223,21 +223,28 @@ def _handle_audit(
     handler: BaseHTTPRequestHandler,
     engine: MemoryEngine | None,
 ) -> None:
-    """GET /api/memory/audit?limit=20&after_id=X — recent audit events."""
+    """GET /api/memory/audit?limit=20&after_id=X&exclude=OP1,OP2."""
     if not engine:
         send_error(handler, 503, "Memory not initialized")
         return
     limit = int(first_param(query, "limit", "20"))
     after_id = first_param(query, "after_id", "")
+    exclude = first_param(query, "exclude", "")
+    exclude_list = [x.strip() for x in exclude.split(",") if x.strip()]
+
+    clauses = ["1=1"]
+    params: list = []
     if after_id:
-        cur = engine._conn.execute(
-            "SELECT * FROM memory_audit WHERE id > ? ORDER BY id DESC LIMIT ?",
-            (int(after_id), limit),
-        )
-    else:
-        cur = engine._conn.execute(
-            "SELECT * FROM memory_audit ORDER BY id DESC LIMIT ?", (limit,)
-        )
+        clauses.append("id > ?")
+        params.append(int(after_id))
+    if exclude_list:
+        placeholders = ",".join("?" * len(exclude_list))
+        clauses.append(f"operation NOT IN ({placeholders})")
+        params.extend(exclude_list)
+    where = " AND ".join(clauses)
+    sql = f"SELECT * FROM memory_audit WHERE {where} ORDER BY id DESC LIMIT ?"
+    params.append(limit)
+    cur = engine._conn.execute(sql, params)
     events = [dict(r) for r in cur.fetchall()]
     send_json(handler, [
         {"id": e["id"], "operation": e["operation"], "entryId": e.get("entry_id"),

@@ -98,7 +98,8 @@ private suspend fun RoutingContext.handleAudit(engine: MemoryEngine?) {
     if (engine == null) { call.respond(HttpStatusCode.ServiceUnavailable, "Memory not initialized"); return }
     val limit = call.parameters["limit"]?.toIntOrNull() ?: 20
     val afterId = call.parameters["after_id"]?.toLongOrNull()
-    val events = engine.audit.listRecent(limit, afterId = afterId)
+    val exclude = call.parameters["exclude"]?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+    val events = engine.audit.listFiltered(limit, afterId, exclude)
     call.respond(events.map { EventResponse(it.id, it.operation, it.entryId, it.sessionId, it.details, it.createdAt) })
 }
 

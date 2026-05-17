@@ -45,4 +45,20 @@ export class AuditRepository {
       'SELECT * FROM memory_audit WHERE id > ? ORDER BY id DESC LIMIT ?'
     ).all(afterId, limit) as AuditEntry[];
   }
+
+  /** List audit entries with exclude filter (for stream tab). */
+  listFiltered(limit: number, afterId: number | null, exclude: string[]): AuditEntry[] {
+    const clauses: string[] = [];
+    const params: any[] = [];
+    if (afterId !== null) { clauses.push('id > ?'); params.push(afterId); }
+    if (exclude.length > 0) {
+      clauses.push(`operation NOT IN (${exclude.map(() => '?').join(',')})`);
+      params.push(...exclude);
+    }
+    const where = clauses.length > 0 ? ' WHERE ' + clauses.join(' AND ') : '';
+    params.push(limit);
+    return this.db.prepare(
+      `SELECT * FROM memory_audit${where} ORDER BY id DESC LIMIT ?`
+    ).all(...params) as AuditEntry[];
+  }
 }

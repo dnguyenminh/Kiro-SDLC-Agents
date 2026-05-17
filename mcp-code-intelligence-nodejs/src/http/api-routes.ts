@@ -171,9 +171,8 @@ function handleAudit(url: URL, res: http.ServerResponse, engine: MemoryEngine | 
   if (!engine) { sendError(res, 503, 'Memory not initialized'); return; }
   const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
   const afterId = url.searchParams.get('after_id');
-  const events = afterId
-    ? engine.audit.listRecentAfterId(parseInt(afterId, 10), limit)
-    : engine.audit.listRecent(limit);
+  const exclude = (url.searchParams.get('exclude') ?? '').split(',').filter(s => s.trim());
+  const events = engine.audit.listFiltered(limit, afterId ? parseInt(afterId, 10) : null, exclude);
   sendJson(res, events.map(e => ({
     id: e.id, operation: e.operation,
     entryId: e.entry_id, sessionId: e.session_id,
