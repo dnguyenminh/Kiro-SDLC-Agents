@@ -10,6 +10,9 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
+/** Server status info for orchestration_status tool. */
+data class ServerStatusInfo(val name: String, val state: String, val toolCount: Int)
+
 class LocalServerManager(
     private var config: OrchestrationConfig,
     private val scope: CoroutineScope
@@ -45,9 +48,11 @@ class LocalServerManager(
     /** Call a tool on the server that owns it. */
     suspend fun callTool(serverName: String, toolName: String, args: JsonObject, timeoutMs: Long): JsonElement? {
         val server = servers[serverName]
-            ?: throw RuntimeException("Server '$serverName' not found")
+            ?: throw RuntimeException("Server '$serverName' not found (tool: '$toolName')")
         if (server.state != ServerState.ACTIVE) {
-            throw RuntimeException("Server '$serverName' is ${server.state}")
+            throw RuntimeException(
+                "Server '$serverName' is ${server.state} — cannot call tool '$toolName'"
+            )
         }
         return server.callTool(toolName, args, timeoutMs)
     }
@@ -75,6 +80,12 @@ class LocalServerManager(
     /** Get status of all managed servers. */
     fun getStatus(): Map<String, ServerState> =
         servers.mapValues { it.value.state }
+
+    /** Get detailed status info for each server (for orchestration_status tool). */
+    fun getServerStatusInfo(): List<ServerStatusInfo> =
+        servers.map { (name, server) ->
+            ServerStatusInfo(name = name, state = server.state.name, toolCount = server.tools.size)
+        }
 
     private fun startHealthMonitor() {
         val intervalMs = config.settings.healthCheckIntervalMs

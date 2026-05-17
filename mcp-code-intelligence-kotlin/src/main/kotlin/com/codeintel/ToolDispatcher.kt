@@ -48,12 +48,13 @@ class ToolDispatcher(
     }
 
     private fun routeToOrchestration(name: String, args: JsonObject): String {
-        val engine = orchestrationEngine ?: return "Unknown tool: $name"
-        if (!engine.isEnabled()) return "Unknown tool: $name"
+        val engine = orchestrationEngine ?: return """{"error":"Unknown tool: $name"}"""
+        if (!engine.isEnabled()) return """{"error":"Unknown tool: $name"}"""
         return try {
             runBlocking { engine.route(name, args) }
         } catch (e: Exception) {
-            """{"error": "${e.message?.replace("\"", "'")}"}"""
+            val msg = e.message?.replace("\"", "'") ?: "Internal error"
+            """{"error":"$msg"}"""
         }
     }
 }

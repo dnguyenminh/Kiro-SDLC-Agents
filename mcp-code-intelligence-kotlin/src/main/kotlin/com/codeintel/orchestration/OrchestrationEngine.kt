@@ -9,11 +9,13 @@ import com.codeintel.log
 import com.codeintel.memory.MemoryEngine
 import com.codeintel.orchestration.local.ConfigWatcher
 import com.codeintel.orchestration.local.LocalServerManager
+import com.codeintel.orchestration.local.ServerStatusInfo
 import com.codeintel.orchestration.logging.AutoLogger
 import com.codeintel.orchestration.meta.MetaToolDispatcher
 import com.codeintel.orchestration.registry.UnifiedRegistry
 import com.codeintel.orchestration.routing.RoutingTable
 import com.codeintel.orchestration.routing.SmartRouter
+import com.codeintel.orchestration.routing.ToolMetrics
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -89,6 +91,14 @@ class OrchestrationEngine(
         put("maxDepth", Config.maxRecursionDepth)
         put("servers", serverManager.getStatus().size)
     }
+
+    /** Get per-server status info (name, state, tool count). */
+    fun getServerStatus(): List<ServerStatusInfo> =
+        serverManager.getServerStatusInfo()
+
+    /** Get per-tool metrics from the router. */
+    fun getMetrics(): Map<String, ToolMetrics> =
+        router.getMetrics()
 
     /** Expose registry for meta-tools. */
     fun getRegistry(): UnifiedRegistry = registry

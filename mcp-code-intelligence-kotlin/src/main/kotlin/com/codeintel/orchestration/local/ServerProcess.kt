@@ -157,11 +157,30 @@ class ServerProcess(
     private fun destroyProcess() {
         val proc = process ?: return
         if (proc.isAlive) {
-            proc.destroyForcibly()
+            if (!tryWindowsTreeKill(proc)) proc.destroyForcibly()
             proc.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
         }
         process = null
     }
+
+    /** On Windows, use taskkill /T /F /PID to kill entire process tree. */
+    private fun tryWindowsTreeKill(proc: Process): Boolean {
+        if (!isWindows()) return false
+        val pid = proc.pid()
+        return try {
+            val kill = ProcessBuilder("taskkill", "/T", "/F", "/PID", "$pid")
+            kill.redirectErrorStream(true)
+            val result = kill.start()
+            result.waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
+            result.exitValue() == 0
+        } catch (e: Exception) {
+            log("[$name] taskkill failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun isWindows(): Boolean =
+        System.getProperty("os.name").lowercase().contains("win")
 
     private fun markFailed(reason: String): Boolean {
         log("[$name] $reason")
