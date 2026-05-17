@@ -167,6 +167,12 @@ class McpServer(args: Array<String> = emptyArray()) {
         if (!initialized) throw RuntimeException("Server not initialized")
         val name = params["name"]?.jsonPrimitive?.content ?: ""
         val args = params["arguments"]?.jsonObject ?: buildJsonObject {}
+        // Log ALL tool calls to audit (for stream tab)
+        memoryEngine?.audit?.log(
+            "TOOL_CALL",
+            sessionId = memoryEngine?.currentSessionId,
+            details = "$name(${args.toString().take(150)})"
+        )
         val text = dispatchTool(name, args)
         return buildJsonObject {
             putJsonArray("content") {

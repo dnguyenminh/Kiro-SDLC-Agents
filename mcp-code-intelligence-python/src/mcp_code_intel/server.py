@@ -233,6 +233,11 @@ class McpServer:
             raise RuntimeError("Server not initialized")
         tool_name = params.get("name", "")
         arguments = params.get("arguments", {})
+        # Log ALL tool calls to audit (for stream tab)
+        if self._memory_dispatcher:
+            engine = self._memory_dispatcher._engine
+            details = f"{tool_name}({str(arguments)[:150]})"
+            engine.audit.log("TOOL_CALL", session_id=engine.session_id, details=details)
         text = self._dispatch_tool(tool_name, arguments)
         return {"content": [{"type": "text", "text": text}]}
 

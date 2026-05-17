@@ -57,7 +57,8 @@ function renderStream() {
 function opColor(op) {
   const map = { INGEST: '#34d399', INGEST_FILE: '#34d399', SEARCH: '#38bdf8',
     DELETE: '#f87171', ACCESS: '#facc15', SESSION_START: '#a78bfa',
-    SESSION_END: '#94a3b8', CONSOLIDATE: '#fb923c', SYNC_CODE: '#f472b6' };
+    SESSION_END: '#94a3b8', CONSOLIDATE: '#fb923c', SYNC_CODE: '#f472b6',
+    TOOL_CALL: '#38bdf8' };
   return map[op] || '#e2e8f0';
 }
 

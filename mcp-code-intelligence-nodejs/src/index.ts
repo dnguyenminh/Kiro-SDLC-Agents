@@ -14,13 +14,15 @@ import { MemoryEngine } from './memory/memory-engine.js';
 import { ViewerServer } from './http/viewer-server.js';
 import { EmbeddingFactory } from './memory/embedding/index.js';
 
-const SERVER_INFO = { name: 'mcp-code-intelligence', version: '0.1.0' };
+const SERVER_INFO = { name: 'mcp-code-intelligence', version: '0.2.0' };
 const PROTOCOL_VERSION = '2024-11-05';
+let _memEngine: MemoryEngine | null = null;
 
 async function main(): Promise<void> {
   let config = loadConfig();
   let db: DatabaseManager | null = null;
   let indexer: IndexingEngine | null = null;
+  let memEngine: MemoryEngine | null = null;
   let initialized = false;
 
   console.error('[code-intel] Server starting (workspace deferred until initialize)');
@@ -61,6 +63,8 @@ async function main(): Promise<void> {
       // Initialize memory engine
       const memoryEngine = new MemoryEngine(db.getDb());
       memoryEngine.startSession('mcp-client');
+      memEngine = memoryEngine;
+      _memEngine = memoryEngine;
 
       // Initialize embedding (optional: Ollama → ONNX → null)
       const embeddingService = EmbeddingFactory.create(config, memoryEngine.vectors);
@@ -110,6 +114,12 @@ async function handleRequest(
     case 'tools/list':
       return { jsonrpc: '2.0', id, result: { tools: getToolDefinitions() } };
     case 'tools/call': {
+      // Log ALL tool calls to audit for stream tab
+      if (_memEngine) {
+        const toolName = params.name ?? '';
+        const details = `${toolName}(${JSON.stringify(params.arguments ?? {}).substring(0, 150)})`;
+        _memEngine.audit.log('TOOL_CALL', undefined, _memEngine.getSessionId() ?? undefined, details);
+      }
       const text = await dispatchTool(params.name, params.arguments ?? {}, db, indexer, config.workspace);
       return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text }] } };
     }
