@@ -4,7 +4,7 @@
  */
 
 const JS = `
-const API='/api/memory';
+const API='api/memory';
 const COLORS={CONTEXT:'#38bdf8',DECISION:'#f472b6',ERROR_PATTERN:'#fb923c',ARCHITECTURE:'#a78bfa',REQUIREMENT:'#34d399',PROCEDURE:'#facc15',LESSON_LEARNED:'#f87171',CODE_ENTITY:'#e2e8f0'};
 function nodeColor(t){return COLORS[t]||'#38bdf8'}
 function nodeSize(e){return e.type==='CODE_ENTITY'?3:e.tier==='PROCEDURAL'?6:e.tier==='SEMANTIC'?5:4}
