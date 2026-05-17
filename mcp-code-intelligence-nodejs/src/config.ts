@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 
 export interface AppConfig {
   workspace: string;
+  viewerPort: number;
   dbPath: string;
   configPath: string;
   watchEnabled: boolean;
@@ -76,6 +77,15 @@ function resolveWorkspaceFromCli(): string | null {
   return null;
 }
 
+function resolveViewerPort(): number {
+  const args = process.argv.slice(2);
+  const idx = args.indexOf('--viewer-port');
+  if (idx >= 0 && args[idx + 1]) return parseInt(args[idx + 1], 10);
+  const envPort = process.env['CODE_INTEL_VIEWER_PORT'];
+  if (envPort) return parseInt(envPort, 10);
+  return 3202;
+}
+
 function resolveWorkspaceFromRoots(rootUri: string | null): string {
   // Env var always takes priority (backward compat)
   const envWs = process.env['CODE_INTEL_WORKSPACE'];
@@ -92,6 +102,7 @@ function buildConfig(workspace: string): AppConfig {
 
   return {
     workspace,
+    viewerPort: resolveViewerPort(),
     dbPath: path.join(codeIntelDir, 'index.db'),
     configPath,
     watchEnabled: envBool('CODE_INTEL_WATCH', fileConfig.watchEnabled ?? true),
