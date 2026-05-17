@@ -1,5 +1,6 @@
 """HTTP server for Knowledge Graph viewer — uses Python stdlib."""
 
+import os
 import sys
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -12,8 +13,9 @@ from .api_routes import handle_api_route, handle_health
 class ViewerServer:
     """Serves REST API + Knowledge Graph Web Viewer."""
 
-    def __init__(self, port: int) -> None:
+    def __init__(self, port: int, workspace: str = "") -> None:
         self.port = port
+        self.workspace = workspace
         self.memory_engine = None  # Set after MCP initialize
         self.knowledge_graph = None
         self._server: HTTPServer | None = None
@@ -36,6 +38,7 @@ class ViewerServer:
                 pass  # Suppress default access logs
 
         self._server = HTTPServer(("0.0.0.0", self.port), Handler)
+        self._server.viewer_workspace = self.workspace
         self._thread = threading.Thread(
             target=self._server.serve_forever, daemon=True
         )
@@ -71,14 +74,27 @@ def _route_get(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
 
 
 def _serve_html(handler: BaseHTTPRequestHandler) -> None:
-    """Serve the 3D Knowledge Graph viewer HTML."""
-    body = VIEWER_HTML.encode("utf-8")
+    """Serve the 3D Knowledge Graph viewer HTML from shared file or fallback."""
+    html = _load_shared_viewer_html(handler.server.viewer_workspace)
+    body = html.encode("utf-8")
     handler.send_response(200)
     handler.send_header("Content-Type", "text/html; charset=utf-8")
     handler.send_header("Access-Control-Allow-Origin", "*")
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _load_shared_viewer_html(workspace: str) -> str:
+    """Load shared viewer HTML from disk. Falls back to inline constant."""
+    shared_path = os.path.join(workspace, "shared", "viewer", "index.html")
+    try:
+        if os.path.isfile(shared_path):
+            with open(shared_path, "r", encoding="utf-8") as f:
+                return f.read()
+    except OSError:
+        pass
+    return VIEWER_HTML
 
 
 def _handle_cors_preflight(handler: BaseHTTPRequestHandler) -> None:

@@ -19,6 +19,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.File
 
 class ViewerServer(
     private val config: Config
@@ -51,10 +52,14 @@ class ViewerServer(
 
     private fun Application.configureRouting() {
         routing {
-            get("/") { call.respondText(VIEWER_HTML, ContentType.Text.Html) }
+            get("/") { call.respondText(loadViewerHtml(), ContentType.Text.Html) }
             get("/api/health") { call.respond(buildHealthResponse()) }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
         }
+    }
+
+    private fun loadViewerHtml(): String {
+        return loadSharedViewerHtml(config.workspace) ?: VIEWER_HTML
     }
 
     private fun buildHealthResponse(): HealthResponse {
@@ -66,6 +71,12 @@ class ViewerServer(
             memoryEnabled = memoryEngine != null
         )
     }
+}
+
+/** Load shared viewer HTML from disk. Returns null if file not found. */
+fun loadSharedViewerHtml(workspace: String): String? {
+    val sharedFile = File(workspace, "shared/viewer/index.html")
+    return if (sharedFile.exists()) sharedFile.readText(Charsets.UTF_8) else null
 }
 
 @Serializable

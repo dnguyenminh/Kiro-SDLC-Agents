@@ -4,6 +4,8 @@
  */
 
 import * as http from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
 import { VIEWER_HTML } from './viewer-html.js';
 import { MemoryEngine } from '../memory/memory-engine.js';
 import { KnowledgeGraph } from '../memory/knowledge-graph.js';
@@ -16,9 +18,11 @@ export class ViewerServer {
   /** Late-binding — set after MCP initialize completes. */
   memoryEngine: MemoryEngine | null = null;
   knowledgeGraph: KnowledgeGraph | null = null;
+  workspace: string = '';
 
-  constructor(port: number) {
+  constructor(port: number, workspace: string = '') {
     this.port = port;
+    this.workspace = workspace;
   }
 
   /** Start HTTP server (non-blocking). */
@@ -59,8 +63,21 @@ export class ViewerServer {
   }
 
   private serveHtml(res: http.ServerResponse): void {
+    const html = this.loadViewerHtml();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(VIEWER_HTML);
+    res.end(html);
+  }
+
+  private loadViewerHtml(): string {
+    if (this.workspace) {
+      const sharedPath = path.join(this.workspace, 'shared', 'viewer', 'index.html');
+      try {
+        if (fs.existsSync(sharedPath)) {
+          return fs.readFileSync(sharedPath, 'utf-8');
+        }
+      } catch { /* fallback to inline */ }
+    }
+    return VIEWER_HTML;
   }
 
   private serveHealth(res: http.ServerResponse): void {
