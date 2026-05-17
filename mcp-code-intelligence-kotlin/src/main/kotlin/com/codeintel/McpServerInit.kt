@@ -96,9 +96,7 @@ private fun initOrchestration(memory: MemoryEngine, config: Config): Orchestrati
     }
     val orchConfig = OrchestrationConfig.load(configPath) ?: return null
     val engine = OrchestrationEngine(orchConfig, memory, config)
-    Thread {
-        runBlocking { engine.start() }
-    }.apply { isDaemon = true; name = "orchestration-init"; start() }
+    runBlocking { engine.start() }
     log("Orchestration enabled: ${orchConfig.enabledServers().size} servers configured")
     return engine
 }

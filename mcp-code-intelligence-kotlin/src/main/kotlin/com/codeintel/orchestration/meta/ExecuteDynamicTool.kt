@@ -1,29 +1,70 @@
 /**
  * execute_dynamic_tool meta-tool — execute any registered tool by name.
- * Delegates to the main ToolDispatcher, enabling dynamic tool invocation.
+ * Uses fallback chain: if tool exists on multiple servers, tries in priority order.
+ * If tool not in registry, tries forwarding to each child server (recursive discovery).
  */
 package com.codeintel.orchestration.meta
 
+import com.codeintel.log
 import com.codeintel.orchestration.OrchestrationEngine
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 
 class ExecuteDynamicTool(private val engine: OrchestrationEngine) {
 
-    /** Execute a tool by name with provided arguments. */
+    /** Execute a tool by name — uses chain routing with fallback. */
     fun execute(args: JsonObject): String {
         val toolName = args["tool_name"]?.jsonPrimitive?.content
             ?: return errorJson("Missing 'tool_name'")
         val toolArgs = args["arguments"]?.jsonObject ?: buildJsonObject {}
+        return executeWithChain(toolName, toolArgs)
+    }
+
+    private fun executeWithChain(toolName: String, args: JsonObject): String {
         val registry = engine.getRegistry()
-        if (registry.find(toolName) == null) {
-            return errorJson("Tool '$toolName' not found or disabled")
+        val chain = registry.getChain(toolName)
+        if (chain != null) return executeChain(chain, toolName, args)
+        if (registry.find(toolName) != null) return routeKnownTool(toolName, args)
+        return tryAllChildren(toolName, args)
+    }
+
+    /** Execute through fallback chain — try each server in priority order. */
+    private fun executeChain(
+        chain: com.codeintel.orchestration.registry.ToolChain,
+        toolName: String,
+        args: JsonObject
+    ): String {
+        for (entry in chain.entries) {
+            val result = tryServer(entry.serverName, toolName, args)
+            if (result != null) {
+                log("[execute_dynamic_tool] $toolName succeeded on ${entry.serverName}")
+                return result
+            }
         }
+        return errorJson("Tool '$toolName' failed on all ${chain.entries.size} servers in chain")
+    }
+
+    private fun routeKnownTool(toolName: String, args: JsonObject): String {
         return try {
-            runBlocking { engine.route(toolName, toolArgs) }
+            runBlocking { engine.route(toolName, args) }
         } catch (e: Exception) {
             errorJson(e.message?.replace("\"", "'") ?: "Execution failed")
         }
+    }
+
+    private fun tryAllChildren(toolName: String, args: JsonObject): String {
+        val servers = engine.getChildServerNames()
+        for (server in servers) {
+            val result = tryServer(server, toolName, args)
+            if (result != null) return result
+        }
+        return errorJson("Tool '$toolName' not found in any server")
+    }
+
+    private fun tryServer(server: String, toolName: String, args: JsonObject): String? {
+        return try {
+            runBlocking { engine.callChild(server, toolName, args) }
+        } catch (e: Exception) { null }
     }
 
     /** Tool definition for tools/list registration. */

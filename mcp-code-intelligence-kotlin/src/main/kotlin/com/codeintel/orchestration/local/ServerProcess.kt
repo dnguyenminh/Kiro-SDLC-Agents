@@ -84,7 +84,8 @@ class ServerProcess(
     private fun spawnProcess(): Process? {
         return try {
             val args = buildChildArgs()
-            val pb = ProcessBuilder(listOf(entry.command) + args)
+            val command = resolveCommand(entry.command)
+            val pb = ProcessBuilder(command + args)
             pb.environment().putAll(entry.env)
             pb.redirectErrorStream(false)
             pb.start()
@@ -92,6 +93,16 @@ class ServerProcess(
             log("[$name] Spawn failed: ${e.message}")
             null
         }
+    }
+
+    /** On Windows, wrap non-exe commands (npx, node, python) with cmd /c for .cmd resolution. */
+    private fun resolveCommand(cmd: String): List<String> {
+        if (!isWindows()) return listOf(cmd)
+        val lower = cmd.lowercase()
+        if (lower.endsWith(".exe") || lower.endsWith(".bat") || lower.endsWith(".cmd")) {
+            return listOf(cmd)
+        }
+        return listOf("cmd", "/c", cmd)
     }
 
     private fun buildChildArgs(): List<String> {

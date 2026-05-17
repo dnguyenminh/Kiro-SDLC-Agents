@@ -1,6 +1,7 @@
 /**
  * Orchestration engine — coordinator that wires LocalServerManager, SmartRouter,
  * UnifiedRegistry, AutoLogger, and ConfigWatcher together. Entry point for orchestration.
+ * Child tools are hidden from tools/list — only accessible via find_tools/execute_dynamic_tool.
  */
 package com.codeintel.orchestration
 
@@ -9,6 +10,7 @@ import com.codeintel.log
 import com.codeintel.memory.MemoryEngine
 import com.codeintel.orchestration.local.ConfigWatcher
 import com.codeintel.orchestration.local.LocalServerManager
+import com.codeintel.orchestration.local.ServerState
 import com.codeintel.orchestration.local.ServerStatusInfo
 import com.codeintel.orchestration.logging.AutoLogger
 import com.codeintel.orchestration.meta.MetaToolDispatcher
@@ -17,9 +19,7 @@ import com.codeintel.orchestration.routing.RoutingTable
 import com.codeintel.orchestration.routing.SmartRouter
 import com.codeintel.orchestration.routing.ToolMetrics
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 
 class OrchestrationEngine(
     private var config: OrchestrationConfig,
@@ -35,17 +35,18 @@ class OrchestrationEngine(
     private var configWatcher: ConfigWatcher? = null
     private var started = false
 
-    /** Meta-tool dispatcher — initialized lazily after engine starts. */
     val metaToolDispatcher: MetaToolDispatcher by lazy { MetaToolDispatcher(this) }
 
-    /** Start orchestration — spawn all child servers, build routing table, start watcher. */
+    /** Start orchestration — spawn all child servers, build routing table, ingest to KB. */
     suspend fun start() {
         if (Config.currentDepth >= Config.maxRecursionDepth) {
             log("Max depth (${Config.currentDepth}/${Config.maxRecursionDepth}). Orchestration disabled.")
             return
         }
+        registry.setServerOrder(config.enabledServers().keys.toList())
         val count = serverManager.startAll()
         buildRoutingTable()
+        ingestToolsToKb()
         started = true
         startConfigWatcher()
         log("Orchestration started: $count/${config.enabledServers().size} servers active")
@@ -78,33 +79,39 @@ class OrchestrationEngine(
         }
     }
 
-    /** Get all child server tools as JsonObject list (for tools/list response). */
+    /** Get all child server tools as JsonObject list (internal use only — NOT for tools/list). */
     fun getAllTools(): List<JsonObject> = registry.getAll()
 
-    /** Check if orchestration is active. */
     fun isEnabled(): Boolean = started
 
-    /** Get orchestration status as JSON. */
     fun getStatus(): JsonObject = buildJsonObject {
         put("enabled", started)
         put("depth", Config.currentDepth)
         put("maxDepth", Config.maxRecursionDepth)
         put("servers", serverManager.getStatus().size)
+        put("hiddenTools", registry.allChildTools().size)
     }
 
-    /** Get per-server status info (name, state, tool count). */
-    fun getServerStatus(): List<ServerStatusInfo> =
-        serverManager.getServerStatusInfo()
-
-    /** Get per-tool metrics from the router. */
-    fun getMetrics(): Map<String, ToolMetrics> =
-        router.getMetrics()
-
-    /** Expose registry for meta-tools. */
+    fun getServerStatus(): List<ServerStatusInfo> = serverManager.getServerStatusInfo()
+    fun getMetrics(): Map<String, ToolMetrics> = router.getMetrics()
     fun getRegistry(): UnifiedRegistry = registry
+    fun getChildServerNames(): List<String> =
+        serverManager.getStatus().filter { it.value == ServerState.ACTIVE }.keys.toList()
 
-    /** Expose workspace path for ManageAutoApproveTool. */
+    /** Call a tool directly on a specific child server (bypass routing table). */
+    suspend fun callChild(serverName: String, toolName: String, args: JsonObject): String {
+        val result = serverManager.callTool(serverName, toolName, args, 30_000)
+        return extractText(result)
+    }
+
     fun getWorkspace(): String = appConfig.workspace
+
+    private fun extractText(result: JsonElement?): String {
+        if (result == null) return "{}"
+        val content = result.jsonObject["content"]?.jsonArray ?: return result.toString()
+        val first = content.firstOrNull()?.jsonObject ?: return "{}"
+        return first["text"]?.jsonPrimitive?.content ?: "{}"
+    }
 
     private fun buildRoutingTable() {
         val allTools = serverManager.getAllTools()
@@ -113,6 +120,32 @@ class OrchestrationEngine(
             registry.setChildTools(serverName, tools)
         }
         routingTable.rebuild(emptySet(), registry.childToolsByServer())
+    }
+
+    /** Ingest all child tool definitions into KB for searchability via find_tools. */
+    private fun ingestToolsToKb() {
+        val mem = memoryEngine ?: return
+        val tools = registry.allChildTools()
+        if (tools.isEmpty()) return
+        val content = tools.joinToString("\n") { t ->
+            val desc = t.definition["description"]?.jsonPrimitive?.content ?: ""
+            "${t.name} [${t.source}]: $desc"
+        }
+        try {
+            mem.knowledge.insert(
+                com.codeintel.memory.models.KnowledgeEntry(
+                    content = content,
+                    summary = "Orchestration child tools registry (${tools.size} tools)",
+                    type = "CONTEXT",
+                    tier = "WORKING",
+                    source = "orchestration-startup",
+                    tags = "tools,registry,orchestration"
+                )
+            )
+            log("Ingested ${tools.size} child tool definitions into KB")
+        } catch (e: Exception) {
+            log("Failed to ingest tools to KB: ${e.message}")
+        }
     }
 
     private fun startConfigWatcher() {
@@ -128,8 +161,10 @@ class OrchestrationEngine(
     private suspend fun rebuildAfterReload(newConfig: OrchestrationConfig) {
         serverManager.stopAll()
         serverManager.updateConfig(newConfig)
+        registry.setServerOrder(newConfig.enabledServers().keys.toList())
         serverManager.startAll()
         buildRoutingTable()
+        ingestToolsToKb()
     }
 
     private fun getTimeout(toolName: String): Long {
@@ -137,7 +172,6 @@ class OrchestrationEngine(
         return config.mcpServers[serverName]?.timeout ?: 30_000
     }
 
-    private fun resolveSource(toolName: String): String {
-        return serverManager.findServerForTool(toolName) ?: "unknown"
-    }
+    private fun resolveSource(toolName: String): String =
+        serverManager.findServerForTool(toolName) ?: "unknown"
 }

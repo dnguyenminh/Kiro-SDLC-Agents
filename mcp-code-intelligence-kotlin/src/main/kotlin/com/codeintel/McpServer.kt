@@ -101,7 +101,7 @@ class McpServer(args: Array<String> = emptyArray()) {
             ToolDefinitions.ALL.forEach { add(it) }
             MemoryToolDefinitions.ALL.forEach { add(it) }
             orchestrationEngine?.metaToolDispatcher?.getToolDefinitions()?.forEach { add(it) }
-            orchestrationEngine?.getAllTools()?.forEach { add(it) }
+            // Child tools NOT exposed — accessed only via find_tools/execute_dynamic_tool
         }
     }
 
