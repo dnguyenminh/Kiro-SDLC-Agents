@@ -106,7 +106,7 @@
 </div>
 
 <!-- Stream Tab -->
-<div class="tab-panel" id="panel-stream" style="flex-direction:column">
+<div class="tab-panel" id="panel-stream" style="flex-direction:column;position:relative">
   <div class="filter-bar">
     <div id="stream-indicator"></div>
     <span style="font-size:.7rem;opacity:.7">Live Operations</span>
@@ -114,7 +114,13 @@
     <button id="stream-sort-btn" onclick="toggleStreamSort()">↑ Oldest first</button>
     <button onclick="clearStream()">Clear</button>
   </div>
-  <div class="entry-list" id="stream-list" style="flex-direction:column-reverse"></div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <div class="entry-list" id="stream-list" style="flex:1;flex-direction:column-reverse"></div>
+    <div id="stream-detail" style="display:none;width:320px;border-left:1px solid #334155;padding:10px;overflow-y:auto;background:rgba(30,41,59,.98)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b style="font-size:.75rem">Event Detail</b><span onclick="closeStreamDetail()" style="cursor:pointer;opacity:.6">✕</span></div>
+      <div id="stream-detail-content"></div>
+    </div>
+  </div>
 </div>
 </div>
 

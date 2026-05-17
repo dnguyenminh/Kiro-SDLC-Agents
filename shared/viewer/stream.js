@@ -39,8 +39,8 @@ function renderStream() {
   const el = document.getElementById('stream-list');
   if (!el) return;
   const sorted = streamSortAsc ? [...streamEvents].reverse() : streamEvents;
-  el.innerHTML = sorted.map(e =>
-    '<div class="stream-item">' +
+  el.innerHTML = sorted.map((e, i) =>
+    '<div class="stream-item" onclick="showStreamDetail(' + i + ')" style="cursor:pointer">' +
     '<div class="stream-time">' + formatTime(e.createdAt || '') + '</div>' +
     '<div style="display:flex;gap:6px;align-items:center">' +
     '<span class="entry-type" style="color:' + opColor(e.operation) + '">' + e.operation + '</span>' +
@@ -52,6 +52,26 @@ function renderStream() {
   ).join('') || '<div style="padding:12px;opacity:.5;font-size:.7rem">Waiting for operations...</div>';
 
   if (!streamPaused) el.scrollTop = 0;
+}
+
+function showStreamDetail(idx) {
+  const sorted = streamSortAsc ? [...streamEvents].reverse() : streamEvents;
+  const e = sorted[idx];
+  if (!e) return;
+  const panel = document.getElementById('stream-detail');
+  const content = document.getElementById('stream-detail-content');
+  panel.style.display = 'block';
+  content.innerHTML =
+    '<div style="margin-bottom:8px"><span class="entry-type" style="color:' + opColor(e.operation) + ';font-size:.8rem">' + e.operation + '</span></div>' +
+    '<div style="font-size:.65rem;opacity:.7;margin-bottom:6px">' + formatTime(e.createdAt) + '</div>' +
+    '<div style="font-size:.65rem;margin-bottom:6px">ID: ' + e.id + '</div>' +
+    (e.sessionId ? '<div style="font-size:.65rem;margin-bottom:6px">Session: ' + e.sessionId + '</div>' : '') +
+    (e.entryId ? '<div style="font-size:.65rem;margin-bottom:6px">Entry: #' + e.entryId + '</div>' : '') +
+    (e.details ? '<div style="margin-top:8px;font-size:.65rem;font-weight:600">Details:</div><pre style="font-size:.6rem;white-space:pre-wrap;background:#0f172a;padding:8px;border-radius:4px;margin-top:4px;max-height:300px;overflow-y:auto">' + esc(e.details) + '</pre>' : '<div style="opacity:.5;font-size:.65rem;margin-top:8px">No details</div>');
+}
+
+function closeStreamDetail() {
+  document.getElementById('stream-detail').style.display = 'none';
 }
 
 function opColor(op) {
