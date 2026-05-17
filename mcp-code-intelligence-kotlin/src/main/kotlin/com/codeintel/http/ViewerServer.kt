@@ -7,6 +7,7 @@ package com.codeintel.http
 import com.codeintel.Config
 import com.codeintel.log
 import com.codeintel.memory.MemoryEngine
+import com.codeintel.memory.embedding.EmbeddingService
 import com.codeintel.memory.graph.KnowledgeGraph
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -24,9 +25,10 @@ import java.io.File
 class ViewerServer(
     private val config: Config
 ) {
-    /** Mutable reference — set after MCP initialize completes. */
+    /** Mutable references — set after MCP initialize completes. */
     @Volatile var memoryEngine: MemoryEngine? = null
     @Volatile var knowledgeGraph: KnowledgeGraph? = null
+    @Volatile var embeddingService: EmbeddingService? = null
 
     /** Start HTTP server (blocking within its thread). */
     fun start() {
@@ -57,6 +59,7 @@ class ViewerServer(
             get("/{file}.css") { serveStaticFile(call, call.parameters["file"] + ".css", "text/css") }
             get("/api/health") { call.respond(buildHealthResponse()) }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
+            ingestApiRoutes({ memoryEngine }, { embeddingService })
             sessionApiRoutes({ memoryEngine })
         }
     }

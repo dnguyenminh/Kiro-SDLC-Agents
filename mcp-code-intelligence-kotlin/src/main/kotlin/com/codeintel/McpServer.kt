@@ -129,6 +129,7 @@ class McpServer(args: Array<String> = emptyArray()) {
         // Wire memory engine into HTTP viewer (late binding)
         viewerServer?.memoryEngine = memory
         viewerServer?.knowledgeGraph = knowledgeGraph
+        viewerServer?.embeddingService = embeddingService
 
         initialized = true
 
