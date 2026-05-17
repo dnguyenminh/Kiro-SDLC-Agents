@@ -21,6 +21,8 @@ export function handleApiRoute(
   else if (path === '/search') handleSearch(url, res, engine);
   else if (path.match(/^\/entries\/\d+$/)) handleGetEntry(path, res, engine);
   else if (path === '/entries') handleListEntries(url, res, engine);
+  else if (path === '/sessions') handleSessions(url, res, engine);
+  else if (path.match(/^\/sessions\/[^/]+\/events$/)) handleSessionEvents(path, url, res, engine);
   else if (path.match(/^\/graph\/\d+\/neighbors$/)) handleNeighbors(path, res, engine, graph);
   else if (path === '/graph/data') handleGraphData(url, res, engine, graph);
   else sendError(res, 404, 'Route not found');
@@ -52,9 +54,13 @@ function handleSearch(url: URL, res: http.ServerResponse, engine: MemoryEngine |
 
 function handleListEntries(url: URL, res: http.ServerResponse, engine: MemoryEngine | null): void {
   if (!engine) { sendError(res, 503, 'Memory not initialized'); return; }
-  const tier = url.searchParams.get('tier') ?? 'WORKING';
+  const tier = url.searchParams.get('tier') ?? undefined;
+  const type = url.searchParams.get('type') ?? undefined;
   const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
-  const entries = engine.knowledge.findByTier(tier, limit);
+  const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+  const sort = url.searchParams.get('sort') ?? 'created_at';
+  const afterId = url.searchParams.get('after_id');
+  const entries = engine.knowledge.findFiltered(tier, type, limit, offset, sort, afterId ? parseInt(afterId, 10) : undefined);
   sendJson(res, entries.map(e => toEntryResponse(e)));
 }
 
@@ -103,6 +109,33 @@ function handleGraphData(
     .map(e => toGraphNode(e));
   const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
   sendJson(res, { nodes, edges: edgeList });
+}
+
+function handleSessions(url: URL, res: http.ServerResponse, engine: MemoryEngine | null): void {
+  if (!engine) { sendError(res, 503, 'Memory not initialized'); return; }
+  const agent = url.searchParams.get('agent') ?? '';
+  const status = url.searchParams.get('status') ?? '';
+  const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+  const sessions = engine.sessions.listFiltered(agent, status, limit);
+  sendJson(res, sessions.map(s => ({
+    id: s.session_id, agentName: s.agent_name,
+    startedAt: s.started_at, endedAt: s.ended_at,
+    observationCount: s.observation_count, status: s.status,
+  })));
+}
+
+function handleSessionEvents(
+  path: string, url: URL, res: http.ServerResponse, engine: MemoryEngine | null
+): void {
+  if (!engine) { sendError(res, 503, 'Memory not initialized'); return; }
+  const sessionId = path.split('/')[2];
+  const limit = parseInt(url.searchParams.get('limit') ?? '200', 10);
+  const events = engine.audit.listBySession(sessionId, limit);
+  sendJson(res, events.map(e => ({
+    id: e.id, operation: e.operation,
+    entryId: e.entry_id, sessionId: e.session_id,
+    details: e.details, createdAt: e.created_at,
+  })));
 }
 
 /** Map entry to API response (without content). */

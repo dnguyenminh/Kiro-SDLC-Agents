@@ -57,6 +57,7 @@ class ViewerServer(
             get("/{file}.css") { serveStaticFile(call, call.parameters["file"] + ".css", "text/css") }
             get("/api/health") { call.respond(buildHealthResponse()) }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
+            sessionApiRoutes({ memoryEngine })
         }
     }
 

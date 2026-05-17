@@ -47,6 +47,34 @@ class KnowledgeRepository(private val db: MemoryDatabaseManager) {
         }
     }
 
+    /** Find entries with flexible filters, sorting, and pagination. */
+    fun findFiltered(
+        tier: String?, type: String?, limit: Int, offset: Int, sort: String, afterId: Long?
+    ): List<KnowledgeEntry> {
+        val clauses = mutableListOf<String>()
+        val params = mutableListOf<Any>()
+        if (tier != null) { clauses.add("tier = ?"); params.add(tier) }
+        if (type != null) { clauses.add("type = ?"); params.add(type) }
+        if (afterId != null) { clauses.add("id > ?"); params.add(afterId) }
+        val where = if (clauses.isEmpty()) "" else "WHERE ${clauses.joinToString(" AND ")}"
+        val orderCol = when (sort) {
+            "access_count" -> "access_count DESC"
+            "confidence" -> "confidence DESC"
+            else -> "created_at DESC"
+        }
+        val sql = "SELECT * FROM knowledge_entries $where ORDER BY $orderCol LIMIT ? OFFSET ?"
+        params.add(limit); params.add(offset)
+        return queryList(sql) { stmt ->
+            params.forEachIndexed { i, p ->
+                when (p) {
+                    is String -> stmt.setString(i + 1, p)
+                    is Int -> stmt.setInt(i + 1, p)
+                    is Long -> stmt.setLong(i + 1, p)
+                }
+            }
+        }
+    }
+
     /** Find entries by type. */
     fun findByType(type: String, limit: Int = 100): List<KnowledgeEntry> {
         val sql = "SELECT * FROM knowledge_entries WHERE type = ? ORDER BY updated_at DESC LIMIT ?"

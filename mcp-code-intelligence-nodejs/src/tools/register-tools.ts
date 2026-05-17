@@ -15,6 +15,7 @@ import { registerCodeModules } from './code-modules.js';
 import { registerCodeIndexStatus } from './code-index-status.js';
 import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
+import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
 
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 export function registerTools(
@@ -36,7 +37,7 @@ export function registerTools(
 
 /** Get tool definitions for tools/list response (raw mode). */
 export function getToolDefinitions(): object[] {
-  return TOOL_DEFINITIONS;
+  return [...TOOL_DEFINITIONS, ...MEMORY_TOOL_DEFINITIONS];
 }
 
 /** Dispatch a tool call and return result text (raw mode). */
@@ -47,8 +48,23 @@ export async function dispatchTool(
   indexer: IndexingEngine,
   workspace: string
 ): Promise<string> {
+  // Try memory tools first
+  const memResult = getMemoryDispatcher(dbManager, workspace).dispatch(name, args);
+  if (memResult !== null) return memResult;
+
   const queryLayer = new QueryLayer(dbManager);
   return dispatchByName(name, args, queryLayer, indexer, workspace);
+}
+
+let memoryDispatcher: MemoryToolDispatcher | null = null;
+
+function getMemoryDispatcher(dbManager: DatabaseManager, workspace: string): MemoryToolDispatcher {
+  if (!memoryDispatcher) {
+    const engine = new MemoryEngine(dbManager.getDb());
+    engine.startSession('mcp-client');
+    memoryDispatcher = new MemoryToolDispatcher(engine, workspace);
+  }
+  return memoryDispatcher;
 }
 
 async function dispatchByName(

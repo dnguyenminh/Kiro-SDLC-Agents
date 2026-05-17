@@ -41,9 +41,13 @@ private suspend fun RoutingContext.handleSearch(engine: MemoryEngine?, graph: Kn
 
 private suspend fun RoutingContext.handleList(engine: MemoryEngine?) {
     if (engine == null) { call.respond(HttpStatusCode.ServiceUnavailable, "Memory not initialized"); return }
-    val tier = call.parameters["tier"] ?: "WORKING"
+    val tier = call.parameters["tier"]
+    val type = call.parameters["type"]
     val limit = call.parameters["limit"]?.toIntOrNull() ?: 20
-    val entries = engine.knowledge.findByTier(tier, limit)
+    val offset = call.parameters["offset"]?.toIntOrNull() ?: 0
+    val sort = call.parameters["sort"] ?: "created_at"
+    val afterId = call.parameters["after_id"]?.toLongOrNull()
+    val entries = engine.knowledge.findFiltered(tier, type, limit, offset, sort, afterId)
     call.respond(entries.map { EntryResponse.from(it) })
 }
 

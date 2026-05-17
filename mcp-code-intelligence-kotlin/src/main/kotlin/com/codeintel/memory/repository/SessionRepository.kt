@@ -62,6 +62,26 @@ class SessionRepository(private val db: MemoryDatabaseManager) {
         return results
     }
 
+    /** List sessions with optional agent and status filters. */
+    fun listFiltered(agent: String, status: String, limit: Int): List<MemorySession> {
+        val clauses = mutableListOf("1=1")
+        val params = mutableListOf<Any>()
+        if (agent.isNotEmpty()) { clauses.add("agent_name = ?"); params.add(agent) }
+        if (status.isNotEmpty()) { clauses.add("status = ?"); params.add(status) }
+        val where = clauses.joinToString(" AND ")
+        val sql = "SELECT * FROM memory_sessions WHERE $where ORDER BY started_at DESC LIMIT ?"
+        params.add(limit)
+        val results = mutableListOf<MemorySession>()
+        db.conn.prepareStatement(sql).use { stmt ->
+            params.forEachIndexed { i, p ->
+                when (p) { is String -> stmt.setString(i + 1, p); is Int -> stmt.setInt(i + 1, p) }
+            }
+            val rs = stmt.executeQuery()
+            while (rs.next()) results.add(mapRow(rs))
+        }
+        return results
+    }
+
     /** Get active session count. */
     fun activeCount(): Int {
         val rs = db.conn.createStatement().executeQuery(
@@ -70,4 +90,14 @@ class SessionRepository(private val db: MemoryDatabaseManager) {
         rs.next()
         return rs.getInt(1)
     }
+
+    private fun mapRow(rs: java.sql.ResultSet) = MemorySession(
+        id = rs.getLong("id"),
+        sessionId = rs.getString("session_id"),
+        agentName = rs.getString("agent_name"),
+        startedAt = rs.getString("started_at"),
+        endedAt = rs.getString("ended_at"),
+        observationCount = rs.getInt("observation_count"),
+        status = rs.getString("status")
+    )
 }
