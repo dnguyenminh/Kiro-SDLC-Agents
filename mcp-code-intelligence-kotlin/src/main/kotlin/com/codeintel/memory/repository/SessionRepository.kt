@@ -69,7 +69,7 @@ class SessionRepository(private val db: MemoryDatabaseManager) {
         if (agent.isNotEmpty()) { clauses.add("agent_name = ?"); params.add(agent) }
         if (status.isNotEmpty()) { clauses.add("status = ?"); params.add(status) }
         val where = clauses.joinToString(" AND ")
-        val sql = "SELECT * FROM memory_sessions WHERE $where ORDER BY started_at DESC LIMIT ?"
+        val sql = "SELECT * FROM memory_sessions WHERE $where ORDER BY observation_count DESC, started_at DESC LIMIT ?"
         params.add(limit)
         val results = mutableListOf<MemorySession>()
         db.conn.prepareStatement(sql).use { stmt ->
