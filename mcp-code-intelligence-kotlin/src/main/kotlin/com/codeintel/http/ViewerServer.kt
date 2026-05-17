@@ -53,8 +53,19 @@ class ViewerServer(
     private fun Application.configureRouting() {
         routing {
             get("/") { call.respondText(loadViewerHtml(), ContentType.Text.Html) }
+            get("/{file}.js") { serveStaticFile(call, call.parameters["file"] + ".js", "application/javascript") }
+            get("/{file}.css") { serveStaticFile(call, call.parameters["file"] + ".css", "text/css") }
             get("/api/health") { call.respond(buildHealthResponse()) }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
+        }
+    }
+
+    private suspend fun serveStaticFile(call: io.ktor.server.application.ApplicationCall, filename: String, contentType: String) {
+        val file = File(config.workspace, "shared/viewer/$filename")
+        if (file.exists() && !filename.contains("..")) {
+            call.respondText(file.readText(Charsets.UTF_8), ContentType.parse(contentType))
+        } else {
+            call.respond(HttpStatusCode.NotFound, "Not found")
         }
     }
 

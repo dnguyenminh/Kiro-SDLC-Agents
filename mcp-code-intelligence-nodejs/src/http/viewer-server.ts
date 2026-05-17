@@ -53,6 +53,8 @@ export class ViewerServer {
 
     if (url.pathname === '/') {
       this.serveHtml(res);
+    } else if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+      this.serveStatic(url.pathname, res);
     } else if (url.pathname === '/api/health') {
       this.serveHealth(res);
     } else if (url.pathname.startsWith('/api/memory')) {
@@ -66,6 +68,20 @@ export class ViewerServer {
     const html = this.loadViewerHtml();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
+  }
+
+  private serveStatic(pathname: string, res: http.ServerResponse): void {
+    const filename = path.basename(pathname);
+    if (filename.includes('..') || !this.workspace) { this.send404(res); return; }
+    const filePath = path.join(this.workspace, 'shared', 'viewer', filename);
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const ct = filename.endsWith('.css') ? 'text/css' : 'application/javascript';
+        res.writeHead(200, { 'Content-Type': ct + '; charset=utf-8' });
+        res.end(content);
+      } else { this.send404(res); }
+    } catch { this.send404(res); }
   }
 
   private loadViewerHtml(): string {
