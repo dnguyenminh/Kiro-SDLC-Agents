@@ -19,8 +19,12 @@ async function initGraph(){
 let selectedId=null;
 function showTip(n){
   selectedId=n.id;
-  graph3d.nodeColor(nd=>nd.id===selectedId?'#00ff88':nodeColor(nd.type));
-  graph3d.nodeVal(nd=>nd.id===selectedId?8:nodeSize(nd));
+  graph3d.nodeColor(nd=>nd.id===selectedId?'#ffffff':nodeColor(nd.type));
+  graph3d.nodeVal(nd=>nd.id===selectedId?10:nodeSize(nd));
+  graph3d.linkWidth(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?4:1.2});
+  graph3d.linkColor(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?'#ffffff':'rgba(100,150,200,0.35)'});
+  graph3d.linkDirectionalParticles(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?4:1});
+  graph3d.linkDirectionalParticleWidth(link=>{const s=link.source.id||link.source;const t=link.target.id||link.target;return(s===selectedId||t===selectedId)?3:1.2});
   const tt=document.getElementById('tooltip');
   tt.style.display='none';
   if(graph3d)graph3d.cameraPosition({x:n.x+100,y:n.y+80,z:n.z+100},{x:n.x,y:n.y,z:n.z},800);
