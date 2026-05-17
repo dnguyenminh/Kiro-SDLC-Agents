@@ -195,11 +195,22 @@ class McpServer:
         # Initialize memory engine on same DB connection
         mem_engine = MemoryEngine(self._db.conn)
         mem_engine.start_session("mcp-client")
-        self._memory_dispatcher = MemoryToolDispatcher(mem_engine, self._workspace)
+
+        # Initialize embedding service (Ollama → ONNX → None)
+        from .memory.embedding import EmbeddingFactory
+        embedding_service = EmbeddingFactory.create(self._config, mem_engine.vectors)
+        if embedding_service:
+            _log("EmbeddingService initialized — vectors enabled")
+        else:
+            _log("EmbeddingService not available — using BM25 only")
+
+        self._memory_dispatcher = MemoryToolDispatcher(
+            mem_engine, self._workspace, embedding_service
+        )
 
         # Start HTTP viewer server
         viewer_port = self._config.get("viewer_port", 3201)
-        self._viewer = ViewerServer(viewer_port)
+        self._viewer = ViewerServer(viewer_port, self._workspace)
         self._viewer.memory_engine = mem_engine
         self._viewer.knowledge_graph = mem_engine.graph
         self._viewer.start()
