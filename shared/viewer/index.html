@@ -109,8 +109,9 @@
 <div class="tab-panel" id="panel-stream" style="flex-direction:column">
   <div class="filter-bar">
     <div id="stream-indicator"></div>
-    <span style="font-size:.7rem;opacity:.7">Live Observation Stream</span>
+    <span style="font-size:.7rem;opacity:.7">Live Operations</span>
     <button id="stream-pause-btn" onclick="toggleStreamPause()">⏸ Pause</button>
+    <button id="stream-sort-btn" onclick="toggleStreamSort()">↑ Oldest first</button>
     <button onclick="clearStream()">Clear</button>
   </div>
   <div class="entry-list" id="stream-list" style="flex-direction:column-reverse"></div>
@@ -122,9 +123,9 @@
 /* Shared utilities */
 const API = 'api/memory';
 function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 200); }
-function formatTime(t) { if (!t) return ''; try { return new Date(t + 'Z').toLocaleString(); } catch { return t; } }
+function formatTime(t) { if (!t) return ''; try { return new Date(t.replace(' ','T') + 'Z').toLocaleString(); } catch { return t; } }
 function timeDiff(a, b) {
-  try { const ms = new Date(b + 'Z') - new Date(a + 'Z'); const m = Math.floor(ms / 60000); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm'; }
+  try { const ms = new Date(b.replace(' ','T') + 'Z') - new Date(a.replace(' ','T') + 'Z'); const m = Math.floor(ms / 60000); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm'; }
   catch { return '?'; }
 }
 function renderEntryDetail(e) {

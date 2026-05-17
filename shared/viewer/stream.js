@@ -3,6 +3,7 @@ let streamEvents = [];
 let streamLastId = 0;
 let streamPaused = false;
 let streamTimer = null;
+let streamSortAsc = false;
 const STREAM_MAX = 100;
 const STREAM_INTERVAL = 3000;
 
@@ -37,7 +38,8 @@ async function pollStream() {
 function renderStream() {
   const el = document.getElementById('stream-list');
   if (!el) return;
-  el.innerHTML = streamEvents.map(e =>
+  const sorted = streamSortAsc ? [...streamEvents].reverse() : streamEvents;
+  el.innerHTML = sorted.map(e =>
     '<div class="stream-item">' +
     '<div class="stream-time">' + formatTime(e.createdAt || '') + '</div>' +
     '<div style="display:flex;gap:6px;align-items:center">' +
@@ -63,6 +65,13 @@ function toggleStreamPause() {
   streamPaused = !streamPaused;
   const btn = document.getElementById('stream-pause-btn');
   if (btn) btn.textContent = streamPaused ? '▶ Resume' : '⏸ Pause';
+}
+
+function toggleStreamSort() {
+  streamSortAsc = !streamSortAsc;
+  const btn = document.getElementById('stream-sort-btn');
+  if (btn) btn.textContent = streamSortAsc ? '↓ Newest first' : '↑ Oldest first';
+  renderStream();
 }
 
 function flashIndicator() {
