@@ -7,6 +7,7 @@ license = {text = "MIT"}
 
 [project.optional-dependencies]
 watch = ["watchdog>=3.0"]
+embedding = ["onnxruntime>=1.16.0", "numpy>=1.24.0"]
 
 [project.scripts]
 mcp-code-intel = "mcp_code_intel.__main__:main"
