@@ -10,13 +10,26 @@ mcp-code-intelligence-nodejs/node_modules/
 
 # Kotlin MCP server build output
 mcp-code-intelligence-kotlin/build/
+mcp-code-intelligence-kotlin/bin/
 mcp-code-intelligence-kotlin/.gradle/
 mcp-code-intelligence-kotlin/.kotlin/
 
-# Python bytecode
+# Python bytecode and test cache
 mcp-code-intelligence-python/src/mcp_code_intel/__pycache__/
+mcp-code-intelligence-python/src/mcp_code_intel/**/__pycache__/
+mcp-code-intelligence-python/.pytest_cache/
+mcp-code-intelligence-python/tests/__pycache__/
 
 # Extension build output
 kiro-sdlc-agents/out/
 kiro-sdlc-agents/node_modules/
 kiro-sdlc-agents/*.vsix
+
+# QA screenshots (generated during testing)
+qa-*.png
+
+# Log files
+*.log
+
+# Workspace-level code-intel DB
+${workspaceFolder}/
