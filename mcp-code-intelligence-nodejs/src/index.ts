@@ -9,7 +9,10 @@ import * as readline from 'readline';
 import { loadConfig, setWorkspace, AppConfig } from './config.js';
 import { DatabaseManager } from './db/database-manager.js';
 import { IndexingEngine } from './indexer/indexing-engine.js';
-import { getToolDefinitions, dispatchTool } from './tools/register-tools.js';
+import { getToolDefinitions, dispatchTool, initMemoryDispatcher } from './tools/register-tools.js';
+import { MemoryEngine } from './memory/memory-engine.js';
+import { ViewerServer } from './http/viewer-server.js';
+import { EmbeddingFactory } from './memory/embedding/index.js';
 
 const SERVER_INFO = { name: 'mcp-code-intelligence', version: '0.1.0' };
 const PROTOCOL_VERSION = '2024-11-05';
@@ -54,6 +57,27 @@ async function main(): Promise<void> {
       db.initialize();
       indexer = new IndexingEngine(db, config);
       initialized = true;
+
+      // Initialize memory engine
+      const memoryEngine = new MemoryEngine(db.getDb());
+      memoryEngine.startSession('mcp-client');
+
+      // Initialize embedding (optional: Ollama → ONNX → null)
+      const embeddingService = EmbeddingFactory.create(config, memoryEngine.vectors);
+      if (embeddingService) {
+        console.error('[code-intel] EmbeddingService initialized — vectors enabled');
+      } else {
+        console.error('[code-intel] EmbeddingService not available — using BM25 only');
+      }
+
+      // Wire memory dispatcher with embedding
+      initMemoryDispatcher(memoryEngine, config.workspace, embeddingService);
+
+      // Start viewer server
+      const viewerServer = new ViewerServer(3202, config.workspace);
+      viewerServer.memoryEngine = memoryEngine;
+      viewerServer.knowledgeGraph = memoryEngine.graph;
+      viewerServer.start();
 
       send({ jsonrpc: '2.0', id: reqId, result: buildInitializeResult() });
 

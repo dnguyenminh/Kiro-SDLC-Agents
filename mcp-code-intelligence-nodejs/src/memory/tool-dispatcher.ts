@@ -8,6 +8,7 @@ import { MemoryEngine } from './memory-engine.js';
 import { IngestPipeline } from './ingest-pipeline.js';
 import { HybridSearch, SearchParams } from './hybrid-search.js';
 import { TierConsolidator } from './tier-consolidator.js';
+import { EmbeddingService } from './embedding/index.js';
 
 export class MemoryToolDispatcher {
   private readonly engine: MemoryEngine;
@@ -16,10 +17,10 @@ export class MemoryToolDispatcher {
   private readonly consolidator: TierConsolidator;
   private readonly workspace: string;
 
-  constructor(engine: MemoryEngine, workspace: string) {
+  constructor(engine: MemoryEngine, workspace: string, embeddingService: EmbeddingService | null = null) {
     this.engine = engine;
     this.workspace = workspace;
-    this.pipeline = new IngestPipeline(engine.knowledge);
+    this.pipeline = new IngestPipeline(engine.knowledge, embeddingService);
     this.hybridSearch = new HybridSearch(engine.search, engine.graph);
     this.consolidator = new TierConsolidator(engine.knowledge, engine.consolidation);
   }

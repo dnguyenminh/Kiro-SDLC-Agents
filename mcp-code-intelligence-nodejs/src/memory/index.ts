@@ -5,3 +5,4 @@
 export { MemoryEngine } from './memory-engine.js';
 export { MemoryToolDispatcher } from './tool-dispatcher.js';
 export { MEMORY_TOOL_DEFINITIONS } from './tool-definitions.js';
+export { EmbeddingService, EmbeddingFactory } from './embedding/index.js';

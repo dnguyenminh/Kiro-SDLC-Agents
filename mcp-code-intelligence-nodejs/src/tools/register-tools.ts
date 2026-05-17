@@ -16,6 +16,7 @@ import { registerCodeIndexStatus } from './code-index-status.js';
 import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
 import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
+import { EmbeddingService } from '../memory/embedding/index.js';
 
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 export function registerTools(
@@ -58,11 +59,18 @@ export async function dispatchTool(
 
 let memoryDispatcher: MemoryToolDispatcher | null = null;
 
+/** Initialize memory dispatcher with engine and optional embedding. */
+export function initMemoryDispatcher(
+  engine: MemoryEngine, workspace: string, embeddingService: EmbeddingService | null
+): void {
+  memoryDispatcher = new MemoryToolDispatcher(engine, workspace, embeddingService);
+}
+
 function getMemoryDispatcher(dbManager: DatabaseManager, workspace: string): MemoryToolDispatcher {
   if (!memoryDispatcher) {
     const engine = new MemoryEngine(dbManager.getDb());
     engine.startSession('mcp-client');
-    memoryDispatcher = new MemoryToolDispatcher(engine, workspace);
+    memoryDispatcher = new MemoryToolDispatcher(engine, workspace, null);
   }
   return memoryDispatcher;
 }

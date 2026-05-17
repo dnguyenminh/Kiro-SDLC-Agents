@@ -3,6 +3,7 @@
  */
 
 import { KnowledgeRepository } from './knowledge-repo.js';
+import { EmbeddingService } from './embedding/index.js';
 
 /** Result of ingesting a document. */
 export interface IngestResult {
@@ -12,14 +13,18 @@ export interface IngestResult {
 
 export class IngestPipeline {
   private readonly repo: KnowledgeRepository;
+  private readonly embedding: EmbeddingService | null;
 
-  constructor(repo: KnowledgeRepository) {
+  constructor(repo: KnowledgeRepository, embeddingService: EmbeddingService | null = null) {
     this.repo = repo;
+    this.embedding = embeddingService;
   }
 
   /** Ingest a single knowledge entry directly. Returns entry ID. */
   ingestEntry(content: string, summary: string, type: string, source?: string, tags = ''): number {
-    return this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
+    const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
+    this.tryEmbed(id, summary);
+    return id;
   }
 
   /** Ingest a markdown document — splits by sections. */
@@ -31,7 +36,8 @@ export class IngestPipeline {
       const chunks = this.chunkText(section.content);
       for (const chunk of chunks) {
         const summary = this.buildSummary(chunk, section.heading);
-        this.repo.insert({ content: chunk, summary, type, tier: this.tierForType(type), source, tags: section.heading });
+        const id = this.repo.insert({ content: chunk, summary, type, tier: this.tierForType(type), source, tags: section.heading });
+        this.tryEmbed(id, summary);
         entriesCreated++;
       }
     }
@@ -44,10 +50,19 @@ export class IngestPipeline {
     let entriesCreated = 0;
     for (const chunk of chunks) {
       const summary = chunk.split('\n')[0]?.slice(0, 120) ?? source;
-      this.repo.insert({ content: chunk, summary, type, tier: this.tierForType(type), source, tags: '' });
+      const id = this.repo.insert({ content: chunk, summary, type, tier: this.tierForType(type), source, tags: '' });
+      this.tryEmbed(id, summary);
       entriesCreated++;
     }
     return { entriesCreated, source };
+  }
+
+  /** Attempt to embed and store vector (fire-and-forget). */
+  private tryEmbed(entryId: number, text: string): void {
+    if (!this.embedding) return;
+    this.embedding.embedAndStore(entryId, text).catch((err) => {
+      process.stderr.write(`[ingest] Embed failed for entry ${entryId}: ${err}\n`);
+    });
   }
 
   /** Assign tier based on knowledge type. */
