@@ -92,6 +92,7 @@ def _build_config(workspace: str) -> dict[str, Any]:
         "workspace": workspace,
         "db_path": str(code_intel_dir / "index.db"),
         "config_path": str(config_path),
+        "viewer_port": _env_int("CODE_INTEL_VIEWER_PORT", file_cfg.get("viewerPort", 3201)),
         "watch_enabled": _env_bool("CODE_INTEL_WATCH", file_cfg.get("watchEnabled", True)),
         "watch_debounce_ms": _env_int("CODE_INTEL_DEBOUNCE", file_cfg.get("watchDebounceMs", 500)),
         "ollama_url": os.environ.get("OLLAMA_URL", file_cfg.get("ollamaUrl")),

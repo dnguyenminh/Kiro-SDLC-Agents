@@ -21,6 +21,8 @@ from .tools import (
     handle_code_kb_export,
 )
 from .stream_write import handle_stream_write_file
+from .memory import MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
+from .http import ViewerServer
 
 SERVER_NAME = "mcp-code-intelligence-python"
 SERVER_VERSION = "0.1.0"
@@ -126,6 +128,8 @@ class McpServer:
         self._db: DatabaseManager | None = None
         self._indexer: IndexingEngine | None = None
         self._query_layer: QueryLayer | None = None
+        self._memory_dispatcher: MemoryToolDispatcher | None = None
+        self._viewer: ViewerServer | None = None
         self._workspace: str = config["workspace"]
         self._initialized = False
 
@@ -188,6 +192,18 @@ class McpServer:
         self._query_layer = QueryLayer(self._db)
         self._initialized = True
 
+        # Initialize memory engine on same DB connection
+        mem_engine = MemoryEngine(self._db.conn)
+        mem_engine.start_session("mcp-client")
+        self._memory_dispatcher = MemoryToolDispatcher(mem_engine, self._workspace)
+
+        # Start HTTP viewer server
+        viewer_port = self._config.get("viewer_port", 3201)
+        self._viewer = ViewerServer(viewer_port)
+        self._viewer.memory_engine = mem_engine
+        self._viewer.knowledge_graph = mem_engine.graph
+        self._viewer.start()
+
         # Run indexing after responding
         self._indexer.run_full_index()
         _log("MCP server ready")
@@ -199,7 +215,7 @@ class McpServer:
         }
 
     def _handle_tools_list(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {"tools": TOOL_DEFINITIONS}
+        return {"tools": TOOL_DEFINITIONS + MEMORY_TOOL_DEFINITIONS}
 
     def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
         if not self._initialized:
@@ -213,6 +229,11 @@ class McpServer:
         return {}
 
     def _dispatch_tool(self, name: str, args: dict[str, Any]) -> str:
+        # Try memory tools first
+        if self._memory_dispatcher:
+            mem_result = self._memory_dispatcher.dispatch(name, args)
+            if mem_result is not None:
+                return mem_result
         if name == "code_search":
             return handle_code_search(args, self._query_layer)
         if name == "code_symbols":

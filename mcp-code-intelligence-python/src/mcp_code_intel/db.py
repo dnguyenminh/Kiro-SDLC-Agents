@@ -128,7 +128,7 @@ class DatabaseManager:
     def initialize(self) -> None:
         """Open database, enable WAL, apply schema."""
         self._ensure_directory()
-        self._conn = sqlite3.connect(self._db_path)
+        self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._configure()
         self._apply_schema()

@@ -18,6 +18,21 @@ def handle_api_route(
     graph: KnowledgeGraph | None,
 ) -> None:
     """Dispatch API requests to the correct handler."""
+    try:
+        _dispatch_api(path, query, handler, engine, graph)
+    except Exception as e:
+        import sys
+        print(f"[http-api] Error: {e}", file=sys.stderr, flush=True)
+        send_error(handler, 500, str(e))
+
+
+def _dispatch_api(
+    path: str, query: dict[str, list[str]],
+    handler: BaseHTTPRequestHandler,
+    engine: MemoryEngine | None,
+    graph: KnowledgeGraph | None,
+) -> None:
+    """Internal dispatch — exceptions caught by handle_api_route."""
     api_path = path.replace("/api/memory", "")
 
     if api_path == "/status":
