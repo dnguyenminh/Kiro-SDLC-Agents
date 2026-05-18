@@ -44,8 +44,10 @@ class McpServer(args: Array<String> = emptyArray()) {
     }
 
     private fun shutdown() {
+        viewerServer?.stop()
         runBlocking { orchestrationEngine?.stop() }
         memoryEngine?.endSession()
+        log("Server shutdown complete")
     }
 
     private fun handleLine(line: String): JsonObject? {

@@ -17,6 +17,7 @@ import { EmbeddingFactory } from './memory/embedding/index.js';
 const SERVER_INFO = { name: 'mcp-code-intelligence', version: '0.2.0' };
 const PROTOCOL_VERSION = '2024-11-05';
 let _memEngine: MemoryEngine | null = null;
+let _viewerServer: ViewerServer | null = null;
 
 async function main(): Promise<void> {
   let config = loadConfig();
@@ -82,6 +83,7 @@ async function main(): Promise<void> {
       viewerServer.memoryEngine = memoryEngine;
       viewerServer.knowledgeGraph = memoryEngine.graph;
       viewerServer.start();
+      _viewerServer = viewerServer;
 
       send({ jsonrpc: '2.0', id: reqId, result: buildInitializeResult() });
 
@@ -102,8 +104,13 @@ async function main(): Promise<void> {
   }
 
   // Cleanup on stdin close
-  if (indexer) indexer.stop();
-  if (db) db.close();
+  cleanup();
+}
+
+function cleanup(): void {
+  console.error('[code-intel] Shutting down...');
+  if (_viewerServer) { _viewerServer.stop(); _viewerServer = null; }
+  if (_memEngine) { _memEngine.endSession(); _memEngine = null; }
 }
 
 async function handleRequest(
@@ -151,8 +158,8 @@ function send(response: any): void {
 }
 
 function setupShutdown(): void {
-  process.on('SIGINT', () => process.exit(0));
-  process.on('SIGTERM', () => process.exit(0));
+  process.on('SIGINT', () => { cleanup(); process.exit(0); });
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); });
 }
 
 setupShutdown();

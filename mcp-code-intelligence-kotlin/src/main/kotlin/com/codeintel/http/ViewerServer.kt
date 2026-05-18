@@ -30,14 +30,23 @@ class ViewerServer(
     @Volatile var knowledgeGraph: KnowledgeGraph? = null
     @Volatile var embeddingService: EmbeddingService? = null
 
+    private var engine: EmbeddedServer<*, *>? = null
+
     /** Start HTTP server (blocking within its thread). */
     fun start() {
-        val server = embeddedServer(Netty, port = config.viewerPort) {
+        engine = embeddedServer(Netty, port = config.viewerPort) {
             configurePlugins()
             configureRouting()
         }
         log("HTTP viewer starting on port ${config.viewerPort}")
-        server.start(wait = true)
+        engine!!.start(wait = true)
+    }
+
+    /** Stop HTTP server gracefully — releases the port. */
+    fun stop() {
+        engine?.stop(500, 1000)
+        engine = null
+        log("HTTP viewer stopped (port ${config.viewerPort} released)")
     }
 
     private fun Application.configurePlugins() {

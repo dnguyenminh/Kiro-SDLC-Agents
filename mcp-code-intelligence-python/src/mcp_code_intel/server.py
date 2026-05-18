@@ -135,6 +135,10 @@ class McpServer:
 
     def run(self) -> None:
         """Main loop — read JSON-RPC from stdin, write to stdout."""
+        import signal
+        signal.signal(signal.SIGTERM, lambda *_: self._shutdown())
+        signal.signal(signal.SIGINT, lambda *_: self._shutdown())
+
         for line in sys.stdin:
             line = line.strip()
             if not line:
@@ -146,6 +150,16 @@ class McpServer:
                     self._send(response)
             except json.JSONDecodeError:
                 self._send_error(None, -32700, "Parse error")
+
+        # stdin closed (reconnect) — cleanup
+        self._shutdown()
+
+    def _shutdown(self) -> None:
+        """Graceful shutdown — stop viewer server and release port."""
+        if self._viewer:
+            self._viewer.stop()
+            self._viewer = None
+        _log("Server shutdown complete")
 
     def _handle_request(self, request: dict[str, Any]) -> dict[str, Any] | None:
         method = request.get("method", "")

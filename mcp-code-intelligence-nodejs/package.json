@@ -1,6 +1,6 @@
 {
   "name": "mcp-code-intelligence",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Local Code Intelligence MCP Server — SQLite FTS5 + Semantic Search for codebase indexing and querying",
   "main": "dist/index.js",
   "bin": {

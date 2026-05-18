@@ -1,6 +1,6 @@
 [project]
 name = "mcp-code-intel"
-version = "0.2.2"
+version = "0.2.3"
 description = "MCP Code Intelligence Server — Python variant with FTS5 search"
 requires-python = ">=3.11"
 license = {text = "MIT"}
