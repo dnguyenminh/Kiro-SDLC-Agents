@@ -9,6 +9,7 @@ import com.codeintel.memory.repository.*
 class MemoryEngine(db: DatabaseManager) {
     private val memoryDb = MemoryDatabaseManager(db)
 
+    val connection: java.sql.Connection get() = memoryDb.conn
     val knowledge = KnowledgeRepository(memoryDb)
     val search = KnowledgeSearchRepository(memoryDb)
     val graph = GraphRepository(memoryDb)

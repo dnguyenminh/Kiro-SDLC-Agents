@@ -119,4 +119,16 @@ CREATE INDEX IF NOT EXISTS idx_ma_operation ON memory_audit(operation);
 CREATE INDEX IF NOT EXISTS idx_ma_entry ON memory_audit(entry_id);
 CREATE INDEX IF NOT EXISTS idx_ma_session ON memory_audit(session_id);
 CREATE INDEX IF NOT EXISTS idx_ma_created ON memory_audit(created_at);
+
+CREATE TABLE IF NOT EXISTS ingest_file_cache (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_path TEXT NOT NULL UNIQUE,
+  checksum TEXT NOT NULL,
+  mtime_ms INTEGER NOT NULL,
+  file_size INTEGER NOT NULL,
+  entry_count INTEGER NOT NULL DEFAULT 0,
+  last_ingested_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ifc_path ON ingest_file_cache(file_path);
 """

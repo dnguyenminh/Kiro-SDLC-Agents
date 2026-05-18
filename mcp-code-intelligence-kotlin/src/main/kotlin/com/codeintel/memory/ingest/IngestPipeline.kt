@@ -11,9 +11,11 @@ import com.codeintel.memory.repository.KnowledgeRepository
 /** Result of ingesting a document. */
 data class IngestResult(
     val entriesCreated: Int,
-    val embeddingsGenerated: Int,
+    val embeddingsGenerated: Int = 0,
     val source: String,
-    val entryIds: List<Long> = emptyList()
+    val entryIds: List<Long> = emptyList(),
+    val skipped: Boolean = false,
+    val skipReason: String? = null
 )
 
 class IngestPipeline(

@@ -5,6 +5,7 @@ import com.codeintel.memory.MemoryEngine
 import com.codeintel.memory.consolidation.TierConsolidator
 import com.codeintel.memory.embedding.EmbeddingService
 import com.codeintel.memory.graph.KnowledgeGraph
+import com.codeintel.memory.ingest.IngestDeduplicator
 import com.codeintel.memory.ingest.IngestFileExecutor
 import com.codeintel.memory.ingest.IngestGraphLinker
 import com.codeintel.memory.ingest.IngestPipeline
@@ -23,7 +24,8 @@ class MemoryToolDispatcher(
 ) {
     private val pipeline = IngestPipeline(engine.knowledge, embeddingService)
     private val graphLinker = IngestGraphLinker(graph)
-    private val fileExecutor = IngestFileExecutor(pipeline, workspace)
+    private val deduplicator = IngestDeduplicator(engine.connection)
+    private val fileExecutor = IngestFileExecutor(pipeline, workspace, deduplicator)
     private val hybridSearch = HybridSearch(engine.search, engine.vectors, embeddingService, graph)
     private val consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
     private val audit: AuditRepository get() = engine.audit
@@ -68,6 +70,13 @@ class MemoryToolDispatcher(
 
         val result = fileExecutor.ingest(filePath, type, format)
             ?: return "Error: file not found — $filePath (workspace=$workspace)"
+
+        // File was skipped (unchanged)
+        if (result.skipped) {
+            val msg = "Skipped: $filePath — ${result.skipReason}"
+            audit.log("INGEST_FILE_SKIP", sessionId = engine.currentSessionId, details = msg.take(200))
+            return msg
+        }
 
         graphLinker.linkChunks(result.entryIds, result.source)
         engine.currentSessionId?.let { engine.sessions.incrementObservations(it) }

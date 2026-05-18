@@ -9,6 +9,7 @@ import {
     getVersionReport, migrateLegacyScripts
 } from "./injector";
 import { isUpgradeAvailable, loadBundledManifest, migrateLegacyVersion } from "./checksum";
+import { promptIndexAfterInject, handleIndexWorkspace } from "./indexer";
 
 export function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -18,7 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.injectAll", () => handleInjectAll(context)),
         vscode.commands.registerCommand("kiroSdlc.injectSelective", () => handleInjectSelective(context)),
         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
-        vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context))
+        vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context)),
+        vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace())
     );
 
     updateStatusBar(statusBar, context);
@@ -70,6 +72,7 @@ async function handleInjectAll(context: vscode.ExtensionContext) {
 
     const injected = await injectAll(root, context.extensionPath);
     vscode.window.showInformationMessage(`✅ Injected ${injected.length} components: ${injected.join(", ")}`);
+    await promptIndexAfterInject(root);
 }
 
 async function handleInjectSelective(context: vscode.ExtensionContext) {
@@ -79,6 +82,7 @@ async function handleInjectSelective(context: vscode.ExtensionContext) {
     const injected = await injectSelective(root, context.extensionPath);
     if (injected.length > 0) {
         vscode.window.showInformationMessage(`✅ Injected: ${injected.join(", ")}`);
+        await promptIndexAfterInject(root);
     }
 }
 

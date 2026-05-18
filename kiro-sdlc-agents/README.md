@@ -10,6 +10,7 @@ Inject a complete multi-agent SDLC pipeline into any workspace with one command.
 | `Kiro SDLC: Inject (Select Components)` | Pick which components to inject |
 | `Kiro SDLC: Update Agents` | Update to latest version (overwrites outdated files) |
 | `Kiro SDLC: Show Status` | Check which components are present and their versions |
+| `Kiro SDLC: Index Workspace (Code + Documents)` | Index source code + documents into Knowledge Base |
 
 ## What Gets Injected
 
@@ -177,6 +178,90 @@ If auto-migration didn't trigger, you can safely delete:
 ```
 .analysis/code-intelligence/scripts/   ← entire folder
 ```
+
+## Indexing Your Project
+
+After injection, the MCP server automatically indexes your **source code**. For **documents** (BRD, FSD, TDD), you can index them via command or chat.
+
+### Quick Start: Index Workspace Command
+
+`Ctrl+Shift+P` → **"Kiro SDLC: Index Workspace (Code + Documents)"**
+
+This command lets you pick what to index:
+- **Index Source Code** — triggers MCP server re-index (FTS5 full-text search)
+- **Index Documents** — discovers all BRD/FSD/TDD in `documents/` folder
+- **Sync Code → Memory** — links code symbols into knowledge graph
+
+> 💡 After "Inject All" or "Inject (Select Components)", the extension automatically asks if you want to index.
+
+### Deduplication (Auto-skip Unchanged Files)
+
+The MCP server tracks every indexed file by **filename + timestamp + checksum**:
+- If a file hasn't changed since last index → **automatically skipped**
+- If only timestamp changed but content is identical → **skipped** (checksum match)
+- Only truly modified files get re-indexed
+
+No manual cache management needed — it's all handled server-side in the database.
+
+### Check Index Status
+
+In Kiro chat, ask the agent to run:
+```
+code_index_status
+```
+
+This shows: file count, symbol count, languages detected, and last indexed time.
+
+### Index Project Documents
+
+To make your BRD, FSD, TDD searchable by agents:
+
+```
+mem_ingest_file → path: "documents/YOUR-TICKET/BRD.md", type: "REQUIREMENT"
+mem_ingest_file → path: "documents/YOUR-TICKET/FSD.md", type: "REQUIREMENT"
+mem_ingest_file → path: "documents/YOUR-TICKET/TDD.md", type: "ARCHITECTURE"
+```
+
+Or simply ask the agent: *"Index all documents for KSA-14"*
+
+> Unchanged files are auto-skipped — safe to re-run anytime without duplicating data.
+
+### Sync Code Symbols to Memory
+
+After indexing, sync code entities into the knowledge graph for cross-referencing:
+
+```
+mem_sync_code
+```
+
+### Search the Knowledge Base
+
+```
+mem_search → query: "authentication", detail: true
+```
+
+Filter by agent role: `role: "DEV"`, `role: "QA"`, `role: "SA"`
+
+### Re-index After Major Changes
+
+After large merges or restructuring:
+```
+code_index_status → reindex: true
+mem_sync_code
+```
+
+### Document Type Reference
+
+| Document | Type Parameter |
+|----------|---------------|
+| BRD, FSD | `REQUIREMENT` |
+| TDD | `ARCHITECTURE` |
+| STP, STC | `PROCEDURE` |
+| DPG, RLN | `PROCEDURE` |
+| Decision records | `DECISION` |
+| Error patterns | `ERROR_PATTERN` |
+
+> Full details: see `.kiro/steering/indexing-guide.md` after injection.
 
 ## Development
 
