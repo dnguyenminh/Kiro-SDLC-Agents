@@ -34,14 +34,14 @@ export async function injectMcpConfig(root: string): Promise<string | null> {
     const variant = selected.variant;
 
     if (variant.delivery === "download") {
-        const ok = await downloadVariant(variant);
+        const ok = await downloadVariant(variant, root);
         if (!ok) { return null; }
     }
 
     // Step 2: Ollama semantic search?
     const ollamaEnv = await promptOllamaSetup();
 
-    const resolvedConfig = resolveConfig(variant, ollamaEnv);
+    const resolvedConfig = resolveConfig(variant, ollamaEnv, root);
     writeMcpConfig(root, resolvedConfig);
     return variant.id;
 }
@@ -123,11 +123,12 @@ export function hasMcpConfig(workspaceRoot: string): boolean {
 }
 
 /** Resolve ${mcpServersDir} placeholder in config args. */
-function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>): Record<string, unknown> {
-    const serversDir = getMcpServersDir();
+function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>, root: string): Record<string, unknown> {
+    const serversDir = getMcpServersDir(root);
     const config: Record<string, unknown> = { ...variant.config };
     const args = (variant.config.args || []).map((arg: string) =>
         arg.replace("${mcpServersDir}", serversDir)
+           .replace("${workspaceFolder}", root)
     );
     config.args = args;
     if (variant.config.cwd) {
@@ -162,10 +163,10 @@ function writeMcpConfig(root: string, serverConfig: Record<string, unknown>): vo
 }
 
 /** Download MCP server asset from GitHub Release. */
-async function downloadVariant(variant: McpVariant): Promise<boolean> {
+async function downloadVariant(variant: McpVariant, root: string): Promise<boolean> {
     if (!variant.downloadAsset) { return false; }
 
-    const destDir = getMcpServersDir();
+    const destDir = getMcpServersDir(root);
     const assetPath = path.join(destDir, variant.downloadAsset);
 
     if (fs.existsSync(assetPath.replace(".zip", "").replace(".jar", ".jar"))) {
@@ -200,8 +201,11 @@ async function downloadVariant(variant: McpVariant): Promise<boolean> {
     );
 }
 
-/** Get global MCP servers directory (~/.kiro/mcp-servers/code-intelligence/). */
-function getMcpServersDir(): string {
+/** Get workspace-local MCP servers directory ({workspace}/.code-intel/servers/). */
+function getMcpServersDir(root?: string): string {
+    if (root) return path.join(root, MCP_SERVERS_DIR);
+    const folders = vscode.workspace.workspaceFolders;
+    if (folders && folders.length > 0) return path.join(folders[0].uri.fsPath, MCP_SERVERS_DIR);
     return path.join(os.homedir(), MCP_SERVERS_DIR);
 }
 

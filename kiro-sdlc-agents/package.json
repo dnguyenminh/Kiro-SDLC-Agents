@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -13,8 +13,21 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other", "Snippets"],
-  "keywords": ["kiro", "sdlc", "agents", "multi-agent", "BA", "QA", "DevOps", "scrum", "mcp"],
+  "categories": [
+    "Other",
+    "Snippets"
+  ],
+  "keywords": [
+    "kiro",
+    "sdlc",
+    "agents",
+    "multi-agent",
+    "BA",
+    "QA",
+    "DevOps",
+    "scrum",
+    "mcp"
+  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {

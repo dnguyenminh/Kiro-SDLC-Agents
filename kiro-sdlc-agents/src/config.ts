@@ -30,11 +30,11 @@ export interface McpServerConfig {
     transportType?: string;
 }
 
-/** Where downloaded MCP servers are stored (global, shared across workspaces). */
-export const MCP_SERVERS_DIR = ".kiro/mcp-servers/code-intelligence";
+/** Where downloaded MCP servers are stored (per-workspace). */
+export const MCP_SERVERS_DIR = ".code-intel/servers";
 
 /** GitHub repo for release downloads. */
-export const GITHUB_RELEASE_REPO = "dnguyenminh/mcp-code-intelligence";
+export const GITHUB_RELEASE_REPO = "dnguyenminh/Kiro-SDLC-Agents";
 
 export const CORE_COMPONENTS: Component[] = [
     {
@@ -93,10 +93,10 @@ export const MCP_VARIANTS: McpVariant[] = [
         label: "Kotlin/JVM (enterprise)",
         description: "Downloads JAR from GitHub Release. JDK 21+",
         delivery: "download",
-        downloadAsset: "mcp-code-intelligence.jar",
+        downloadAsset: "mcp-code-intelligence-latest.jar",
         config: {
             command: "java",
-            args: ["-jar", "${mcpServersDir}/mcp-code-intelligence.jar", "--workspace", "${workspaceFolder}"]
+            args: ["-jar", "${mcpServersDir}/mcp-code-intelligence-latest.jar"]
         }
     }
 ];
