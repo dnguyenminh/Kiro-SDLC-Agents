@@ -1,0 +1,180 @@
+"""Orchestration engine — coordinator that wires all components together.
+
+Entry point for orchestration. Child tools are hidden from tools/list.
+Behavioral parity with Kotlin OrchestrationEngine.kt.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+from .config import OrchestrationConfig
+from .local import ConfigWatcher, LocalServerManager
+from .registry import UnifiedRegistry
+from .routing import RoutingTable, SmartRouter, ToolMetrics
+from .logging.auto_logger import AutoLogger
+
+
+class OrchestrationEngine:
+    """Coordinator — wires LocalServerManager, SmartRouter, UnifiedRegistry, AutoLogger."""
+
+    def __init__(self, config: OrchestrationConfig, memory_engine: Any, app_config: dict) -> None:
+        self._config = config
+        self._memory_engine = memory_engine
+        self._app_config = app_config
+        self._server_manager = LocalServerManager(config)
+        self._routing_table = RoutingTable()
+        self._registry = UnifiedRegistry(config.settings.similarity_threshold)
+        self._router = SmartRouter(self._server_manager, self._routing_table)
+        self._auto_logger = AutoLogger(memory_engine, config.settings.auto_log)
+        self._config_watcher: ConfigWatcher | None = None
+        self._started = False
+
+    async def start(self) -> None:
+        """Start orchestration — spawn servers, build routing, ingest KB."""
+        self._registry.set_server_order(list(self._config.enabled_servers().keys()))
+        count = await self._server_manager.start_all()
+        self._build_routing_table()
+        self._ingest_tools_to_kb()
+        self._started = True
+        self._start_config_watcher()
+        _log(f"Orchestration started: {count}/{len(self._config.enabled_servers())} servers active")
+
+    def stop(self) -> None:
+        """Stop orchestration — kill all child processes."""
+        if not self._started:
+            return
+        if self._config_watcher:
+            self._config_watcher.stop()
+        self._server_manager.stop_all()
+        self._started = False
+        _log("Orchestration stopped")
+
+    async def route(self, tool_name: str, args: dict) -> str:
+        """Route a tool call to the appropriate child server."""
+        if not self._started:
+            raise RuntimeError("Orchestration not started")
+        start = time.time()
+        self._router.request_start_time = start
+        try:
+            timeout = self._get_timeout(tool_name)
+            result = await self._router.route(tool_name, args, timeout)
+            latency = int((time.time() - start) * 1000)
+            source = self._server_manager.find_server_for_tool(tool_name) or "unknown"
+            self._auto_logger.log_call(tool_name, str(args), result, latency, source)
+            return result
+        except Exception as e:
+            latency = int((time.time() - start) * 1000)
+            self._auto_logger.log_call(tool_name, str(args), str(e), latency, "unknown", True)
+            raise
+
+    def get_registry(self) -> UnifiedRegistry:
+        """Get the unified registry."""
+        return self._registry
+
+    def get_memory_engine(self) -> Any:
+        """Get memory engine for KB search."""
+        return self._memory_engine
+
+    def is_enabled(self) -> bool:
+        return self._started
+
+    def get_status(self) -> dict:
+        """Get orchestration status summary."""
+        return {
+            "enabled": self._started,
+            "servers": len(self._server_manager.get_status()),
+            "hiddenTools": len(self._registry.all_child_tools()),
+        }
+
+    def get_server_status(self) -> list[dict]:
+        return self._server_manager.get_server_status_info()
+
+    def get_metrics(self) -> dict[str, ToolMetrics]:
+        return self._router.get_metrics()
+
+    async def call_child(self, server_name: str, tool_name: str, args: dict) -> str:
+        """Call a tool directly on a specific child server."""
+        result = await self._server_manager.call_tool(server_name, tool_name, args, 30_000)
+        return self._extract_text(result)
+
+    def get_workspace(self) -> str:
+        return self._app_config.get("workspace", "")
+
+    def _build_routing_table(self) -> None:
+        """Build routing table from all active child servers."""
+        all_tools = self._server_manager.get_all_tools()
+        by_server: dict[str, list[dict]] = {}
+        for server_name, tool_def in all_tools:
+            by_server.setdefault(server_name, []).append(tool_def)
+        for server_name, tools in by_server.items():
+            self._registry.set_child_tools(server_name, tools)
+        self._routing_table.rebuild(set(), self._registry.child_tools_by_server())
+
+    def _ingest_tools_to_kb(self) -> None:
+        """Ingest child tool definitions into KB."""
+        mem = self._memory_engine
+        if not mem:
+            return
+        tools = self._registry.all_child_tools()
+        if not tools:
+            return
+        content = "\n".join(
+            f"{t.name} [{t.source}]: {t.definition.get('description', '')}" for t in tools
+        )
+        try:
+            mem.knowledge.insert_entry(
+                content=content,
+                summary=f"Orchestration child tools registry ({len(tools)} tools)",
+                entry_type="CONTEXT", tier="WORKING",
+                source="orchestration-startup", tags="tools,registry,orchestration",
+            )
+            _log(f"Ingested {len(tools)} child tool definitions into KB")
+        except Exception as e:
+            _log(f"Failed to ingest tools to KB: {e}")
+
+    def _start_config_watcher(self) -> None:
+        """Start config file watcher for hot-reload."""
+        workspace = self.get_workspace()
+        config_path = str(Path(workspace) / ".code-intel" / "orchestration.json")
+        self._config_watcher = ConfigWatcher(config_path, self._on_config_reload)
+        self._config_watcher.start()
+
+    def _on_config_reload(self, new_config: OrchestrationConfig) -> None:
+        """Handle config hot-reload."""
+        self._config = new_config
+        _log("Config hot-reloaded, rebuilding...")
+        asyncio.create_task(self._rebuild_after_reload(new_config))
+
+    async def _rebuild_after_reload(self, new_config: OrchestrationConfig) -> None:
+        """Stop all, restart with new config."""
+        self._server_manager.stop_all()
+        self._server_manager.update_config(new_config)
+        self._registry.set_server_order(list(new_config.enabled_servers().keys()))
+        await self._server_manager.start_all()
+        self._build_routing_table()
+        self._ingest_tools_to_kb()
+
+    def _get_timeout(self, tool_name: str) -> int:
+        """Get timeout for a tool based on its server config."""
+        server_name = self._server_manager.find_server_for_tool(tool_name)
+        if server_name and server_name in self._config.mcp_servers:
+            return self._config.mcp_servers[server_name].timeout
+        return 30_000
+
+    def _extract_text(self, result: Any) -> str:
+        if result is None:
+            return "{}"
+        if isinstance(result, dict):
+            content = result.get("content")
+            if isinstance(content, list) and content:
+                return content[0].get("text", "{}") if isinstance(content[0], dict) else "{}"
+        return str(result)
+
+
+def _log(msg: str) -> None:
+    print(f"[orchestration] {msg}", file=sys.stderr, flush=True)

@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   # --- Version gate: extract version from tag and verify it matches source ---
@@ -102,13 +103,16 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
-  # --- Build Kotlin JAR + Upload to GitHub Release ---
+  # --- Build Kotlin JAR + Publish to GitHub Packages + Upload to GitHub Release ---
   publish-kotlin:
     needs: version-check
     if: |
       needs.version-check.outputs.should_publish == 'true' &&
       (github.event.inputs.target != 'extension-only')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -117,6 +121,12 @@ jobs:
           java-version: '21'
       - run: chmod +x gradlew && ./gradlew shadowJar
         working-directory: mcp-code-intelligence-kotlin
+      - name: Publish to GitHub Packages (Maven)
+        run: ./gradlew publish
+        working-directory: mcp-code-intelligence-kotlin
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload JAR to GitHub Release
         uses: softprops/action-gh-release@v2
         with:

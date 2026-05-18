@@ -7,6 +7,7 @@ from .engine import MemoryEngine
 from .ingest import IngestPipeline
 from .hybrid_search import HybridSearch
 from .consolidation import TierConsolidator
+from .sync_code import MemSyncCode
 
 if TYPE_CHECKING:
     from .embedding import EmbeddingService
@@ -16,12 +17,14 @@ class MemoryToolDispatcher:
     """Routes mem_* tool calls to appropriate handlers."""
 
     def __init__(self, engine: MemoryEngine, workspace: str,
-                 embedding_service: "EmbeddingService | None" = None) -> None:
+                 embedding_service: "EmbeddingService | None" = None,
+                 query_layer: Any = None) -> None:
         self._engine = engine
         self._workspace = workspace
         self._pipeline = IngestPipeline(engine.knowledge, embedding_service)
         self._search = HybridSearch(engine.search, engine.graph)
         self._consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
+        self._sync_code = MemSyncCode(engine, query_layer, engine.graph) if query_layer else None
 
     def dispatch(self, name: str, args: dict[str, Any]) -> str | None:
         """Dispatch a memory tool call. Returns None if not a memory tool."""
@@ -37,6 +40,7 @@ class MemoryToolDispatcher:
             "mem_consolidate": self._handle_consolidate,
             "mem_audit": self._handle_audit,
             "mem_sessions": self._handle_sessions,
+            "mem_sync_code": self._handle_sync_code,
         }
         handler = handlers.get(name)
         if handler is None:
@@ -269,6 +273,11 @@ class MemoryToolDispatcher:
             lines.append(f"  Started: {s['started_at']} | {duration} | Observations: {s['observation_count']}")
             lines.append("")
         return "\n".join(lines)
+
+    def _handle_sync_code(self, args: dict[str, Any]) -> str:
+        if not self._sync_code:
+            return '{"error": "mem_sync_code requires query_layer (code indexer not available)"}'
+        return self._sync_code.execute(args)
 
     def _resolve_path(self, file_path: str) -> str:
         """Resolve file path relative to workspace."""

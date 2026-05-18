@@ -29,13 +29,16 @@ class OrchestrationEngine(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val serverManager = LocalServerManager(config, scope)
     private val routingTable = RoutingTable()
-    private val registry = UnifiedRegistry()
+    private val registry = UnifiedRegistry(config.settings.similarityThreshold)
     private val router = SmartRouter(serverManager, routingTable)
     private val autoLogger = AutoLogger(memoryEngine, config.settings.autoLog)
     private var configWatcher: ConfigWatcher? = null
     private var started = false
 
     val metaToolDispatcher: MetaToolDispatcher by lazy { MetaToolDispatcher(this) }
+
+    /** Expose memory engine for KB search in find_tools. */
+    fun getMemoryEngine(): MemoryEngine? = memoryEngine
 
     /** Start orchestration — spawn all child servers, build routing table, ingest to KB. */
     suspend fun start() {
@@ -118,8 +121,18 @@ class OrchestrationEngine(
         val byServer = allTools.groupBy({ it.first }, { it.second })
         for ((serverName, tools) in byServer) {
             registry.setChildTools(serverName, tools)
+            discoverNested(serverName, tools)
         }
         routingTable.rebuild(emptySet(), registry.childToolsByServer())
+    }
+
+    /** Detect nested orchestrators and log discovery. */
+    private fun discoverNested(serverName: String, tools: List<JsonObject>) {
+        val toolNames = tools.mapNotNull { it["name"]?.jsonPrimitive?.content }
+        val isNested = "find_tools" in toolNames || "execute_dynamic_tool" in toolNames
+        if (isNested) {
+            log("Nested orchestrator detected on '$serverName' — tools accessible via find_tools")
+        }
     }
 
     /** Ingest all child tool definitions into KB for searchability via find_tools. */

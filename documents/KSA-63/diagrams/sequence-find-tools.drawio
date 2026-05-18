@@ -1,0 +1,91 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="2" value="KSA-63: Sequence — find_tools Semantic Search" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="280" y="10" width="400" height="30" as="geometry" />
+    </mxCell>
+    <!-- Lifelines -->
+    <mxCell id="10" value="AI Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1">
+      <mxGeometry x="80" y="50" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="FindToolsTool" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1">
+      <mxGeometry x="260" y="50" width="100" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="UnifiedRegistry" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+      <mxGeometry x="450" y="50" width="120" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="MemoryEngine&#xa;(KB)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+      <mxGeometry x="660" y="50" width="120" height="600" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="Tokenizer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+      <mxGeometry x="870" y="50" width="100" height="600" as="geometry" />
+    </mxCell>
+    <!-- Messages -->
+    <mxCell id="20" value="1: find_tools(query=&quot;search issues&quot;)" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="120" as="sourcePoint" />
+        <mxPoint x="310" y="120" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="21" value="2: tokenize(query)" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="160" as="sourcePoint" />
+        <mxPoint x="920" y="160" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="22" value="3: [&quot;search&quot;, &quot;issues&quot;]" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="920" y="190" as="sourcePoint" />
+        <mxPoint x="310" y="190" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="23" value="4: searchWithTokens(terms)" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="230" as="sourcePoint" />
+        <mxPoint x="510" y="230" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="24" value="5: score each tool against terms&#xa;(name 2x, desc 1x)" style="html=1;verticalAlign=bottom;endArrow=block;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="260" as="sourcePoint" />
+        <mxPoint x="510" y="310" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="25" value="6: registryResults" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="330" as="sourcePoint" />
+        <mxPoint x="310" y="330" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="26" value="7: search(query, tags=&quot;tools,registry&quot;)" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="370" as="sourcePoint" />
+        <mxPoint x="720" y="370" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="27" value="8: kbResults (BM25 + vector)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="720" y="410" as="sourcePoint" />
+        <mxPoint x="310" y="410" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="28" value="9: merge + deduplicate + sort" style="html=1;verticalAlign=bottom;endArrow=block;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="440" as="sourcePoint" />
+        <mxPoint x="310" y="490" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="29" value="10: top-K results (sorted by score)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="520" as="sourcePoint" />
+        <mxPoint x="130" y="520" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <!-- Notes -->
+    <mxCell id="40" value="Parallel: Registry search&#xa;+ KB search" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="560" y="280" width="140" height="50" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

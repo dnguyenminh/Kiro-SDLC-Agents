@@ -51,7 +51,11 @@ data class ServerEntry(
 data class OrchSettings(
     val autoLog: AutoLogConfig = AutoLogConfig(),
     val healthCheckIntervalMs: Long = 30_000,
-    val maxRestartRetries: Int = 3
+    val maxRestartRetries: Int = 3,
+    val similarityThreshold: Double = 0.7,
+    val maxRecursionDepth: Int = 3,
+    val discoveryTimeoutMs: Long = 10_000,
+    val kbSearchTimeoutMs: Long = 2_000
 )
 
 @Serializable

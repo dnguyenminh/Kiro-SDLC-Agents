@@ -6,12 +6,15 @@
 import { SearchResult } from './models.js';
 import { KnowledgeSearchRepository } from './search-repo.js';
 import { KnowledgeGraph } from './knowledge-graph.js';
+import { typesForRole } from './role-filter.js';
+import { tierBoostFactor } from './tier-boost.js';
 
 export interface SearchParams {
   query: string;
   limit: number;
   tier?: string;
   type?: string;
+  role?: string;
   bm25Weight: number;
   graphWeight: number;
 }
@@ -60,18 +63,21 @@ export class HybridSearch {
   ): SearchResult[] {
     const ftsMap = new Map(ftsResults.map((r, i) => [r.entry.id, { result: r, rank: i }]));
     const allIds = new Set([...ftsMap.keys(), ...graphBoost.keys()]);
+    const roleTypes = typesForRole(params.role);
 
     const scored: Array<{ id: number; score: number; result?: SearchResult }> = [];
     for (const id of allIds) {
       const ftsEntry = ftsMap.get(id);
-      const ftsScore = ftsEntry ? this.rrfScore(ftsEntry.rank) * params.bm25Weight : 0;
+      if (!ftsEntry?.result) continue;
+      if (roleTypes && !roleTypes.has(ftsEntry.result.entry.type)) continue;
+      const ftsScore = this.rrfScore(ftsEntry.rank) * params.bm25Weight;
       const gScore = (graphBoost.get(id) ?? 0) * params.graphWeight;
-      const total = ftsScore + gScore;
-      scored.push({ id, score: total, result: ftsEntry?.result });
+      const boost = tierBoostFactor(ftsEntry.result.entry.tier);
+      const total = (ftsScore + gScore) * boost;
+      scored.push({ id, score: total, result: ftsEntry.result });
     }
 
     return scored
-      .filter(s => s.result !== undefined)
       .sort((a, b) => b.score - a.score)
       .slice(0, params.limit)
       .map(s => ({ ...s.result!, score: s.score, matchType: 'hybrid' }));

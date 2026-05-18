@@ -9,6 +9,7 @@ import { IngestPipeline } from './ingest-pipeline.js';
 import { HybridSearch, SearchParams } from './hybrid-search.js';
 import { TierConsolidator } from './tier-consolidator.js';
 import { EmbeddingService } from './embedding/index.js';
+import { MemSyncCode } from './sync-code.js';
 
 export class MemoryToolDispatcher {
   private readonly engine: MemoryEngine;
@@ -17,12 +18,19 @@ export class MemoryToolDispatcher {
   private readonly consolidator: TierConsolidator;
   private readonly workspace: string;
 
-  constructor(engine: MemoryEngine, workspace: string, embeddingService: EmbeddingService | null = null) {
+  private syncCode: MemSyncCode | null = null;
+  private queryLayer: any = null;
+
+  constructor(engine: MemoryEngine, workspace: string, embeddingService: EmbeddingService | null = null, queryLayer: any = null) {
     this.engine = engine;
     this.workspace = workspace;
     this.pipeline = new IngestPipeline(engine.knowledge, embeddingService);
     this.hybridSearch = new HybridSearch(engine.search, engine.graph);
     this.consolidator = new TierConsolidator(engine.knowledge, engine.consolidation);
+    this.queryLayer = queryLayer;
+    if (queryLayer) {
+      this.syncCode = new MemSyncCode(engine, queryLayer, engine.graph);
+    }
   }
 
   /** Dispatch a memory tool call. Returns null if not a memory tool. */
@@ -39,6 +47,7 @@ export class MemoryToolDispatcher {
       case 'mem_consolidate': return this.handleConsolidate();
       case 'mem_audit': return this.handleAudit(args);
       case 'mem_sessions': return this.handleSessions(args);
+      case 'mem_sync_code': return this.handleSyncCode(args);
       default: return null;
     }
   }
@@ -253,6 +262,11 @@ export class MemoryToolDispatcher {
       lines.push('');
     }
     return lines.join('\n');
+  }
+
+  private handleSyncCode(args: Record<string, unknown>): string {
+    if (!this.syncCode) return '{"error": "mem_sync_code requires queryLayer (code indexer not available)"}';
+    return this.syncCode.execute(args as Record<string, any>);
   }
 
   private resolvePath(filePath: string): string {

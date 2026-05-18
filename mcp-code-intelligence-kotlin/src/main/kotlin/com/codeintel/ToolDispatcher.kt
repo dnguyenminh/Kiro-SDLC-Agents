@@ -67,8 +67,9 @@ class ToolDispatcher(
         args: JsonObject
     ): String {
         for (entry in chain.entries) {
+            val actualName = entry.toolName ?: name
             try {
-                return runBlocking { engine.callChild(entry.serverName, name, args) }
+                return runBlocking { engine.callChild(entry.serverName, actualName, args) }
             } catch (_: Exception) { /* try next in chain */ }
         }
         return """{"error":"Tool '$name' failed on all servers in chain"}"""

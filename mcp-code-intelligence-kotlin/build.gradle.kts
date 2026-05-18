@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.shadow)
+    `maven-publish`
     application
 }
 
@@ -49,4 +50,25 @@ tasks.shadowJar {
     archiveClassifier.set("")
     archiveVersion.set("latest")
     mergeServiceFiles()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.codeintel"
+            artifactId = "mcp-code-intelligence-kotlin"
+            version = project.version.toString()
+            artifact(tasks.shadowJar)
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/dnguyenminh/Kiro-SDLC-Agents")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: project.findProperty("gpr.user") as String?
+                password = System.getenv("GITHUB_TOKEN") ?: project.findProperty("gpr.key") as String?
+            }
+        }
+    }
 }

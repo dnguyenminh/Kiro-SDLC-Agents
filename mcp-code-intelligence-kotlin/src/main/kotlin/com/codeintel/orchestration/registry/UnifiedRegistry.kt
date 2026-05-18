@@ -12,24 +12,33 @@ data class RegisteredTool(
     val name: String,
     val definition: JsonObject,
     val source: String,
-    val priority: Int = 0
+    val priority: Int = 0,
+    val nameTokens: Set<String> = emptySet(),
+    val descTokens: Set<String> = emptySet()
 )
 
 /** Ordered chain of servers that provide the same tool name. */
 data class ToolChain(
     val toolName: String,
-    val entries: List<ChainEntry>
+    val entries: List<ChainEntry>,
+    val groupingReason: String = "exact_name",
+    val similarNames: Set<String> = emptySet()
 )
 
-data class ChainEntry(val serverName: String, val priority: Int)
+data class ChainEntry(
+    val serverName: String,
+    val priority: Int,
+    val toolName: String? = null
+)
 
-class UnifiedRegistry {
+class UnifiedRegistry(private val similarityThreshold: Double = 0.7) {
     private var nativeTools: List<RegisteredTool> = emptyList()
     private var childTools: List<RegisteredTool> = emptyList()
     private var merged: List<RegisteredTool> = emptyList()
     private val toggles = mutableMapOf<String, Boolean>()
     private val chains = mutableMapOf<String, ToolChain>()
     private var serverOrder: List<String> = emptyList()
+    private val hits = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
 
     /** Set config-declared server order (determines fallback priority). */
     fun setServerOrder(order: List<String>) { serverOrder = order }
@@ -38,7 +47,8 @@ class UnifiedRegistry {
     fun setNativeTools(tools: List<JsonObject>) {
         nativeTools = tools.map { def ->
             val name = def["name"]?.jsonPrimitive?.content ?: "unknown"
-            RegisteredTool(name, def, "native", priority = Int.MAX_VALUE)
+            val desc = def["description"]?.jsonPrimitive?.content ?: ""
+            RegisteredTool(name, def, "native", Int.MAX_VALUE, Tokenizer.tokenize(name), Tokenizer.tokenize(desc))
         }
         rebuild()
     }
@@ -53,7 +63,8 @@ class UnifiedRegistry {
         childTools = childTools.filter { it.source != "child:$serverName" } +
             filtered.map { def ->
                 val name = def["name"]?.jsonPrimitive?.content ?: "unknown"
-                RegisteredTool(name, def, "child:$serverName", priority)
+                val desc = def["description"]?.jsonPrimitive?.content ?: ""
+                RegisteredTool(name, def, "child:$serverName", priority, Tokenizer.tokenize(name), Tokenizer.tokenize(desc))
             }
         rebuild()
     }
@@ -75,16 +86,60 @@ class UnifiedRegistry {
     /** Get fallback chain for a tool name — ordered by config priority (lower = higher). */
     fun getChain(toolName: String): ToolChain? = chains[toolName]
 
-    /** Fuzzy search tools by name or description keyword. */
+    /** Tokenized search — scores tools by relevance + popularity (hits). */
     fun search(query: String): List<RegisteredTool> {
-        val q = query.lowercase()
-        return merged.filter { tool ->
-            isEnabled(tool.name) && (
-                tool.name.lowercase().contains(q) ||
-                tool.definition.toString().lowercase().contains(q)
-            )
+        val terms = Tokenizer.tokenize(query)
+        if (terms.isEmpty()) return merged.filter { isEnabled(it.name) }
+        val maxHits = hits.values.maxOfOrNull { it.get() }?.coerceAtLeast(1) ?: 1
+        return merged
+            .filter { isEnabled(it.name) }
+            .map { tool -> tool to combinedScore(tool, terms, maxHits) }
+            .filter { it.second > 0.0 }
+            .sortedByDescending { it.second }
+            .map { it.first }
+    }
+
+    private fun combinedScore(tool: RegisteredTool, terms: Set<String>, maxHits: Int): Double {
+        val relevance = scoreAgainstTerms(tool, terms)
+        if (relevance <= 0.0) return 0.0
+        val toolHits = hits[tool.name]?.get() ?: 0
+        val normalizedHits = toolHits.toDouble() / maxHits.toDouble()
+        return relevance * 0.7 + normalizedHits * 0.3
+    }
+
+    private fun scoreAgainstTerms(tool: RegisteredTool, queryTerms: Set<String>): Double {
+        var score = 0.0
+        for (term in queryTerms) {
+            when {
+                term in tool.nameTokens -> score += 2.0
+                tool.descTokens.any { it.contains(term) } -> score += 1.0
+            }
+        }
+        return if (queryTerms.isNotEmpty()) score / (queryTerms.size * 2.0) else 0.0
+    }
+
+    /** Record a successful tool execution hit. Triggers decay if threshold exceeded. */
+    fun recordHit(toolName: String) {
+        val counter = hits.computeIfAbsent(toolName) { java.util.concurrent.atomic.AtomicInteger(0) }
+        val newVal = counter.incrementAndGet()
+        if (newVal > 1000) applyDecay(toolName)
+    }
+
+    /** Decay: subtract 500 from all tools in same chain/group. Floor at -2000. */
+    private fun applyDecay(triggerTool: String) {
+        val chain = chains[triggerTool]
+        val groupNames = if (chain != null) {
+            chain.entries.map { it.toolName ?: chain.toolName }.toSet() + chain.similarNames
+        } else setOf(triggerTool)
+        for (name in groupNames) {
+            val c = hits[name] ?: continue
+            c.addAndGet(-500)
+            if (c.get() < -2000) c.set(-2000)
         }
     }
+
+    /** Get current hits for a tool (for testing/observability). */
+    fun getHits(toolName: String): Int = hits[toolName]?.get() ?: 0
 
     /** Toggle a tool on/off for this session. */
     fun toggle(toolName: String, enabled: Boolean) { toggles[toolName] = enabled }
@@ -111,14 +166,9 @@ class UnifiedRegistry {
     }
 
     private fun rebuildChains() {
+        val grouper = SemanticGrouper(similarityThreshold)
+        val newChains = grouper.buildChains(childTools)
         chains.clear()
-        val grouped = childTools.groupBy { it.name }
-        for ((name, tools) in grouped) {
-            if (tools.size < 2) continue
-            val entries = tools
-                .map { ChainEntry(it.source.removePrefix("child:"), it.priority) }
-                .sortedBy { it.priority }
-            chains[name] = ToolChain(name, entries)
-        }
+        chains.putAll(newChains)
     }
 }

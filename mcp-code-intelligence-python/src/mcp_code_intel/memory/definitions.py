@@ -126,4 +126,15 @@ MEMORY_TOOL_DEFINITIONS = [
             },
         },
     },
+    {
+        "name": "mem_sync_code",
+        "description": "Sync code symbols (classes, interfaces) into memory graph with cross-references to documents. Creates CODE_ENTITY nodes and IMPLEMENTED_BY edges.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "kind": {"type": "string", "description": "Filter by kind: class, interface, function (default: class+interface)"},
+                "limit": {"type": "number", "description": "Max symbols to sync (default 10000)"},
+            },
+        },
+    },
 ]

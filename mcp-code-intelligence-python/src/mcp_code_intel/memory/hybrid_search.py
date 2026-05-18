@@ -4,10 +4,12 @@ from typing import Any
 
 from .search_repo import KnowledgeSearchRepository
 from .knowledge_graph import KnowledgeGraph
+from .role_filter import types_for_role
+from .tier_boost import factor as tier_boost_factor
 
 
 class HybridSearch:
-    """Hybrid search with RRF fusion (BM25 + graph boost)."""
+    """Hybrid search with RRF fusion (BM25 + graph boost + role filter + tier boost)."""
 
     def __init__(self, fts_repo: KnowledgeSearchRepository,
                  graph: KnowledgeGraph) -> None:
@@ -15,11 +17,11 @@ class HybridSearch:
         self._graph = graph
 
     def search(self, query: str, limit: int = 10,
-               tier: str | None = None) -> list[dict[str, Any]]:
+               tier: str | None = None, role: str | None = None) -> list[dict[str, Any]]:
         """Execute hybrid search."""
         fts_results = self._search_fts(query, tier, limit * 2)
         graph_boost = self._compute_graph_boost(fts_results)
-        return self._fuse(fts_results, graph_boost, limit)
+        return self._fuse(fts_results, graph_boost, limit, role)
 
     def _search_fts(self, query: str, tier: str | None,
                     limit: int) -> list[dict[str, Any]]:
@@ -37,19 +39,28 @@ class HybridSearch:
         return {k: v / max_boost for k, v in boosted.items()}
 
     def _fuse(self, fts_results: list[dict[str, Any]],
-              graph_boost: dict[int, float], limit: int) -> list[dict[str, Any]]:
+              graph_boost: dict[int, float], limit: int,
+              role: str | None = None) -> list[dict[str, Any]]:
         bm25_weight = 0.6
         graph_weight = 0.4
+        role_types = types_for_role(role)
         fts_map = {r["entry"]["id"]: (r, i) for i, r in enumerate(fts_results)}
         all_ids = set(fts_map.keys()) | set(graph_boost.keys())
 
         scored: list[tuple[float, dict[str, Any] | None]] = []
         for entry_id in all_ids:
             fts_entry = fts_map.get(entry_id)
-            fts_score = self._rrf_score(fts_entry[1]) * bm25_weight if fts_entry else 0
+            if fts_entry is None:
+                continue
+            result, rank = fts_entry
+            entry_type = result.get("entry", {}).get("type", "")
+            if role_types and entry_type not in role_types:
+                continue
+            fts_score = self._rrf_score(rank) * bm25_weight
             g_score = graph_boost.get(entry_id, 0) * graph_weight
-            total = fts_score + g_score
-            result = fts_entry[0] if fts_entry else None
+            entry_tier = result.get("entry", {}).get("tier")
+            boost = tier_boost_factor(entry_tier)
+            total = (fts_score + g_score) * boost
             scored.append((total, result))
 
         scored.sort(key=lambda x: x[0], reverse=True)

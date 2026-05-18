@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "name": "Stream Agent Response",
-  "description": "When agent completes a response, call HTTP ingest endpoint via curl to log AI activity.",
-  "version": "2",
+  "description": "When agent completes a response, use mem_ingest MCP tool to log AI activity.",
+  "version": "3",
   "when": {
     "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Agent just finished responding. Use the shell tool to run: curl -s -X POST http://localhost:3200/api/memory/ingest -H \"Content-Type: application/json\" -d with JSON body {\"content\": \"<1-sentence summary of what agent did, max 150 chars>\", \"type\": \"CONTEXT\", \"source\": \"chat-response\", \"tags\": \"chat,stream,agent\"}. Do NOT use mem_ingest MCP tool — use curl only. Do NOT add commentary."
+    "prompt": "Agent just finished responding. Use the mem_ingest MCP tool to log a 1-sentence summary (max 150 chars) of what you just did. Parameters: content=<summary>, type=CONTEXT, source=chat-response, tags=chat,stream,agent. Do NOT add commentary."
   }
 }

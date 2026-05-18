@@ -34,19 +34,25 @@ class ExecuteDynamicTool(private val engine: OrchestrationEngine) {
         toolName: String,
         args: JsonObject
     ): String {
+        val errors = mutableListOf<String>()
         for (entry in chain.entries) {
-            val result = tryServer(entry.serverName, toolName, args)
+            val actualName = entry.toolName ?: toolName
+            val result = tryServer(entry.serverName, actualName, args)
             if (result != null) {
                 log("[execute_dynamic_tool] $toolName succeeded on ${entry.serverName}")
+                engine.getRegistry().recordHit(toolName)
                 return result
             }
+            errors.add("${entry.serverName}: failed")
         }
-        return errorJson("Tool '$toolName' failed on all ${chain.entries.size} servers in chain")
+        return errorJson("Tool '$toolName' failed on all ${chain.entries.size} servers in chain: $errors")
     }
 
     private fun routeKnownTool(toolName: String, args: JsonObject): String {
         return try {
-            runBlocking { engine.route(toolName, args) }
+            val result = runBlocking { engine.route(toolName, args) }
+            engine.getRegistry().recordHit(toolName)
+            result
         } catch (e: Exception) {
             errorJson(e.message?.replace("\"", "'") ?: "Execution failed")
         }

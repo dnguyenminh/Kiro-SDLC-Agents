@@ -1,0 +1,80 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="2" value="KSA-63: State Diagram — Fallback Chain Lifecycle" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="300" y="20" width="420" height="30" as="geometry" />
+    </mxCell>
+    <!-- States -->
+    <mxCell id="5" value="" style="ellipse;html=1;shape=doubleCircle;whiteSpace=wrap;fillColor=#000000;strokeColor=#000000" vertex="1" parent="1">
+      <mxGeometry x="80" y="100" width="30" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="NOT_BUILT&#xa;(No chains exist)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="200" y="90" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="DISCOVERING&#xa;(Fetching tools from servers)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="450" y="90" width="200" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="GROUPING&#xa;(Computing semantic similarity&#xa;&amp; building chains)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="730" y="90" width="220" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="ACTIVE&#xa;(Chains ready for execution)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="450" y="250" width="200" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="REBUILDING&#xa;(Config changed, rebuilding)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="730" y="250" width="200" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="DEGRADED&#xa;(Some servers offline,&#xa;partial chains)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="200" y="250" width="180" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="STOPPED&#xa;(Engine shutdown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11" vertex="1" parent="1">
+      <mxGeometry x="450" y="400" width="200" height="50" as="geometry" />
+    </mxCell>
+    <!-- Transitions -->
+    <mxCell id="20" value="start()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="startAll() called" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="10" target="11" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="all tools fetched" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="11" target="12" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="chains built" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="12" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="24" value="config hot-reload" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="13" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="25" value="rebuild complete" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="14" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="830" y="320" />
+          <mxPoint x="550" y="320" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="26" value="server goes offline" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="13" target="15" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="27" value="server reconnects" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="15" target="13" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="290" y="220" />
+          <mxPoint x="550" y="220" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="28" value="stop()" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="13" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="29" value="stop()" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="15" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <!-- Notes -->
+    <mxCell id="40" value="In DEGRADED state:&#xa;• Chains still work for available servers&#xa;• Offline server entries are skipped&#xa;• No error thrown until all in chain fail" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="60" y="350" width="280" height="80" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
