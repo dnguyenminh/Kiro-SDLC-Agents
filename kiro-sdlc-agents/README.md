@@ -55,7 +55,7 @@ Starting in v1.2.0, code intelligence is powered by an MCP server instead of bun
   "mcpServers": {
     "code-intelligence": {
       "command": "uvx",
-      "args": ["mcp-code-intelligence@latest", "--workspace", "${workspaceFolder}"]
+      "args": ["mcp-code-intel@latest", "--workspace", "${workspaceFolder}"]
     }
   }
 }

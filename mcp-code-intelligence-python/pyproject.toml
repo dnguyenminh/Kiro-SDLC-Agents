@@ -1,9 +1,13 @@
 [project]
 name = "mcp-code-intel"
-version = "0.2.3"
+version = "0.2.4"
 description = "MCP Code Intelligence Server — Python variant with FTS5 search"
 requires-python = ">=3.11"
 license = {text = "MIT"}
+dependencies = [
+    "numpy>=1.24.0",
+    "onnxruntime>=1.16.0",
+]
 
 [project.optional-dependencies]
 watch = ["watchdog>=3.0"]
