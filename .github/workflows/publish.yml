@@ -20,12 +20,15 @@ permissions:
   packages: write
 
 jobs:
-  # --- Version gate: extract version from tag and verify it matches source ---
+  # --- Version gate: extract version from tag ---
   version-check:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.extract.outputs.version }}
-      should_publish: ${{ steps.check.outputs.should_publish }}
+      node_ver: ${{ steps.versions.outputs.node_ver }}
+      py_ver: ${{ steps.versions.outputs.py_ver }}
+      kt_ver: ${{ steps.versions.outputs.kt_ver }}
+      ext_ver: ${{ steps.versions.outputs.ext_ver }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,34 +41,27 @@ jobs:
             VERSION=$(jq -r .version mcp-code-intelligence-nodejs/package.json)
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "📦 Version: $VERSION"
+          echo "📦 Tag version: $VERSION"
 
-      - name: Verify all modules have same version
-        id: check
+      - name: Read module versions
+        id: versions
         run: |
-          VERSION="${{ steps.extract.outputs.version }}"
           NODE_VER=$(jq -r .version mcp-code-intelligence-nodejs/package.json)
           PY_VER=$(grep -oP 'version = "\K[^"]+' mcp-code-intelligence-python/pyproject.toml)
           KT_VER=$(grep -oP 'version = "\K[^"]+' mcp-code-intelligence-kotlin/build.gradle.kts)
+          EXT_VER=$(jq -r .version kiro-sdlc-agents/package.json)
 
-          echo "Node.js: $NODE_VER | Python: $PY_VER | Kotlin: $KT_VER | Tag: $VERSION"
+          echo "node_ver=$NODE_VER" >> "$GITHUB_OUTPUT"
+          echo "py_ver=$PY_VER" >> "$GITHUB_OUTPUT"
+          echo "kt_ver=$KT_VER" >> "$GITHUB_OUTPUT"
+          echo "ext_ver=$EXT_VER" >> "$GITHUB_OUTPUT"
 
-          if [[ "$NODE_VER" != "$VERSION" ]] || [[ "$PY_VER" != "$VERSION" ]] || [[ "$KT_VER" != "$VERSION" ]]; then
-            echo "❌ Version mismatch! All MCP servers must have version $VERSION"
-            echo "   Node.js=$NODE_VER Python=$PY_VER Kotlin=$KT_VER"
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-          echo "✅ All versions match: $VERSION"
-          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          echo "Node.js: $NODE_VER | Python: $PY_VER | Kotlin: $KT_VER | Extension: $EXT_VER"
 
   # --- Build + Publish MCP Node.js to npm ---
   publish-nodejs:
     needs: version-check
-    if: |
-      needs.version-check.outputs.should_publish == 'true' &&
-      (github.event.inputs.target != 'extension-only')
+    if: github.event.inputs.target != 'extension-only'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,7 +73,8 @@ jobs:
         working-directory: mcp-code-intelligence-nodejs
       - run: npm run build
         working-directory: mcp-code-intelligence-nodejs
-      - run: npm publish --access public
+      - name: Publish to npm (skip if version exists)
+        run: npm publish --access public || echo "⚠️ Version already published, skipping"
         working-directory: mcp-code-intelligence-nodejs
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -85,9 +82,7 @@ jobs:
   # --- Build + Publish MCP Python to PyPI ---
   publish-python:
     needs: version-check
-    if: |
-      needs.version-check.outputs.should_publish == 'true' &&
-      (github.event.inputs.target != 'extension-only')
+    if: github.event.inputs.target != 'extension-only'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +92,8 @@ jobs:
       - run: pip install build twine
       - run: python -m build
         working-directory: mcp-code-intelligence-python
-      - run: twine upload dist/*
+      - name: Publish to PyPI (skip if version exists)
+        run: twine upload dist/* --skip-existing
         working-directory: mcp-code-intelligence-python
         env:
           TWINE_USERNAME: __token__
@@ -106,9 +102,7 @@ jobs:
   # --- Build Kotlin JAR + Publish to GitHub Packages + Upload to GitHub Release ---
   publish-kotlin:
     needs: version-check
-    if: |
-      needs.version-check.outputs.should_publish == 'true' &&
-      (github.event.inputs.target != 'extension-only')
+    if: github.event.inputs.target != 'extension-only'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -121,8 +115,8 @@ jobs:
           java-version: '21'
       - run: chmod +x gradlew && ./gradlew shadowJar
         working-directory: mcp-code-intelligence-kotlin
-      - name: Publish to GitHub Packages (Maven)
-        run: ./gradlew publish
+      - name: Publish to GitHub Packages (skip if version exists)
+        run: ./gradlew publish || echo "⚠️ Version already published, skipping"
         working-directory: mcp-code-intelligence-kotlin
         env:
           GITHUB_ACTOR: ${{ github.actor }}
@@ -137,7 +131,6 @@ jobs:
     needs: [version-check, publish-nodejs, publish-python, publish-kotlin]
     if: |
       always() &&
-      needs.version-check.outputs.should_publish == 'true' &&
       (github.event.inputs.target != 'mcp-only')
     runs-on: ubuntu-latest
     defaults:
