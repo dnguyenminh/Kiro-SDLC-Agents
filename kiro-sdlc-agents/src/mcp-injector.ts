@@ -43,6 +43,7 @@ export async function injectMcpConfig(root: string): Promise<string | null> {
 
     const resolvedConfig = resolveConfig(variant, ollamaEnv, root);
     writeMcpConfig(root, resolvedConfig);
+    writeDefaultOrchestrationConfig(root);
     return variant.id;
 }
 
@@ -145,6 +146,28 @@ function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>, r
     config.env = env;
 
     return config;
+}
+
+/** Create default .code-intel/orchestration.json if not exists. */
+function writeDefaultOrchestrationConfig(root: string): void {
+    const orchPath = path.join(root, ".code-intel", "orchestration.json");
+    if (fs.existsSync(orchPath)) { return; }
+
+    const defaultConfig = {
+        mcpServers: {},
+        settings: {
+            autoLog: { enabled: true, excludeTools: ["mem_audit", "mem_status"], maxArgLength: 200 },
+            healthCheckIntervalMs: 30000,
+            maxRestartRetries: 3,
+            similarityThreshold: 0.7,
+            maxRecursionDepth: 3,
+            discoveryTimeoutMs: 10000,
+            kbSearchTimeoutMs: 2000
+        }
+    };
+
+    fs.mkdirSync(path.dirname(orchPath), { recursive: true });
+    fs.writeFileSync(orchPath, JSON.stringify(defaultConfig, null, 2));
 }
 
 /** Write MCP config to .kiro/settings/mcp.json (merge, not overwrite). */
