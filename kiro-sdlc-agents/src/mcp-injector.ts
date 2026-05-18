@@ -135,10 +135,14 @@ function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>, r
         config.cwd = variant.config.cwd.replace("${mcpServersDir}", serversDir);
     }
 
-    // Inject Ollama env vars if user enabled it
-    if (Object.keys(ollamaEnv).length > 0) {
-        config.env = ollamaEnv;
-    }
+    // Build env: required vars + Ollama vars (if enabled)
+    const env: Record<string, string> = {
+        CODE_INTEL_WORKSPACE: root,
+        CODE_INTEL_VIEWER_PORT: "3200",
+        FORCE_RESTART: "15",
+        ...ollamaEnv
+    };
+    config.env = env;
 
     return config;
 }
