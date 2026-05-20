@@ -4,7 +4,7 @@
  */
 
 import { OrchestrationEngine } from '../engine.js';
-import { executeFindTools } from './find-tools.js';
+import { executeFindTools, executeFindToolsAsync } from './find-tools.js';
 import { executeDynamic } from './execute-dynamic.js';
 import { AGENT_LOG_DEFINITION, executeAgentLog } from './agent-log.js';
 import { MANAGE_AUTO_APPROVE_DEFINITION, executeManageAutoApprove } from './manage-auto-approve.js';
@@ -47,7 +47,7 @@ export class MetaToolDispatcher {
   /** Dispatch a meta-tool call. Returns null if not a meta-tool. */
   async dispatch(toolName: string, args: Record<string, any>): Promise<string | null> {
     if (!META_TOOL_NAMES.has(toolName)) return null;
-    if (toolName === 'find_tools') return executeFindTools(this.engine, args);
+    if (toolName === 'find_tools') return executeFindToolsAsync(this.engine, args);
     if (toolName === 'execute_dynamic_tool') return executeDynamic(this.engine, args);
     if (toolName === 'toggle_tool') return this.handleToggle(args);
     if (toolName === 'reset_tools') return this.handleReset();

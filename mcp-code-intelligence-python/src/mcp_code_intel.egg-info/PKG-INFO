@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: mcp-code-intel
+Version: 0.2.4
+Summary: MCP Code Intelligence Server — Python variant with FTS5 search
+License: MIT
+Requires-Python: >=3.11
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: onnxruntime>=1.16.0
+Provides-Extra: watch
+Requires-Dist: watchdog>=3.0; extra == "watch"
+Provides-Extra: embedding
+Requires-Dist: onnxruntime>=1.16.0; extra == "embedding"
+Requires-Dist: numpy>=1.24.0; extra == "embedding"

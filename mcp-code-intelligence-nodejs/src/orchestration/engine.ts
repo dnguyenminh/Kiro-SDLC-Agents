@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import { OrchestrationConfig, enabledServers } from './config.js';
-import { LocalServerManager, ConfigWatcher } from './local/index.js';
+import { LocalServerManager, ConfigWatcher, ServerState } from './local/index.js';
 import { UnifiedRegistry } from './registry/index.js';
 import { RoutingTable, SmartRouter, ToolMetrics } from './routing/index.js';
 import { AutoLogger } from './logging/auto-logger.js';
@@ -23,6 +23,8 @@ export class OrchestrationEngine {
   private autoLogger: AutoLogger;
   private configWatcher: ConfigWatcher | null = null;
   private started = false;
+  private findToolsDelegates: string[] = [];
+  private toolMapping = new Map<string, [string, string]>();
 
   constructor(config: OrchestrationConfig, memoryEngine: any, appConfig: any) {
     this.config = config;
@@ -97,6 +99,32 @@ export class OrchestrationEngine {
 
   getWorkspace(): string { return this.appConfig?.workspace ?? ''; }
 
+  /** Get server names that have nested find_tools capability. */
+  getFindToolsDelegates(): string[] { return this.findToolsDelegates; }
+
+  /** Get (serverName, originalName) for a previously discovered nested tool. */
+  getToolMapping(toolName: string): [string, string] | null {
+    return this.toolMapping.get(toolName) ?? null;
+  }
+
+  /** Register a tool discovered via nested find_tools delegation. */
+  registerNestedTool(uniqueName: string, serverName: string, originalName: string, definition: Record<string, any>): void {
+    this.toolMapping.set(uniqueName, [serverName, originalName]);
+    this.toolMapping.set(originalName, [serverName, originalName]);
+    this.registry.registerNested(uniqueName, serverName, definition);
+    this.routingTable.addRoute(originalName, serverName);
+  }
+
+  /** Get all active child server names. */
+  getChildServerNames(): string[] {
+    const status = this.serverManager.getStatus();
+    const result: string[] = [];
+    for (const [name, state] of status) {
+      if (state === ServerState.ACTIVE) result.push(name);
+    }
+    return result;
+  }
+
   private buildRoutingTable(): void {
     const allTools = this.serverManager.getAllTools();
     const byServer = new Map<string, Record<string, any>[]>();
@@ -109,6 +137,18 @@ export class OrchestrationEngine {
       this.registry.setChildTools(serverName, tools);
     }
     this.routingTable.rebuild(new Set(), this.registry.childToolsByServer());
+    this.buildDelegationList(allTools);
+  }
+
+  /** Identify child servers that expose find_tools (nested orchestrators). */
+  private buildDelegationList(allTools: Array<[string, Record<string, any>]>): void {
+    this.findToolsDelegates = [];
+    const serversWithFind = new Set<string>();
+    for (const [serverName, toolDef] of allTools) {
+      if (toolDef.name === 'find_tools') serversWithFind.add(serverName);
+    }
+    this.findToolsDelegates = [...serversWithFind];
+    console.error(`[orchestration] Delegation list: find_tools → [${this.findToolsDelegates.join(', ')}]`);
   }
 
   private ingestToolsToKb(): void {

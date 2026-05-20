@@ -10,6 +10,7 @@ package com.codeintel
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -83,21 +84,33 @@ data class Config(
 
         /** Set workspace from MCP initialize roots (only if CLI/env not set). */
         fun withWorkspace(rootUri: String?): Config {
-            // CLI arg and env var take priority over initialize roots
+            // CLI arg takes highest priority
             if (resolveWorkspaceFromCli() != null) return load()
+            // Env var (may not be available on Windows via Kiro)
             val env = System.getenv("CODE_INTEL_WORKSPACE")
             if (!env.isNullOrBlank()) return load()
+            // System property (-D flag)
+            val prop = System.getProperty("CODE_INTEL_WORKSPACE")
+            if (!prop.isNullOrBlank()) return buildConfig(Path.of(prop).toAbsolutePath().toString())
+            // Detect workspace from JAR location
+            val jarWorkspace = resolveWorkspaceFromJarLocation()
+            log("DEBUG withWorkspace: env=$env, prop=$prop, jarWs=$jarWorkspace, rootUri=$rootUri, cmd=${System.getProperty("sun.java.command")?.take(200)}")
+            if (jarWorkspace != null) return buildConfig(jarWorkspace)
+            // Finally try initialize roots
             val workspace = resolveWorkspaceFromRoots(rootUri)
             return buildConfig(workspace)
         }
 
-        /** Parse --viewer-port from CLI args. */
+        /** Parse --viewer-port from CLI args, system properties, or env vars. */
         fun resolveViewerPort(): Int {
             val idx = cliArgs.indexOf("--viewer-port")
             if (idx >= 0 && idx + 1 < cliArgs.size) {
                 return cliArgs[idx + 1].toIntOrNull() ?: 3200
             }
-            return System.getenv("VIEWER_PORT")?.toIntOrNull() ?: 3200
+            return System.getProperty("CODE_INTEL_VIEWER_PORT")?.toIntOrNull()
+                ?: System.getenv("CODE_INTEL_VIEWER_PORT")?.toIntOrNull()
+                ?: System.getenv("VIEWER_PORT")?.toIntOrNull()
+                ?: 3200
         }
 
         private fun resolveWorkspaceFromCli(): String? {
@@ -129,7 +142,50 @@ private val json = Json { ignoreUnknownKeys = true }
 private fun resolveWorkspaceFromEnv(): String {
     val env = System.getenv("CODE_INTEL_WORKSPACE")
     if (!env.isNullOrBlank()) return Path.of(env).toAbsolutePath().toString()
+    val prop = System.getProperty("CODE_INTEL_WORKSPACE")
+    if (!prop.isNullOrBlank()) return Path.of(prop).toAbsolutePath().toString()
+    // Detect from JAR location
+    val jarWs = resolveWorkspaceFromJarLocation()
+    if (jarWs != null) return jarWs
+    log("⚠️ Workspace fallback to user.dir=${System.getProperty("user.dir")} — env and JAR detection both failed")
     return System.getProperty("user.dir")
+}
+
+/** Detect workspace from JAR file location (JAR is at workspace/mcp-code-intelligence-kotlin/build/libs/). */
+private fun resolveWorkspaceFromJarLocation(): String? {
+    try {
+        // Method 1: From sun.java.command (contains full JAR path on most JVMs)
+        val cmd = System.getProperty("sun.java.command") ?: ""
+        val jarMatch = Regex("""(.+[/\\]mcp-code-intelligence-kotlin[/\\]build[/\\]libs[/\\][^"'\s]+\.jar)""").find(cmd)
+        if (jarMatch != null) {
+            val jarPath = Path.of(jarMatch.groupValues[1])
+            val candidate = jarPath.parent?.parent?.parent?.parent
+            if (candidate != null && candidate.resolve("shared").resolve("viewer").resolve("index.html").toFile().exists()) {
+                return candidate.toAbsolutePath().toString()
+            }
+        }
+        // Method 2: From java.class.path
+        val classPath = System.getProperty("java.class.path") ?: ""
+        for (entry in classPath.split(File.pathSeparator)) {
+            if (entry.contains("mcp-code-intelligence-kotlin") && entry.contains("build")) {
+                val jarPath = Path.of(entry)
+                val candidate = jarPath.parent?.parent?.parent?.parent
+                if (candidate != null && candidate.resolve("shared").resolve("viewer").resolve("index.html").toFile().exists()) {
+                    return candidate.toAbsolutePath().toString()
+                }
+            }
+        }
+        // Method 3: From protectionDomain
+        val url = Config::class.java.protectionDomain?.codeSource?.location
+        if (url != null) {
+            val jarFile = Path.of(url.toURI())
+            val candidate = jarFile.parent?.parent?.parent?.parent
+            if (candidate != null && candidate.resolve("shared").resolve("viewer").resolve("index.html").toFile().exists()) {
+                return candidate.toAbsolutePath().toString()
+            }
+        }
+    } catch (_: Exception) {}
+    return null
 }
 
 private fun resolveWorkspaceFromRoots(rootUri: String?): String {

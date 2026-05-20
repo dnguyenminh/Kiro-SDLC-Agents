@@ -33,12 +33,17 @@ class OrchestrationEngine:
         self._auto_logger = AutoLogger(memory_engine, config.settings.auto_log)
         self._config_watcher: ConfigWatcher | None = None
         self._started = False
+        self._find_tools_delegates: list[str] = []
+        self._exec_delegates: list[str] = []
+        self._tool_mapping: dict[str, tuple[str, str]] = {}
 
     async def start(self) -> None:
         """Start orchestration — spawn servers, build routing, ingest KB."""
+        self._orch_loop = asyncio.get_event_loop()  # Store reference to running loop
         self._registry.set_server_order(list(self._config.enabled_servers().keys()))
         count = await self._server_manager.start_all()
         self._build_routing_table()
+        self._build_delegation_list()
         self._ingest_tools_to_kb()
         self._started = True
         self._start_config_watcher()
@@ -97,13 +102,33 @@ class OrchestrationEngine:
     def get_metrics(self) -> dict[str, ToolMetrics]:
         return self._router.get_metrics()
 
-    async def call_child(self, server_name: str, tool_name: str, args: dict) -> str:
+    async def call_child(self, server_name: str, tool_name: str, args: dict, timeout_ms: int = 60_000) -> str:
         """Call a tool directly on a specific child server."""
-        result = await self._server_manager.call_tool(server_name, tool_name, args, 30_000)
+        result = await self._server_manager.call_tool(server_name, tool_name, args, timeout_ms)
         return self._extract_text(result)
 
     def get_workspace(self) -> str:
         return self._app_config.get("workspace", "")
+
+    # --- Delegation list (KSA-65 Option E) ---
+
+    def get_find_tools_delegates(self) -> list[str]:
+        """Get server names that have nested find_tools capability."""
+        return self._find_tools_delegates
+
+    def get_tool_mapping(self, tool_name: str) -> tuple[str, str] | None:
+        """Get (server_name, original_name) for a previously discovered nested tool."""
+        return self._tool_mapping.get(tool_name)
+
+    def register_nested_tool(
+        self, unique_name: str, server_name: str, original_name: str, definition: dict
+    ) -> None:
+        """Register a tool discovered via nested find_tools delegation."""
+        self._tool_mapping[unique_name] = (server_name, original_name)
+        self._tool_mapping[original_name] = (server_name, original_name)
+        self._registry.register_nested(unique_name, server_name, definition)
+        # Update routing table so SmartRouter can find it
+        self._routing_table.add_route(original_name, server_name)
 
     def _build_routing_table(self) -> None:
         """Build routing table from all active child servers."""
@@ -114,6 +139,24 @@ class OrchestrationEngine:
         for server_name, tools in by_server.items():
             self._registry.set_child_tools(server_name, tools)
         self._routing_table.rebuild(set(), self._registry.child_tools_by_server())
+
+    def _build_delegation_list(self) -> None:
+        """Identify child servers that have nested find_tools/execute_dynamic_tool."""
+        self._find_tools_delegates = []
+        self._exec_delegates = []
+        all_tools = self._server_manager.get_all_tools()
+        _log(f"Building delegation list from {len(all_tools)} total tools")
+        servers_with_find: set[str] = set()
+        servers_with_exec: set[str] = set()
+        for server_name, tool_def in all_tools:
+            name = tool_def.get("name", "")
+            if name == "find_tools":
+                servers_with_find.add(server_name)
+            elif name == "execute_dynamic_tool":
+                servers_with_exec.add(server_name)
+        self._find_tools_delegates = list(servers_with_find)
+        self._exec_delegates = list(servers_with_exec)
+        _log(f"Delegation list: find_tools → {self._find_tools_delegates}, exec → {self._exec_delegates}")
 
     def _ingest_tools_to_kb(self) -> None:
         """Ingest child tool definitions into KB."""
@@ -127,10 +170,10 @@ class OrchestrationEngine:
             f"{t.name} [{t.source}]: {t.definition.get('description', '')}" for t in tools
         )
         try:
-            mem.knowledge.insert_entry(
+            mem.knowledge.insert(
                 content=content,
                 summary=f"Orchestration child tools registry ({len(tools)} tools)",
-                entry_type="CONTEXT", tier="WORKING",
+                type_="CONTEXT", tier="WORKING",
                 source="orchestration-startup", tags="tools,registry,orchestration",
             )
             _log(f"Ingested {len(tools)} child tool definitions into KB")
@@ -157,6 +200,7 @@ class OrchestrationEngine:
         self._registry.set_server_order(list(new_config.enabled_servers().keys()))
         await self._server_manager.start_all()
         self._build_routing_table()
+        self._build_delegation_list()
         self._ingest_tools_to_kb()
 
     def _get_timeout(self, tool_name: str) -> int:

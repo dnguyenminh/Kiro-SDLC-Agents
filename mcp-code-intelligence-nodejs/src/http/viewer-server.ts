@@ -10,6 +10,7 @@ import { VIEWER_HTML } from './viewer-html.js';
 import { MemoryEngine } from '../memory/memory-engine.js';
 import { KnowledgeGraph } from '../memory/knowledge-graph.js';
 import { handleApiRoute } from './api-routes.js';
+import { handleIngestFileRoute } from './ingest-routes.js';
 
 export class ViewerServer {
   private server: http.Server | null = null;
@@ -42,7 +43,7 @@ export class ViewerServer {
   private handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
     const url = new URL(req.url ?? '/', `http://localhost:${this.port}`);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -58,7 +59,11 @@ export class ViewerServer {
     } else if (url.pathname === '/api/health') {
       this.serveHealth(res);
     } else if (url.pathname.startsWith('/api/memory')) {
-      handleApiRoute(url, res, this.memoryEngine, this.knowledgeGraph);
+      if (req.method === 'POST') {
+        handleIngestFileRoute(req, url, res, this.memoryEngine, this.workspace);
+      } else {
+        handleApiRoute(url, res, this.memoryEngine, this.knowledgeGraph);
+      }
     } else {
       this.send404(res);
     }

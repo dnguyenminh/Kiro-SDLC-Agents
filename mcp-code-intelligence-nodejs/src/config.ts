@@ -86,6 +86,14 @@ function resolveViewerPort(): number {
   return 3202;
 }
 
+/** Resolve orchestration config path from --config CLI arg. Null = use default workspace path. */
+export function resolveOrchestrationConfigPath(): string | null {
+  const args = process.argv.slice(2);
+  const idx = args.indexOf('--config');
+  if (idx >= 0 && args[idx + 1]) return path.resolve(args[idx + 1]);
+  return null;
+}
+
 function resolveWorkspaceFromRoots(rootUri: string | null): string {
   // Env var always takes priority (backward compat)
   const envWs = process.env['CODE_INTEL_WORKSPACE'];

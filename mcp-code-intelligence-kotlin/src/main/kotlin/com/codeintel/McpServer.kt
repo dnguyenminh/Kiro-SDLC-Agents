@@ -84,6 +84,8 @@ class McpServer(args: Array<String> = emptyArray()) {
 
     private fun handleInitialize(params: JsonObject): JsonObject {
         val rootUri = extractRootUri(params)
+        log("DEBUG env CODE_INTEL_WORKSPACE=${System.getenv("CODE_INTEL_WORKSPACE")}")
+        log("DEBUG rootUri=$rootUri")
         config = Config.withWorkspace(rootUri)
         log("Workspace: ${config.workspace}")
         val result = initializeServer(config)

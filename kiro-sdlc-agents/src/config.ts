@@ -76,7 +76,8 @@ export const MCP_VARIANTS: McpVariant[] = [
         delivery: "registry",
         config: {
             command: "uvx",
-            args: ["mcp-code-intelligence@latest", "--config", "${workspaceFolder}/.code-intel/orchestration.json"]
+            args: ["mcp-code-intelligence@latest", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+            cwd: "${workspaceFolder}"
         }
     },
     {
@@ -86,7 +87,8 @@ export const MCP_VARIANTS: McpVariant[] = [
         delivery: "registry",
         config: {
             command: "npx",
-            args: ["mcp-code-intelligence@latest", "--config", "${workspaceFolder}/.code-intel/orchestration.json"]
+            args: ["mcp-code-intelligence@latest", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+            cwd: "${workspaceFolder}"
         }
     },
     {
@@ -97,7 +99,8 @@ export const MCP_VARIANTS: McpVariant[] = [
         downloadAsset: "mcp-code-intelligence-latest.jar",
         config: {
             command: "java",
-            args: ["-jar", "${mcpServersDir}/mcp-code-intelligence-latest.jar", "--config", "${workspaceFolder}/.code-intel/orchestration.json"]
+            args: ["-jar", "${mcpServersDir}/mcp-code-intelligence-latest.jar", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+            cwd: "${workspaceFolder}"
         }
     }
 ];

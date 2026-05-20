@@ -34,9 +34,13 @@ async function initGraph() {
       .backgroundColor('#0f172a')
       .width(el.clientWidth).height(el.clientHeight)
       .onNodeClick(n => selectGraphNode(n));
+    // Resize graph when container changes
+    new ResizeObserver(() => {
+      if (graph3d) graph3d.width(el.clientWidth).height(el.clientHeight);
+    }).observe(el);
     populateClusters();
-    setTimeout(drawMinimap, 3000);
-    setInterval(drawMinimap, 5000);
+    // Start smooth minimap updates
+    setTimeout(() => { drawMinimapNodes(); startMinimapLoop(); }, 3000);
   } catch (e) { console.error('[graph]', e); }
 }
 
@@ -65,7 +69,7 @@ async function loadNodeDetail(id) {
     const e = await r.json();
     const nb = await fetch(API + '/graph/' + id + '/neighbors');
     const neighbors = await nb.json();
-    const panel = document.getElementById('graph-detail');
+    const panel = document.getElementById('graph-node-detail');
     panel.innerHTML = renderEntryDetail(e) +
       (neighbors.length ? '<div style="font-size:.65rem;margin:.4rem 0;opacity:.7">Connected (' +
         neighbors.length + '):</div>' + neighbors.slice(0, 10).map(nb =>
@@ -83,24 +87,52 @@ function focusEntry(id) {
   else loadNodeDetail(id);
 }
 
-function drawMinimap() {
+let mmBounds = { x0: 0, x1: 1, z0: 0, z1: 1, sx: 1, sz: 1 };
+let mmNodeImage = null;
+
+function drawMinimapNodes() {
   if (!graph3d) return;
-  const c = document.getElementById('mc');
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 180, 140);
   const ns = graph3d.graphData().nodes;
   if (!ns.length) return;
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   ns.forEach(n => { if (n.x < x0) x0 = n.x; if (n.x > x1) x1 = n.x; if (n.z < z0) z0 = n.z; if (n.z > z1) z1 = n.z; });
   x0 -= 50; x1 += 50; z0 -= 50; z1 += 50;
   const sx = 180 / (x1 - x0 || 1), sz = 140 / (z1 - z0 || 1);
+  mmBounds = { x0, x1, z0, z1, sx, sz };
+  const off = document.createElement('canvas');
+  off.width = 180; off.height = 140;
+  const ctx = off.getContext('2d');
   ns.forEach(n => { ctx.fillStyle = nodeColor(n.type); ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc((n.x - x0) * sx, (n.z - z0) * sz, 2, 0, 6.28); ctx.fill(); });
-  ctx.globalAlpha = 1;
+  mmNodeImage = off;
+}
+
+function startMinimapLoop() {
+  const c = document.getElementById('mc');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  setInterval(drawMinimapNodes, 5000);
+  function frame() {
+    if (!graph3d || !mmNodeImage) { requestAnimationFrame(frame); return; }
+    ctx.clearRect(0, 0, 180, 140);
+    ctx.drawImage(mmNodeImage, 0, 0);
+    // Camera position indicator (crosshair)
+    const cam = graph3d.cameraPosition();
+    const { x0, z0, sx, sz } = mmBounds;
+    const cx = (cam.x - x0) * sx;
+    const cz = (cam.z - z0) * sz;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, cz); ctx.lineTo(cx + 8, cz);
+    ctx.moveTo(cx, cz - 8); ctx.lineTo(cx, cz + 8);
+    ctx.stroke();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
   c.onclick = function(ev) {
     const br = c.getBoundingClientRect();
-    const mx = (ev.clientX - br.left) / 180 * (x1 - x0) + x0;
-    const mz = (ev.clientY - br.top) / 140 * (z1 - z0) + z0;
+    const mx = (ev.clientX - br.left) / 180 * (mmBounds.x1 - mmBounds.x0) + mmBounds.x0;
+    const mz = (ev.clientY - br.top) / 140 * (mmBounds.z1 - mmBounds.z0) + mmBounds.z0;
     graph3d.cameraPosition({ x: mx, y: 80, z: mz }, { x: mx, y: 0, z: mz }, 800);
   };
 }

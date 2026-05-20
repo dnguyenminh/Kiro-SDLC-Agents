@@ -1,10 +1,11 @@
-/* Sessions Tab — Session Explorer + Replay Timeline */
+/* Sessions Tab — Session list + orchestration (delegates to timeline/playback/export) */
 let sessionsData = [];
 let replayEvents = [];
 let replayIdx = 0;
 let replayTimer = null;
 let replayPlaying = false;
 
+/** Load sessions from API with filters. */
 async function loadSessions() {
   const agent = document.getElementById('sess-agent')?.value || '';
   const status = document.getElementById('sess-status')?.value || '';
@@ -18,23 +19,27 @@ async function loadSessions() {
   } catch (e) { console.error('[sessions]', e); }
 }
 
+/** Render session list with duration + task count badges. */
 function renderSessionList() {
   const el = document.getElementById('sess-list');
   if (!el) return;
   el.innerHTML = sessionsData.map(s => {
-    const dur = s.endedAt ? timeDiff(s.startedAt, s.endedAt) : 'active';
+    const dur = s.totalDurationMs ? formatDurationShort(s.totalDurationMs) : (s.endedAt ? timeDiff(s.startedAt, s.endedAt) : 'active');
+    const tasks = s.taskCount ? '<span style="font-size:.55rem;opacity:.6"> | ' + s.taskCount + ' tasks</span>' : '';
     return '<div class="entry-item" onclick="viewSession(\'' + s.id + '\')">' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
       '<span class="entry-type" style="color:#38bdf8">' + (s.agentName || 'unknown') + '</span>' +
       '<span class="badge badge-' + (s.status === 'active' ? 'WORKING' : 'SEMANTIC') + '">' + s.status + '</span></div>' +
-      '<div class="entry-summary">' + formatTime(s.startedAt) + ' — ' + dur + '</div>' +
+      '<div class="entry-summary">' + formatTime(s.startedAt) + ' — ' + dur + tasks + '</div>' +
       '<div class="entry-meta">' + s.observationCount + ' observations</div></div>';
   }).join('') || '<div style="padding:12px;opacity:.5;font-size:.7rem">No sessions found</div>';
 }
 
+/** Open session detail and load events. */
 async function viewSession(sessionId) {
-  document.getElementById('sess-detail').style.display = 'block';
+  document.getElementById('sess-detail').style.display = 'flex';
   document.getElementById('sess-detail-id').textContent = sessionId;
+  document.getElementById('timeline-events').innerHTML = '';
   try {
     const r = await fetch(API + '/sessions/' + sessionId + '/events');
     replayEvents = await r.json();
@@ -44,77 +49,36 @@ async function viewSession(sessionId) {
   } catch (e) { console.error('[session-events]', e); }
 }
 
-function renderTimeline() {
-  const bar = document.getElementById('timeline-bar');
-  const total = replayEvents.length || 1;
-  bar.style.width = ((replayIdx + 1) / total * 100) + '%';
-  document.getElementById('timeline-pos').textContent =
-    (replayIdx + 1) + '/' + replayEvents.length;
+/** Format duration for session list. */
+function formatDurationShort(ms) {
+  if (ms < 1000) return ms + 'ms';
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return sec + 's';
+  return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
 }
 
-function renderEventDetail() {
-  const el = document.getElementById('timeline-events');
-  if (!replayEvents.length) { el.innerHTML = '<div style="opacity:.5;font-size:.7rem">No events</div>'; return; }
-  el.innerHTML = replayEvents.map((ev, i) => {
-    const active = i === replayIdx ? 'border-left:3px solid #38bdf8;' : '';
-    return '<div class="entry-item" style="' + active + '" onclick="replayJump(' + i + ')">' +
-      '<div style="display:flex;justify-content:space-between">' +
-      '<span class="entry-type" style="color:' + opColor(ev.operation) + '">' + ev.operation + '</span>' +
-      '<span class="entry-meta">' + formatTime(ev.createdAt) + '</span></div>' +
-      (ev.details ? '<div class="entry-summary">' + esc(ev.details).substring(0, 80) + '</div>' : '') +
-      (ev.entryId ? '<div class="entry-meta">Entry #' + ev.entryId + '</div>' : '') + '</div>';
-  }).join('');
-  const activeEl = el.querySelector('[style*="border-left:3px"]');
-  if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
-}
-
-function replayPlay() {
-  if (replayPlaying) { replayPause(); return; }
-  replayPlaying = true;
-  document.getElementById('replay-play-btn').textContent = '⏸';
-  replayTimer = setInterval(() => {
-    if (replayIdx < replayEvents.length - 1) { replayIdx++; renderTimeline(); renderEventDetail(); }
-    else replayPause();
-  }, 1000);
-}
-
-function replayPause() {
-  replayPlaying = false;
-  document.getElementById('replay-play-btn').textContent = '▶';
-  if (replayTimer) { clearInterval(replayTimer); replayTimer = null; }
-}
-
-function replayStep(dir) {
-  replayPause();
-  replayIdx = Math.max(0, Math.min(replayEvents.length - 1, replayIdx + dir));
-  renderTimeline();
-  renderEventDetail();
-}
-
-function replayJump(idx) {
-  replayPause();
-  replayIdx = idx;
-  renderTimeline();
-  renderEventDetail();
-}
-
-function replayScrub(ev) {
-  const bar = document.getElementById('timeline-track');
-  const rect = bar.getBoundingClientRect();
-  const pct = (ev.clientX - rect.left) / rect.width;
-  replayIdx = Math.floor(pct * (replayEvents.length - 1));
-  replayIdx = Math.max(0, Math.min(replayEvents.length - 1, replayIdx));
-  renderTimeline();
-  renderEventDetail();
-}
-
-function closeReplay() {
-  replayPause();
-  document.getElementById('sess-detail').style.display = 'none';
-}
-
+/** Color map for operation types. */
 function opColor(op) {
   const map = { INGEST: '#34d399', SEARCH: '#38bdf8', DELETE: '#f87171',
-    SESSION_START: '#facc15', SESSION_END: '#94a3b8', CONSOLIDATE: '#a78bfa' };
+    SESSION_START: '#facc15', SESSION_END: '#94a3b8', CONSOLIDATE: '#a78bfa',
+    INGEST_FILE: '#34d399', TOOL_CALL: '#2dd4bf', SYNC_CODE: '#a78bfa',
+    INGEST_FILE_SKIP: '#94a3b8', INGEST_FILE_HTTP: '#34d399' };
   return map[op] || '#e2e8f0';
+}
+
+/** Load and display a linked knowledge entry. */
+async function loadEventEntry(entryId) {
+  try {
+    const r = await fetch(API + '/entries/' + entryId);
+    const e = await r.json();
+    const el = document.getElementById('timeline-events');
+    const detail = '<div style="background:#0f172a;padding:8px;border-radius:4px;margin:8px 0;border:1px solid #475569">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
+      '<b style="color:' + nodeColor(e.type) + ';font-size:.7rem">[' + e.type + '] #' + e.id + '</b>' +
+      '<span style="font-size:.6rem;opacity:.6">' + e.tier + '</span></div>' +
+      '<div style="font-size:.7rem;margin:4px 0">' + esc(e.summary) + '</div>' +
+      (e.content ? '<pre style="font-size:.55rem;white-space:pre-wrap;max-height:150px;overflow-y:auto;background:#1e293b;padding:6px;border-radius:3px;margin-top:4px">' + esc(e.content).substring(0, 500) + '</pre>' : '') +
+      '</div>';
+    el.insertAdjacentHTML('afterbegin', detail);
+  } catch (e) { console.error('[entry]', e); }
 }

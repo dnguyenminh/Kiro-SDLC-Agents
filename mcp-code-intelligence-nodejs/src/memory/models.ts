@@ -57,6 +57,12 @@ export interface AuditEntry {
   session_id: string | null;
   agent_name: string | null;
   details: string | null;
+  // KSA-64: enriched fields
+  arguments: string | null;
+  result_summary: string | null;
+  duration_ms: number | null;
+  task_id: string | null;
+  tool_name: string | null;
   created_at: string;
 }
 

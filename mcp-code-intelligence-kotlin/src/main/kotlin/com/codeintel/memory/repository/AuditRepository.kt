@@ -10,29 +10,47 @@ data class AuditEntry(
     val sessionId: String? = null,
     val agentName: String? = null,
     val details: String? = null,
+    // KSA-64: enriched fields
+    val arguments: String? = null,
+    val resultSummary: String? = null,
+    val durationMs: Long? = null,
+    val taskId: String? = null,
+    val toolName: String? = null,
     val createdAt: String = ""
 )
 
 class AuditRepository(private val db: MemoryDatabaseManager) {
 
-    /** Log an operation to the audit trail. */
+    /** Log an operation with enriched data. Backward compatible. */
     fun log(
         operation: String,
         entryId: Long? = null,
         sessionId: String? = null,
         agentName: String? = null,
-        details: String? = null
+        details: String? = null,
+        arguments: String? = null,
+        resultSummary: String? = null,
+        durationMs: Long? = null,
+        taskId: String? = null,
+        toolName: String? = null
     ) {
         val sql = """
-            INSERT INTO memory_audit (operation, entry_id, session_id, agent_name, details)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO memory_audit
+            (operation, entry_id, session_id, agent_name, details,
+             arguments, result_summary, duration_ms, task_id, tool_name)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """.trimIndent()
         db.conn.prepareStatement(sql).use { stmt ->
             stmt.setString(1, operation)
-            if (entryId != null) stmt.setLong(2, entryId) else stmt.setNull(2, java.sql.Types.INTEGER)
+            setNullableLong(stmt, 2, entryId)
             stmt.setString(3, sessionId)
             stmt.setString(4, agentName)
             stmt.setString(5, details)
+            stmt.setString(6, arguments?.take(10240))
+            stmt.setString(7, resultSummary?.take(2000))
+            setNullableLong(stmt, 8, durationMs)
+            stmt.setString(9, taskId)
+            stmt.setString(10, toolName)
             stmt.executeUpdate()
         }
     }
@@ -63,7 +81,9 @@ class AuditRepository(private val db: MemoryDatabaseManager) {
     fun listFiltered(limit: Int, afterId: Long?, exclude: List<String>): List<AuditEntry> {
         val clauses = mutableListOf<String>()
         if (afterId != null) clauses.add("id > ?")
-        if (exclude.isNotEmpty()) clauses.add("operation NOT IN (${exclude.joinToString(",") { "?" }})")
+        if (exclude.isNotEmpty()) {
+            clauses.add("operation NOT IN (${exclude.joinToString(",") { "?" }})")
+        }
         val sql = buildString {
             append("SELECT * FROM memory_audit")
             if (clauses.isNotEmpty()) append(" WHERE ${clauses.joinToString(" AND ")}")
@@ -99,11 +119,14 @@ class AuditRepository(private val db: MemoryDatabaseManager) {
         val sql = "SELECT operation, COUNT(*) as cnt FROM memory_audit GROUP BY operation"
         val counts = mutableMapOf<String, Int>()
         db.conn.createStatement().executeQuery(sql).use { rs ->
-            while (rs.next()) {
-                counts[rs.getString("operation")] = rs.getInt("cnt")
-            }
+            while (rs.next()) counts[rs.getString("operation")] = rs.getInt("cnt")
         }
         return counts
+    }
+
+    private fun setNullableLong(stmt: java.sql.PreparedStatement, idx: Int, value: Long?) {
+        if (value != null) stmt.setLong(idx, value)
+        else stmt.setNull(idx, java.sql.Types.INTEGER)
     }
 
     private fun mapRow(rs: java.sql.ResultSet): AuditEntry = AuditEntry(
@@ -113,6 +136,11 @@ class AuditRepository(private val db: MemoryDatabaseManager) {
         sessionId = rs.getString("session_id"),
         agentName = rs.getString("agent_name"),
         details = rs.getString("details"),
+        arguments = rs.getString("arguments"),
+        resultSummary = rs.getString("result_summary"),
+        durationMs = rs.getLong("duration_ms").takeIf { !rs.wasNull() },
+        taskId = rs.getString("task_id"),
+        toolName = rs.getString("tool_name"),
         createdAt = rs.getString("created_at")
     )
 }

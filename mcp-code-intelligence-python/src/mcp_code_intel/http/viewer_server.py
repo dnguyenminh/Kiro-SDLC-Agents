@@ -8,6 +8,7 @@ from urllib.parse import urlparse, parse_qs
 
 from .viewer_html import VIEWER_HTML
 from .api_routes import handle_api_route, handle_health
+from .ingest_routes import handle_ingest_file_route
 
 
 class ViewerServer:
@@ -30,6 +31,9 @@ class ViewerServer:
 
             def do_GET(self) -> None:
                 _route_get(self, server_ref)
+
+            def do_POST(self) -> None:
+                _route_post(self, server_ref)
 
             def do_OPTIONS(self) -> None:
                 _handle_cors_preflight(self)
@@ -75,6 +79,17 @@ def _route_get(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
         _send_404(handler)
 
 
+def _route_post(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
+    """Route POST requests — ingest-file endpoint."""
+    parsed = urlparse(handler.path)
+    path = parsed.path
+
+    if path == "/api/memory/ingest-file":
+        handle_ingest_file_route(handler, server.memory_engine, server.workspace)
+    else:
+        _send_404(handler)
+
+
 def _serve_html(handler: BaseHTTPRequestHandler) -> None:
     """Serve the 3D Knowledge Graph viewer HTML from shared file or fallback."""
     html = _load_shared_viewer_html(handler.server.viewer_workspace)
@@ -103,7 +118,7 @@ def _handle_cors_preflight(handler: BaseHTTPRequestHandler) -> None:
     """Handle CORS preflight OPTIONS request."""
     handler.send_response(204)
     handler.send_header("Access-Control-Allow-Origin", "*")
-    handler.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+    handler.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     handler.send_header("Access-Control-Allow-Headers", "Content-Type")
     handler.end_headers()
 

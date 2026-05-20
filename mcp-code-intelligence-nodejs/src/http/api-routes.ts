@@ -7,6 +7,7 @@ import * as http from 'http';
 import { MemoryEngine } from '../memory/memory-engine.js';
 import { KnowledgeGraph } from '../memory/knowledge-graph.js';
 import { KnowledgeEntry } from '../memory/models.js';
+import { handleSessionExport } from './session-export.js';
 
 /** Dispatch API requests to the correct handler. */
 export function handleApiRoute(
@@ -23,6 +24,7 @@ export function handleApiRoute(
   else if (path === '/entries') handleListEntries(url, res, engine);
   else if (path === '/sessions') handleSessions(url, res, engine);
   else if (path.match(/^\/sessions\/[^/]+\/events$/)) handleSessionEvents(path, url, res, engine);
+  else if (path.match(/^\/sessions\/[^/]+\/export$/)) handleSessionExport(path, res, engine);
   else if (path.match(/^\/graph\/\d+\/neighbors$/)) handleNeighbors(path, res, engine, graph);
   else if (path === '/graph/data') handleGraphData(url, res, engine, graph);
   else if (path === '/audit') handleAudit(url, res, engine);
@@ -118,11 +120,18 @@ function handleSessions(url: URL, res: http.ServerResponse, engine: MemoryEngine
   const status = url.searchParams.get('status') ?? '';
   const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
   const sessions = engine.sessions.listFiltered(agent, status, limit);
-  sendJson(res, sessions.map(s => ({
-    id: s.session_id, agentName: s.agent_name,
-    startedAt: s.started_at, endedAt: s.ended_at,
-    observationCount: s.observation_count, status: s.status,
-  })));
+  const enriched = sessions.map(s => {
+    const events = engine.audit.listBySession(s.session_id, 1000);
+    const totalDurationMs = events.reduce((sum, e) => sum + (e.duration_ms ?? 0), 0);
+    const taskIds = new Set(events.map(e => e.task_id).filter(Boolean));
+    return {
+      id: s.session_id, agentName: s.agent_name,
+      startedAt: s.started_at, endedAt: s.ended_at,
+      observationCount: s.observation_count, status: s.status,
+      totalDurationMs, taskCount: taskIds.size,
+    };
+  });
+  sendJson(res, enriched);
 }
 
 function handleSessionEvents(
@@ -136,6 +145,9 @@ function handleSessionEvents(
     id: e.id, operation: e.operation,
     entryId: e.entry_id, sessionId: e.session_id,
     details: e.details, createdAt: e.created_at,
+    toolName: e.tool_name, arguments: e.arguments,
+    resultSummary: e.result_summary,
+    durationMs: e.duration_ms, taskId: e.task_id,
   })));
 }
 

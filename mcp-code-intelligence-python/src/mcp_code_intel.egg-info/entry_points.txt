@@ -1,0 +1,2 @@
+[console_scripts]
+mcp-code-intel = mcp_code_intel.__main__:main

@@ -36,3 +36,8 @@ class RoutingTable:
     def resolve(self, tool_name: str) -> RouteEntry | None:
         """Resolve tool name to route entry. Returns None if not found."""
         return self._routes.get(tool_name)
+
+    def add_route(self, tool_name: str, server_name: str) -> None:
+        """Add a single route entry (for dynamically discovered tools)."""
+        if tool_name not in self._routes:
+            self._routes[tool_name] = RouteEntry(server_name=server_name)

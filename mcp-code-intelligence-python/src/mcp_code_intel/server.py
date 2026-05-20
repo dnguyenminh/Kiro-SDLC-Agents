@@ -23,6 +23,11 @@ from .tools import (
 from .stream_write import handle_stream_write_file
 from .memory import MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
 from .http import ViewerServer
+from .orchestration.engine import OrchestrationEngine
+from .orchestration.config import OrchestrationConfig, load_orchestration_config
+from .orchestration.meta.dispatcher import MetaToolDispatcher, META_TOOL_DEFINITIONS
+from .orchestration.meta.recursion_guard import parse_recursion_args, is_depth_exceeded
+from .orchestration.registry.registry import META_TOOL_NAMES
 
 SERVER_NAME = "mcp-code-intelligence-python"
 SERVER_VERSION = "0.1.0"
@@ -129,6 +134,8 @@ class McpServer:
         self._indexer: IndexingEngine | None = None
         self._query_layer: QueryLayer | None = None
         self._memory_dispatcher: MemoryToolDispatcher | None = None
+        self._orchestration: OrchestrationEngine | None = None
+        self._meta_dispatcher: MetaToolDispatcher | None = None
         self._viewer: ViewerServer | None = None
         self._workspace: str = config["workspace"]
         self._initialized = False
@@ -155,11 +162,71 @@ class McpServer:
         self._shutdown()
 
     def _shutdown(self) -> None:
-        """Graceful shutdown — stop viewer server and release port."""
+        """Graceful shutdown — stop orchestration, viewer, release resources."""
+        if self._orchestration:
+            self._orchestration.stop()
+            # Stop the dedicated orchestration event loop
+            if hasattr(self, '_orch_loop') and self._orch_loop and self._orch_loop.is_running():
+                self._orch_loop.call_soon_threadsafe(self._orch_loop.stop)
+            self._orchestration = None
         if self._viewer:
             self._viewer.stop()
             self._viewer = None
         _log("Server shutdown complete")
+
+    def _init_orchestration(self, mem_engine: Any) -> None:
+        """Initialize orchestration engine from config file.
+        
+        Runs event loop in a background thread so _read_loop tasks stay active.
+        """
+        import threading
+        from pathlib import Path
+
+        # Recursion guard
+        recursion = parse_recursion_args()
+        if is_depth_exceeded(recursion):
+            _log(f"Max recursion depth ({recursion.max_depth}) — orchestration disabled")
+            return
+
+        config_path = Path(self._workspace) / ".code-intel" / "orchestration.json"
+        if not config_path.exists():
+            _log("No orchestration.json — orchestration disabled")
+            return
+        try:
+            orch_config = load_orchestration_config(self._workspace)
+            if not orch_config or not orch_config.enabled_servers():
+                _log("Orchestration config empty — disabled")
+                return
+
+            import asyncio
+            # Create a dedicated event loop running in background thread
+            self._orch_loop = asyncio.new_event_loop()
+            self._orchestration = OrchestrationEngine(orch_config, mem_engine, self._config)
+
+            # Start orchestration on the dedicated loop
+            started = [False]
+            def _run_loop():
+                asyncio.set_event_loop(self._orch_loop)
+                self._orch_loop.run_until_complete(self._orchestration.start())
+                started[0] = True
+                # Keep loop running for _read_loop tasks
+                self._orch_loop.run_forever()
+
+            self._orch_thread = threading.Thread(target=_run_loop, daemon=True, name="orch-loop")
+            self._orch_thread.start()
+
+            # Wait for startup to complete
+            import time
+            for _ in range(100):  # max 10s
+                if started[0]:
+                    break
+                time.sleep(0.1)
+
+            self._meta_dispatcher = MetaToolDispatcher(self._orchestration)
+            _log(f"Orchestration enabled: {len(orch_config.enabled_servers())} servers")
+        except Exception as e:
+            _log(f"Orchestration init failed: {e}")
+            self._orchestration = None
 
     def _handle_request(self, request: dict[str, Any]) -> dict[str, Any] | None:
         method = request.get("method", "")
@@ -231,6 +298,10 @@ class McpServer:
 
         # Run indexing after responding
         self._indexer.run_full_index()
+
+        # Initialize orchestration engine (child MCP servers)
+        self._init_orchestration(mem_engine)
+
         _log("MCP server ready")
 
         return {
@@ -240,7 +311,10 @@ class McpServer:
         }
 
     def _handle_tools_list(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {"tools": TOOL_DEFINITIONS + MEMORY_TOOL_DEFINITIONS}
+        tools = TOOL_DEFINITIONS + MEMORY_TOOL_DEFINITIONS
+        if self._orchestration and self._orchestration.is_enabled():
+            tools = tools + META_TOOL_DEFINITIONS
+        return {"tools": tools}
 
     def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
         if not self._initialized:
@@ -264,6 +338,7 @@ class McpServer:
             mem_result = self._memory_dispatcher.dispatch(name, args)
             if mem_result is not None:
                 return mem_result
+        # Native tools
         if name == "code_search":
             return handle_code_search(args, self._query_layer)
         if name == "code_symbols":
@@ -278,7 +353,99 @@ class McpServer:
             return handle_stream_write_file(args, self._workspace)
         if name == "code_kb_export":
             return handle_code_kb_export(args, self._query_layer, self._workspace)
+        # Meta-tools (orchestration)
+        if self._meta_dispatcher:
+            if name in META_TOOL_NAMES:
+                _log(f"Dispatching meta-tool: {name}")
+                return self._dispatch_meta(name, args)
+        # Route to child servers via orchestration (with chain + fallback)
+        orch = self._orchestration
+        if orch and orch.is_enabled():
+            return self._route_orchestration(name, args)
+        _log(f"Tool '{name}' not routed: orchestration={orch is not None}, enabled={orch.is_enabled() if orch else 'N/A'}")
         return f"Unknown tool: {name}"
+
+    def _dispatch_meta(self, name: str, args: dict[str, Any]) -> str:
+        """Dispatch meta-tools — all sync (parity with Kotlin MetaToolDispatcher)."""
+        try:
+            result = self._meta_dispatcher.dispatch(name, args)
+            if result is not None:
+                return result
+            _log(f"Meta-dispatcher returned None for {name}")
+            return json.dumps({"error": f"Meta-tool '{name}' returned None"})
+        except Exception as e:
+            _log(f"Meta-dispatcher exception for {name}: {type(e).__name__}: {e}")
+            return json.dumps({"error": f"Meta-tool '{name}' failed: {e}"})
+
+    def _route_orchestration(self, name: str, args: dict[str, Any]) -> str:
+        """Route to orchestration with mapping check + chain + children fallback."""
+        import asyncio
+        import concurrent.futures
+        engine = self._orchestration
+        loop = getattr(engine, '_orch_loop', None)
+
+        if not loop or loop.is_closed():
+            return json.dumps({"error": "Orchestration event loop not available"})
+
+        # Check mapping first (from find_tools discovery)
+        mapping = engine.get_tool_mapping(name)
+        if mapping:
+            server_name, original_name = mapping
+            _log(f"Routing '{name}' via mapping → {server_name}::execute_dynamic_tool({original_name})")
+            try:
+                # Route via nested server's execute_dynamic_tool
+                future = asyncio.run_coroutine_threadsafe(
+                    engine.call_child(server_name, "execute_dynamic_tool",
+                        {"tool_name": original_name, "arguments": args}, timeout_ms=60_000), loop
+                )
+                return future.result(timeout=60)
+            except Exception as e:
+                _log(f"Mapping route failed: {e}")
+
+        # Check chain
+        registry = engine.get_registry()
+        chain = registry.get_chain(name) if hasattr(registry, 'get_chain') else None
+        if chain:
+            return self._execute_chain_on_loop(chain, name, args, loop)
+
+        # Try normal route
+        try:
+            future = asyncio.run_coroutine_threadsafe(engine.route(name, args), loop)
+            return future.result(timeout=60)
+        except Exception as e:
+            return self._try_children_fallback_on_loop(name, args, e, loop)
+
+    def _execute_chain_on_loop(self, chain: Any, name: str, args: dict[str, Any], loop) -> str:
+        """Execute through fallback chain on orchestration loop."""
+        import asyncio
+        for entry in chain.entries:
+            actual_name = entry.tool_name or name
+            try:
+                future = asyncio.run_coroutine_threadsafe(
+                    self._orchestration.call_child(entry.server_name, actual_name, args, timeout_ms=60_000), loop
+                )
+                return future.result(timeout=60)
+            except Exception:
+                continue
+        return json.dumps({"error": f"Tool '{name}' failed on all servers in chain"})
+
+    def _try_children_fallback_on_loop(self, name: str, args: dict[str, Any], original: Exception, loop) -> str:
+        """Try all child servers as fallback on orchestration loop."""
+        import asyncio
+        server_manager = self._orchestration._server_manager
+        statuses = server_manager.get_status()
+        for server_name, state in statuses.items():
+            if state.value != "ACTIVE":
+                continue
+            try:
+                future = asyncio.run_coroutine_threadsafe(
+                    self._orchestration.call_child(server_name, name, args, timeout_ms=60_000), loop
+                )
+                return future.result(timeout=60)
+            except Exception:
+                continue
+        msg = str(original).replace('"', "'")
+        return json.dumps({"error": msg})
 
     def _send(self, response: dict[str, Any]) -> None:
         data = json.dumps(response)
@@ -290,6 +457,26 @@ class McpServer:
 
     def _error_response(self, req_id: Any, code: int, message: str) -> dict[str, Any]:
         return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
+
+
+def _run_async_in_thread(coro) -> str:
+    """Run a coroutine in a new thread with its own event loop (like Kotlin runBlocking).
+
+    This avoids 'event loop already running' errors when the main loop is active.
+    """
+    import asyncio
+    import concurrent.futures
+
+    def _run():
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(_run)
+        return future.result(timeout=60)
 
 
 def _extract_root_uri(params: dict[str, Any]) -> str | None:

@@ -23,7 +23,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class ViewerServer(
-    private val config: Config
+    val config: Config
 ) {
     /** Mutable references — set after MCP initialize completes. */
     @Volatile var memoryEngine: MemoryEngine? = null

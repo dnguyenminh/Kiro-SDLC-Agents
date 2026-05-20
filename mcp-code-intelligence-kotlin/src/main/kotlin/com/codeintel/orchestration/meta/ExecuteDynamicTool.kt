@@ -1,7 +1,7 @@
 /**
  * execute_dynamic_tool meta-tool — execute any registered tool by name.
- * Uses fallback chain: if tool exists on multiple servers, tries in priority order.
- * If tool not in registry, tries forwarding to each child server (recursive discovery).
+ * KSA-66: Routes via bridge's execute_dynamic_tool for nested tools (mapping check first).
+ * Falls back to chain routing or direct routing if no mapping exists.
  */
 package com.codeintel.orchestration.meta
 
@@ -12,20 +12,41 @@ import kotlinx.serialization.json.*
 
 class ExecuteDynamicTool(private val engine: OrchestrationEngine) {
 
-    /** Execute a tool by name — uses chain routing with fallback. */
+    /** Execute a tool by name — mapping → chain → single routing. */
     fun execute(args: JsonObject): String {
         val toolName = args["tool_name"]?.jsonPrimitive?.content
             ?: return errorJson("Missing 'tool_name'")
         val toolArgs = args["arguments"]?.jsonObject ?: buildJsonObject {}
-        return executeWithChain(toolName, toolArgs)
+        return executeWithMapping(toolName, toolArgs)
     }
 
-    private fun executeWithChain(toolName: String, args: JsonObject): String {
-        val registry = engine.getRegistry()
-        val chain = registry.getChain(toolName)
+    /** Check mapping first (nested tools), then chain, then single. */
+    private fun executeWithMapping(toolName: String, args: JsonObject): String {
+        val mapping = engine.getToolMapping(toolName)
+        if (mapping != null) return executeViaBridge(toolName, mapping, args)
+        val chain = engine.getRegistry().getChain(toolName)
         if (chain != null) return executeChain(chain, toolName, args)
-        if (registry.find(toolName) != null) return routeKnownTool(toolName, args)
+        if (engine.getRegistry().find(toolName) != null) return routeKnownTool(toolName, args)
         return tryAllChildren(toolName, args)
+    }
+
+    /** Execute via nested server's execute_dynamic_tool (bridge pattern). */
+    private fun executeViaBridge(toolName: String, mapping: Pair<String, String>, args: JsonObject): String {
+        val (serverName, originalName) = mapping
+        val bridgeArgs = buildJsonObject {
+            put("tool_name", originalName)
+            put("arguments", args)
+        }
+        return try {
+            val result = runBlocking {
+                engine.callChild(serverName, "execute_dynamic_tool", bridgeArgs)
+            }
+            engine.getRegistry().recordHit(toolName, 1)
+            if (!isErrorResult(result)) engine.getRegistry().recordHit(toolName, 3)
+            result
+        } catch (e: Exception) {
+            errorJson("Nested execute failed on $serverName: ${e.message}")
+        }
     }
 
     /** Execute through fallback chain — try each server in priority order. */
@@ -40,18 +61,20 @@ class ExecuteDynamicTool(private val engine: OrchestrationEngine) {
             val result = tryServer(entry.serverName, actualName, args)
             if (result != null) {
                 log("[execute_dynamic_tool] $toolName succeeded on ${entry.serverName}")
-                engine.getRegistry().recordHit(toolName)
+                engine.getRegistry().recordHit(toolName, 1)
+                if (!isErrorResult(result)) engine.getRegistry().recordHit(toolName, 3)
                 return result
             }
             errors.add("${entry.serverName}: failed")
         }
-        return errorJson("Tool '$toolName' failed on all ${chain.entries.size} servers in chain: $errors")
+        return errorJson("Tool '$toolName' failed on all ${chain.entries.size} servers: $errors")
     }
 
     private fun routeKnownTool(toolName: String, args: JsonObject): String {
         return try {
             val result = runBlocking { engine.route(toolName, args) }
-            engine.getRegistry().recordHit(toolName)
+            engine.getRegistry().recordHit(toolName, 1)
+            if (!isErrorResult(result)) engine.getRegistry().recordHit(toolName, 3)
             result
         } catch (e: Exception) {
             errorJson(e.message?.replace("\"", "'") ?: "Execution failed")
@@ -92,6 +115,9 @@ class ExecuteDynamicTool(private val engine: OrchestrationEngine) {
             putJsonArray("required") { add("tool_name") }
         }
     }
+
+    private fun isErrorResult(result: String): Boolean =
+        result.trimStart().startsWith("{\"error\"") || "\"error\"" in result.take(100)
 
     private fun errorJson(msg: String) = """{"error":"$msg"}"""
 }

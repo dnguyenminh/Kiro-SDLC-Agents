@@ -34,6 +34,8 @@ class OrchestrationEngine(
     private val autoLogger = AutoLogger(memoryEngine, config.settings.autoLog)
     private var configWatcher: ConfigWatcher? = null
     private var started = false
+    private val findToolsDelegates = mutableListOf<String>()
+    private val toolMapping = java.util.concurrent.ConcurrentHashMap<String, Pair<String, String>>()
 
     val metaToolDispatcher: MetaToolDispatcher by lazy { MetaToolDispatcher(this) }
 
@@ -101,6 +103,20 @@ class OrchestrationEngine(
     fun getChildServerNames(): List<String> =
         serverManager.getStatus().filter { it.value == ServerState.ACTIVE }.keys.toList()
 
+    /** Get server names that have nested find_tools capability. */
+    fun getFindToolsDelegates(): List<String> = findToolsDelegates
+
+    /** Get (serverName, originalName) for a previously discovered nested tool. */
+    fun getToolMapping(toolName: String): Pair<String, String>? = toolMapping[toolName]
+
+    /** Register a tool discovered via nested find_tools delegation. */
+    fun registerNestedTool(uniqueName: String, serverName: String, originalName: String, definition: JsonObject) {
+        toolMapping[uniqueName] = serverName to originalName
+        toolMapping[originalName] = serverName to originalName
+        registry.registerNested(uniqueName, serverName, definition)
+        routingTable.addRoute(originalName, serverName)
+    }
+
     /** Call a tool directly on a specific child server (bypass routing table). */
     suspend fun callChild(serverName: String, toolName: String, args: JsonObject): String {
         val result = serverManager.callTool(serverName, toolName, args, 30_000)
@@ -121,18 +137,21 @@ class OrchestrationEngine(
         val byServer = allTools.groupBy({ it.first }, { it.second })
         for ((serverName, tools) in byServer) {
             registry.setChildTools(serverName, tools)
-            discoverNested(serverName, tools)
         }
         routingTable.rebuild(emptySet(), registry.childToolsByServer())
+        buildDelegationList(allTools)
     }
 
-    /** Detect nested orchestrators and log discovery. */
-    private fun discoverNested(serverName: String, tools: List<JsonObject>) {
-        val toolNames = tools.mapNotNull { it["name"]?.jsonPrimitive?.content }
-        val isNested = "find_tools" in toolNames || "execute_dynamic_tool" in toolNames
-        if (isNested) {
-            log("Nested orchestrator detected on '$serverName' — tools accessible via find_tools")
+    /** Identify child servers that expose find_tools/execute_dynamic_tool (nested orchestrators). */
+    private fun buildDelegationList(allTools: List<Pair<String, JsonObject>>) {
+        findToolsDelegates.clear()
+        val serversWithFind = mutableSetOf<String>()
+        for ((serverName, toolDef) in allTools) {
+            val name = toolDef["name"]?.jsonPrimitive?.content ?: ""
+            if (name == "find_tools") serversWithFind.add(serverName)
         }
+        findToolsDelegates.addAll(serversWithFind)
+        log("Delegation list: find_tools → $findToolsDelegates")
     }
 
     /** Ingest all child tool definitions into KB for searchability via find_tools. */

@@ -11,6 +11,7 @@ class MemoryDatabaseManager(private val db: DatabaseManager) {
     /** Apply memory schema tables to existing database. */
     fun initialize() {
         applyMemorySchema()
+        migrateAuditSchema()
         log("Memory schema initialized")
     }
 
@@ -21,6 +22,41 @@ class MemoryDatabaseManager(private val db: DatabaseManager) {
                 if (sql.isNotBlank()) stmt.execute(sql)
             }
         }
+    }
+
+    /** KSA-64: Add enriched audit columns (idempotent). */
+    private fun migrateAuditSchema() {
+        val existing = getColumnNames("memory_audit")
+        val migrations = mapOf(
+            "arguments" to "ALTER TABLE memory_audit ADD COLUMN arguments TEXT",
+            "result_summary" to "ALTER TABLE memory_audit ADD COLUMN result_summary TEXT",
+            "duration_ms" to "ALTER TABLE memory_audit ADD COLUMN duration_ms INTEGER",
+            "task_id" to "ALTER TABLE memory_audit ADD COLUMN task_id TEXT",
+            "tool_name" to "ALTER TABLE memory_audit ADD COLUMN tool_name TEXT"
+        )
+        conn.createStatement().use { stmt ->
+            for ((col, sql) in migrations) {
+                if (col !in existing) {
+                    stmt.execute(sql)
+                    log("Migration: added column $col to memory_audit")
+                }
+            }
+            stmt.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_session_task ON memory_audit(session_id, task_id)"
+            )
+            stmt.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_tool_name ON memory_audit(tool_name) WHERE tool_name IS NOT NULL"
+            )
+        }
+    }
+
+    /** Get column names for a table via PRAGMA. */
+    private fun getColumnNames(table: String): Set<String> {
+        val cols = mutableSetOf<String>()
+        conn.createStatement().executeQuery("PRAGMA table_info($table)").use { rs ->
+            while (rs.next()) cols.add(rs.getString("name"))
+        }
+        return cols
     }
 
     /** Split SQL preserving trigger bodies. */

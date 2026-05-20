@@ -1,0 +1,72 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Session Replay System" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;dashed=1;fontSize=14;fontStyle=1;verticalAlign=top;align=center;" vertex="1" parent="1">
+      <mxGeometry x="250" y="40" width="500" height="520" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="200" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="AI Agent" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="400" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="View Session List" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="320" y="70" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Replay Session&#xa;with Rich Timeline" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="320" y="160" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="View Event Details&#xa;(Arguments + Results)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="320" y="250" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="View Duration&#xa;&amp; Performance" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="320" y="340" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Export Session&#xa;as Markdown" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="320" y="430" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Navigate with&#xa;Playback Controls" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="540" y="160" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="View Task Groups" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="540" y="250" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="3" target="5">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="3" target="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="3" target="7">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="3" target="8">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="3" target="9">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="4" target="9">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="6" target="10">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="&lt;&lt;include&gt;&gt;" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="7" target="11">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="Kotlin Server" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="870" y="200" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="Log Rich&#xa;Audit Events" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="540" y="350" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="20" target="21">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="" style="endArrow=none;html=1;" edge="1" parent="1" source="4" target="7">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

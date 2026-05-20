@@ -6,18 +6,21 @@
  */
 
 import * as readline from 'readline';
-import { loadConfig, setWorkspace, AppConfig } from './config.js';
+import { loadConfig, setWorkspace, AppConfig, resolveOrchestrationConfigPath } from './config.js';
 import { DatabaseManager } from './db/database-manager.js';
 import { IndexingEngine } from './indexer/indexing-engine.js';
-import { getToolDefinitions, dispatchTool, initMemoryDispatcher } from './tools/register-tools.js';
+import { getToolDefinitions, dispatchTool, initMemoryDispatcher, initOrchestration } from './tools/register-tools.js';
 import { MemoryEngine } from './memory/memory-engine.js';
 import { ViewerServer } from './http/viewer-server.js';
 import { EmbeddingFactory } from './memory/embedding/index.js';
+import { loadOrchestrationConfig, loadOrchestrationConfigFromPath } from './orchestration/config.js';
+import { OrchestrationEngine } from './orchestration/engine.js';
 
 const SERVER_INFO = { name: 'mcp-code-intelligence', version: '0.2.0' };
 const PROTOCOL_VERSION = '2024-11-05';
 let _memEngine: MemoryEngine | null = null;
 let _viewerServer: ViewerServer | null = null;
+let _orchEngine: OrchestrationEngine | null = null;
 
 async function main(): Promise<void> {
   let config = loadConfig();
@@ -85,6 +88,21 @@ async function main(): Promise<void> {
       viewerServer.start();
       _viewerServer = viewerServer;
 
+      // Initialize orchestration engine (nullable — skipped if no config)
+      const orchConfigPath = resolveOrchestrationConfigPath();
+      const orchConfig = orchConfigPath
+        ? loadOrchestrationConfigFromPath(orchConfigPath)
+        : loadOrchestrationConfig(config.workspace);
+      if (orchConfig) {
+        const orchEngine = new OrchestrationEngine(orchConfig, memoryEngine, config);
+        await orchEngine.start();
+        _orchEngine = orchEngine;
+        initOrchestration(orchEngine);
+        console.error('[code-intel] OrchestrationEngine started');
+      } else {
+        console.error('[code-intel] No orchestration.json — orchestration disabled');
+      }
+
       send({ jsonrpc: '2.0', id: reqId, result: buildInitializeResult() });
 
       // Start background indexing after responding
@@ -109,6 +127,7 @@ async function main(): Promise<void> {
 
 function cleanup(): void {
   console.error('[code-intel] Shutting down...');
+  if (_orchEngine) { _orchEngine.stop(); _orchEngine = null; }
   if (_viewerServer) { _viewerServer.stop(); _viewerServer = null; }
   if (_memEngine) { _memEngine.endSession(); _memEngine = null; }
 }

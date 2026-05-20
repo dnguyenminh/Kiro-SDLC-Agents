@@ -41,7 +41,7 @@ class StdioJsonRpc:
         future: asyncio.Future[Any] = asyncio.get_event_loop().create_future()
         self._pending[req_id] = future
         msg = self._build_request(req_id, method, params)
-        self._write_message(msg)
+        await self._write_message(msg)
         try:
             return await asyncio.wait_for(future, timeout=timeout_ms / 1000.0)
         except asyncio.TimeoutError:
@@ -50,10 +50,14 @@ class StdioJsonRpc:
 
     def send_notification(self, method: str, params: dict | None) -> None:
         """Send JSON-RPC notification (no response expected)."""
-        msg = {"jsonrpc": "2.0", "method": method}
+        msg: dict[str, Any] = {"jsonrpc": "2.0", "method": method}
         if params is not None:
             msg["params"] = params
-        self._write_message(msg)
+        proc = self._proc
+        if not proc or not proc.stdin:
+            return
+        data = (json.dumps(msg) + "\n").encode("utf-8")
+        proc.stdin.write(data)
 
     def reject_all(self, reason: str) -> None:
         """Reject all pending requests with an error."""
@@ -108,10 +112,11 @@ class StdioJsonRpc:
             msg["params"] = params
         return msg
 
-    def _write_message(self, msg: dict) -> None:
-        """Write JSON message to child process stdin."""
+    async def _write_message(self, msg: dict) -> None:
+        """Write JSON message to child process stdin and flush."""
         proc = self._proc
         if not proc or not proc.stdin:
             raise RuntimeError("Not attached to process")
         data = (json.dumps(msg) + "\n").encode("utf-8")
         proc.stdin.write(data)
+        await proc.stdin.drain()

@@ -76,6 +76,21 @@ class UnifiedRegistry(private val similarityThreshold: Double = 0.7) {
         )
     }
 
+    /** Register a tool discovered via nested find_tools delegation. */
+    fun registerNested(uniqueName: String, serverName: String, definition: JsonObject) {
+        val desc = definition["description"]?.jsonPrimitive?.content ?: ""
+        val tool = RegisteredTool(
+            name = uniqueName,
+            definition = definition,
+            source = "child:$serverName",
+            priority = serverOrder.indexOf(serverName).let { if (it < 0) 999 else it },
+            nameTokens = Tokenizer.tokenize(uniqueName),
+            descTokens = Tokenizer.tokenize(desc)
+        )
+        childTools = childTools + tool
+        rebuild()
+    }
+
     /** Get all enabled tool definitions (respects toggles). */
     fun getAll(): List<JsonObject> = merged.filter { isEnabled(it.name) }.map { it.definition }
 
@@ -104,7 +119,7 @@ class UnifiedRegistry(private val similarityThreshold: Double = 0.7) {
         if (relevance <= 0.0) return 0.0
         val toolHits = hits[tool.name]?.get() ?: 0
         val normalizedHits = toolHits.toDouble() / maxHits.toDouble()
-        return relevance * 0.7 + normalizedHits * 0.3
+        return normalizedHits * 0.6 + relevance * 0.4
     }
 
     private fun scoreAgainstTerms(tool: RegisteredTool, queryTerms: Set<String>): Double {
@@ -119,9 +134,9 @@ class UnifiedRegistry(private val similarityThreshold: Double = 0.7) {
     }
 
     /** Record a successful tool execution hit. Triggers decay if threshold exceeded. */
-    fun recordHit(toolName: String) {
+    fun recordHit(toolName: String, weight: Int = 1) {
         val counter = hits.computeIfAbsent(toolName) { java.util.concurrent.atomic.AtomicInteger(0) }
-        val newVal = counter.incrementAndGet()
+        val newVal = counter.addAndGet(weight)
         if (newVal > 1000) applyDecay(toolName)
     }
 

@@ -102,7 +102,9 @@ class ServerProcess:
         """Spawn child process with configured command and args."""
         try:
             cmd = self._resolve_command(self._entry.command)
-            args = self._entry.args
+            args = list(self._entry.args)
+            # Note: depth args NOT injected for third-party servers
+            # (they don't understand --depth/--max-depth)
             env = {**os.environ, **self._entry.env}
             return await asyncio.create_subprocess_exec(
                 *cmd, *args,

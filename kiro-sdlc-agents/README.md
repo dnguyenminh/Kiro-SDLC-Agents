@@ -55,7 +55,8 @@ Starting in v1.2.0, code intelligence is powered by an MCP server instead of bun
   "mcpServers": {
     "code-intelligence": {
       "command": "uvx",
-      "args": ["mcp-code-intel@latest", "--workspace", "${workspaceFolder}"]
+      "args": ["mcp-code-intel@latest", "--workspace", "${workspaceFolder}", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+      "cwd": "/absolute/path/to/workspace"
     }
   }
 }
@@ -67,7 +68,8 @@ Starting in v1.2.0, code intelligence is powered by an MCP server instead of bun
   "mcpServers": {
     "code-intelligence": {
       "command": "npx",
-      "args": ["mcp-code-intelligence@latest", "--workspace", "${workspaceFolder}"]
+      "args": ["mcp-code-intelligence@latest", "--workspace", "${workspaceFolder}", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+      "cwd": "/absolute/path/to/workspace"
     }
   }
 }
@@ -79,11 +81,14 @@ Starting in v1.2.0, code intelligence is powered by an MCP server instead of bun
   "mcpServers": {
     "code-intelligence": {
       "command": "java",
-      "args": ["-jar", "~/.kiro/mcp-servers/code-intelligence/mcp-code-intelligence.jar", "--workspace", "${workspaceFolder}"]
+      "args": ["-jar", "~/.kiro/mcp-servers/code-intelligence/mcp-code-intelligence.jar", "--workspace", "${workspaceFolder}", "--config", "${workspaceFolder}/.code-intel/orchestration.json"],
+      "cwd": "/absolute/path/to/workspace"
     }
   }
 }
 ```
+
+> **Note:** The `cwd` field requires an absolute path — `${workspaceFolder}` is not supported here. The extension automatically sets this to your workspace root when injecting the MCP config.
 
 ### First-time Security Approval
 

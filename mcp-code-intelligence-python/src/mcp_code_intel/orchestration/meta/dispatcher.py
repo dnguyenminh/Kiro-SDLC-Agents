@@ -1,6 +1,7 @@
 """Meta-tool dispatcher — routes meta-tool calls to handlers.
 
 Behavioral parity with Kotlin MetaToolDispatcher.kt.
+dispatch() is SYNC — only execute_dynamic_tool uses runBlocking internally.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from ..engine import OrchestrationEngine
 
 from .find_tools import execute as find_tools_execute
-from .execute_dynamic import execute as execute_dynamic_execute
+from .execute_dynamic import execute_sync as execute_dynamic_sync
 from .agent_log import execute as agent_log_execute
 from .manage_auto_approve import execute as manage_auto_approve_execute
 
@@ -95,19 +96,23 @@ META_TOOL_NAMES = frozenset(d["name"] for d in META_TOOL_DEFINITIONS)
 
 
 class MetaToolDispatcher:
-    """Dispatches meta-tool calls to their handlers."""
+    """Dispatches meta-tool calls to their handlers.
+
+    dispatch() is SYNC (like Kotlin). Only execute_dynamic_tool uses
+    runBlocking internally to call async engine methods.
+    """
 
     def __init__(self, engine: OrchestrationEngine) -> None:
         self._engine = engine
 
-    async def dispatch(self, tool_name: str, args: dict) -> str | None:
+    def dispatch(self, tool_name: str, args: dict) -> str | None:
         """Dispatch a meta-tool call. Returns None if not a meta-tool."""
         if tool_name not in META_TOOL_NAMES:
             return None
         if tool_name == "find_tools":
             return find_tools_execute(self._engine, args)
         if tool_name == "execute_dynamic_tool":
-            return await execute_dynamic_execute(self._engine, args)
+            return execute_dynamic_sync(self._engine, args)
         if tool_name == "toggle_tool":
             return self._handle_toggle(args)
         if tool_name == "reset_tools":

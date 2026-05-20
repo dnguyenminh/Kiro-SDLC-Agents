@@ -17,6 +17,7 @@ import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
 import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
 import { EmbeddingService } from '../memory/embedding/index.js';
+import { OrchestrationEngine } from '../orchestration/engine.js';
 
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 export function registerTools(
@@ -38,7 +39,11 @@ export function registerTools(
 
 /** Get tool definitions for tools/list response (raw mode). */
 export function getToolDefinitions(): object[] {
-  return [...TOOL_DEFINITIONS, ...MEMORY_TOOL_DEFINITIONS];
+  const defs: object[] = [...TOOL_DEFINITIONS, ...MEMORY_TOOL_DEFINITIONS];
+  if (orchestrationEngine) {
+    defs.push(...orchestrationEngine.metaToolDispatcher.getDefinitions());
+  }
+  return defs;
 }
 
 /** Dispatch a tool call and return result text (raw mode). */
@@ -49,12 +54,25 @@ export async function dispatchTool(
   indexer: IndexingEngine,
   workspace: string
 ): Promise<string> {
-  // Try memory tools first
+  // Try orchestration meta-tools first (find_tools, execute_dynamic_tool, etc.)
+  if (orchestrationEngine) {
+    const orchResult = await orchestrationEngine.metaToolDispatcher.dispatch(name, args);
+    if (orchResult !== null) return orchResult;
+  }
+
+  // Try memory tools
   const memResult = getMemoryDispatcher(dbManager, workspace).dispatch(name, args);
   if (memResult !== null) return memResult;
 
   const queryLayer = new QueryLayer(dbManager);
   return dispatchByName(name, args, queryLayer, indexer, workspace);
+}
+
+let orchestrationEngine: OrchestrationEngine | null = null;
+
+/** Wire orchestration engine into tool dispatch. */
+export function initOrchestration(engine: OrchestrationEngine): void {
+  orchestrationEngine = engine;
 }
 
 let memoryDispatcher: MemoryToolDispatcher | null = null;

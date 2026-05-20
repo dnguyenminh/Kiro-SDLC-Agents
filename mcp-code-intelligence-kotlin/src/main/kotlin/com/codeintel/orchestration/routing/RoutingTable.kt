@@ -38,6 +38,13 @@ class RoutingTable {
     /** Get all child (non-native) routes. */
     fun childRoutes(): List<RouteEntry> = table.values.filter { !it.isNative }
 
+    /** Add a single route entry (for dynamically discovered nested tools). */
+    fun addRoute(toolName: String, serverName: String) {
+        if (!table.containsKey(toolName)) {
+            table[toolName] = RouteEntry(toolName, serverName, isNative = false)
+        }
+    }
+
     /** Check if a tool exists in the routing table. */
     fun contains(toolName: String): Boolean = table.containsKey(toolName)
 

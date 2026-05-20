@@ -73,9 +73,9 @@ class UnifiedRegistry:
         """Get fallback chain for a tool name."""
         return self._chains.get(tool_name)
 
-    def record_hit(self, tool_name: str) -> None:
+    def record_hit(self, tool_name: str, weight: int = 1) -> None:
         """Record successful execution hit. Triggers decay if > 1000."""
-        self._hits[tool_name] = self._hits.get(tool_name, 0) + 1
+        self._hits[tool_name] = self._hits.get(tool_name, 0) + weight
         if self._hits[tool_name] > 1000:
             self._apply_decay(tool_name)
 
@@ -106,13 +106,28 @@ class UnifiedRegistry:
         """Get all child tools as flat list."""
         return list(self._child_tools)
 
+    def register_nested(self, unique_name: str, server_name: str, definition: dict) -> None:
+        """Register a tool discovered via nested find_tools delegation."""
+        existing = self.find(unique_name)
+        if existing:
+            return
+        name = definition.get("name", unique_name)
+        desc = definition.get("description", "")
+        priority = self._server_order.index(server_name) if server_name in self._server_order else 999
+        tool = RegisteredTool(
+            name=unique_name, definition=definition, source=f"nested:{server_name}",
+            priority=priority, name_tokens=tokenize(name), desc_tokens=tokenize(desc),
+        )
+        self._child_tools.append(tool)
+        self._merged.append(tool)
+
     def _combined_score(self, tool: RegisteredTool, terms: set[str], max_hits: int) -> float:
         """Combined relevance + popularity score."""
         relevance = self._score_against_terms(tool, terms)
         if relevance <= 0.0:
             return 0.0
         normalized_hits = self._hits.get(tool.name, 0) / max_hits
-        return relevance * 0.7 + normalized_hits * 0.3
+        return normalized_hits * 0.6 + relevance * 0.4
 
     def _score_against_terms(self, tool: RegisteredTool, query_terms: set[str]) -> float:
         """Score tool against query terms."""

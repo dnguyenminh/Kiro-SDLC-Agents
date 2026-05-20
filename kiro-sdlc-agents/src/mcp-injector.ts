@@ -133,7 +133,9 @@ function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>, r
     );
     config.args = args;
     if (variant.config.cwd) {
-        config.cwd = variant.config.cwd.replace("${mcpServersDir}", serversDir);
+        config.cwd = variant.config.cwd
+            .replace("${mcpServersDir}", serversDir)
+            .replace("${workspaceFolder}", root);
     }
 
     // Build env: required vars + Ollama vars (if enabled)

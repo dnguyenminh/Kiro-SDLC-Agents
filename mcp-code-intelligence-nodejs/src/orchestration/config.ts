@@ -50,6 +50,11 @@ const DEFAULT_SETTINGS: OrchestrationSettings = {
 /** Load orchestration.json from workspace .code-intel/ directory. */
 export function loadOrchestrationConfig(workspace: string): OrchestrationConfig | null {
   const configPath = path.join(workspace, '.code-intel', 'orchestration.json');
+  return loadOrchestrationConfigFromPath(configPath);
+}
+
+/** Load orchestration config from an explicit file path. */
+export function loadOrchestrationConfigFromPath(configPath: string): OrchestrationConfig | null {
   if (!fs.existsSync(configPath)) return null;
   try {
     const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));

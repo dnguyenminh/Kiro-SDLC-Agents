@@ -31,4 +31,11 @@ export class RoutingTable {
   resolve(toolName: string): RouteEntry | null {
     return this.routes.get(toolName) ?? null;
   }
+
+  /** Add a single route entry (for dynamically discovered nested tools). */
+  addRoute(toolName: string, serverName: string): void {
+    if (!this.routes.has(toolName)) {
+      this.routes.set(toolName, { serverName, isNative: false });
+    }
+  }
 }

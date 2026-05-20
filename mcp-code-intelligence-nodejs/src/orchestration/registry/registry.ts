@@ -63,10 +63,10 @@ export class UnifiedRegistry {
 
   getChain(toolName: string): ToolChain | null { return this.chains.get(toolName) ?? null; }
 
-  recordHit(toolName: string): void {
+  recordHit(toolName: string, weight: number = 1): void {
     const current = this.hits.get(toolName) ?? 0;
-    this.hits.set(toolName, current + 1);
-    if (current + 1 > 1000) this.applyDecay(toolName);
+    this.hits.set(toolName, current + weight);
+    if (current + weight > 1000) this.applyDecay(toolName);
   }
 
   toggle(toolName: string, enabled: boolean): void { this.toggles.set(toolName, enabled); }
@@ -87,11 +87,26 @@ export class UnifiedRegistry {
 
   allChildTools(): RegisteredTool[] { return [...this.childTools]; }
 
+  /** Register a tool discovered via nested find_tools delegation. */
+  registerNested(uniqueName: string, serverName: string, definition: Record<string, any>): void {
+    const desc = definition.description ?? '';
+    const tool: RegisteredTool = {
+      name: uniqueName,
+      definition,
+      source: `child:${serverName}`,
+      priority: this.serverOrder.indexOf(serverName) < 0 ? 999 : this.serverOrder.indexOf(serverName),
+      nameTokens: tokenize(uniqueName),
+      descTokens: tokenize(desc),
+    };
+    this.childTools.push(tool);
+    this.rebuild();
+  }
+
   private combinedScore(tool: RegisteredTool, terms: Set<string>, maxHits: number): number {
     const relevance = this.scoreAgainstTerms(tool, terms);
     if (relevance <= 0) return 0;
     const normalizedHits = (this.hits.get(tool.name) ?? 0) / maxHits;
-    return relevance * 0.7 + normalizedHits * 0.3;
+    return normalizedHits * 0.6 + relevance * 0.4;
   }
 
   private scoreAgainstTerms(tool: RegisteredTool, queryTerms: Set<string>): number {

@@ -57,12 +57,13 @@ async function runIndexWorkspace(root: string): Promise<void> {
             if (options.includes("documents")) {
                 report.report({ message: "Discovering documents..." });
                 const docs = discoverDocuments(root);
-                results.push(`✅ Found ${docs.length} document(s) to index`);
-                results.push("   (MCP server auto-skips unchanged files via checksum)");
 
-                if (docs.length > 0) {
-                    report.report({ message: `Sending ${docs.length} documents to MCP server...` });
-                    results.push(formatDocList(docs));
+                if (docs.length === 0) {
+                    results.push("ℹ️ No documents found in documents/ folder");
+                } else {
+                    report.report({ message: `Indexing ${docs.length} documents via HTTP API...` });
+                    const apiResult = await ingestDocumentsViaHttp(docs, report);
+                    results.push(apiResult);
                 }
             }
 
@@ -143,8 +144,7 @@ function showIndexResults(results: string[], root: string, options: string[]): v
         channel.appendLine("• Code: MCP server indexes automatically. Check with: code_index_status");
     }
     if (options.includes("documents")) {
-        channel.appendLine("• Documents: Ask agent to run mem_ingest_file for each discovered document");
-        channel.appendLine("  Or in chat: \"Index all documents for KSA-14\"");
+        channel.appendLine("• Documents: Indexed via HTTP API (auto-skips unchanged files)");
     }
     if (options.includes("sync")) {
         channel.appendLine("• Sync: Ask agent to run mem_sync_code");
@@ -166,4 +166,75 @@ function getWorkspaceRoot(): string | undefined {
         return undefined;
     }
     return folders[0].uri.fsPath;
+}
+
+/** Resolve viewer port from MCP config or env. */
+function resolveViewerPort(root: string): number {
+    try {
+        const mcpPath = path.join(root, ".kiro", "settings", "mcp.json");
+        if (fs.existsSync(mcpPath)) {
+            const raw = fs.readFileSync(mcpPath, "utf-8");
+            const config = JSON.parse(raw);
+            const servers = config.mcpServers || {};
+            for (const server of Object.values(servers) as any[]) {
+                const env = server.env || {};
+                if (env.CODE_INTEL_VIEWER_PORT) {
+                    return parseInt(env.CODE_INTEL_VIEWER_PORT, 10);
+                }
+            }
+        }
+    } catch { /* ignore */ }
+    return 3200; // default
+}
+
+/** Call MCP server HTTP API to ingest documents. */
+async function ingestDocumentsViaHttp(
+    docs: Array<{ path: string; type: string; ticket: string }>,
+    report: vscode.Progress<{ message?: string }>
+): Promise<string> {
+    const root = getWorkspaceRoot();
+    if (!root) { return "❌ No workspace root"; }
+
+    const port = resolveViewerPort(root);
+    const url = `http://localhost:${port}/api/memory/ingest-file`;
+
+    const payload = {
+        files: docs.map(d => ({ file_path: d.path, type: d.type, format: "markdown" }))
+    };
+
+    try {
+        const http = await import("http");
+        const body = JSON.stringify(payload);
+
+        const result = await new Promise<string>((resolve, reject) => {
+            const req = http.request(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+            }, (res) => {
+                let data = "";
+                res.on("data", chunk => { data += chunk; });
+                res.on("end", () => {
+                    if (res.statusCode === 200) {
+                        try {
+                            const json = JSON.parse(data);
+                            resolve(`✅ Indexed: ${json.ingested} files, skipped: ${json.skipped} (unchanged)`);
+                        } catch {
+                            resolve(`✅ Server responded: ${data.substring(0, 200)}`);
+                        }
+                    } else {
+                        resolve(`⚠️ Server returned ${res.statusCode}: ${data.substring(0, 200)}`);
+                    }
+                });
+            });
+            req.on("error", (err) => {
+                resolve(`❌ Cannot reach MCP server at port ${port}: ${err.message}\n   Ensure server is running. Fallback: ask agent "Index all documents"`);
+            });
+            req.write(body);
+            req.end();
+        });
+
+        return result;
+    } catch (err: any) {
+        return `❌ HTTP request failed: ${err.message}`;
+    }
 }
