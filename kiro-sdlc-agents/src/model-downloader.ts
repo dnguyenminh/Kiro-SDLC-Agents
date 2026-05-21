@@ -82,8 +82,11 @@ function saveRegistry(registry: Registry): void {
 
 function isDownloaded(model: ModelInfo): boolean {
     const modelDir = path.join(MODELS_DIR, model.name);
-    const onnxFile = path.join(modelDir, "model.onnx");
-    return fs.existsSync(onnxFile);
+    // Check ALL required files exist (not just model.onnx)
+    return Object.values(model.files).every(relPath => {
+        const target = path.join(modelDir, path.basename(relPath));
+        return fs.existsSync(target) && fs.statSync(target).size > 0;
+    });
 }
 
 function switchModel(modelName: string, registry: Registry): void {
