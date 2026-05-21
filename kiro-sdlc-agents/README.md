@@ -11,6 +11,7 @@ Inject a complete multi-agent SDLC pipeline into any workspace with one command.
 | `Kiro SDLC: Update Agents` | Update to latest version (overwrites outdated files) |
 | `Kiro SDLC: Show Status` | Check which components are present and their versions |
 | `Kiro SDLC: Index Workspace (Code + Documents)` | Index source code + documents into Knowledge Base |
+| `Kiro SDLC: Download Embedding Model` | Download/switch embedding models for semantic search |
 
 ## What Gets Injected
 

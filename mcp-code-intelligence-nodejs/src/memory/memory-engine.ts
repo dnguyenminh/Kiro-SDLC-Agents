@@ -32,9 +32,14 @@ export class MemoryEngine {
   readonly audit: AuditRepository;
   readonly graph: KnowledgeGraph;
 
+  private readonly _db: Database.Database;
   private currentSessionId: string | null = null;
 
+  /** Expose raw DB for direct queries (used by UX routes). */
+  get db(): Database.Database { return this._db; }
+
   constructor(db: Database.Database) {
+    this._db = db;
     const memDb = new MemoryDatabaseManager(db);
     memDb.initialize();
 

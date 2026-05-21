@@ -35,9 +35,10 @@ async function initGraph() {
       .width(el.clientWidth).height(el.clientHeight)
       .onNodeClick(n => selectGraphNode(n));
     // Resize graph when container changes
+    const wrap = document.getElementById('graph-wrap');
     new ResizeObserver(() => {
-      if (graph3d) graph3d.width(el.clientWidth).height(el.clientHeight);
-    }).observe(el);
+      if (graph3d) graph3d.width(wrap.clientWidth).height(wrap.clientHeight);
+    }).observe(wrap);
     populateClusters();
     // Start smooth minimap updates
     setTimeout(() => { drawMinimapNodes(); startMinimapLoop(); }, 3000);

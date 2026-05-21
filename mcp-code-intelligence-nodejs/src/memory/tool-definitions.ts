@@ -1,8 +1,15 @@
 /**
  * MCP tool definitions for memory engine. Prefix: mem_
+ * Now exports consolidated 14 tools (KSA-85) instead of 12 V1 + 17 V2.
  */
 
-export const MEMORY_TOOL_DEFINITIONS = [
+import { MEMORY_TOOL_DEFINITIONS_CONSOLIDATED } from './tool-definitions-consolidated.js';
+
+// Primary export: 14 consolidated tools
+export const MEMORY_TOOL_DEFINITIONS = MEMORY_TOOL_DEFINITIONS_CONSOLIDATED;
+
+// Legacy V1 definitions kept for internal dispatcher reference
+export const MEMORY_TOOL_DEFINITIONS_V1 = [
   {
     name: 'mem_search',
     description: 'Hybrid search across local workspace memory (BM25 + vector + graph). Returns ranked results with progressive disclosure.',

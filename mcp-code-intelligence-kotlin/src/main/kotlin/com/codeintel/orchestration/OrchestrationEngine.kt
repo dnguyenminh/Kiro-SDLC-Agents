@@ -8,12 +8,15 @@ package com.codeintel.orchestration
 import com.codeintel.Config
 import com.codeintel.log
 import com.codeintel.memory.MemoryEngine
+import com.codeintel.orchestration.cache.AdaptiveTokenCache
+import com.codeintel.orchestration.embedding.EmbeddingSearcher
 import com.codeintel.orchestration.local.ConfigWatcher
 import com.codeintel.orchestration.local.LocalServerManager
 import com.codeintel.orchestration.local.ServerState
 import com.codeintel.orchestration.local.ServerStatusInfo
 import com.codeintel.orchestration.logging.AutoLogger
 import com.codeintel.orchestration.meta.MetaToolDispatcher
+import com.codeintel.orchestration.models.ModelManager
 import com.codeintel.orchestration.registry.UnifiedRegistry
 import com.codeintel.orchestration.routing.RoutingTable
 import com.codeintel.orchestration.routing.SmartRouter
@@ -36,11 +39,39 @@ class OrchestrationEngine(
     private var started = false
     private val findToolsDelegates = mutableListOf<String>()
     private val toolMapping = java.util.concurrent.ConcurrentHashMap<String, Pair<String, String>>()
+    private var tokenCache: AdaptiveTokenCache? = null
+    private var modelManager: ModelManager? = null
+    private var embeddingSearcher: EmbeddingSearcher? = null
 
     val metaToolDispatcher: MetaToolDispatcher by lazy { MetaToolDispatcher(this) }
 
     /** Expose memory engine for KB search in find_tools. */
     fun getMemoryEngine(): MemoryEngine? = memoryEngine
+
+    /** Lazy-init adaptive token cache. */
+    fun getTokenCache(): AdaptiveTokenCache {
+        if (tokenCache == null) {
+            val cachePath = "${getWorkspace()}/.code-intel/token-cache.json"
+            tokenCache = AdaptiveTokenCache(cachePath)
+        }
+        return tokenCache!!
+    }
+
+    /** Get embedding searcher (null if ONNX unavailable). */
+    fun getEmbeddingSearcher(): EmbeddingSearcher? {
+        if (embeddingSearcher == null) {
+            embeddingSearcher = try {
+                EmbeddingSearcher(getModelManager(), registry)
+            } catch (_: Exception) { null }
+        }
+        return embeddingSearcher
+    }
+
+    /** Get model manager instance. */
+    fun getModelManager(): ModelManager {
+        if (modelManager == null) modelManager = ModelManager()
+        return modelManager!!
+    }
 
     /** Start orchestration — spawn all child servers, build routing table, ingest to KB. */
     suspend fun start() {
@@ -115,6 +146,16 @@ class OrchestrationEngine(
         toolMapping[originalName] = serverName to originalName
         registry.registerNested(uniqueName, serverName, definition)
         routingTable.addRoute(originalName, serverName)
+    }
+
+    /** Retry FAILED servers and rebuild routing if any recover. */
+    suspend fun retryFailedServers(): List<String> {
+        val recovered = serverManager.retryFailedServers()
+        if (recovered.isNotEmpty()) {
+            buildRoutingTable()
+            log("Recovered servers: $recovered — routing rebuilt")
+        }
+        return recovered
     }
 
     /** Call a tool directly on a specific child server (bypass routing table). */

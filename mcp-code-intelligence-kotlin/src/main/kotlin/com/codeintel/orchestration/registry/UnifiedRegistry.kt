@@ -98,6 +98,12 @@ class UnifiedRegistry(private val similarityThreshold: Double = 0.7) {
     fun find(name: String): RegisteredTool? =
         merged.firstOrNull { it.name == name && isEnabled(it.name) }
 
+    /** Compute deterministic hash of current tool registry state. */
+    fun versionHash(): String {
+        val names = merged.map { it.name }.sorted().joinToString("|")
+        return names.hashCode().toUInt().toString(16).padStart(8, '0')
+    }
+
     /** Get fallback chain for a tool name — ordered by config priority (lower = higher). */
     fun getChain(toolName: String): ToolChain? = chains[toolName]
 

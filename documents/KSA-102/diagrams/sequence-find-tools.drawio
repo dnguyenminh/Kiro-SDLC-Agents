@@ -1,0 +1,108 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlActor;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="20" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="find_tools" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="200" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Registry" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="370" y="40" width="80" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="TokenCache" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="520" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="EmbeddingSearcher" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="700" y="40" width="130" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="OnnxProvider" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="900" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="find_tools(query)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="120" as="sourcePoint" />
+        <mxPoint x="250" y="120" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="11" value="search(query)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="150" as="sourcePoint" />
+        <mxPoint x="410" y="150" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="12" value="[] (no results)" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="410" y="180" as="sourcePoint" />
+        <mxPoint x="250" y="180" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="13" value="find_fuzzy(tokens, 0.80)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="220" as="sourcePoint" />
+        <mxPoint x="570" y="220" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="14" value="None (cache miss)" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="570" y="250" as="sourcePoint" />
+        <mxPoint x="250" y="250" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="15" value="search_embedding(query)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="300" as="sourcePoint" />
+        <mxPoint x="765" y="300" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="16" value="embed(query)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="765" y="330" as="sourcePoint" />
+        <mxPoint x="950" y="330" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="vector[384]" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="950" y="370" as="sourcePoint" />
+        <mxPoint x="765" y="370" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" value="cosine_similarity(query_vec, tool_vecs)" style="html=1;verticalAlign=bottom;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="765" y="400" as="sourcePoint" />
+        <mxPoint x="950" y="400" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="19" value="(tool, score=0.87)" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="765" y="440" as="sourcePoint" />
+        <mxPoint x="250" y="440" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="add(tokens, tool, 0.87)" style="html=1;verticalAlign=bottom;strokeColor=#009900;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="490" as="sourcePoint" />
+        <mxPoint x="570" y="490" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="21" value="LEARN: cache mapping" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;fontStyle=1;fontColor=#009900;" vertex="1" parent="1">
+      <mxGeometry x="300" y="500" width="160" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="schedule_persist()" style="html=1;verticalAlign=bottom;dashed=1;strokeColor=#009900;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="570" y="540" as="sourcePoint" />
+        <mxPoint x="570" y="570" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="23" value="[tool_definition]" style="html=1;verticalAlign=bottom;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="600" as="sourcePoint" />
+        <mxPoint x="90" y="600" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="24" value="score &gt; 0.75 → CACHE" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="580" y="460" width="140" height="40" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

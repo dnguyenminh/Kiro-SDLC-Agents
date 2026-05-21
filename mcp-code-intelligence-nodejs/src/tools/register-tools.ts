@@ -84,6 +84,11 @@ export function initMemoryDispatcher(
   memoryDispatcher = new MemoryToolDispatcher(engine, workspace, embeddingService);
 }
 
+/** Get the initialized memory dispatcher (for tool-call ingest hook). */
+export function getMemoryDispatcherInstance(): MemoryToolDispatcher | null {
+  return memoryDispatcher;
+}
+
 function getMemoryDispatcher(dbManager: DatabaseManager, workspace: string): MemoryToolDispatcher {
   if (!memoryDispatcher) {
     const engine = new MemoryEngine(dbManager.getDb());

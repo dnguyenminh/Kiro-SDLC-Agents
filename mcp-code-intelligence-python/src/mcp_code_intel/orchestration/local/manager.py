@@ -88,6 +88,21 @@ class LocalServerManager:
             for name, s in self._servers.items()
         ]
 
+    async def retry_failed_servers(self) -> list[str]:
+        """Retry starting servers that are in FAILED state. Returns names of newly active servers."""
+        recovered: list[str] = []
+        for name, server in list(self._servers.items()):
+            if server.state != ServerState.FAILED:
+                continue
+            _log(f"[{name}] Retrying failed server...")
+            server.retry_count = 0  # Reset retry count for fresh attempt
+            if await server.start():
+                recovered.append(name)
+                _log(f"[{name}] Recovered — now active with {len(server.tools)} tools")
+            else:
+                _log(f"[{name}] Still failing")
+        return recovered
+
     def _start_health_monitor(self) -> None:
         """Start background health check task."""
         interval_s = self._config.settings.health_check_interval_ms / 1000.0
@@ -103,8 +118,14 @@ class LocalServerManager:
             pass
 
     async def _check_health(self) -> None:
-        """Check each active server, restart if unhealthy."""
+        """Check each active server, restart if unhealthy. Also retry FAILED servers."""
         for server in list(self._servers.values()):
+            if server.state == ServerState.FAILED:
+                _log(f"[{server.name}] Health check: retrying failed server")
+                server.retry_count = 0
+                if await server.start():
+                    _log(f"[{server.name}] Recovered via health check")
+                continue
             if server.state != ServerState.ACTIVE:
                 continue
             if not server.is_alive() or not await server.health_check():

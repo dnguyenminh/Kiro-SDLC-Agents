@@ -7,6 +7,7 @@ package com.codeintel
 
 import com.codeintel.memory.MemoryEngine
 import com.codeintel.memory.tools.MemoryToolDefinitions
+import com.codeintel.memory.tools.MemoryToolDefinitionsConsolidated
 import com.codeintel.orchestration.OrchestrationEngine
 import com.codeintel.tools.ToolDefinitions
 import kotlinx.coroutines.runBlocking
@@ -21,6 +22,7 @@ class McpServer(args: Array<String> = emptyArray()) {
     private var memoryEngine: MemoryEngine? = null
     private var orchestrationEngine: OrchestrationEngine? = null
     private var toolDispatcher: ToolDispatcher? = null
+    private var toolCallIngestHook: ToolCallIngestHook? = null
     private var initialized = false
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
@@ -91,10 +93,12 @@ class McpServer(args: Array<String> = emptyArray()) {
         val result = initializeServer(config)
         memoryEngine = result.memoryEngine
         orchestrationEngine = result.orchestrationEngine
+        viewerServer?.modelManager = orchestrationEngine?.getModelManager()
         toolDispatcher = ToolDispatcher(
             config, result.queryLayer, result.indexer,
             result.memoryDispatcher, result.orchestrationEngine
         )
+        toolCallIngestHook = ToolCallIngestHook(result.memoryDispatcher)
         initialized = true
         log("MCP server ready")
         return buildInitResponse()
@@ -103,7 +107,7 @@ class McpServer(args: Array<String> = emptyArray()) {
     private fun handleToolsList(): JsonObject = buildJsonObject {
         putJsonArray("tools") {
             ToolDefinitions.ALL.forEach { add(it) }
-            MemoryToolDefinitions.ALL.forEach { add(it) }
+            MemoryToolDefinitionsConsolidated.ALL.forEach { add(it) }
             orchestrationEngine?.metaToolDispatcher?.getToolDefinitions()?.forEach { add(it) }
             // Child tools NOT exposed — accessed only via find_tools/execute_dynamic_tool
         }
@@ -119,6 +123,7 @@ class McpServer(args: Array<String> = emptyArray()) {
             details = "$name(${args.toString().take(150)})"
         )
         val text = toolDispatcher?.dispatch(name, args) ?: "Unknown tool: $name"
+        toolCallIngestHook?.maybeIngest(name, args, text)
         return buildJsonObject {
             putJsonArray("content") {
                 addJsonObject { put("type", "text"); put("text", text) }

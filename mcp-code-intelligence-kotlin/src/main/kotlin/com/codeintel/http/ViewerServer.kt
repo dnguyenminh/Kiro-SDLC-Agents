@@ -1,6 +1,6 @@
 /**
  * Ktor HTTP server — serves REST API + Knowledge Graph Web Viewer.
- * Runs as daemon thread alongside the stdio MCP transport.
+ * All HTML/CSS/JS served from shared/viewer/ (single source of truth).
  */
 package com.codeintel.http
 
@@ -22,17 +22,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class ViewerServer(
-    val config: Config
-) {
-    /** Mutable references — set after MCP initialize completes. */
+class ViewerServer(val config: Config) {
     @Volatile var memoryEngine: MemoryEngine? = null
     @Volatile var knowledgeGraph: KnowledgeGraph? = null
     @Volatile var embeddingService: EmbeddingService? = null
+    @Volatile var modelManager: com.codeintel.orchestration.models.ModelManager? = null
 
     private var engine: EmbeddedServer<*, *>? = null
 
-    /** Start HTTP server (blocking within its thread). */
     fun start() {
         engine = embeddedServer(Netty, port = config.viewerPort) {
             configurePlugins()
@@ -42,7 +39,6 @@ class ViewerServer(
         engine!!.start(wait = true)
     }
 
-    /** Stop HTTP server gracefully — releases the port. */
     fun stop() {
         engine?.stop(500, 1000)
         engine = null
@@ -63,27 +59,65 @@ class ViewerServer(
 
     private fun Application.configureRouting() {
         routing {
-            get("/") { call.respondText(loadViewerHtml(), ContentType.Text.Html) }
+            get("/") { serveSharedFile(call, "index.html") }
+            get("/dashboard") { serveSharedFile(call, "dashboard.html") }
+            get("/tags") { serveSharedFile(call, "tags.html") }
+            get("/quality") { serveSharedFile(call, "quality.html") }
+            get("/analytics") { serveSharedFile(call, "analytics.html") }
             get("/{file}.js") { serveStaticFile(call, call.parameters["file"] + ".js", "application/javascript") }
             get("/{file}.css") { serveStaticFile(call, call.parameters["file"] + ".css", "text/css") }
+            get("/modules/{file}.js") { serveSubdirFile(call, "modules/" + call.parameters["file"] + ".js", "application/javascript") }
+            get("/config/{file}.json") { serveSubdirFile(call, "config/" + call.parameters["file"] + ".json", "application/json") }
             get("/api/health") { call.respond(buildHealthResponse()) }
+            modelApiRoutes { modelManager }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
+            uxApiRoutes { memoryEngine }
             ingestApiRoutes({ memoryEngine }, { embeddingService })
             sessionApiRoutes({ memoryEngine })
         }
     }
 
-    private suspend fun serveStaticFile(call: io.ktor.server.application.ApplicationCall, filename: String, contentType: String) {
-        val file = File(config.workspace, "shared/viewer/$filename")
-        if (file.exists() && !filename.contains("..")) {
+    private suspend fun serveSharedFile(call: ApplicationCall, filename: String) {
+        val file = resolveSharedFile(filename)
+        if (file != null) {
+            call.respondText(file.readText(Charsets.UTF_8), ContentType.Text.Html)
+        } else {
+            call.respondText(viewerErrorPage(filename), ContentType.Text.Html, HttpStatusCode.ServiceUnavailable)
+        }
+    }
+
+    private suspend fun serveStaticFile(call: ApplicationCall, filename: String, contentType: String) {
+        val file = resolveSharedFile(filename)
+        if (file != null) {
             call.respondText(file.readText(Charsets.UTF_8), ContentType.parse(contentType))
         } else {
             call.respond(HttpStatusCode.NotFound, "Not found")
         }
     }
 
-    private fun loadViewerHtml(): String {
-        return loadSharedViewerHtml(config.workspace) ?: VIEWER_HTML
+    private suspend fun serveSubdirFile(call: ApplicationCall, relPath: String, contentType: String) {
+        if (relPath.contains("..")) { call.respond(HttpStatusCode.NotFound, "Not found"); return }
+        val file = resolveSharedFile(relPath)
+        if (file != null) {
+            call.respondText(file.readText(Charsets.UTF_8), ContentType.parse(contentType))
+        } else {
+            call.respond(HttpStatusCode.NotFound, "Not found")
+        }
+    }
+
+    /** Resolve file within shared/viewer/. Returns null if not found. */
+    private fun resolveSharedFile(relPath: String): File? {
+        val file = File(config.workspace, "shared/viewer/$relPath")
+        return if (file.exists()) file else null
+    }
+
+    /** Error page when shared/viewer/ files are missing. */
+    private fun viewerErrorPage(filename: String): String {
+        return "<!DOCTYPE html><html><head><title>Viewer Unavailable</title></head>" +
+            "<body style='background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem'>" +
+            "<h1>Viewer Unavailable</h1>" +
+            "<p>shared/viewer/$filename not found. Please ensure workspace is correct.</p>" +
+            "<p style='opacity:.6;font-size:.8rem'>Workspace: ${config.workspace}</p></body></html>"
     }
 
     private fun buildHealthResponse(): HealthResponse {
@@ -95,12 +129,6 @@ class ViewerServer(
             memoryEnabled = memoryEngine != null
         )
     }
-}
-
-/** Load shared viewer HTML from disk. Returns null if file not found. */
-fun loadSharedViewerHtml(workspace: String): String? {
-    val sharedFile = File(workspace, "shared/viewer/index.html")
-    return if (sharedFile.exists()) sharedFile.readText(Charsets.UTF_8) else null
 }
 
 @Serializable

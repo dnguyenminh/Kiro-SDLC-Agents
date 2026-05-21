@@ -1,6 +1,16 @@
 """MCP tool definitions for memory engine. Prefix: mem_"""
 
-MEMORY_TOOL_DEFINITIONS = [
+from .definitions_consolidated import (
+    MEMORY_TOOL_DEFINITIONS_CONSOLIDATED,
+    TOOL_ALIASES,
+)
+from .definitions_v2 import MEMORY_TOOL_DEFINITIONS_V2
+
+# Expose consolidated (14 tools) as the primary export
+MEMORY_TOOL_DEFINITIONS = MEMORY_TOOL_DEFINITIONS_CONSOLIDATED
+
+# Legacy: full 29-tool list for backward compat (internal use only)
+_MEMORY_TOOL_DEFINITIONS_LEGACY = [
     {
         "name": "mem_search",
         "description": "Hybrid search across local workspace memory (BM25 + vector + graph). Returns ranked results with progressive disclosure.",
@@ -137,4 +147,4 @@ MEMORY_TOOL_DEFINITIONS = [
             },
         },
     },
-]
+] + MEMORY_TOOL_DEFINITIONS_V2

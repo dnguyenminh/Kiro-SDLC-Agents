@@ -8,6 +8,9 @@ from .ingest import IngestPipeline
 from .hybrid_search import HybridSearch
 from .consolidation import TierConsolidator
 from .sync_code import MemSyncCode
+from .dispatcher_v2 import MemoryToolDispatcherV2
+from .dispatcher_consolidated import MemoryToolDispatcherConsolidated
+from .engine_v2 import MemoryEngineV2
 
 if TYPE_CHECKING:
     from .embedding import EmbeddingService
@@ -26,8 +29,27 @@ class MemoryToolDispatcher:
         self._consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
         self._sync_code = MemSyncCode(engine, query_layer, engine.graph) if query_layer else None
 
+        # V2 dispatcher for KB Enhancement tools
+        if isinstance(engine, MemoryEngineV2):
+            self._v2 = MemoryToolDispatcherV2(engine)
+        else:
+            self._v2 = None
+
+        # Consolidated dispatcher (routes 14 tools + aliases)
+        if self._v2:
+            self._consolidated = MemoryToolDispatcherConsolidated(self, self._v2)
+        else:
+            self._consolidated = None
+
     def dispatch(self, name: str, args: dict[str, Any]) -> str | None:
         """Dispatch a memory tool call. Returns None if not a memory tool."""
+        # Try consolidated dispatcher first (handles 14 tools + 20 aliases)
+        if self._consolidated:
+            result = self._consolidated.dispatch(name, args)
+            if result is not None:
+                return result
+
+        # Fallback: direct V1 handlers for non-consolidated calls
         handlers = {
             "mem_search": self._handle_search,
             "mem_ingest": self._handle_ingest,

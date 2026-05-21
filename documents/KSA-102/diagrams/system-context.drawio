@@ -1,0 +1,49 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="MCP Code Intelligence Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="350" y="280" width="250" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Developer&#xa;(AI Agent)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="290" width="40" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="HuggingFace Hub" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="400" y="50" width="150" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Workspace FS&#xa;(.code-intel/)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="200" y="480" width="120" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Global FS&#xa;(~/.code-intel/models/)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="600" y="480" width="150" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="Child MCP Servers&#xa;(Nested Delegates)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="750" y="280" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="find_tools(query)" style="endArrow=classic;html=1;" edge="1" parent="1" source="3" target="2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="ToolDefinition[]" style="endArrow=classic;html=1;dashed=1;" edge="1" parent="1" source="2" target="3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Download model" style="endArrow=classic;html=1;" edge="1" parent="1" source="2" target="4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="Read/Write&#xa;token-cache.json" style="endArrow=classic;endFill=1;html=1;" edge="1" parent="1" source="2" target="5">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="Read/Write&#xa;models + registry" style="endArrow=classic;endFill=1;html=1;" edge="1" parent="1" source="2" target="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="Delegate&#xa;find_tools" style="endArrow=classic;html=1;" edge="1" parent="1" source="2" target="7">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="mem_model_manager(action)" style="endArrow=classic;html=1;strokeColor=#009900;" edge="1" parent="1" source="3" target="2">
+      <mxGeometry x="0.5" y="30" relative="1" as="geometry">
+        <mxPoint x="160" y="360" as="sourcePoint" />
+        <mxPoint x="350" y="360" as="targetPoint" />
+        <mxPoint as="offset" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

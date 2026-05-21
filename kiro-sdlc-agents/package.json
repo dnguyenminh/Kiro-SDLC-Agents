@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -51,6 +51,10 @@
       {
         "command": "kiroSdlc.indexWorkspace",
         "title": "Kiro SDLC: Index Workspace (Code + Documents)"
+      },
+      {
+        "command": "kiroSdlc.downloadModel",
+        "title": "Kiro SDLC: Download Embedding Model"
       }
     ],
     "configuration": {
