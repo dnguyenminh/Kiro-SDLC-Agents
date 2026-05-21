@@ -180,27 +180,43 @@ async function downloadModel(model: ModelInfo, registry: Registry): Promise<void
     );
 }
 
-function downloadFile(url: string, target: string): Promise<void> {
+function downloadFile(url: string, target: string, maxRedirects: number = 10): Promise<void> {
     return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(target);
-        https.get(url, (res) => {
-            if (res.statusCode === 301 || res.statusCode === 302) {
-                file.close();
-                fs.unlinkSync(target);
-                downloadFile(res.headers.location!, target).then(resolve).catch(reject);
+        if (maxRedirects <= 0) { reject(new Error("Too many redirects")); return; }
+
+        const parsedUrl = new URL(url);
+        const client = parsedUrl.protocol === "https:" ? https : require("http");
+
+        client.get(url, (res: any) => {
+            const status = res.statusCode ?? 0;
+
+            // Handle all redirect types (301, 302, 303, 307, 308)
+            if (status >= 300 && status < 400 && res.headers.location) {
+                res.resume(); // Drain response
+                let redirectUrl = res.headers.location;
+                // Resolve relative URLs
+                if (redirectUrl.startsWith("/")) {
+                    redirectUrl = `${parsedUrl.protocol}//${parsedUrl.host}${redirectUrl}`;
+                }
+                downloadFile(redirectUrl, target, maxRedirects - 1).then(resolve).catch(reject);
                 return;
             }
-            if (res.statusCode !== 200) {
-                file.close();
-                fs.unlinkSync(target);
-                reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+
+            if (status !== 200) {
+                res.resume();
+                reject(new Error(`HTTP ${status} for ${url}`));
                 return;
             }
+
+            const file = fs.createWriteStream(target);
             res.pipe(file);
             file.on("finish", () => { file.close(); resolve(); });
-            file.on("error", (err) => { fs.unlinkSync(target); reject(err); });
-        }).on("error", (err) => {
-            file.close();
+            file.on("error", (err: Error) => {
+                file.close();
+                if (fs.existsSync(target)) { fs.unlinkSync(target); }
+                reject(err);
+            });
+        }).on("error", (err: Error) => {
             if (fs.existsSync(target)) { fs.unlinkSync(target); }
             reject(err);
         });
