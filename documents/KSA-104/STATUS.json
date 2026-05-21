@@ -9,8 +9,12 @@
     "test_planning": { "status": "not_started" },
     "implementation": { "status": "done", "completedAt": "2026-05-21T09:00:00Z", "note": "Code already committed before ticket creation" },
     "testing": { "status": "not_started" },
-    "deployment": { "status": "not_started" }
+    "deployment": { "status": "done", "completedAt": "2026-05-21T12:51:00Z", "note": "v1.6.0 released, v1.6.1 patch released with bug fix KSA-105" }
   },
-  "relatedTickets": ["KSA-102"],
-  "lastUpdated": "2026-05-21T11:00:00Z"
+  "releases": [
+    { "version": "v1.6.0", "date": "2026-05-21", "type": "feature", "note": "Initial release of Download Embedding Model" },
+    { "version": "v1.6.1", "date": "2026-05-21", "type": "patch", "ticket": "KSA-105", "note": "Fix: self-contained download + cache invalidation" }
+  ],
+  "relatedTickets": ["KSA-102", "KSA-105"],
+  "lastUpdated": "2026-05-21T12:51:00Z"
 }
