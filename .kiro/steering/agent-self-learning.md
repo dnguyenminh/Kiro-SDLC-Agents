@@ -26,6 +26,16 @@ Khi cần gọi external tool:
 
 **KHÔNG BAO GIỜ** hardcode tool names, CLI commands, hoặc giả định tool tồn tại.
 
+### 2.1: MCP Tools First — KHÔNG viết script riêng khi MCP đã có
+
+Khi task cần thao tác với external service (web browsing, screenshot, Jira, database...):
+
+1. **LUÔN `find_tools("<mô tả hành động>")` trước** — kiểm tra MCP servers đã có tool phù hợp chưa
+2. **Nếu MCP có tool** → dùng `execute_dynamic_tool` — KHÔNG viết script riêng (Playwright, curl, requests, pandoc...)
+3. **CHỈ dùng external script/CLI** khi `find_tools` thật sự không trả về tool nào phù hợp
+
+**Lý do:** MCP tools đã được test, có error handling, tích hợp sẵn vào orchestration, và kết quả được log vào KB tự động. User tự cấu hình MCP servers phù hợp — agent chỉ cần discover và dùng.
+
 ## ⛔ Quy tắc #3: Ingest kinh nghiệm mới
 
 Sau khi hoàn thành task bằng phương pháp mới, PHẢI ingest:
