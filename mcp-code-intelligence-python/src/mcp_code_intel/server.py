@@ -371,7 +371,9 @@ class McpServer:
                 return mem_result
         # Native tools
         if name == "code_search":
-            return handle_code_search(args, self._query_layer)
+            result = handle_code_search(args, self._query_layer)
+            self._log_search_analytics(args.get("query", ""), result)
+            return result
         if name == "code_symbols":
             return handle_code_symbols(args, self._query_layer)
         if name == "code_context":
@@ -395,6 +397,18 @@ class McpServer:
             return self._route_orchestration(name, args)
         _log(f"Tool '{name}' not routed: orchestration={orch is not None}, enabled={orch.is_enabled() if orch else 'N/A'}")
         return f"Unknown tool: {name}"
+
+    def _log_search_analytics(self, query: str, result: str) -> None:
+        """Log search to search_log for analytics page."""
+        try:
+            if not query or not self._memory_dispatcher:
+                return
+            import re
+            match = re.search(r"(\d+) results", result)
+            count = int(match.group(1)) if match else 0
+            self._memory_dispatcher._log_search_analytics(query, count)
+        except Exception:
+            pass  # analytics must not break search
 
     def _dispatch_meta(self, name: str, args: dict[str, Any]) -> str:
         """Dispatch meta-tools — all sync (parity with Kotlin MetaToolDispatcher)."""

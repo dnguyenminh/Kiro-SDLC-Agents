@@ -72,6 +72,7 @@ class ViewerServer(val config: Config) {
             modelApiRoutes { modelManager }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
             uxApiRoutes { memoryEngine }
+            kbViewerRoutes { memoryEngine }
             ingestApiRoutes({ memoryEngine }, { embeddingService })
             sessionApiRoutes({ memoryEngine })
         }

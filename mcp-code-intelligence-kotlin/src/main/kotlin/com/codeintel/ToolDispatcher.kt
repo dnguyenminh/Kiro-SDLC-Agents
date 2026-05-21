@@ -30,7 +30,11 @@ class ToolDispatcher(
 
     private fun dispatchNative(name: String, args: JsonObject): String? {
         return when (name) {
-            "code_search" -> CodeSearchTool(queryLayer).execute(args)
+            "code_search" -> {
+                val result = CodeSearchTool(queryLayer).execute(args)
+                logSearchAnalytics(args, result)
+                result
+            }
             "code_symbols" -> CodeSymbolsTool(queryLayer).execute(args)
             "code_context" -> CodeContextTool(queryLayer, config.workspace).execute(args)
             "code_modules" -> CodeModulesTool(queryLayer).execute(args)
@@ -39,6 +43,14 @@ class ToolDispatcher(
             "code_kb_export" -> CodeKbExportTool(queryLayer, config.workspace).execute(args)
             else -> null
         }
+    }
+
+    private fun logSearchAnalytics(args: JsonObject, result: String) {
+        try {
+            val query = args["query"]?.let { it as? kotlinx.serialization.json.JsonPrimitive }?.content ?: return
+            val count = Regex("""(\d+) results""").find(result)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            memoryDispatcher?.logSearchForAnalytics(query, count)
+        } catch (_: Exception) { /* analytics must not break search */ }
     }
 
     private fun dispatchMeta(name: String, args: JsonObject): String? {

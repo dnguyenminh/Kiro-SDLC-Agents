@@ -58,9 +58,14 @@ def _handle_dashboard(
     query: dict, handler: BaseHTTPRequestHandler, engine: MemoryEngineV2
 ) -> None:
     """GET /api/kb/dashboard — full health dashboard."""
-    from ..memory.health_dashboard import HealthDashboard
-    dashboard = HealthDashboard(engine._conn)
-    send_json(handler, dashboard.get_dashboard())
+    try:
+        from ..memory.health_dashboard import HealthDashboard
+        dashboard = HealthDashboard(engine._conn)
+        send_json(handler, dashboard.get_dashboard())
+    except Exception as e:
+        import sys
+        print(f"[kb_viewer] Dashboard error: {e}", file=sys.stderr, flush=True)
+        send_error(handler, 500, f"Dashboard error: {e}")
 
 
 def _handle_tags(

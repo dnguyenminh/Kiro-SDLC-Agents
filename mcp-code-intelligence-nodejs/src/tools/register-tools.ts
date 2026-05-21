@@ -46,6 +46,18 @@ export function getToolDefinitions(): object[] {
   return defs;
 }
 
+/** Log code_search to analytics via memory dispatcher. */
+function logCodeSearchAnalytics(args: Record<string, unknown>, result: string): void {
+  try {
+    const dispatcher = getMemoryDispatcherInstance();
+    if (!dispatcher) return;
+    const query = (args.query as string) ?? '';
+    const match = result.match(/(\d+) results/);
+    const count = match ? parseInt(match[1], 10) : 0;
+    dispatcher.logSearchAnalytics(query, count);
+  } catch { /* analytics must not break search */ }
+}
+
 /** Dispatch a tool call and return result text (raw mode). */
 export async function dispatchTool(
   name: string,
@@ -106,8 +118,11 @@ async function dispatchByName(
   workspace: string
 ): Promise<string> {
   switch (name) {
-    case 'code_search':
-      return handleCodeSearch(args, queryLayer);
+    case 'code_search': {
+      const result = handleCodeSearch(args, queryLayer);
+      logCodeSearchAnalytics(args, result);
+      return result;
+    }
     case 'code_symbols':
       return handleCodeSymbols(args, queryLayer);
     case 'code_context':

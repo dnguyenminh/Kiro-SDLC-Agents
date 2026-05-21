@@ -65,6 +65,8 @@ export class MemoryToolDispatcher {
     };
     const results = this.hybridSearch.search(params);
     this.engine.audit.log('SEARCH', undefined, this.engine.getSessionId() ?? undefined);
+    this.logSearchAnalytics(query, results.length);
+    this.recordAccessAndCitations(results);
     if (results.length === 0) return `No knowledge found for "${query}"`;
     const detail = args.detail as boolean ?? false;
     const lines = [`Found ${results.length} results:\n`];
@@ -78,6 +80,39 @@ export class MemoryToolDispatcher {
     return lines.join('\n');
   }
 
+  /** Log search to search_log + popular_queries for analytics page. */
+  logSearchAnalytics(query: string, resultCount: number): void {
+    try {
+      const db = this.engine.db;
+      db.prepare('INSERT INTO search_log (query, result_count) VALUES (?, ?)').run(query, resultCount);
+      db.prepare(
+        `INSERT INTO popular_queries (query, hit_count, avg_results) VALUES (?, 1, ?)
+         ON CONFLICT(query) DO UPDATE SET
+         hit_count = hit_count + 1,
+         avg_results = (avg_results * (hit_count - 1) + ?) / hit_count,
+         last_searched = datetime('now')`
+      ).run(query, resultCount, resultCount);
+    } catch { /* analytics must not break search */ }
+  }
+
+  /** Increment access_count and auto-cite entries from search results. */
+  private recordAccessAndCitations(results: Array<{ entry: { id: number } }>): void {
+    try {
+      if (results.length === 0) return;
+      const db = this.engine.db;
+      const accessStmt = db.prepare(
+        'UPDATE knowledge_entries SET access_count = access_count + 1, last_accessed_at = datetime(\'now\') WHERE id = ?'
+      );
+      const citeStmt = db.prepare(
+        'INSERT OR IGNORE INTO citations (entry_id, cited_by, context) VALUES (?, \'mem_search\', \'auto-cited from search results\')'
+      );
+      for (const r of results) {
+        accessStmt.run(r.entry.id);
+        citeStmt.run(r.entry.id);
+      }
+    } catch { /* must not break search */ }
+  }
+
   private handleIngest(args: Record<string, unknown>): string {
     const content = args.content as string;
     if (!content) return 'Error: content required';
@@ -87,7 +122,51 @@ export class MemoryToolDispatcher {
     const summary = (args.summary as string) ?? content.slice(0, 120);
     const id = this.pipeline.ingestEntry(content, summary, type, source, tags);
     this.engine.audit.log('INGEST', id, this.engine.getSessionId() ?? undefined);
+    this.autoOwnEntry(id, source);
+    this.autoScoreEntry(id, content, tags);
     return `Knowledge entry created: id=${id}, type=${type}, tier=WORKING`;
+  }
+
+  /** Auto-set owner based on source field. */
+  private autoOwnEntry(id: number, source: string | undefined): void {
+    try {
+      const owner = this.inferOwner(source);
+      if (owner) {
+        this.engine.db.prepare(
+          "UPDATE knowledge_entries SET owner = ? WHERE id = ? AND (owner IS NULL OR owner = '')"
+        ).run(owner, id);
+      }
+    } catch { /* must not break ingest */ }
+  }
+
+  private inferOwner(source: string | undefined): string {
+    if (!source) return 'system';
+    const s = source.toLowerCase();
+    if (['ba', 'brd', 'fsd'].some(k => s.includes(k))) return 'ba-agent';
+    if (['sa', 'tdd', 'architect'].some(k => s.includes(k))) return 'sa-agent';
+    if (['qa', 'stp', 'stc', 'test'].some(k => s.includes(k))) return 'qa-agent';
+    if (['dev', 'implement', 'code'].some(k => s.includes(k))) return 'dev-agent';
+    if (['devops', 'deploy', 'release'].some(k => s.includes(k))) return 'devops-agent';
+    if (['security', 'audit'].some(k => s.includes(k))) return 'security-agent';
+    if (['ui', 'design', 'wireframe'].some(k => s.includes(k))) return 'ui-agent';
+    if (['sm', 'scrum'].some(k => s.includes(k))) return 'sm-agent';
+    if (['ta', 'technical'].some(k => s.includes(k))) return 'ta-agent';
+    if (['chat', 'user'].some(k => s.includes(k))) return 'user';
+    if (['hook', 'tool-call'].some(k => s.includes(k))) return 'system';
+    return 'system';
+  }
+
+  /** Auto-compute quality score for newly ingested entry. */
+  private autoScoreEntry(id: number, content: string, tags: string): void {
+    try {
+      const lenScore = content.length > 500 ? 30 : content.length > 200 ? 20 : content.length > 50 ? 10 : 5;
+      const tagScore = tags ? 20 : 0;
+      const structScore = content.includes('\n') && (content.includes('#') || content.includes('-')) ? 20 : 10;
+      const total = Math.min(lenScore + tagScore + structScore + 10, 100);
+      this.engine.db.prepare(
+        'INSERT OR REPLACE INTO quality_scores (entry_id, total_score, dimensions, scored_at) VALUES (?, ?, \'{}\', datetime(\'now\'))'
+      ).run(id, total);
+    } catch { /* must not break ingest */ }
   }
 
   private handleIngestFile(args: Record<string, unknown>): string {

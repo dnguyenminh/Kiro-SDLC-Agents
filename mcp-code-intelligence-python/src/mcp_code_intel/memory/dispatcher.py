@@ -79,6 +79,8 @@ class MemoryToolDispatcher:
 
         results = self._search.search(query, limit, tier)
         self._engine.audit.log("SEARCH", session_id=self._engine.session_id)
+        self._log_search_analytics(query, len(results))
+        self._record_access_and_citations(results)
 
         if not results:
             return f'No knowledge found for "{query}"'
@@ -95,6 +97,49 @@ class MemoryToolDispatcher:
             lines.append("Tip: use detail=true for content, or mem_get(id) for full entry.")
         return "\n".join(lines)
 
+    def _log_search_analytics(self, query: str, result_count: int) -> None:
+        """Log search to search_log + popular_queries for analytics."""
+        try:
+            conn = self._engine._conn
+            conn.execute(
+                "INSERT INTO search_log (query, result_count) VALUES (?, ?)",
+                (query, result_count),
+            )
+            conn.execute(
+                "INSERT INTO popular_queries (query, hit_count, avg_results) "
+                "VALUES (?, 1, ?) "
+                "ON CONFLICT(query) DO UPDATE SET "
+                "hit_count = hit_count + 1, "
+                "avg_results = (avg_results * (hit_count - 1) + ?) / hit_count, "
+                "last_searched = datetime('now')",
+                (query, result_count, result_count),
+            )
+            conn.commit()
+        except Exception:
+            pass  # analytics must not break search
+
+    def _record_access_and_citations(self, results: list) -> None:
+        """Increment access_count and auto-cite entries from search results."""
+        try:
+            if not results:
+                return
+            conn = self._engine._conn
+            for r in results:
+                entry_id = r["entry"]["id"]
+                conn.execute(
+                    "UPDATE knowledge_entries SET access_count = access_count + 1, "
+                    "last_accessed_at = datetime('now') WHERE id = ?",
+                    (entry_id,),
+                )
+                conn.execute(
+                    "INSERT OR IGNORE INTO citations (entry_id, cited_by, context) "
+                    "VALUES (?, 'mem_search', 'auto-cited from search results')",
+                    (entry_id,),
+                )
+            conn.commit()
+        except Exception:
+            pass  # must not break search
+
     def _handle_ingest(self, args: dict[str, Any]) -> str:
         content = args.get("content", "")
         if not content:
@@ -106,7 +151,67 @@ class MemoryToolDispatcher:
 
         entry_id = self._pipeline.ingest_entry(content, summary, type_, source, tags)
         self._engine.audit.log("INGEST", entry_id=entry_id, session_id=self._engine.session_id)
+        self._auto_own_entry(entry_id, source)
+        self._auto_score_entry(entry_id, content, tags)
         return f"Knowledge entry created: id={entry_id}, type={type_}, tier=WORKING"
+
+    def _auto_own_entry(self, entry_id: int, source: str | None) -> None:
+        """Auto-set owner based on source field."""
+        try:
+            owner = self._infer_owner(source)
+            if owner:
+                self._engine._conn.execute(
+                    "UPDATE knowledge_entries SET owner = ? WHERE id = ? AND (owner IS NULL OR owner = '')",
+                    (owner, entry_id),
+                )
+                self._engine._conn.commit()
+        except Exception:
+            pass
+
+    def _infer_owner(self, source: str | None) -> str:
+        """Infer owner from source field."""
+        if not source:
+            return "system"
+        s = source.lower()
+        if any(k in s for k in ("ba", "brd", "fsd")):
+            return "ba-agent"
+        if any(k in s for k in ("sa", "tdd", "architect")):
+            return "sa-agent"
+        if any(k in s for k in ("qa", "stp", "stc", "test")):
+            return "qa-agent"
+        if any(k in s for k in ("dev", "implement", "code")):
+            return "dev-agent"
+        if any(k in s for k in ("devops", "deploy", "release")):
+            return "devops-agent"
+        if any(k in s for k in ("security", "audit")):
+            return "security-agent"
+        if any(k in s for k in ("ui", "design", "wireframe")):
+            return "ui-agent"
+        if any(k in s for k in ("sm", "scrum")):
+            return "sm-agent"
+        if any(k in s for k in ("ta", "technical")):
+            return "ta-agent"
+        if any(k in s for k in ("chat", "user")):
+            return "user"
+        if any(k in s for k in ("hook", "tool-call")):
+            return "system"
+        return "system"
+
+    def _auto_score_entry(self, entry_id: int, content: str, tags: str) -> None:
+        """Auto-compute quality score for newly ingested entry."""
+        try:
+            conn = self._engine._conn
+            len_score = 30 if len(content) > 500 else (20 if len(content) > 200 else (10 if len(content) > 50 else 5))
+            tag_score = 20 if tags else 0
+            struct_score = 20 if ("\n" in content and ("#" in content or "-" in content)) else 10
+            total = min(len_score + tag_score + struct_score + 10, 100)
+            conn.execute(
+                "INSERT OR REPLACE INTO quality_scores (entry_id, total_score, dimensions, scored_at) VALUES (?, ?, '{}', datetime('now'))",
+                (entry_id, total),
+            )
+            conn.commit()
+        except Exception:
+            pass  # must not break ingest
 
     def _handle_ingest_file(self, args: dict[str, Any]) -> str:
         file_path = args.get("file_path", "")
