@@ -87,6 +87,22 @@ class LocalServerManager(
             ServerStatusInfo(name = name, state = server.state.name, toolCount = server.tools.size)
         }
 
+    /** Retry starting servers that are in FAILED state. Returns names of recovered servers. */
+    suspend fun retryFailedServers(): List<String> {
+        val recovered = mutableListOf<String>()
+        for ((name, server) in servers) {
+            if (server.state != ServerState.FAILED) continue
+            log("[$name] Retrying failed server...")
+            if (server.start()) {
+                recovered.add(name)
+                log("[$name] Recovered — now active with ${server.tools.size} tools")
+            } else {
+                log("[$name] Still failing")
+            }
+        }
+        return recovered
+    }
+
     private fun startHealthMonitor() {
         val intervalMs = config.settings.healthCheckIntervalMs
         healthJob = scope.launch {
@@ -99,6 +115,13 @@ class LocalServerManager(
 
     private suspend fun checkHealth() {
         for ((name, server) in servers) {
+            if (server.state == ServerState.FAILED) {
+                log("[$name] Health check: retrying failed server")
+                if (server.start()) {
+                    log("[$name] Recovered via health check")
+                }
+                continue
+            }
             if (server.state != ServerState.ACTIVE) continue
             if (!server.isAlive()) {
                 log("[$name] Process died — attempting restart")

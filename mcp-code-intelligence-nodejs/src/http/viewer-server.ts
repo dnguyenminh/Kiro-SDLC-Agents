@@ -1,16 +1,18 @@
 /**
  * HTTP server for Knowledge Graph viewer — uses Node.js built-in http module.
- * Port of Kotlin ViewerServer.kt + MemoryApiRoutes.kt.
+ * All HTML/CSS/JS served from shared/viewer/ (single source of truth).
  */
 
 import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
-import { VIEWER_HTML } from './viewer-html.js';
 import { MemoryEngine } from '../memory/memory-engine.js';
 import { KnowledgeGraph } from '../memory/knowledge-graph.js';
 import { handleApiRoute } from './api-routes.js';
 import { handleIngestFileRoute } from './ingest-routes.js';
+import { handleUxRoute } from './ux-routes.js';
+import { handleModelRoute } from './model-routes.js';
+import { ModelManager } from '../orchestration/models/model-manager.js';
 
 export class ViewerServer {
   private server: http.Server | null = null;
@@ -19,6 +21,7 @@ export class ViewerServer {
   /** Late-binding — set after MCP initialize completes. */
   memoryEngine: MemoryEngine | null = null;
   knowledgeGraph: KnowledgeGraph | null = null;
+  modelManager: ModelManager | null = null;
   workspace: string = '';
 
   constructor(port: number, workspace: string = '') {
@@ -26,7 +29,6 @@ export class ViewerServer {
     this.workspace = workspace;
   }
 
-  /** Start HTTP server (non-blocking). */
   start(): void {
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
     this.server.listen(this.port, () => {
@@ -34,7 +36,6 @@ export class ViewerServer {
     });
   }
 
-  /** Stop the server gracefully. */
   stop(): void {
     this.server?.close();
     this.server = null;
@@ -46,18 +47,33 @@ export class ViewerServer {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
     if (url.pathname === '/') {
-      this.serveHtml(res);
+      this.serveSharedFile(res, 'index.html', 'text/html');
+    } else if (url.pathname === '/dashboard') {
+      this.serveSharedFile(res, 'dashboard.html', 'text/html');
+    } else if (url.pathname === '/tags') {
+      this.serveSharedFile(res, 'tags.html', 'text/html');
+    } else if (url.pathname === '/quality') {
+      this.serveSharedFile(res, 'quality.html', 'text/html');
+    } else if (url.pathname === '/analytics') {
+      this.serveSharedFile(res, 'analytics.html', 'text/html');
+    } else if (url.pathname.startsWith('/modules/') || url.pathname.startsWith('/config/')) {
+      this.serveSubdirStatic(url.pathname, res);
     } else if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
       this.serveStatic(url.pathname, res);
     } else if (url.pathname === '/api/health') {
       this.serveHealth(res);
+    } else if (url.pathname.startsWith('/api/models')) {
+      if (!handleModelRoute(req, url, res, this.modelManager)) {
+        this.send404(res);
+      }
+    } else if (url.pathname.startsWith('/api/kb')) {
+      const db = this.memoryEngine?.db ?? null;
+      if (!handleUxRoute(req, url, res, this.memoryEngine, db)) {
+        this.send404(res);
+      }
     } else if (url.pathname.startsWith('/api/memory')) {
       if (req.method === 'POST') {
         handleIngestFileRoute(req, url, res, this.memoryEngine, this.workspace);
@@ -69,36 +85,60 @@ export class ViewerServer {
     }
   }
 
-  private serveHtml(res: http.ServerResponse): void {
-    const html = this.loadViewerHtml();
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(html);
+  private serveSharedFile(res: http.ServerResponse, filename: string, contentType: string): void {
+    const filePath = this.resolveSharedPath(filename);
+    if (!filePath) { this.serveViewerError(res, filename); return; }
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': `${contentType}; charset=utf-8` });
+      res.end(content);
+    } catch { this.serveViewerError(res, filename); }
+  }
+
+  private serveSubdirStatic(pathname: string, res: http.ServerResponse): void {
+    if (pathname.includes('..')) { this.send404(res); return; }
+    const relPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+    const filePath = this.resolveSharedPath(relPath);
+    if (!filePath) { this.send404(res); return; }
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const ct = pathname.endsWith('.json') ? 'application/json'
+        : pathname.endsWith('.css') ? 'text/css' : 'application/javascript';
+      res.writeHead(200, { 'Content-Type': ct + '; charset=utf-8' });
+      res.end(content);
+    } catch { this.send404(res); }
   }
 
   private serveStatic(pathname: string, res: http.ServerResponse): void {
     const filename = path.basename(pathname);
-    if (filename.includes('..') || !this.workspace) { this.send404(res); return; }
-    const filePath = path.join(this.workspace, 'shared', 'viewer', filename);
+    if (filename.includes('..')) { this.send404(res); return; }
+    const filePath = this.resolveSharedPath(filename);
+    if (!filePath) { this.send404(res); return; }
     try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const ct = filename.endsWith('.css') ? 'text/css' : 'application/javascript';
-        res.writeHead(200, { 'Content-Type': ct + '; charset=utf-8' });
-        res.end(content);
-      } else { this.send404(res); }
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const ct = filename.endsWith('.css') ? 'text/css' : 'application/javascript';
+      res.writeHead(200, { 'Content-Type': ct + '; charset=utf-8' });
+      res.end(content);
     } catch { this.send404(res); }
   }
 
-  private loadViewerHtml(): string {
-    if (this.workspace) {
-      const sharedPath = path.join(this.workspace, 'shared', 'viewer', 'index.html');
-      try {
-        if (fs.existsSync(sharedPath)) {
-          return fs.readFileSync(sharedPath, 'utf-8');
-        }
-      } catch { /* fallback to inline */ }
-    }
-    return VIEWER_HTML;
+  /** Resolve path within shared/viewer/. Returns null if workspace missing or file not found. */
+  private resolveSharedPath(relPath: string): string | null {
+    if (!this.workspace) return null;
+    const filePath = path.join(this.workspace, 'shared', 'viewer', relPath);
+    return fs.existsSync(filePath) ? filePath : null;
+  }
+
+  /** Error page when shared/viewer/ files are missing. */
+  private serveViewerError(res: http.ServerResponse, filename: string): void {
+    const html = `<!DOCTYPE html><html><head><title>Viewer Unavailable</title></head>`
+      + `<body style="background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem">`
+      + `<h1>Viewer Unavailable</h1>`
+      + `<p>shared/viewer/${filename} not found. Please ensure workspace is correct.</p>`
+      + `<p style="opacity:.6;font-size:.8rem">Workspace: ${this.workspace || '(not set)'}</p>`
+      + `</body></html>`;
+    res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
   }
 
   private serveHealth(res: http.ServerResponse): void {

@@ -1,18 +1,30 @@
 /**
  * FindToolsTool — semantic search across all registered tools + KB + nested delegates.
  * KSA-66: Nested delegation — delegates to child orchestrators for lazy discovery.
+ * KSA-102: Adaptive Token Cache (Tier 2) + Embedding Search (Tier 3).
  * Behavioral parity with Python find_tools.py.
  */
 
 import { OrchestrationEngine } from '../engine.js';
 import { RegisteredTool } from '../registry/grouper.js';
+import { tokenize } from '../registry/tokenizer.js';
 
 /** Execute tokenized search for tools matching query. */
 export function executeFindTools(engine: OrchestrationEngine, args: Record<string, any>): string {
   const query = args.query;
   if (!query) return JSON.stringify({ error: "Missing 'query'" });
 
-  const registryResults = engine.getRegistry().search(query);
+  let registryResults = engine.getRegistry().search(query);
+
+  // If no results from registry, try recovering FAILED servers (lazy retry)
+  if (registryResults.length === 0) {
+    const recovered = retryFailedServersSync(engine);
+    if (recovered) {
+      registryResults = engine.getRegistry().search(query);
+    }
+  }
+
+  // ALWAYS delegate to nested (lazy discovery — must run every time)
   const nestedResults = delegateToNested(engine, query);
   const merged = mergeResults(registryResults, nestedResults);
 
@@ -20,10 +32,23 @@ export function executeFindTools(engine: OrchestrationEngine, args: Record<strin
     return JSON.stringify(merged.slice(0, 10).map((t) => t.definition));
   }
 
+  // Tier 2: Adaptive Token Cache (KSA-102)
+  const cacheResult = searchCache(engine, query);
+  if (cacheResult) return cacheResult;
+
+  // Tier 3: Embedding Search (KSA-102)
+  const embeddingResult = searchEmbedding(engine, query);
+  if (embeddingResult) return embeddingResult;
+
+  // Tier 5: KB fallback
   const kbResults = searchKb(engine, query);
   if (kbResults.length > 0) {
     return JSON.stringify(kbResults.slice(0, 10).map((t) => t.definition));
   }
+
+  // KSA-102 Story 5: Multilingual hint when non-ASCII query fails
+  const hint = getMultilingualHint(engine, query);
+  if (hint) return JSON.stringify({ tools: [], _hint: hint });
 
   return '[]';
 }
@@ -66,12 +91,36 @@ function delegateToNested(engine: OrchestrationEngine, query: string): Record<st
   return [];
 }
 
+/** Attempt to recover FAILED servers synchronously (fire-and-forget, returns true if scheduled). */
+function retryFailedServersSync(engine: OrchestrationEngine): boolean {
+  try {
+    engine.retryFailedServers().catch((e: any) =>
+      console.error(`[find_tools] Retry failed servers error: ${e.message}`)
+    );
+    // Cannot await in sync context — return false so caller doesn't retry search immediately.
+    // The async version (executeFindToolsAsync) handles this properly with await.
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 /** Async version of executeFindTools for use in async contexts. */
 export async function executeFindToolsAsync(engine: OrchestrationEngine, args: Record<string, any>): Promise<string> {
   const query = args.query;
   if (!query) return JSON.stringify({ error: "Missing 'query'" });
 
-  const registryResults = engine.getRegistry().search(query);
+  let registryResults = engine.getRegistry().search(query);
+
+  // If no results from registry, try recovering FAILED servers (lazy retry)
+  if (registryResults.length === 0) {
+    const recovered = await engine.retryFailedServers();
+    if (recovered.length > 0) {
+      registryResults = engine.getRegistry().search(query);
+    }
+  }
+
+  // ALWAYS delegate to nested (lazy discovery — must run every time)
   const nestedResults = await delegateToNestedAsync(engine, query);
   const merged = mergeResults(registryResults, nestedResults);
 
@@ -79,12 +128,71 @@ export async function executeFindToolsAsync(engine: OrchestrationEngine, args: R
     return JSON.stringify(merged.slice(0, 10).map((t) => t.definition));
   }
 
+  // Tier 2: Adaptive Token Cache (KSA-102)
+  const cacheResult = searchCache(engine, query);
+  if (cacheResult) return cacheResult;
+
+  // Tier 3: Embedding Search (KSA-102)
+  const embeddingResult = searchEmbedding(engine, query);
+  if (embeddingResult) return embeddingResult;
+
+  // Tier 5: KB fallback
   const kbResults = searchKb(engine, query);
   if (kbResults.length > 0) {
     return JSON.stringify(kbResults.slice(0, 10).map((t) => t.definition));
   }
 
+  // KSA-102 Story 5: Multilingual hint when non-ASCII query fails
+  const hintAsync = getMultilingualHint(engine, query);
+  if (hintAsync) return JSON.stringify({ tools: [], _hint: hintAsync });
+
   return '[]';
+}
+
+/** Tier 2: Search adaptive token cache for fuzzy match. */
+function searchCache(engine: OrchestrationEngine, query: string): string | null {
+  try {
+    const cache = engine.getTokenCache();
+    const tokens = tokenize(query);
+    const cached = cache.findFuzzy(tokens);
+    if (!cached) return null;
+    const tool = engine.getRegistry().find(cached.toolName);
+    if (!tool) return null;
+    cache.schedulePersist();
+    console.error(`[find_tools] Cache hit: '${query}' → ${cached.toolName} (hits=${cached.hitCount})`);
+    return JSON.stringify([tool.definition]);
+  } catch (e: any) {
+    console.error(`[find_tools] Cache search error: ${e.message}`);
+    return null;
+  }
+}
+
+/** Tier 3: Search via embedding similarity with timeout. */
+function searchEmbedding(engine: OrchestrationEngine, query: string): string | null {
+  try {
+    const searcher = engine.getEmbeddingSearcher();
+    if (!searcher || !searcher.isAvailable) {
+      engine.getModelManager().autoDownloadIfNeeded();
+      return null;
+    }
+    const result = searcher.search(query, 100);
+    if (!result) return null;
+    const [toolName, score] = result;
+    if (score < 0.75) return null;
+    const tool = engine.getRegistry().find(toolName);
+    if (!tool) return null;
+    // Self-learning: add to cache for future fast lookups
+    const tokens = tokenize(query);
+    const cache = engine.getTokenCache();
+    const registryHash = engine.getRegistry().versionHash();
+    cache.add(tokens, toolName, score, registryHash);
+    cache.schedulePersist();
+    console.error(`[find_tools] Embedding hit: '${query}' → ${toolName} (score=${score.toFixed(3)})`);
+    return JSON.stringify([tool.definition]);
+  } catch (e: any) {
+    console.error(`[find_tools] Embedding search error: ${e.message}`);
+    return null;
+  }
 }
 
 /** Parse raw JSON response into list of tool definitions. */
@@ -98,6 +206,23 @@ function parseToolList(raw: string): Record<string, any>[] {
   } catch {
     return [];
   }
+}
+
+/** Session-level flag: only show multilingual hint once. */
+let multilingualHintShown = false;
+
+/** Return multilingual model hint if query has non-ASCII and model is English-only. */
+function getMultilingualHint(engine: OrchestrationEngine, query: string): string | null {
+  if (multilingualHintShown) return null;
+  if (/^[\x00-\x7F]*$/.test(query)) return null;
+  const active = engine.getModelManager().getActiveModel();
+  if (active !== 'all-MiniLM-L6-v2') return null;
+  multilingualHintShown = true;
+  return (
+    "💡 Tip: Current model is English-only. For better multilingual support, run: " +
+    "mem_model_manager(action='download', model_name='paraphrase-multilingual-MiniLM-L12-v2') " +
+    "then mem_model_manager(action='switch', model_name='paraphrase-multilingual-MiniLM-L12-v2')"
+  );
 }
 
 /** Search KB for tool definitions (best-effort). */

@@ -9,7 +9,8 @@ import * as readline from 'readline';
 import { loadConfig, setWorkspace, AppConfig, resolveOrchestrationConfigPath } from './config.js';
 import { DatabaseManager } from './db/database-manager.js';
 import { IndexingEngine } from './indexer/indexing-engine.js';
-import { getToolDefinitions, dispatchTool, initMemoryDispatcher, initOrchestration } from './tools/register-tools.js';
+import { getToolDefinitions, dispatchTool, initMemoryDispatcher, initOrchestration, getMemoryDispatcherInstance } from './tools/register-tools.js';
+import { maybeIngestToolCall, setIngestDispatcher } from './tools/tool-call-ingest.js';
 import { MemoryEngine } from './memory/memory-engine.js';
 import { ViewerServer } from './http/viewer-server.js';
 import { EmbeddingFactory } from './memory/embedding/index.js';
@@ -80,6 +81,8 @@ async function main(): Promise<void> {
 
       // Wire memory dispatcher with embedding
       initMemoryDispatcher(memoryEngine, config.workspace, embeddingService);
+      const memDispatcher = getMemoryDispatcherInstance();
+      if (memDispatcher) setIngestDispatcher(memDispatcher);
 
       // Start viewer server
       const viewerServer = new ViewerServer(config.viewerPort, config.workspace);
@@ -98,6 +101,7 @@ async function main(): Promise<void> {
         await orchEngine.start();
         _orchEngine = orchEngine;
         initOrchestration(orchEngine);
+        viewerServer.modelManager = orchEngine.getModelManager();
         console.error('[code-intel] OrchestrationEngine started');
       } else {
         console.error('[code-intel] No orchestration.json — orchestration disabled');
@@ -147,6 +151,7 @@ async function handleRequest(
         _memEngine.audit.log('TOOL_CALL', undefined, _memEngine.getSessionId() ?? undefined, details);
       }
       const text = await dispatchTool(params.name, params.arguments ?? {}, db, indexer, config.workspace);
+      maybeIngestToolCall(params.name ?? '', params.arguments ?? {}, text);
       return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text }] } };
     }
     case 'ping':

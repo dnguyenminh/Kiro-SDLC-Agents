@@ -36,6 +36,10 @@ class OrchestrationEngine:
         self._find_tools_delegates: list[str] = []
         self._exec_delegates: list[str] = []
         self._tool_mapping: dict[str, tuple[str, str]] = {}
+        # KSA-102: Cache + Embedding + Model Manager (lazy init)
+        self._token_cache = None
+        self._embedding_searcher = None
+        self._model_manager = None
 
     async def start(self) -> None:
         """Start orchestration — spawn servers, build routing, ingest KB."""
@@ -102,6 +106,15 @@ class OrchestrationEngine:
     def get_metrics(self) -> dict[str, ToolMetrics]:
         return self._router.get_metrics()
 
+    async def retry_failed_servers(self) -> list[str]:
+        """Retry FAILED servers and rebuild routing if any recover."""
+        recovered = await self._server_manager.retry_failed_servers()
+        if recovered:
+            self._build_routing_table()
+            self._build_delegation_list()
+            _log(f"Recovered servers: {recovered} — routing rebuilt")
+        return recovered
+
     async def call_child(self, server_name: str, tool_name: str, args: dict, timeout_ms: int = 60_000) -> str:
         """Call a tool directly on a specific child server."""
         result = await self._server_manager.call_tool(server_name, tool_name, args, timeout_ms)
@@ -129,6 +142,36 @@ class OrchestrationEngine:
         self._registry.register_nested(unique_name, server_name, definition)
         # Update routing table so SmartRouter can find it
         self._routing_table.add_route(original_name, server_name)
+
+    # --- KSA-102: Cache + Embedding + Model Manager ---
+
+    def get_token_cache(self):
+        """Lazy-init adaptive token cache."""
+        if self._token_cache is None:
+            from .cache import AdaptiveTokenCache
+            cache_path = Path(self.get_workspace()) / ".code-intel" / "token-cache.json"
+            self._token_cache = AdaptiveTokenCache(cache_path)
+        return self._token_cache
+
+    def get_embedding_searcher(self):
+        """Get embedding searcher (None if ONNX unavailable)."""
+        if self._embedding_searcher is None:
+            try:
+                from .embedding import EmbeddingSearcher
+                self._embedding_searcher = EmbeddingSearcher(
+                    model_manager=self.get_model_manager(),
+                    registry=self.get_registry(),
+                )
+            except ImportError:
+                return None
+        return self._embedding_searcher
+
+    def get_model_manager(self):
+        """Get model manager instance."""
+        if self._model_manager is None:
+            from .models import ModelManager
+            self._model_manager = ModelManager()
+        return self._model_manager
 
     def _build_routing_table(self) -> None:
         """Build routing table from all active child servers."""

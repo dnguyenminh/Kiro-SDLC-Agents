@@ -21,7 +21,7 @@ from .tools import (
     handle_code_kb_export,
 )
 from .stream_write import handle_stream_write_file
-from .memory import MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
+from .memory import MemoryEngineV2, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
 from .http import ViewerServer
 from .orchestration.engine import OrchestrationEngine
 from .orchestration.config import OrchestrationConfig, load_orchestration_config
@@ -274,7 +274,7 @@ class McpServer:
         self._initialized = True
 
         # Initialize memory engine on same DB connection
-        mem_engine = MemoryEngine(self._db.conn)
+        mem_engine = MemoryEngineV2(self._db.conn, self._workspace)
         mem_engine.start_session("mcp-client")
 
         # Initialize embedding service (Ollama → ONNX → None)
@@ -302,6 +302,10 @@ class McpServer:
         # Initialize orchestration engine (child MCP servers)
         self._init_orchestration(mem_engine)
 
+        # Wire model manager to viewer for HTTP API
+        if self._orchestration:
+            self._viewer.model_manager = self._orchestration.get_model_manager()
+
         _log("MCP server ready")
 
         return {
@@ -316,6 +320,14 @@ class McpServer:
             tools = tools + META_TOOL_DEFINITIONS
         return {"tools": tools}
 
+    # Tools excluded from KB ingest to prevent infinite loops
+    _KB_INGEST_EXCLUDE = frozenset({
+        "mem_ingest", "mem_search", "mem_ingest_file", "mem_crud",
+        "mem_graph", "mem_consolidate", "mem_lifecycle", "mem_templates",
+        "mem_attachments", "mem_discover", "mem_tags", "mem_citations",
+        "mem_scoring", "mem_admin",
+    })
+
     def _handle_tools_call(self, params: dict[str, Any]) -> dict[str, Any]:
         if not self._initialized:
             raise RuntimeError("Server not initialized")
@@ -327,7 +339,26 @@ class McpServer:
             details = f"{tool_name}({str(arguments)[:150]})"
             engine.audit.log("TOOL_CALL", session_id=engine.session_id, details=details)
         text = self._dispatch_tool(tool_name, arguments)
+        # Ingest tool call input/output into KB (skip memory tools to avoid loops)
+        self._maybe_ingest_tool_call(tool_name, arguments, text)
         return {"content": [{"type": "text", "text": text}]}
+
+    def _maybe_ingest_tool_call(self, tool_name: str, arguments: dict[str, Any], output: str) -> None:
+        """Ingest tool call I/O into KB for context retention. Fire-and-forget."""
+        if tool_name in self._KB_INGEST_EXCLUDE:
+            return
+        if not self._memory_dispatcher:
+            return
+        try:
+            content = f"{tool_name}: {json.dumps(arguments, ensure_ascii=False)}\n---\n{output}"
+            self._memory_dispatcher.dispatch("mem_ingest", {
+                "content": content,
+                "type": "CONTEXT",
+                "source": "tool-call-stream",
+                "tags": f"tool-call,{tool_name}",
+            })
+        except Exception:
+            pass  # Fire-and-forget — never block tool response
 
     def _handle_ping(self, params: dict[str, Any]) -> dict[str, Any]:
         return {}

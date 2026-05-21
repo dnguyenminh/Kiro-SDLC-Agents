@@ -1,0 +1,727 @@
+# Functional Specification Document (FSD)
+
+## KB Web Viewer — KSA-86: Frontend HTML Update (Dashboard, Tags, Quality, Analytics Pages)
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-86 |
+| Title | Frontend HTML Update: Dashboard, Tags, Quality, Analytics Pages |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2025-01-27 |
+| Status | Draft |
+| Related BRD | documents/KSA-86/BRD.md |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-27 | BA + TA | Initiate document with UI mockups |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+Đặc tả chi tiết giao diện, hành vi, và data flow cho 4 trang frontend HTML của KB Web Viewer. Document này bao gồm wireframe mockups cho mỗi page layout.
+
+### 1.2 Scope
+
+4 HTML pages + shared navigation, rendered server-side bằng Python string templates, served qua HTTP server trên port 3201.
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+|------|------------|
+| KB | Knowledge Base |
+| SSR | Server-Side Rendering (HTML generated in Python) |
+| SPA-like | Single page behavior via fetch() API calls |
+| Gauge | Circular progress indicator showing score |
+
+### 1.4 References
+
+| Document | Location |
+|----------|----------|
+| BRD | documents/KSA-86/BRD.md |
+| kb-standard.md | kb-standard.md (business rationale) |
+| API Routes | mcp-code-intelligence-python/src/mcp_code_intel/http/kb_viewer_routes.py |
+
+---
+
+## 2. System Overview
+
+### 2.1 System Context
+
+```
+┌─────────────┐     HTTP GET      ┌──────────────────┐     Internal     ┌─────────────┐
+│   Browser   │ ──────────────── │  KB Web Viewer   │ ──────────────── │  MemoryDB   │
+│  (User)     │  port 3201       │  (Python HTTP)   │   SQLite         │  (SQLite)   │
+└─────────────┘                   └──────────────────┘                   └─────────────┘
+       │                                   │
+       │  fetch('/api/kb/...')             │
+       │ ─────────────────────────────────│
+       │  JSON response                    │
+       │ ◄─────────────────────────────────│
+```
+
+### 2.2 Architecture Pattern
+
+- **Rendering:** Server generates full HTML page (Python f-string templates)
+- **Data Loading:** Client-side fetch() calls to `/api/kb/*` endpoints on page load
+- **Charting:** Canvas 2D API (no external libraries)
+- **Styling:** Inline CSS (no external stylesheets)
+- **Interactivity:** Vanilla JavaScript (no frameworks)
+
+---
+
+## 3. Functional Requirements
+
+### 3.1 Feature: Navigation Bar (Shared Component)
+
+**Source:** BRD Story 5
+
+#### 3.1.1 Description
+
+Horizontal tab bar present on all pages, providing quick navigation between viewer sections.
+
+#### 3.1.2 UI Specification — Navigation Bar Mockup
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  [Graph]  [Dashboard]  [Tags]  [Quality]  [Analytics]               │
+│   ↑ inactive    ↑ ACTIVE (highlighted)                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Component Breakdown:**
+
+| # | Element | Type | Behavior |
+|---|---------|------|----------|
+| 1 | Nav container | `<nav>` flex | Horizontal, gap 0.5rem, flex-wrap |
+| 2 | Tab link | `<a>` | Padding 0.4rem 0.8rem, border-radius 0.3rem |
+| 3 | Active indicator | CSS class `.active` | Background #334155, color #e2e8f0 |
+| 4 | Hover state | CSS `:hover` | Same as active styling |
+
+**URLs:**
+
+| Tab | URL | Active On |
+|-----|-----|-----------|
+| Graph | `/` | Graph page |
+| Dashboard | `/dashboard` | Dashboard page |
+| Tags | `/tags` | Tags page |
+| Quality | `/quality` | Quality page |
+| Analytics | `/analytics` | Analytics page |
+
+---
+
+### 3.2 Feature: Dashboard Page
+
+**Source:** BRD Story 1
+
+#### 3.2.1 Description
+
+Trang tổng quan hiển thị health score, key metrics, actionable recommendations, và 7-day trends.
+
+#### 3.2.2 UI Mockup — Dashboard Page Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  [Graph]  [Dashboard*]  [Tags]  [Quality]  [Analytics]              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─── Health Score ───────────────────────────────────────────────┐ │
+│  │                                                                 │ │
+│  │              ╭───────────╮                                      │ │
+│  │             ╱    72/100   ╲    ← SVG circular gauge             │ │
+│  │            │   ████████░░  │      Green = ≥70                   │ │
+│  │             ╲             ╱      Yellow = ≥40                   │ │
+│  │              ╰───────────╯       Red = <40                      │ │
+│  │                Healthy                                          │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Metrics Grid (4 cards, auto-fit min 200px) ─────────────────┐ │
+│  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────┐ │ │
+│  │ │ TOTAL ENTRIES │ │ QUALITY AVG  │ │    STALE     │ │UNOWNED │ │ │
+│  │ │     156      │ │    67.3      │ │     12       │ │   8    │ │ │
+│  │ │ All KB entries│ │ Score 0-100  │ │ Needs review │ │No owner│ │ │
+│  │ └──────────────┘ └──────────────┘ └──────────────┘ └────────┘ │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Recommendations ───────────────────────────────────────────┐ │
+│  │ ▌█ Review 12 stale entries (last reviewed > 90 days)          │ │
+│  │ ▌█ Assign owners to 8 unowned entries                         │ │
+│  │ ▌░ Consider merging 3 duplicate entries                       │ │
+│  │   ↑ red border = high priority                                │ │
+│  │   ↑ green border = low priority                               │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Trends (7 days) ───────────────────────────────────────────┐ │
+│  │ ┌─ Search Volume ──────┐  ┌─ Ingest Volume ──────┐           │ │
+│  │ │  █                   │  │        █              │           │ │
+│  │ │  █ █                 │  │      █ █              │           │ │
+│  │ │  █ █   █             │  │    █ █ █ █            │           │ │
+│  │ │  █ █ █ █ █ █ █       │  │  █ █ █ █ █ █ █       │           │ │
+│  │ │  ─────────────       │  │  ─────────────       │           │ │
+│  │ │  (canvas bar chart)  │  │  (canvas bar chart)  │           │ │
+│  │ └─────────────────────┘  └─────────────────────┘           │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.2.3 Data Flow
+
+| Component | API Endpoint | Response Fields Used |
+|-----------|-------------|---------------------|
+| Health Gauge | `GET /api/kb/dashboard` | `health_score` |
+| Metrics Cards | `GET /api/kb/dashboard` | `total_entries`, `quality_avg`, `stale_count`, `unowned_count` |
+| Recommendations | `GET /api/kb/dashboard` | `recommendations[]` → `{message, priority}` |
+| Trend Charts | `GET /api/kb/dashboard` | `trends.search_volume[]`, `trends.ingest_volume[]` |
+
+#### 3.2.4 Component Behavior
+
+**Health Gauge (SVG):**
+- SVG viewBox 120×120, circle radius 50
+- Stroke-dasharray = (score/100) × 314
+- Rotation: -135° (starts from bottom-left)
+- Text centered: score number (font-size 20)
+- Label below: "Healthy" / "Needs Attention" / "Critical"
+
+**Metrics Cards:**
+- CSS Grid: `repeat(auto-fit, minmax(200px, 1fr))`
+- Each card: h3 (label, uppercase, 0.7rem), .val (value, 1.8rem bold), .sub (subtitle, 0.65rem)
+
+**Recommendations List:**
+- `<ul class="recs">` with `<li>` items
+- Border-left 3px: red (#ef4444) for high, amber (#f59e0b) for medium, green (#22c55e) for low
+
+**Trend Charts (Canvas):**
+- Canvas 300×140px, background #1e293b
+- Bar chart: width = 280/dataLength, height proportional to max value
+- Label text at top-left (11px system-ui, #94a3b8)
+
+---
+
+### 3.3 Feature: Tags Page
+
+**Source:** BRD Story 2
+
+#### 3.3.1 Description
+
+Trang khám phá taxonomy với tag cloud, tree view, và search functionality.
+
+#### 3.3.2 UI Mockup — Tags Page Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  [Graph]  [Dashboard]  [Tags*]  [Quality]  [Analytics]              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─── Popular Tags (Cloud) ──────────────────────────────────────┐ │
+│  │                                                                 │ │
+│  │  ┌────────┐ ┌──────┐ ┌───────────┐ ┌────┐ ┌──────────┐       │ │
+│  │  │python 8│ │api 12│ │database 15│ │ci 3│ │security 6│       │ │
+│  │  └────────┘ └──────┘ └───────────┘ └────┘ └──────────┘       │ │
+│  │  ┌──────────┐ ┌────────┐ ┌─────┐ ┌───────────┐               │ │
+│  │  │testing 10│ │docker 5│ │k8s 4│ │frontend 7 │               │ │
+│  │  └──────────┘ └────────┘ └─────┘ └───────────┘               │ │
+│  │                                                                 │ │
+│  │  ↑ Font size proportional to usage_count                       │ │
+│  │  ↑ Color = hsl(charCode*37 % 360, 60%, 40%) with 0.3 alpha   │ │
+│  │  ↑ Click → triggers search below                              │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Tag Taxonomy (Tree) ───────────────────────────────────────┐ │
+│  │  ▸ development (parent, bold, sky-400)                         │ │
+│  │    ├── python                                                  │ │
+│  │    ├── javascript                                              │ │
+│  │    └── kotlin                                                  │ │
+│  │  ▸ infrastructure                                              │ │
+│  │    ├── docker                                                  │ │
+│  │    ├── kubernetes                                              │ │
+│  │    └── ci-cd                                                   │ │
+│  │  ▸ documentation                                               │ │
+│  │    ├── api-docs                                                │ │
+│  │    └── guides                                                  │ │
+│  │                                                                 │ │
+│  │  (max-height: 300px, overflow-y: auto)                         │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Search by Tag ─────────────────────────────────────────────┐ │
+│  │  ┌─────────────────────────────────┐                           │ │
+│  │  │ Enter tag name...          [⏎]  │  ← input, 250px width    │ │
+│  │  └─────────────────────────────────┘                           │ │
+│  │                                                                 │ │
+│  │  Results:                                                       │ │
+│  │  ┌─────────────────────────────────────────────────────────┐   │ │
+│  │  │ DECISION  How to structure API endpoints for KB viewer  │   │ │
+│  │  ├─────────────────────────────────────────────────────────┤   │ │
+│  │  │ CONTEXT   Python HTTP server setup for MCP tools        │   │ │
+│  │  ├─────────────────────────────────────────────────────────┤   │ │
+│  │  │ ARCHITECTURE  KB memory engine v2 design                │   │ │
+│  │  └─────────────────────────────────────────────────────────┘   │ │
+│  │  ↑ border-left: 3px solid sky-400                              │ │
+│  │  ↑ type badge: violet-400, 0.6rem, bold                       │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.3.3 Data Flow
+
+| Component | API Endpoint | Response Fields Used |
+|-----------|-------------|---------------------|
+| Tag Cloud | `GET /api/kb/tags/popular?limit=30` | `[{tag, usage_count}]` |
+| Taxonomy Tree | `GET /api/kb/tags` | `{categories: {cat: [tags]}}` or `[{tag, children}]` |
+| Search Results | `GET /api/memory/search?q={tag}` | `[{type, summary}]` |
+
+#### 3.3.4 Component Behavior
+
+**Tag Cloud:**
+- Container: flex, flex-wrap, gap 0.4rem, padding 0.8rem
+- Each tag: `<span class="tag">` with inline styles
+- Font size formula: `0.65 + (usage_count / maxCount) * 0.8` rem
+- Color formula: `hsla((tag.charCodeAt(0) * 37) % 360, 60%, 40%, 0.3)` background
+- Text color: `hsl(hue, 70%, 75%)`
+- Click handler: `onclick="searchTag('tagName')"`
+- Usage count shown as `<small>` after tag name
+
+**Taxonomy Tree:**
+- Container: max-height 300px, overflow-y auto
+- Nested `<ul>` with padding-left 1rem
+- Parent nodes: font-weight 600, color #38bdf8
+- Child nodes: font-size 0.75rem, clickable (cursor pointer)
+- Supports two data formats: array of nodes with children, or categories object
+
+**Search:**
+- Input: 250px width, dark theme styling
+- Trigger: Enter key (`keyup` event listener)
+- Results: list of `.entry` divs with type badge + summary text
+- Fallback: if popular tags API doesn't have entries, falls back to `/api/memory/search`
+
+---
+
+### 3.4 Feature: Quality Page
+
+**Source:** BRD Story 3
+
+
+#### 3.4.1 Description
+
+Trang giám sát chất lượng KB entries với stats overview, score distribution chart, và low-quality entries table.
+
+#### 3.4.2 UI Mockup — Quality Page Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  [Graph]  [Dashboard]  [Tags]  [Quality*]  [Analytics]              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─── Quality Overview (Stats Grid, min 180px) ──────────────────┐ │
+│  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────┐ │ │
+│  │ │ AVERAGE SCORE│ │SCORED ENTRIES│ │ HIGH QUALITY │ │  LOW   │ │ │
+│  │ │    67.3      │ │     142      │ │     98       │ │   44   │ │ │
+│  │ └──────────────┘ └──────────────┘ └──────────────┘ └────────┘ │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Score Distribution (Canvas Bar Chart) ─────────────────────┐ │
+│  │                                                                 │ │
+│  │  ██                                                             │ │
+│  │  ██ ██                                                          │ │
+│  │  ██ ██    ██                                                    │ │
+│  │  ██ ██ ██ ██ ██                                                 │ │
+│  │  ██ ██ ██ ██ ██ ██ ██                                           │ │
+│  │  ─────────────────────                                          │ │
+│  │  0  10 20 30 40 50 60 70 80 90 100                              │ │
+│  │                                                                 │ │
+│  │  ↑ Red bars (0-29), Yellow bars (30-59), Green bars (60-100)   │ │
+│  │  ↑ Canvas max-width: 500px                                     │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Low Quality Entries (Table) ───────────────────────────────┐ │
+│  │                                                                 │ │
+│  │  ID  │ Type      │ Summary                        │Score│ Bar  │ │
+│  │  ────┼───────────┼────────────────────────────────┼─────┼───── │ │
+│  │  42  │ CONTEXT   │ Old deployment notes from...   │  18 │ ██░░ │ │
+│  │  67  │ DECISION  │ Temporary workaround for...    │  25 │ ███░ │ │
+│  │  103 │ PROCEDURE │ Draft: how to configure...     │  32 │ ████ │ │
+│  │  89  │ CONTEXT   │ Meeting notes 2024-01-...      │  35 │ ████ │ │
+│  │                                                                 │ │
+│  │  ↑ Score bar: 6px height, color-coded                          │ │
+│  │  ↑ Red (<30), Yellow (30-59), Green (≥60)                      │ │
+│  │  ↑ Hover: row background #1e293b                               │ │
+│  │  ↑ Summary truncated at 60 chars                               │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.4.3 Data Flow
+
+| Component | API Endpoint | Response Fields Used |
+|-----------|-------------|---------------------|
+| Stats Cards | `GET /api/kb/quality` | `average_score`, `scored_count`, `high_count`, `low_count` |
+| Distribution Chart | `GET /api/kb/quality` | `distribution` or `score_distribution` (object: score→count) |
+| Low Quality Table | `GET /api/kb/quality/low?threshold=40&limit=20` | `[{id, type, summary, quality_score}]` |
+
+#### 3.4.4 Component Behavior
+
+**Stats Cards:**
+- Grid: `repeat(auto-fit, minmax(180px, 1fr))`
+- 4 cards: Average Score (.toFixed(1)), Scored Entries, High Quality, Low Quality
+- Same card styling as Dashboard
+
+**Distribution Chart (Canvas):**
+- Canvas height 140px, max-width 500px
+- Bars: width = canvasWidth / bucketCount, with 2px gap
+- Bar height proportional to max count
+- Color by score bucket: red (<30), yellow (30-59), green (≥60)
+- X-axis labels: score bucket values (9px font)
+- Global alpha 0.8 for bars
+
+**Low Quality Table:**
+- Columns: ID, Type, Summary (truncated 60 chars), Score, Visual Bar
+- Score bar: 6px height div with colored fill
+- Fill width = score%, color = red/yellow/green based on thresholds
+- Row hover: background #1e293b
+- XSS protection: `esc()` function for summary text
+
+---
+
+### 3.5 Feature: Analytics Page
+
+**Source:** BRD Story 4
+
+#### 3.5.1 Description
+
+Trang phân tích search patterns hiển thị volume trend, popular queries, và content gaps (zero-result queries).
+
+#### 3.5.2 UI Mockup — Analytics Page Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  [Graph]  [Dashboard]  [Tags]  [Quality]  [Analytics*]              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─── Search Volume Trend (Line Chart) ──────────────────────────┐ │
+│  │                                                                 │ │
+│  │         •                                                       │ │
+│  │        / \        •                                             │ │
+│  │       /   \      / \                                            │ │
+│  │      /     \    /   \     •                                     │ │
+│  │  •  /       \  /     \   / \                                    │ │
+│  │   \/         \/       \ /   •                                   │ │
+│  │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░  ← area fill (sky-400, 0.1 alpha)│ │
+│  │                                                                 │ │
+│  │  ↑ Line: stroke #38bdf8, width 2                               │ │
+│  │  ↑ Dots: filled circles radius 3                               │ │
+│  │  ↑ Canvas max-width: 600px, height: 120px                      │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌─── Two Column Layout (responsive) ────────────────────────────┐ │
+│  │                                                                 │ │
+│  │  ┌─ Popular Queries ──────┐  ┌─ Zero-Result (Gaps) ─────────┐ │ │
+│  │  │                         │  │                               │ │ │
+│  │  │ Query        │Cnt│ Avg  │  │ Query           │Cnt│ Status │ │ │
+│  │  │ ─────────────┼───┼───── │  │ ────────────────┼───┼─────── │ │ │
+│  │  │ python setup │ 8 │ 3.2  │  │ grpc config     │ 5 │ ⚠ Gap │ │ │
+│  │  │ api design   │ 6 │ 2.1  │  │ k8s helm chart  │ 3 │ ⚠ Gap │ │ │
+│  │  │ docker build │ 5 │ 4.0  │  │ oauth2 flow     │ 2 │ ⚠ Gap │ │ │
+│  │  │ test patterns│ 4 │ 1.5  │  │ graphql schema  │ 2 │ ⚠ Gap │ │ │
+│  │  │ ci pipeline  │ 3 │ 2.8  │  │                 │   │       │ │ │
+│  │  │                         │  │                               │ │ │
+│  │  │ ↑ Count: badge-info    │  │ ↑ Count: badge-warn           │ │ │
+│  │  │   (blue background)    │  │   (amber background)          │ │ │
+│  │  └─────────────────────────┘  └───────────────────────────────┘ │ │
+│  │                                                                 │ │
+│  │  @media (max-width: 768px) → single column                    │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.5.3 Data Flow
+
+| Component | API Endpoint | Response Fields Used |
+|-----------|-------------|---------------------|
+| Trend Chart | `GET /api/kb/analytics` | `search_trend[]` or `daily_volume[]` → `{count}` or number |
+| Popular Queries | `GET /api/kb/analytics` | `popular_queries[]` → `{query, count, avg_results}` |
+| Zero-Result Gaps | `GET /api/kb/analytics` | `zero_results[]` or `gaps[]` → `{query, count}` |
+
+#### 3.5.4 Component Behavior
+
+**Trend Line Chart (Canvas):**
+- Canvas 600×120px (max-width: 600px via CSS)
+- Line: strokeStyle #38bdf8, lineWidth 2
+- Points: filled circles, radius 3, color #38bdf8
+- Area fill: close path to bottom, fillStyle rgba(56,189,248,0.1)
+- X spacing: canvasWidth / dataLength
+- Y scaling: (value/max) × (height - 40), offset 20px from bottom
+- Empty state: "No trend data" text (12px, #64748b)
+
+**Popular Queries Table:**
+- Columns: Query, Count (badge-info), Avg Results
+- Badge-info: background #1e3a5f, color #7dd3fc, border-radius 1rem
+- Max 15 rows displayed
+- Empty state: "No data yet" (colspan 3)
+
+**Zero-Result Table:**
+- Columns: Query, Count (badge-warn), Status
+- Badge-warn: background #854d0e, color #fef08a
+- Status column: always "Gap"
+- Max 15 rows displayed
+- Empty state: "No gaps detected"
+
+**Responsive Layout:**
+- `.two-col`: CSS Grid `grid-template-columns: 1fr 1fr`
+- Media query `@media(max-width:768px)`: collapse to `1fr`
+
+---
+
+## 4. Data Model
+
+### 4.1 API Response Schemas
+
+#### Dashboard Response (`/api/kb/dashboard`)
+
+```json
+{
+  "health_score": 72,
+  "total_entries": 156,
+  "quality_avg": 67.3,
+  "stale_count": 12,
+  "unowned_count": 8,
+  "recommendations": [
+    {"message": "Review 12 stale entries", "priority": "high"},
+    {"message": "Assign owners to 8 entries", "priority": "low"}
+  ],
+  "trends": {
+    "search_volume": [{"count": 5}, {"count": 8}, {"count": 3}],
+    "ingest_volume": [{"count": 2}, {"count": 4}, {"count": 1}]
+  }
+}
+```
+
+#### Tags Popular Response (`/api/kb/tags/popular`)
+
+```json
+[
+  {"tag": "python", "usage_count": 15},
+  {"tag": "api", "usage_count": 12},
+  {"tag": "testing", "usage_count": 8}
+]
+```
+
+#### Quality Response (`/api/kb/quality`)
+
+```json
+{
+  "average_score": 67.3,
+  "scored_count": 142,
+  "high_count": 98,
+  "low_count": 44,
+  "distribution": {"10": 5, "20": 8, "30": 12, "40": 15, "50": 20}
+}
+```
+
+#### Analytics Response (`/api/kb/analytics`)
+
+```json
+{
+  "popular_queries": [
+    {"query": "python setup", "count": 8, "avg_results": 3.2}
+  ],
+  "zero_results": [
+    {"query": "grpc config", "count": 5}
+  ],
+  "search_trend": [{"count": 10}, {"count": 15}, {"count": 8}]
+}
+```
+
+---
+
+## 5. Navigation Flow
+
+```
+                    ┌──────────┐
+                    │  Graph   │ (/)
+                    └────┬─────┘
+                         │
+         ┌───────────────┼───────────────┬───────────────┐
+         ▼               ▼               ▼               ▼
+   ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐
+   │ Dashboard │  │   Tags    │  │  Quality  │  │ Analytics │
+   │(/dashboard)│  │  (/tags)  │  │(/quality) │  │(/analytics)│
+   └───────────┘  └───────────┘  └───────────┘  └───────────┘
+         │               │               │               │
+         └───────────────┴───────────────┴───────────────┘
+                    All pages interconnected via nav bar
+```
+
+**Navigation Rules:**
+- All pages accessible from any other page (flat navigation)
+- No deep linking within pages (no hash routes)
+- Browser back/forward works naturally (full page navigation)
+- No loading spinners (pages render instantly, data fills in async)
+
+---
+
+## 6. Error Handling
+
+### 6.1 Error States
+
+| Scenario | Component | Behavior |
+|----------|-----------|----------|
+| API fetch fails | All pages | `console.error(e)` — silent failure, components stay empty |
+| Empty data array | Charts | Canvas shows nothing (blank) or "No data" text |
+| Empty data array | Tables | Show "No data yet" / "No gaps detected" row |
+| Empty data array | Tag cloud | Cloud container stays empty |
+| Malformed JSON | All | Caught by try/catch, logged to console |
+| Network timeout | All | Fetch uses default timeout, no retry logic |
+
+### 6.2 XSS Prevention
+
+All user-generated content (tag names, query strings, summaries) passed through `esc()` function:
+
+```javascript
+function esc(s) {
+  return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+```
+
+---
+
+## 7. Responsive Behavior
+
+### 7.1 Breakpoints
+
+| Breakpoint | Layout Change |
+|-----------|---------------|
+| > 768px | Full layout: 2-column tables, multi-column grids |
+| ≤ 768px | Analytics: 2-col → 1-col |
+| Auto-fit | Dashboard cards: min 200px, Quality cards: min 180px |
+| Flex-wrap | Nav bar, Tag cloud: natural wrapping |
+
+### 7.2 Component Responsive Rules
+
+| Component | Desktop | Mobile |
+|-----------|---------|--------|
+| Nav bar | Single row | Wraps to multiple rows |
+| Metric cards | 4 across | 2 across or stacked |
+| Trend charts | Side by side | Stacked (flex-wrap) |
+| Analytics tables | 2 columns | 1 column |
+| Tag cloud | Wide spread | Narrower, more rows |
+| Quality table | Full width | Horizontal scroll if needed |
+
+---
+
+## 8. Implementation Architecture
+
+### 8.1 File Structure
+
+```
+mcp-code-intelligence-python/src/mcp_code_intel/http/
+├── viewer_dashboard_html.py   ← Dashboard page (HTML + CSS + JS)
+├── viewer_tags_html.py        ← Tags page
+├── viewer_quality_html.py     ← Quality page
+├── viewer_analytics_html.py   ← Analytics page
+└── kb_viewer_routes.py        ← API route handlers
+```
+
+### 8.2 Page Generation Pattern
+
+Each page file exports a single constant (e.g., `DASHBOARD_HTML`) containing the complete HTML document as a Python string:
+
+```python
+# Pattern for each page file:
+_CSS = "..."          # Inline CSS styles
+_NAV = "..."          # Navigation HTML (shared structure)
+_BODY = f"{_NAV}..."  # Page body with sections
+_JS = r"..."          # JavaScript (raw string for regex safety)
+
+PAGE_HTML = (
+    '<!DOCTYPE html><html lang="en"><head>'
+    '<meta charset="UTF-8">'
+    '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    f'<title>...</title><style>{_CSS}</style></head>'
+    f'<body>{_BODY}<script>{_JS}</script></body></html>'
+)
+```
+
+### 8.3 Shared Design Tokens (CSS)
+
+All pages share identical base styles:
+
+| Token | CSS Value | Purpose |
+|-------|-----------|---------|
+| Box model | `*{box-sizing:border-box;margin:0;padding:0}` | Reset |
+| Body | `background:#0f172a;color:#e2e8f0;padding:1rem` | Dark theme |
+| Nav | `display:flex;gap:.5rem;flex-wrap:wrap` | Tab bar |
+| Card | `background:#1e293b;border-radius:.5rem;border:1px solid #334155` | Surface |
+| Section | `margin-bottom:1.5rem` | Spacing |
+| Table | `border-collapse:collapse;font-size:.75rem` | Data tables |
+
+---
+
+## 9. Testing Considerations
+
+### 9.1 Test Scenarios
+
+| ID | Scenario | Page | Expected Result | Priority |
+|----|----------|------|-----------------|----------|
+| TC-1 | Dashboard loads with valid data | Dashboard | Gauge shows score, cards show metrics | High |
+| TC-2 | Dashboard with zero entries | Dashboard | Cards show 0, gauge shows 0 | Medium |
+| TC-3 | Tag cloud renders 30 tags | Tags | All tags visible with proportional sizes | High |
+| TC-4 | Click tag triggers search | Tags | Results section populated | High |
+| TC-5 | Taxonomy tree renders hierarchy | Tags | Parent/child structure visible | Medium |
+| TC-6 | Quality table shows low entries | Quality | Table with score bars | High |
+| TC-7 | Distribution chart renders | Quality | Canvas shows colored bars | Medium |
+| TC-8 | Analytics trend line renders | Analytics | Line + area + dots visible | High |
+| TC-9 | Zero-result gaps displayed | Analytics | Table with warning badges | High |
+| TC-10 | Responsive: 768px breakpoint | Analytics | 2-col → 1-col transition | Medium |
+| TC-11 | XSS: tag with `<script>` | Tags | Escaped, not executed | High |
+| TC-12 | API failure: network error | All | No crash, console.error logged | Medium |
+| TC-13 | Nav active state correct | All | Only current page tab highlighted | Low |
+| TC-14 | Empty KB (no entries) | All | Graceful empty states | Medium |
+
+---
+
+## 10. Appendix
+
+### API Endpoint Summary
+
+| # | Endpoint | Method | Page | Purpose |
+|---|----------|--------|------|---------|
+| 1 | `/api/kb/dashboard` | GET | Dashboard | Full dashboard data |
+| 2 | `/api/kb/tags` | GET | Tags | Taxonomy tree |
+| 3 | `/api/kb/tags/popular?limit=30` | GET | Tags | Popular tags list |
+| 4 | `/api/kb/quality` | GET | Quality | Quality stats + distribution |
+| 5 | `/api/kb/quality/low?threshold=40&limit=20` | GET | Quality | Low-quality entries |
+| 6 | `/api/kb/analytics` | GET | Analytics | Search analytics data |
+| 7 | `/api/memory/search?q={tag}` | GET | Tags | Search by tag (fallback) |
+
+### CSS Class Reference
+
+| Class | Used In | Purpose |
+|-------|---------|---------|
+| `.grid` | Dashboard, Quality | Auto-fit card grid |
+| `.card` | Dashboard, Quality | Metric card container |
+| `.gauge` | Dashboard | SVG gauge wrapper |
+| `.recs` | Dashboard | Recommendations list |
+| `.trend` | Dashboard | Trend charts flex container |
+| `.cloud` | Tags | Tag cloud flex container |
+| `.tag` | Tags | Individual tag pill |
+| `.tree` | Tags | Taxonomy tree container |
+| `.results` | Tags | Search results container |
+| `.entry` | Tags | Single search result |
+| `.score-bar` | Quality | Score progress bar background |
+| `.score-fill` | Quality | Score progress bar fill |
+| `.chart-wrap` | Quality, Analytics | Canvas chart container |
+| `.two-col` | Analytics | Two-column grid |
+| `.badge` | Analytics | Count badge base |
+| `.badge-info` | Analytics | Blue badge (popular) |
+| `.badge-warn` | Analytics | Amber badge (gaps) |
+| `.empty` | Analytics | Empty state text |

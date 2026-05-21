@@ -35,6 +35,14 @@ Open any workspace → `Ctrl+Shift+P` → "Kiro SDLC: Inject All Agents"
 
 Provide a Jira ticket key (e.g., `KSA-14`) → Scrum Master agent orchestrates the pipeline.
 
+### 4. Download Embedding Model (Optional)
+
+`Ctrl+Shift+P` → **"Kiro SDLC: Download Embedding Model"**
+
+Choose from available models:
+- `all-MiniLM-L6-v2` (90MB, English, default — auto-downloaded)
+- `paraphrase-multilingual-MiniLM-L12-v2` (470MB, 50+ languages including Vietnamese)
+
 ## Modules
 
 | Module | Description | Tech |

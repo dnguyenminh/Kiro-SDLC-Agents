@@ -1,0 +1,96 @@
+{
+  "graph": [
+    {
+      "id": "tip-graph-3d",
+      "target": "#graph3d",
+      "title": "3D Knowledge Graph",
+      "content": "Hiển thị tất cả entries dưới dạng nodes và relationships dưới dạng edges. Mỗi màu = 1 loại entry. Kéo chuột để xoay, scroll để zoom."
+    },
+    {
+      "id": "tip-graph-search",
+      "target": "#graph-search",
+      "title": "Tìm kiếm Graph",
+      "content": "Nhập từ khóa rồi Enter. Kết quả hiển thị ở panel phải. Click vào entry để camera focus vào node tương ứng."
+    },
+    {
+      "id": "tip-graph-legend",
+      "target": "#legend",
+      "title": "Chú thích màu",
+      "content": "Mỗi loại entry có màu riêng: xanh lá = Requirement, tím = Architecture, hồng = Decision, cam = Error Pattern."
+    },
+    {
+      "id": "tip-graph-stats",
+      "target": "#graph-stats",
+      "title": "Thống kê",
+      "content": "Tổng số entries, edges (relationships), vectors (embeddings), và tiers trong KB hiện tại."
+    }
+  ],
+  "sessions": [
+    {
+      "id": "tip-sess-filter",
+      "target": "#sess-agent",
+      "title": "Lọc Sessions",
+      "content": "Nhập tên agent để lọc sessions. Chọn status Active/Ended để xem sessions đang chạy hoặc đã kết thúc."
+    },
+    {
+      "id": "tip-sess-replay",
+      "target": "#sess-detail",
+      "title": "Session Replay",
+      "content": "Click vào session để xem timeline. Dùng nút Play để replay từng event theo thứ tự thời gian."
+    }
+  ],
+  "browser": [
+    {
+      "id": "tip-br-filters",
+      "target": "#br-tier",
+      "title": "Bộ lọc Entries",
+      "content": "Lọc theo Tier (WORKING/EPISODIC/SEMANTIC/PROCEDURAL), Type (DECISION/ARCHITECTURE/...), hoặc sắp xếp theo thời gian/access count."
+    },
+    {
+      "id": "tip-br-search",
+      "target": "#br-search",
+      "title": "Full-text Search",
+      "content": "Tìm kiếm toàn văn trong content của entries. Nhập từ khóa và Enter."
+    }
+  ],
+  "stream": [
+    {
+      "id": "tip-stream-live",
+      "target": "#stream-indicator",
+      "title": "Live Stream",
+      "content": "Indicator xanh = đang nhận events real-time. Events mới xuất hiện tự động khi có thao tác trên KB."
+    }
+  ],
+  "dashboard": [
+    {
+      "id": "tip-dash-health",
+      "target": null,
+      "title": "Health Dashboard",
+      "content": "Tổng quan sức khỏe KB: tỷ lệ entries có quality score cao, stale entries cần review, và recommendations."
+    }
+  ],
+  "tags": [
+    {
+      "id": "tip-tags-popular",
+      "target": null,
+      "title": "Popular Tags",
+      "content": "Tags được sử dụng nhiều nhất. Click vào tag để xem tất cả entries có tag đó."
+    }
+  ],
+  "quality": [
+    {
+      "id": "tip-quality-score",
+      "target": null,
+      "title": "Quality Score",
+      "content": "Score 0-100 dựa trên: content length, có tags không, có relationships không, confidence level. Score < 40 = cần cải thiện."
+    }
+  ],
+  "analytics": [
+    {
+      "id": "tip-analytics-zero",
+      "target": null,
+      "title": "Zero-Result Searches",
+      "content": "Queries mà user tìm nhưng không có kết quả. Gợi ý content gaps cần bổ sung vào KB."
+    }
+  ]
+}

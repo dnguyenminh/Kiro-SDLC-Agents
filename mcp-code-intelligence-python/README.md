@@ -44,6 +44,42 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 | `code_modules` | List discovered modules with file/symbol counts |
 | `code_index_status` | Get indexing status, trigger re-index |
 
+## Embedding Models (KSA-102)
+
+`find_tools` supports semantic search via ONNX embedding models. On first use, the default English model is auto-downloaded in the background.
+
+### Available Models
+
+| Model | Size | Languages | Use Case |
+|-------|------|-----------|----------|
+| `all-MiniLM-L6-v2` | 90MB | English | Default, fast, good for English tool names |
+| `paraphrase-multilingual-MiniLM-L12-v2` | 470MB | 50+ (en, vi, zh, ja, ko...) | Multilingual queries |
+
+### Model Management
+
+```bash
+# List available models
+mem_model_manager(action="list")
+
+# Check current model status
+mem_model_manager(action="status")
+
+# Download multilingual model (for Vietnamese/Chinese/etc.)
+mem_model_manager(action="download", model_name="paraphrase-multilingual-MiniLM-L12-v2")
+
+# Switch to multilingual model
+mem_model_manager(action="switch", model_name="paraphrase-multilingual-MiniLM-L12-v2")
+```
+
+### How It Works
+
+1. `find_tools(query)` first tries tokenized search (instant)
+2. If no match → checks learned cache (instant, self-improving)
+3. If cache miss → embedding similarity search (< 100ms)
+4. If embedding finds match → caches it for next time (self-learning)
+5. Models stored globally at `~/.code-intel/models/`
+6. Cache stored per-workspace at `.code-intel/token-cache.json`
+
 ## Kiro MCP Configuration
 
 Add to `.kiro/settings/mcp.json`:

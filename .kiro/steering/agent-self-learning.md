@@ -72,7 +72,23 @@ mem_get(id=<entry_id>)                           → Full content 1 entry
 - Local documents (BRD/FSD/TDD...) → `mem_ingest_file`, `mem_search`
 - Code patterns → `code_search`, `code_symbols`
 
-## ⛔ Quy tắc #7: Chống giải pháp manh mún
+## ⛔ Quy tắc #7: Load Personalized Rules từ KB đầu session
+
+Ở lượt đầu tiên của mỗi session chat, PHẢI search KB để load user's personalized rules:
+
+```
+mem_search("personalized rules preferences conventions", type="PROCEDURE", detail=true)
+```
+
+- Nếu tìm thấy entries → tuân thủ như steering rules trong suốt session
+- Rules từ KB có priority thấp hơn steering files (nếu conflict → steering wins)
+- Personalized rules bao gồm: coding preferences, naming conventions cá nhân, workflow habits, tool preferences
+
+**Khi nào ingest personalized rule mới:**
+- User nói "nhớ rằng...", "luôn luôn...", "đừng bao giờ...", "tôi thích..."
+- Ingest với: `mem_ingest(content="<rule>", type="PROCEDURE", source="user-preference", tags="personalized,rule,preference")`
+
+## ⛔ Quy tắc #8: Chống giải pháp manh mún
 
 1. **KHÔNG tạo wrapper/helper mới** nếu hệ thống đã có mechanism (dù đang broken → fix root cause)
 2. **KHÔNG bypass** bằng workaround khi root cause có thể fix

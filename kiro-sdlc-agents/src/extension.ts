@@ -10,6 +10,7 @@ import {
 } from "./injector";
 import { isUpgradeAvailable, loadBundledManifest, migrateLegacyVersion } from "./checksum";
 import { promptIndexAfterInject, handleIndexWorkspace } from "./indexer";
+import { handleDownloadModel } from "./model-downloader";
 
 export function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -20,7 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.injectSelective", () => handleInjectSelective(context)),
         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
         vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context)),
-        vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace())
+        vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace()),
+        vscode.commands.registerCommand("kiroSdlc.downloadModel", () => handleDownloadModel())
     );
 
     updateStatusBar(statusBar, context);

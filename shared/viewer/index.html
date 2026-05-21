@@ -1,18 +1,20 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SDLC Memory Viewer</title>
 <link rel="stylesheet" href="viewer.css">
+<link rel="stylesheet" href="ui-tokens.css">
+<link rel="stylesheet" href="ux-components.css">
 <style>
 /* Graph-specific layout */
-#graph3d{flex:1;position:relative;overflow:hidden}
-#graph-toolbar{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:100;align-items:center}
+#graph3d{position:absolute!important;top:0;left:0;right:0;bottom:0;z-index:0}
+#graph-toolbar{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:200;align-items:center;transform:translateZ(0)}
 #graph-toolbar h1{font-size:.85rem;font-weight:600;white-space:nowrap}
 #graph-toolbar input{padding:4px 8px;border-radius:4px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-size:.72rem;width:200px}
 #graph-toolbar button,#graph-toolbar select{padding:4px 8px;border-radius:4px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:.68rem}
 #graph-toolbar button:hover{background:#334155}
 #graph-detail{width:300px;min-width:300px;overflow-y:auto;padding:8px;background:rgba(30,41,59,.95);border-left:1px solid #334155;z-index:5}
-#minimap{position:absolute;bottom:8px;left:8px;width:180px;height:140px;background:rgba(15,23,42,.9);border:1px solid #475569;border-radius:4px;z-index:100}
+#minimap{position:absolute;bottom:8px;left:8px;width:140px;height:110px;background:rgba(15,23,42,.9);border:1px solid #475569;border-radius:4px;z-index:200;transform:translateZ(0)}
 #minimap canvas{width:100%;height:100%}
-#legend{position:absolute;bottom:8px;left:200px;background:rgba(30,41,59,.9);padding:6px;border-radius:4px;font-size:.6rem;z-index:100}
+#legend{position:absolute!important;bottom:8px!important;top:auto!important;left:160px;background:rgba(30,41,59,.9);padding:6px;border-radius:4px;font-size:.6rem;z-index:200;transform:translateZ(0)}
 #legend div{display:flex;align-items:center;gap:4px;margin-bottom:2px}
 #legend span{display:inline-block;width:9px;height:9px;border-radius:50%}
 /* Sessions */
@@ -40,27 +42,36 @@
   <button class="tab-btn" data-tab="sessions" onclick="switchTab('sessions',this)">📋 Sessions</button>
   <button class="tab-btn" data-tab="browser" onclick="switchTab('browser',this)">🔍 Browser</button>
   <button class="tab-btn" data-tab="stream" onclick="switchTab('stream',this)">⚡ Stream</button>
+  <span style="border-left:1px solid #475569;height:20px;margin:0 4px"></span>
+  <a class="tab-btn" href="dashboard" style="text-decoration:none">📊 Dashboard</a>
+  <a class="tab-btn" href="tags" style="text-decoration:none">🏷️ Tags</a>
+  <a class="tab-btn" href="quality" style="text-decoration:none">📈 Quality</a>
+  <a class="tab-btn" href="analytics" style="text-decoration:none">🔎 Analytics</a>
   <span id="workspace-info" style="margin-left:auto;font-size:.6rem;opacity:.5;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title=""></span>
 </div>
 
 <!-- Graph Tab -->
 <div class="tab-panel active" id="panel-graph" style="flex-direction:row;position:relative">
-  <div id="graph3d"></div>
-  <div id="graph-toolbar"><h1>🧠 3D Graph</h1>
-    <input type="text" id="graph-search" placeholder="Search..." onkeyup="graphSearchKey(event)">
-    <button onclick="graphFit()" title="Fit all">⊞ Fit</button>
-    <button onclick="graphReset()" title="Reset">↺</button>
-    <select id="cs" onchange="graphJumpCluster(this.value)"><option value="">Jump to...</option></select>
-  </div>
-  <div id="minimap"><canvas id="mc" width="180" height="140"></canvas></div>
-  <div id="legend">
-    <div><span style="background:#34d399"></span>REQUIREMENT</div>
-    <div><span style="background:#a78bfa"></span>ARCHITECTURE</div>
-    <div><span style="background:#e2e8f0"></span>CODE_ENTITY</div>
-    <div><span style="background:#f472b6"></span>DECISION</div>
-    <div><span style="background:#fb923c"></span>ERROR_PATTERN</div>
-    <div><span style="background:#facc15"></span>PROCEDURE</div>
-    <div><span style="background:#38bdf8"></span>CONTEXT</div>
+  <div id="graph-wrap" style="flex:1;position:relative;overflow:hidden">
+    <div id="graph3d"></div>
+    <div id="graph-toolbar"><h1>🧠 3D Graph</h1>
+      <input type="text" id="graph-search" placeholder="Search..." onkeyup="graphSearchKey(event)">
+      <button onclick="graphFit()" title="Fit all">⊞ Fit</button>
+      <button onclick="graphReset()" title="Reset">↺</button>
+      <select id="cs" onchange="graphJumpCluster(this.value)"><option value="">Jump to...</option></select>
+    </div>
+    <div id="minimap"><canvas id="mc" width="180" height="140"></canvas></div>
+    <div id="legend">
+      <div><span style="background:#34d399"></span>REQUIREMENT</div>
+      <div><span style="background:#a78bfa"></span>ARCHITECTURE</div>
+      <div><span style="background:#e2e8f0"></span>CODE_ENTITY</div>
+      <div><span style="background:#f472b6"></span>DECISION</div>
+      <div><span style="background:#fb923c"></span>ERROR_PATTERN</div>
+      <div><span style="background:#facc15"></span>PROCEDURE</div>
+      <div><span style="background:#f87171"></span>LESSON_LEARNED</div>
+      <div><span style="background:#2dd4bf"></span>API_DESIGN</div>
+      <div><span style="background:#38bdf8"></span>CONTEXT</div>
+    </div>
   </div>
   <div id="graph-detail">
     <div class="stats" id="graph-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px"></div>
@@ -215,5 +226,21 @@ async function loadStats() {
   } catch(e) {}
 }
 loadStats(); initGraph();
+</script>
+<script type="module">
+import { initTour } from './modules/tour.js';
+import { initTooltips } from './modules/tooltips.js';
+import { initEmptyStates } from './modules/empty-states.js';
+import { initHelpPanel } from './modules/help-panel.js';
+import { initGraphAnalysis } from './modules/graph-analysis.js';
+import { initRecommendations } from './modules/recommendations.js';
+
+const page = 'graph';
+initTour(page);
+initTooltips(page);
+initEmptyStates(page);
+initHelpPanel(page);
+initGraphAnalysis();
+initRecommendations();
 </script>
 </body></html>

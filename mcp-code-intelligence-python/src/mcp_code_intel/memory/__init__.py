@@ -1,8 +1,10 @@
 """Memory engine package — local workspace knowledge management."""
 
 from .engine import MemoryEngine
+from .engine_v2 import MemoryEngineV2
 from .dispatcher import MemoryToolDispatcher
 from .definitions import MEMORY_TOOL_DEFINITIONS
+from .definitions_consolidated import TOOL_ALIASES
 from .role_filter import types_for_role
 from .tier_boost import factor as tier_boost_factor
 from .decision import DecisionMemory, Decision
@@ -17,8 +19,10 @@ from .document_parser import parse_markdown, parse_plain_text, ParsedDocument, D
 
 __all__ = [
     "MemoryEngine",
+    "MemoryEngineV2",
     "MemoryToolDispatcher",
     "MEMORY_TOOL_DEFINITIONS",
+    "TOOL_ALIASES",
     "types_for_role",
     "tier_boost_factor",
     "DecisionMemory",

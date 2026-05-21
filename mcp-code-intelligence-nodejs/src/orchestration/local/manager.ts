@@ -85,14 +85,37 @@ export class LocalServerManager {
     this.healthInterval = setInterval(() => this.checkHealth(), intervalMs);
   }
 
+  /** Retry starting servers that are in FAILED state. Returns names of recovered servers. */
+  async retryFailedServers(): Promise<string[]> {
+    const recovered: string[] = [];
+    for (const [name, server] of this.servers) {
+      if (server.state !== ServerState.FAILED) continue;
+      console.error(`[${name}] Retrying failed server...`);
+      if (await server.start()) {
+        recovered.push(name);
+        console.error(`[${name}] Recovered — now active with ${server.tools.length} tools`);
+      } else {
+        console.error(`[${name}] Still failing`);
+      }
+    }
+    return recovered;
+  }
+
   private async checkHealth(): Promise<void> {
-    for (const server of this.servers.values()) {
+    for (const [name, server] of this.servers) {
+      if (server.state === ServerState.FAILED) {
+        console.error(`[${name}] Health check: retrying failed server`);
+        if (await server.start()) {
+          console.error(`[${name}] Recovered via health check`);
+        }
+        continue;
+      }
       if (server.state !== ServerState.ACTIVE) continue;
       if (!server.isAlive() || !await server.healthCheck()) {
-        console.error(`[${server.name}] Unhealthy — attempting restart`);
+        console.error(`[${name}] Unhealthy — attempting restart`);
         const maxRetries = this.config.settings.maxRestartRetries;
         if (!await server.restart(maxRetries)) {
-          console.error(`[${server.name}] Permanently dead after ${maxRetries} retries`);
+          console.error(`[${name}] Permanently dead after ${maxRetries} retries`);
         }
       }
     }

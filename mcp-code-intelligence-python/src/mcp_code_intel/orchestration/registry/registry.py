@@ -69,6 +69,12 @@ class UnifiedRegistry:
                 return t
         return None
 
+    def version_hash(self) -> str:
+        """Compute deterministic hash of current tool registry state."""
+        import hashlib
+        names = sorted(t.name for t in self._merged)
+        return hashlib.md5("|".join(names).encode()).hexdigest()[:8]
+
     def get_chain(self, tool_name: str) -> ToolChain | None:
         """Get fallback chain for a tool name."""
         return self._chains.get(tool_name)

@@ -1,0 +1,69 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="&lt;&lt;package&gt;&gt;&#xa;orchestration/cache/" style="shape=folder;fontStyle=1;tabWidth=110;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="280" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="AdaptiveTokenCache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="100" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="CacheEntry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="150" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="CachePersistence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="100" y="200" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Invalidation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="270" y="150" width="80" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="&lt;&lt;package&gt;&gt;&#xa;orchestration/models/" style="shape=folder;fontStyle=1;tabWidth=110;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="80" y="310" width="280" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="ModelManager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="100" y="350" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="ModelCatalog" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="100" y="400" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="ModelRegistry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="100" y="450" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="&lt;&lt;package&gt;&gt;&#xa;orchestration/embedding/" style="shape=folder;fontStyle=1;tabWidth=130;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="500" y="60" width="280" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="EmbeddingSearcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="520" y="100" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="ToolEmbeddingIndex" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="520" y="160" width="150" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="&lt;&lt;package&gt;&gt;&#xa;memory/embedding/ (existing)" style="shape=folder;fontStyle=1;tabWidth=160;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="500" y="310" width="280" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="OnnxEmbeddingProvider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="520" y="350" width="160" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="ModelDownloader" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="520" y="410" width="160" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="Tokenizer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="700" y="350" width="70" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="uses" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="12" target="15">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="19" value="uses" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="8" target="16">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="uses" style="endArrow=open;endSize=12;dashed=1;html=1;" edge="1" parent="1" source="3" target="12">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

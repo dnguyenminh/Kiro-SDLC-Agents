@@ -61,6 +61,16 @@ export class UnifiedRegistry {
     return this.merged.find((t) => t.name === name && this.isEnabled(t.name)) ?? null;
   }
 
+  /** Compute deterministic hash of current tool registry state. */
+  versionHash(): string {
+    const names = this.merged.map((t) => t.name).sort().join('|');
+    let hash = 0;
+    for (let i = 0; i < names.length; i++) {
+      hash = ((hash << 5) - hash + names.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
   getChain(toolName: string): ToolChain | null { return this.chains.get(toolName) ?? null; }
 
   recordHit(toolName: string, weight: number = 1): void {

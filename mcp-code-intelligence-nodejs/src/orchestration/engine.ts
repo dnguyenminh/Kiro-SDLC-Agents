@@ -10,6 +10,9 @@ import { UnifiedRegistry } from './registry/index.js';
 import { RoutingTable, SmartRouter, ToolMetrics } from './routing/index.js';
 import { AutoLogger } from './logging/auto-logger.js';
 import { MetaToolDispatcher } from './meta/dispatcher.js';
+import { AdaptiveTokenCache } from './cache/index.js';
+import { ModelManager } from './models/index.js';
+import { EmbeddingSearcher } from './embedding/index.js';
 
 export class OrchestrationEngine {
   readonly metaToolDispatcher: MetaToolDispatcher;
@@ -25,6 +28,9 @@ export class OrchestrationEngine {
   private started = false;
   private findToolsDelegates: string[] = [];
   private toolMapping = new Map<string, [string, string]>();
+  private tokenCache: AdaptiveTokenCache | null = null;
+  private modelManager: ModelManager | null = null;
+  private embeddingSearcher: EmbeddingSearcher | null = null;
 
   constructor(config: OrchestrationConfig, memoryEngine: any, appConfig: any) {
     this.config = config;
@@ -81,6 +87,31 @@ export class OrchestrationEngine {
   getMemoryEngine(): any { return this.memoryEngine; }
   isEnabled(): boolean { return this.started; }
 
+  /** Lazy-init adaptive token cache. */
+  getTokenCache(): AdaptiveTokenCache {
+    if (!this.tokenCache) {
+      const cachePath = path.join(this.getWorkspace(), '.code-intel', 'token-cache.json');
+      this.tokenCache = new AdaptiveTokenCache(cachePath);
+    }
+    return this.tokenCache;
+  }
+
+  /** Get embedding searcher (null if ONNX unavailable). */
+  getEmbeddingSearcher(): EmbeddingSearcher | null {
+    if (!this.embeddingSearcher) {
+      try {
+        this.embeddingSearcher = new EmbeddingSearcher(this.getModelManager(), this.registry);
+      } catch { return null; }
+    }
+    return this.embeddingSearcher;
+  }
+
+  /** Get model manager instance. */
+  getModelManager(): ModelManager {
+    if (!this.modelManager) this.modelManager = new ModelManager();
+    return this.modelManager;
+  }
+
   getStatus(): Record<string, any> {
     return {
       enabled: this.started,
@@ -91,6 +122,16 @@ export class OrchestrationEngine {
 
   getServerStatus() { return this.serverManager.getServerStatusInfo(); }
   getMetrics(): Map<string, ToolMetrics> { return this.router.getMetrics(); }
+
+  /** Retry FAILED servers and rebuild routing if any recover. */
+  async retryFailedServers(): Promise<string[]> {
+    const recovered = await this.serverManager.retryFailedServers();
+    if (recovered.length > 0) {
+      this.buildRoutingTable();
+      console.error(`[orchestration] Recovered servers: [${recovered.join(', ')}] — routing rebuilt`);
+    }
+    return recovered;
+  }
 
   async callChild(serverName: string, toolName: string, args: Record<string, any>): Promise<string> {
     const result = await this.serverManager.callTool(serverName, toolName, args, 30_000);
