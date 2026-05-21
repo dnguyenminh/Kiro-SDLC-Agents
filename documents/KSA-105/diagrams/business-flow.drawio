@@ -1,0 +1,60 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;" vertex="1" parent="1">
+      <mxGeometry x="80" y="300" width="30" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Invoke &quot;Download&#xa;Embedding Model&quot;" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+      <mxGeometry x="180" y="310" width="160" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Read Local&#xa;Model Catalog" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+      <mxGeometry x="400" y="310" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Read registry.json&#xa;(local file)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+      <mxGeometry x="600" y="310" width="150" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Show QuickPick&#xa;with Status Icons" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+      <mxGeometry x="400" y="410" width="150" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="Download from&#xa;HuggingFace (HTTPS)" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="200" y="510" width="170" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="Write model files&#xa;to ~/.code-intel/models/" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+      <mxGeometry x="430" y="510" width="180" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="Update registry.json&#xa;(set active model)" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="670" y="510" width="170" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="MCP Server reads&#xa;fresh registry.json&#xa;(no cache)" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="670" y="610" width="170" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="4" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="5" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="Select model" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="6" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="17" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="8" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="Server sees change" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="9" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="KSA-105: Self-Contained Download Flow (No MCP Server Required)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="230" width="500" height="30" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

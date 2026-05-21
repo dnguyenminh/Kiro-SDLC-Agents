@@ -1,0 +1,65 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="KSA-105: Architecture — Self-Contained Download + Cache Invalidation" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="30" width="550" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="VS Code Extension" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="80" width="350" height="250" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="model-downloader.ts&#xa;(REWRITTEN)" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="3">
+      <mxGeometry x="20" y="40" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="MODELS constant&#xa;(hardcoded catalog)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="3">
+      <mxGeometry x="190" y="40" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="downloadFile()&#xa;(HTTPS client)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="3">
+      <mxGeometry x="20" y="110" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="readRegistry()&#xa;updateRegistry()" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="3">
+      <mxGeometry x="190" y="110" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="showModelPicker()&#xa;(QuickPick UI)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="3">
+      <mxGeometry x="100" y="180" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="MCP Server Modules (3x)" style="swimlane;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="80" y="380" width="350" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="ModelRegistry&#xa;(MODIFIED — no cache)" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="20">
+      <mxGeometry x="20" y="40" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="ModelManager&#xa;(unchanged)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="20">
+      <mxGeometry x="200" y="40" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="ModelCatalog&#xa;(unchanged)" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="20">
+      <mxGeometry x="200" y="110" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="24" value="loadRegistry()&#xa;→ reads file EVERY call" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=2;" vertex="1" parent="20">
+      <mxGeometry x="20" y="110" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="30" value="Shared File System" style="swimlane;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="500" y="200" width="250" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="31" value="~/.code-intel/models/&#xa;registry.json" style="shape=cylinder3;whiteSpace=wrap;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="30">
+      <mxGeometry x="60" y="40" width="130" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="32" value="model.onnx&#xa;vocab.txt" style="shape=document;whiteSpace=wrap;" vertex="1" parent="30">
+      <mxGeometry x="60" y="120" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="40" value="HuggingFace Hub" style="shape=cloud;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="820" y="100" width="150" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="50" value="HTTPS download" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="6" target="40" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="160" y="220" as="sourcePoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="51" value="Write files" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="7" target="31" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="52" value="Read fresh&#xa;(every call)" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="21" target="31" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

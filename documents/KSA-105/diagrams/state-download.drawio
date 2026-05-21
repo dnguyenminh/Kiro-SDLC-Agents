@@ -1,0 +1,69 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="IDLE" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="200" y="200" width="100" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="SHOWING&#xa;PICKER" style="ellipse;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="420" y="200" width="100" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="DOWNLOADING" style="ellipse;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="640" y="200" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="WRITING&#xa;REGISTRY" style="ellipse;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="640" y="350" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="SUCCESS" style="ellipse;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="420" y="450" width="100" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="ERROR" style="ellipse;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="640" y="450" width="100" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="[start]" style="ellipse;whiteSpace=wrap;fillColor=#000000;fontColor=#ffffff;" vertex="1" parent="1">
+      <mxGeometry x="80" y="210" width="40" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="" style="" edge="1" source="8" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="User invokes command" style="" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="User selects model" style="" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="User cancels" style="curved=1;" edge="1" source="3" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="350" y="160" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="13" value="Files downloaded" style="" edge="1" source="4" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="Network/disk error" style="" edge="1" source="4" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="Registry updated" style="" edge="1" source="5" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="Acknowledged" style="curved=1;" edge="1" source="6" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="200" y="450" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="Acknowledged" style="curved=1;" edge="1" source="7" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="150" y="500" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" value="KSA-105: Extension Download State Machine" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="100" width="350" height="30" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
