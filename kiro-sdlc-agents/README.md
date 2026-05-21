@@ -133,6 +133,49 @@ No manual configuration needed. All settings are configured through the injectio
 - MCP variant → chosen during "Inject All" or "Inject Selective"
 - Ollama → prompted after variant selection (optional)
 
+## Download Embedding Model
+
+`Ctrl+Shift+P` → **"Kiro SDLC: Download Embedding Model"**
+
+This command downloads ONNX embedding models for semantic search (`find_tools`). It works **independently of the MCP server** — no server needs to be running.
+
+### How It Works
+
+1. Extension shows QuickPick with available models (from built-in catalog)
+2. User selects a model → extension downloads directly from HuggingFace
+3. Files saved to `~/.code-intel/models/{model-name}/`
+4. `registry.json` updated with active model selection
+5. MCP server (when running) auto-detects the active model from shared `registry.json`
+
+### Available Models
+
+| Model | Size | Languages | Use Case |
+|-------|------|-----------|----------|
+| `all-MiniLM-L6-v2` | 90MB | English | Default, fast, good for English tool names |
+| `paraphrase-multilingual-MiniLM-L12-v2` | 470MB | 50+ (en, vi, zh, ja, ko...) | Multilingual queries |
+
+### Status Icons in QuickPick
+
+| Icon | Meaning |
+|------|---------|
+| `$(check)` | Active model (currently in use) |
+| `$(cloud-download)` | Downloaded but not active |
+| `$(cloud)` | Not yet downloaded |
+
+### No MCP Server Required
+
+Unlike v1.6.0 which called the MCP server HTTP API, v1.6.1+ downloads directly from HuggingFace. This means:
+- Works during initial setup (before MCP server is configured)
+- Works when MCP server is stopped or restarting
+- Supports cancellation during download
+
+### Shared Registry
+
+Both extension and MCP server use `~/.code-intel/models/registry.json`:
+- Extension writes: model download state + active model selection
+- MCP server reads: which model to load for embedding operations
+- No server restart needed after switching models
+
 ## Optional: Semantic Search with Ollama
 
 By default, code intelligence uses **FTS5 keyword search** (fast, zero setup). For **semantic search** (find code by meaning), the injection wizard offers Ollama integration.

@@ -48,6 +48,16 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 
 `find_tools` supports semantic search via ONNX embedding models. On first use, the default English model is auto-downloaded in the background.
 
+### Download Models
+
+**Easiest way:** `Ctrl+Shift+P` → "Kiro SDLC: Download Embedding Model" (works without MCP server running)
+
+**Via MCP tool** (when server is running):
+```bash
+mem_model_manager(action="download", model_name="paraphrase-multilingual-MiniLM-L12-v2")
+mem_model_manager(action="switch", model_name="paraphrase-multilingual-MiniLM-L12-v2")
+```
+
 ### Available Models
 
 | Model | Size | Languages | Use Case |

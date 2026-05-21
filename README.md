@@ -39,9 +39,11 @@ Provide a Jira ticket key (e.g., `KSA-14`) → Scrum Master agent orchestrates t
 
 `Ctrl+Shift+P` → **"Kiro SDLC: Download Embedding Model"**
 
-Choose from available models:
-- `all-MiniLM-L6-v2` (90MB, English, default — auto-downloaded)
+Downloads directly from HuggingFace — no MCP server required. Choose from:
+- `all-MiniLM-L6-v2` (90MB, English, default — auto-downloaded on first server start)
 - `paraphrase-multilingual-MiniLM-L12-v2` (470MB, 50+ languages including Vietnamese)
+
+Models stored at `~/.code-intel/models/`. MCP server auto-detects active model from shared `registry.json`.
 
 ## Modules
 
