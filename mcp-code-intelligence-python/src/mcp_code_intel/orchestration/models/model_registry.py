@@ -22,7 +22,8 @@ class ModelRegistry:
 
     @property
     def active_model(self) -> str:
-        """Get currently active model name."""
+        """Get currently active model name. Always re-reads from disk."""
+        self._data = None  # Invalidate cache — external tools may update
         data = self._load()
         return data.get("active_model", DEFAULT_MODEL)
 

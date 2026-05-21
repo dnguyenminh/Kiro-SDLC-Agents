@@ -15,7 +15,10 @@ class ModelRegistry(private val modelsDir: String) {
     private var data: MutableMap<String, Any?>? = null
     private val json = Json { prettyPrint = true; encodeDefaults = true }
 
-    val activeModel: String get() = loadData()["active_model"]?.toString() ?: DEFAULT_MODEL
+    val activeModel: String get() {
+        data = null // Invalidate cache — external tools may update registry
+        return loadData()["active_model"]?.toString() ?: DEFAULT_MODEL
+    }
 
     /** Check if a model is marked as downloaded. */
     fun isDownloaded(modelName: String): Boolean {

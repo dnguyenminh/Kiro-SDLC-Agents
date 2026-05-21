@@ -19,6 +19,7 @@ export class ModelRegistry {
   }
 
   get activeModel(): string {
+    this.data = null; // Invalidate cache — external tools may update registry
     return this.loadData().active_model ?? DEFAULT_MODEL;
   }
 
