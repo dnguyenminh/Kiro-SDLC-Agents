@@ -52,7 +52,18 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Copy shared/viewer/ into JAR resources so static files are bundled
+val copyViewer = tasks.register<Copy>("copyViewer") {
+    from(rootProject.file("../shared/viewer"))
+    into(layout.buildDirectory.dir("resources/main/viewer"))
+}
+
+tasks.named("processResources") {
+    dependsOn(copyViewer)
+}
+
 tasks.shadowJar {
+    dependsOn(copyViewer)
     archiveBaseName.set("mcp-code-intelligence")
     archiveClassifier.set("")
     archiveVersion.set("latest")

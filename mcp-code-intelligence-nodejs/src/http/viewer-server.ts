@@ -122,11 +122,17 @@ export class ViewerServer {
     } catch { this.send404(res); }
   }
 
-  /** Resolve path within shared/viewer/. Returns null if workspace missing or file not found. */
+  /** Resolve path within viewer/. Checks bundled dist/viewer/ first, then workspace shared/viewer/. */
   private resolveSharedPath(relPath: string): string | null {
-    if (!this.workspace) return null;
-    const filePath = path.join(this.workspace, 'shared', 'viewer', relPath);
-    return fs.existsSync(filePath) ? filePath : null;
+    // 1. Bundled viewer (inside npm package: dist/viewer/)
+    const bundledPath = path.join(__dirname, '..', 'viewer', relPath);
+    if (fs.existsSync(bundledPath)) return bundledPath;
+    // 2. Fallback: workspace shared/viewer/ (dev mode)
+    if (this.workspace) {
+      const wsPath = path.join(this.workspace, 'shared', 'viewer', relPath);
+      if (fs.existsSync(wsPath)) return wsPath;
+    }
+    return null;
   }
 
   /** Error page when shared/viewer/ files are missing. */

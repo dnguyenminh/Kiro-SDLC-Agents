@@ -106,8 +106,23 @@ class ViewerServer(val config: Config) {
         }
     }
 
-    /** Resolve file within shared/viewer/. Returns null if not found. */
+    /** Resolve file within viewer/. Checks classpath resources first, then workspace shared/viewer/. */
     private fun resolveSharedFile(relPath: String): File? {
+        // 1. Bundled viewer (inside JAR: /viewer/)
+        val resource = this::class.java.getResourceAsStream("/viewer/$relPath")
+        if (resource != null) {
+            // Write to temp file for consistent File-based API
+            val tempDir = File(System.getProperty("java.io.tmpdir"), "mcp-viewer-cache")
+            tempDir.mkdirs()
+            val cached = File(tempDir, relPath.replace("/", File.separator))
+            if (!cached.exists()) {
+                cached.parentFile?.mkdirs()
+                cached.writeBytes(resource.readBytes())
+            }
+            resource.close()
+            return cached
+        }
+        // 2. Fallback: workspace shared/viewer/ (dev mode)
         val file = File(config.workspace, "shared/viewer/$relPath")
         return if (file.exists()) file else null
     }

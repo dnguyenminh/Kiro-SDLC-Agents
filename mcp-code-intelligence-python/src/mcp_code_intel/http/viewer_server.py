@@ -190,11 +190,19 @@ def _serve_static(
 
 
 def _resolve_shared_path(workspace: str, rel_path: str) -> str | None:
-    """Resolve path within shared/viewer/. Returns None if not found."""
-    if not workspace:
-        return None
-    full_path = os.path.join(workspace, "shared", "viewer", rel_path)
-    return full_path if os.path.isfile(full_path) else None
+    """Resolve path within viewer/. Checks bundled package data first, then workspace."""
+    # 1. Bundled viewer (inside installed package: mcp_code_intel/viewer/)
+    pkg_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(pkg_dir)  # mcp_code_intel/
+    bundled = os.path.join(parent_dir, "viewer", rel_path)
+    if os.path.isfile(bundled):
+        return bundled
+    # 2. Fallback: workspace shared/viewer/ (dev mode)
+    if workspace:
+        full_path = os.path.join(workspace, "shared", "viewer", rel_path)
+        if os.path.isfile(full_path):
+            return full_path
+    return None
 
 
 def _serve_viewer_error(

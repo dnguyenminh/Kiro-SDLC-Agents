@@ -1,13 +1,14 @@
 {
   "name": "mcp-code-intelligence",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Local Code Intelligence MCP Server — SQLite FTS5 + Semantic Search for codebase indexing and querying",
   "main": "dist/index.js",
   "bin": {
     "mcp-code-intelligence": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "copy-viewer": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'../shared/viewer'),p.resolve(__dirname,'dist/viewer'))\"",
+    "build": "tsc && npm run copy-viewer",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "clean": "rimraf dist",
@@ -30,6 +31,7 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
+    "dist/viewer/**",
     "README.md"
   ],
   "dependencies": {

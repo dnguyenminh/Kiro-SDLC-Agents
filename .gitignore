@@ -17,6 +17,7 @@ mcp-code-intelligence-kotlin/.kotlin/
 # Python bytecode and test cache
 mcp-code-intelligence-python/src/mcp_code_intel/__pycache__/
 mcp-code-intelligence-python/src/mcp_code_intel/**/__pycache__/
+mcp-code-intelligence-python/src/mcp_code_intel/viewer/
 mcp-code-intelligence-python/.pytest_cache/
 mcp-code-intelligence-python/tests/__pycache__/
 

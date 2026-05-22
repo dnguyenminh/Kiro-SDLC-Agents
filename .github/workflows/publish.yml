@@ -90,6 +90,9 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install build twine
+      - name: Bundle viewer static files
+        run: python copy_viewer.py
+        working-directory: mcp-code-intelligence-python
       - run: python -m build
         working-directory: mcp-code-intelligence-python
       - name: Publish to PyPI (skip if version exists)
