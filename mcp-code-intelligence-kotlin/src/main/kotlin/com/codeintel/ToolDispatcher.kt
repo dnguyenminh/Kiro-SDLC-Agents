@@ -41,6 +41,7 @@ class ToolDispatcher(
             "code_index_status" -> CodeIndexStatusTool(queryLayer, indexer).execute(args)
             "stream_write_file" -> StreamWriteFileTool(config.workspace).execute(args)
             "code_kb_export" -> CodeKbExportTool(queryLayer, config.workspace).execute(args)
+            "drawio_auto_layout" -> com.codeintel.tools.drawio.DrawioAutoLayoutTool(config.workspace).execute(args)
             else -> null
         }
     }

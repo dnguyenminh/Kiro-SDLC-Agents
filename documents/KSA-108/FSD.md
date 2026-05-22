@@ -1,0 +1,620 @@
+# Functional Specification Document (FSD)
+
+## KB Web Viewer — KSA-108: Add Mark Reviewed Button and Review Workflow on Dashboard
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-108 |
+| Title | KB Web Viewer: Add Mark Reviewed button and review workflow on Dashboard |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-05-22 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-108.docx |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-05-22 | BA Agent | Initiate document |
+| 1.0 | 2026-05-22 | TA Agent | Technical enrichment — API contracts, pseudocode, integration specs |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior of the "Mark Reviewed" feature for the KB Web Viewer. It covers the Dashboard Due Reviews table button, the Entry Detail view button, toast notifications, and row removal animation.
+
+### 1.2 Scope
+
+Frontend-only changes to `dashboard.html`, `dashboard.js`, and `browser.js`. No backend changes required — the API endpoint `POST /api/kb/entries/{id}/review` already exists and is operational.
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+|------|------------|
+| KB | Knowledge Base |
+| Due Reviews | Entries overdue for periodic review (staleness > threshold) |
+| Staleness Score | 0-1 float indicating how stale an entry is |
+| Toast | Temporary notification popup that auto-dismisses |
+| MCP | Model Context Protocol |
+
+### 1.4 References
+
+| Document | Location |
+|----------|----------|
+| BRD | BRD-v1-KSA-108.docx |
+| Dashboard HTML | shared/viewer/dashboard.html |
+| Dashboard JS | shared/viewer/dashboard.js |
+| Browser JS | shared/viewer/browser.js |
+| UX Routes (Kotlin) | mcp-code-intelligence-kotlin/src/main/kotlin/com/codeintel/http/UxRoutes.kt |
+
+---
+
+## 2. System Overview
+
+### 2.1 System Context Diagram
+
+![System Context](diagrams/system-context.png)
+
+The KB Web Viewer is a single-page application served as static HTML/JS from the MCP server. It communicates with the backend via REST API calls to `/api/kb/*` endpoints. The "Mark Reviewed" feature adds a new user interaction that calls the existing `POST /api/kb/entries/{id}/review` endpoint.
+
+**Actors:**
+- KB Administrator (human user via browser)
+- Backend API (MCP server — Kotlin/Python/Node.js)
+
+**Data Flow:**
+1. Browser loads dashboard → fetches `/api/kb/reminders` → renders Due Reviews table
+2. User clicks "Mark Reviewed" → frontend calls `POST /api/kb/entries/{id}/review`
+3. Backend updates DB → returns 200 OK
+4. Frontend removes row + shows toast
+
+### 2.2 System Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│  Browser (KB Web Viewer)                    │
+│  ┌──────────────┐  ┌──────────────────────┐ │
+│  │ dashboard.js │  │ browser.js           │ │
+│  │ (Due Reviews)│  │ (Entry Detail)       │ │
+│  └──────┬───────┘  └──────────┬───────────┘ │
+│         │                      │             │
+│         └──────────┬───────────┘             │
+│                    │ fetch()                  │
+└────────────────────┼─────────────────────────┘
+                     │ HTTP
+┌────────────────────┼─────────────────────────┐
+│  MCP Server        │                         │
+│  ┌─────────────────▼───────────────────────┐ │
+│  │ UxRoutes: POST /api/kb/entries/{id}/review │
+│  └─────────────────┬───────────────────────┘ │
+│                    │ SQL                      │
+│  ┌─────────────────▼───────────────────────┐ │
+│  │ SQLite: knowledge_entries table          │ │
+│  │ UPDATE staleness_score=0, updated_at=now │ │
+│  └─────────────────────────────────────────┘ │
+└──────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Functional Requirements
+
+### 3.1 Feature: Mark Reviewed from Dashboard
+
+**Source:** BRD Story 1
+
+#### 3.1.1 Description
+
+Add a "Mark Reviewed" button to each row in the Due Reviews table on the Dashboard page. When clicked, the button calls the backend API to mark the entry as reviewed, then removes the row from the table with a fade-out animation and shows a success toast.
+
+#### 3.1.2 Use Case
+
+**Use Case ID:** UC-01
+**Actor:** KB Administrator
+**Preconditions:** Dashboard page is loaded; Due Reviews table has at least one entry
+**Postconditions:** Entry is marked as reviewed; row removed from table; staleness score = 0
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Views Dashboard | Loads Due Reviews via GET /api/kb/reminders | Table displays overdue entries |
+| 2 | Clicks "Mark Reviewed" on a row | | User initiates review action |
+| 3 | | Disables button, shows spinner | Prevent double-click |
+| 4 | | Calls POST /api/kb/entries/{id}/review | API request sent |
+| 5 | | Receives 200 OK | Backend confirms success |
+| 6 | | Shows success toast | "Entry #{id} marked as reviewed" |
+| 7 | | Fades out row (300ms) | Visual feedback |
+| 8 | | Removes row from DOM | Table updated |
+| 9 | | Decrements "Stale" metric card | Dashboard metrics updated |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-01 | Table becomes empty after removal | Show "No due reviews" message in table body |
+| AF-02 | User clicks button on last row | Same as main flow + AF-01 |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-01 | Network error (fetch fails) | Re-enable button; show error toast "Network error — please try again" |
+| EF-02 | API returns 404 | Re-enable button; show error toast "Entry not found" |
+| EF-03 | API returns 503 | Re-enable button; show error toast "Service unavailable — please try again later" |
+| EF-04 | API returns other error | Re-enable button; show error toast "Error: {status}" |
+
+#### 3.1.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-01 | Button must be disabled during API call (prevent double-click) | BRD Story 1 |
+| BR-02 | Row removal animation must be 300ms fade-out | BRD Story 4 |
+| BR-03 | Success toast auto-dismisses after 3 seconds | BRD Story 3 |
+| BR-04 | Error toast auto-dismisses after 5 seconds | BRD Story 3 |
+| BR-05 | Stale metric card decrements by 1 on success | BRD Story 4 |
+| BR-06 | API is idempotent — marking already-reviewed entry is a no-op | BRD Assumptions |
+
+#### 3.1.4 Data Specifications
+
+**Input Data:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| entry_id | Integer | Y | Positive integer, extracted from row data | ID of the KB entry to mark as reviewed |
+
+**Output Data (API Response):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | String | "ok" on success |
+| entryId | Long | ID of the reviewed entry |
+
+#### 3.1.5 UI Specifications
+
+**Screen: Dashboard — Due Reviews Table**
+
+| No. | Element | Type | Required | Behavior | Validation |
+|-----|---------|------|----------|----------|------------|
+| 1 | Action column header | th | Y | Static text "Action" | N/A |
+| 2 | Mark Reviewed button | button | Y | Calls API on click; disabled during loading | entry_id must be valid |
+| 3 | Loading spinner | span (CSS animation) | Y | Replaces button text during API call | N/A |
+| 4 | Success toast | div.toast.toast-success | Y | Shows for 3s then fades out | N/A |
+| 5 | Error toast | div.toast.toast-error | Y | Shows for 5s then fades out | N/A |
+
+**Button Styling:**
+- Normal state: `background: #22c55e; color: white; border-radius: 4px; padding: 4px 8px; font-size: 0.65rem; cursor: pointer; border: none;`
+- Hover: `background: #16a34a;`
+- Disabled/Loading: `opacity: 0.6; cursor: not-allowed;`
+- Focus: `outline: 2px solid #22c55e; outline-offset: 2px;`
+
+#### 3.1.6 API Contract (Functional View)
+
+**Endpoint:** `POST /api/kb/entries/{id}/review`
+**Purpose:** Mark a KB entry as reviewed, resetting its staleness score
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | Integer (path) | Y | BR-06 (idempotent) | Entry ID to mark as reviewed |
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | String | "ok" |
+| entryId | Long | Confirmed entry ID |
+
+**Business Error Scenarios:**
+
+| Scenario | User Message | Trigger Condition |
+|----------|-------------|-------------------|
+| Entry not found | "Entry not found" | ID doesn't exist in DB |
+| Engine not initialized | "Service unavailable — please try again later" | Server starting up or DB not connected |
+| Invalid ID | "Invalid id" | Non-numeric or negative ID in URL |
+
+---
+
+### 3.2 Feature: Mark Reviewed from Entry Detail View
+
+**Source:** BRD Story 2
+
+#### 3.2.1 Description
+
+Add a "Mark Reviewed" button to the Entry Detail panel in the Browser tab. After successful marking, the button transforms into a "Reviewed ✓" badge.
+
+#### 3.2.2 Use Case
+
+**Use Case ID:** UC-02
+**Actor:** KB Administrator
+**Preconditions:** Entry Detail panel is open (user clicked an entry in Browser tab)
+**Postconditions:** Entry marked as reviewed; button replaced with badge
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Opens entry detail | Renders detail panel with "Mark Reviewed" button | Button in header next to ✕ |
+| 2 | Clicks "Mark Reviewed" | | User initiates review |
+| 3 | | Disables button, shows spinner | Prevent double-click |
+| 4 | | Calls POST /api/kb/entries/{id}/review | API request |
+| 5 | | Receives 200 OK | Success |
+| 6 | | Shows success toast | Same toast as UC-01 |
+| 7 | | Replaces button with "Reviewed ✓" badge | Visual confirmation |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-01 | Entry already reviewed (button already badge) | No button shown — only badge |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-01 | API error | Same as UC-01 exception flows; button remains clickable |
+
+#### 3.2.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-07 | Detail panel stays open after marking | BRD Story 2 |
+| BR-08 | Button transforms to non-interactive badge on success | BRD Story 2 |
+| BR-09 | Badge text: "Reviewed ✓" with green styling | BRD Story 2 |
+
+#### 3.2.4 UI Specifications
+
+**Screen: Browser Tab — Entry Detail Panel**
+
+| No. | Element | Type | Required | Behavior | Validation |
+|-----|---------|------|----------|----------|------------|
+| 1 | Mark Reviewed button | button | Y | In header row, left of ✕ close button | N/A |
+| 2 | Reviewed badge | span | Y | Replaces button after success | Non-interactive |
+
+**Button Styling (Entry Detail):**
+- Normal: `background: transparent; border: 1px solid #22c55e; color: #22c55e; border-radius: 4px; padding: 3px 6px; font-size: 0.65rem; cursor: pointer;`
+- Hover: `background: #22c55e; color: white;`
+
+**Badge Styling:**
+- `background: #166534; color: #bbf7d0; border-radius: 4px; padding: 3px 6px; font-size: 0.65rem;`
+
+---
+
+### 3.3 Feature: Toast Notification System
+
+**Source:** BRD Story 3
+
+#### 3.3.1 Description
+
+A lightweight toast notification system for displaying success/error messages. Toasts appear at the top-right of the viewport and auto-dismiss.
+
+#### 3.3.2 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-10 | Success toast: green accent, 3s auto-dismiss | BRD Story 3 |
+| BR-11 | Error toast: red accent, 5s auto-dismiss | BRD Story 3 |
+| BR-12 | Toasts stack vertically (newest on top) | BRD Story 3 |
+| BR-13 | Toasts don't block page interaction | BRD Story 3 |
+| BR-14 | Toast has close (✕) button for manual dismiss | UX best practice |
+
+#### 3.3.3 UI Specifications
+
+**Toast Container:**
+- Position: `fixed; top: 1rem; right: 1rem; z-index: 9999;`
+- Layout: `display: flex; flex-direction: column; gap: 0.5rem;`
+
+**Toast Item:**
+- Size: `min-width: 250px; max-width: 350px; padding: 0.75rem 1rem;`
+- Style: `border-radius: 0.5rem; font-size: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3);`
+- Success: `background: #166534; color: #bbf7d0; border-left: 4px solid #22c55e;`
+- Error: `background: #7f1d1d; color: #fecaca; border-left: 4px solid #ef4444;`
+- Animation: fade-in 200ms on appear, fade-out 200ms on dismiss
+
+#### 3.3.4 Pseudocode
+
+```javascript
+function showToast(message, type = 'success') {
+  // 1. Get or create toast container
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = createElement('div', { id: 'toast-container', style: TOAST_CONTAINER_STYLE });
+    document.body.appendChild(container);
+  }
+
+  // 2. Create toast element
+  const toast = createElement('div', {
+    className: `toast toast-${type}`,
+    innerHTML: `<span>${escapeHtml(message)}</span><span class="toast-close" onclick="this.parentElement.remove()">✕</span>`
+  });
+
+  // 3. Insert at top (newest first)
+  container.prepend(toast);
+
+  // 4. Animate in
+  toast.style.opacity = '0';
+  requestAnimationFrame(() => { toast.style.opacity = '1'; });
+
+  // 5. Auto-dismiss
+  const timeout = type === 'success' ? 3000 : 5000;
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 200);
+  }, timeout);
+}
+```
+
+---
+
+## 4. Data Model
+
+### 4.1 Affected Entity
+
+#### Entity: knowledge_entries
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | INTEGER | Y | Primary key | Entry identifier |
+| staleness_score | REAL | Y | BR-06: reset to 0 on review | 0.0-1.0 staleness indicator |
+| last_reviewed_at | TEXT | N | Set to current timestamp on review | ISO 8601 datetime |
+| updated_at | TEXT | Y | Set to current timestamp on any update | ISO 8601 datetime |
+
+**No schema changes required.** The existing table already has all necessary columns.
+
+---
+
+## 5. Integration Specifications
+
+### 5.1 External System: MCP Server Backend API
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Persist review action to database |
+| Direction | Outbound (browser → server) |
+| Data Format | JSON |
+| Frequency | On-demand (user click) |
+
+**Data Exchange:**
+
+| Our Data | External Data | Direction | Business Rule |
+|----------|--------------|-----------|---------------|
+| entry_id (from row) | id (path param) | Send | Must be valid positive integer |
+| — | { status, entryId } | Receive | Confirm success |
+
+**API Details:**
+
+| Method | URL | Content-Type | Auth |
+|--------|-----|-------------|------|
+| POST | /api/kb/entries/{id}/review | N/A (no body) | None (same-origin) |
+
+**Response Codes:**
+
+| Code | Meaning | Frontend Action |
+|------|---------|-----------------|
+| 200 | Success | Remove row, show success toast |
+| 400 | Invalid ID | Show error toast |
+| 404 | Entry not found | Show error toast |
+| 500 | Server error | Show error toast |
+| 503 | Engine not initialized | Show error toast |
+
+---
+
+## 6. Processing Logic
+
+### 6.1 Mark Reviewed — Dashboard Flow
+
+**Trigger:** User clicks "Mark Reviewed" button on a Due Reviews table row
+**Input:** Entry ID (from table row data attribute)
+**Output:** Row removed from table; toast shown; metric updated
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Extract entry ID from button's data-id attribute | If missing, log error and return |
+| 2 | Disable button, show loading spinner | N/A |
+| 3 | Call `POST /api/kb/entries/{id}/review` | On network error → EF-01 |
+| 4 | Check response status | On non-200 → EF-02/03/04 |
+| 5 | Show success toast | N/A |
+| 6 | Fade out row (300ms CSS transition) | N/A |
+| 7 | Remove row from DOM after transition | N/A |
+| 8 | Check if table is empty → show empty state | N/A |
+| 9 | Decrement stale count in metrics card | N/A |
+
+### 6.2 Mark Reviewed — Entry Detail Flow
+
+**Trigger:** User clicks "Mark Reviewed" button in Entry Detail panel
+**Input:** Entry ID (from detail panel data)
+**Output:** Button replaced with badge; toast shown
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Extract entry ID from panel data | If missing, log error and return |
+| 2 | Disable button, show loading spinner | N/A |
+| 3 | Call `POST /api/kb/entries/{id}/review` | On network error → re-enable button, show error toast |
+| 4 | Check response status | On non-200 → re-enable button, show error toast |
+| 5 | Show success toast | N/A |
+| 6 | Replace button with "Reviewed ✓" badge | N/A |
+
+### 6.3 Pseudocode — markReviewed Function
+
+```javascript
+async function markReviewed(entryId, buttonEl, context = 'dashboard') {
+  // BR-01: Prevent double-click
+  buttonEl.disabled = true;
+  const originalText = buttonEl.textContent;
+  buttonEl.textContent = '⏳';
+
+  try {
+    const basePath = window.__MCP_BASE || '';
+    const response = await fetch(basePath + '/api/kb/entries/' + entryId + '/review', {
+      method: 'POST'
+    });
+
+    if (!response.ok) {
+      const errorMsg = response.status === 404 ? 'Entry not found'
+        : response.status === 503 ? 'Service unavailable — please try again later'
+        : 'Error: ' + response.status;
+      showToast(errorMsg, 'error');
+      buttonEl.disabled = false;
+      buttonEl.textContent = originalText;
+      return;
+    }
+
+    // Success
+    showToast('Entry #' + entryId + ' marked as reviewed', 'success');
+
+    if (context === 'dashboard') {
+      // BR-02: Fade out row
+      const row = buttonEl.closest('tr');
+      row.style.transition = 'opacity 300ms';
+      row.style.opacity = '0';
+      setTimeout(() => {
+        row.remove();
+        // Check empty state
+        const tbody = document.getElementById('reminders');
+        if (!tbody.children.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="padding:.4rem;font-size:.75rem;opacity:.6">No due reviews</td></tr>';
+        }
+        // BR-05: Decrement stale metric
+        decrementStaleCount();
+      }, 300);
+    } else {
+      // BR-08: Replace button with badge
+      const badge = document.createElement('span');
+      badge.textContent = 'Reviewed ✓';
+      badge.style.cssText = 'background:#166534;color:#bbf7d0;border-radius:4px;padding:3px 6px;font-size:.65rem;';
+      buttonEl.replaceWith(badge);
+    }
+  } catch (err) {
+    showToast('Network error — please try again', 'error');
+    buttonEl.disabled = false;
+    buttonEl.textContent = originalText;
+  }
+}
+```
+
+---
+
+## 7. Security Requirements
+
+### 7.1 Authentication & Authorization
+
+| Role | Permissions | Screens/Features |
+|------|-------------|-------------------|
+| KB Administrator | Read + Write | Dashboard, Browser, Mark Reviewed |
+
+No additional auth required — the API endpoint is same-origin and the server handles authorization internally.
+
+### 7.2 Data Sensitivity Classification
+
+| Data Type | Classification | Business Requirement |
+|-----------|---------------|---------------------|
+| Entry ID | Internal | Not sensitive — integer identifier |
+| Review timestamp | Internal | Audit trail for review compliance |
+
+### 7.3 Input Validation
+
+| Input | Validation | Reason |
+|-------|-----------|--------|
+| entry_id | Must be positive integer from DOM data attribute | Prevent injection; API validates server-side |
+
+---
+
+## 8. Non-Functional Requirements
+
+| Category | Business Requirement | Acceptance Criteria |
+|----------|---------------------|---------------------|
+| Performance | Button click to visual feedback | < 100ms (loading state appears) |
+| Performance | API round-trip | < 500ms (server response) |
+| Performance | Row removal animation | Exactly 300ms (smooth, no jank) |
+| Accessibility | Keyboard navigation | Button focusable via Tab, activatable via Enter/Space |
+| Accessibility | Screen reader | aria-label="Mark entry {id} as reviewed" |
+| Accessibility | Color contrast | All text meets WCAG AA (4.5:1 ratio) |
+| Compatibility | Browser support | Chrome 90+, Firefox 90+, Edge 90+ |
+| Reliability | Error recovery | User can retry without page refresh |
+
+---
+
+## 9. Error Handling (User-Facing)
+
+### 9.1 Error Scenarios
+
+| Scenario | Severity | User Message | Expected Behavior |
+|----------|----------|-------------|-------------------|
+| Network failure | Warning | "Network error — please try again" | Button re-enabled, user can retry |
+| Entry not found (404) | Warning | "Entry not found" | Button re-enabled; entry may have been deleted |
+| Service unavailable (503) | Warning | "Service unavailable — please try again later" | Button re-enabled; server starting up |
+| Unknown server error | Warning | "Error: {status code}" | Button re-enabled |
+| Invalid entry ID (client) | Info | (silent — logged to console) | No API call made |
+
+### 9.2 Notification Requirements
+
+| Event | Who is Notified | Channel | Timing |
+|-------|----------------|---------|--------|
+| Review success | Current user | Toast (in-app) | Immediate |
+| Review failure | Current user | Toast (in-app) | Immediate |
+
+---
+
+## 10. Testing Considerations
+
+### 10.1 Test Scenarios
+
+| ID | Scenario | Input | Expected Output | Priority |
+|----|----------|-------|-----------------|----------|
+| TC-01 | Mark reviewed from dashboard — success | Click button on row with valid entry | Row fades out, toast shown, stale count decrements | High |
+| TC-02 | Mark reviewed from dashboard — network error | Click button with network disconnected | Error toast, button re-enabled | High |
+| TC-03 | Mark reviewed from dashboard — 404 | Click button for deleted entry | Error toast "Entry not found", button re-enabled | High |
+| TC-04 | Mark reviewed from dashboard — last row | Click button on only remaining row | Row removed, empty state shown | High |
+| TC-05 | Mark reviewed from entry detail — success | Click button in detail panel | Badge replaces button, toast shown | High |
+| TC-06 | Mark reviewed from entry detail — error | Click button with API error | Error toast, button remains clickable | Medium |
+| TC-07 | Double-click prevention | Rapid double-click on button | Only one API call made | High |
+| TC-08 | Keyboard activation | Focus button with Tab, press Enter | Same behavior as click | Medium |
+| TC-09 | Toast auto-dismiss | Wait after success | Toast disappears after 3s | Medium |
+| TC-10 | Toast manual dismiss | Click ✕ on toast | Toast immediately removed | Low |
+| TC-11 | Multiple toasts stack | Mark 2 entries rapidly | Both toasts visible, stacked | Low |
+
+---
+
+## 11. Appendix
+
+### State Diagram — Mark Reviewed Button
+
+![State Diagram](diagrams/state-mark-reviewed.png)
+
+States:
+- **Idle** — Button shows "Mark Reviewed", clickable
+- **Loading** — Button shows spinner, disabled
+- **Success** — (Dashboard) Row fading out / (Detail) Badge shown
+- **Error** — Button returns to Idle state
+
+### Sequence Diagram — Mark Reviewed Flow
+
+![Sequence Diagram](diagrams/sequence-mark-reviewed.png)
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Sequence — Mark Reviewed | [sequence-mark-reviewed.png](diagrams/sequence-mark-reviewed.png) | [sequence-mark-reviewed.drawio](diagrams/sequence-mark-reviewed.drawio) |
+| 3 | State — Mark Reviewed Button | [state-mark-reviewed.png](diagrams/state-mark-reviewed.png) | [state-mark-reviewed.drawio](diagrams/state-mark-reviewed.drawio) |
+
+### Change Log from BRD
+
+- No deviations from BRD. All acceptance criteria preserved.
+- Added technical details: pseudocode, API response codes, state transitions.
+- Clarified that `basePath` helper must be used for API calls (per ui-relative-paths steering rule).

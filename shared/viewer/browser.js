@@ -56,9 +56,11 @@ async function showBrowserDetail(id) {
   try {
     const r = await fetch(API + '/entries/' + id);
     const e = await r.json();
-    panel.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:8px">' +
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
       '<b style="font-size:.75rem">Entry #' + e.id + '</b>' +
-      '<span onclick="closeBrowserDetail()" style="cursor:pointer;opacity:.6">✕</span></div>' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
+      '<button class="btn-review" aria-label="Mark entry ' + e.id + ' as reviewed" onclick="markReviewed(' + e.id + ',this,\'detail\')">Mark Reviewed</button>' +
+      '<span onclick="closeBrowserDetail()" style="cursor:pointer;opacity:.6">\u2715</span></div></div>' +
       renderEntryDetail(e);
   } catch (err) { panel.innerHTML = '<div style="color:#f87171">Error loading entry</div>'; }
 }

@@ -21,6 +21,7 @@ from .tools import (
     handle_code_kb_export,
 )
 from .stream_write import handle_stream_write_file
+from .drawio import handle_drawio_layout, DRAWIO_TOOL_DEFINITION
 from .memory import MemoryEngineV2, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
 from .http import ViewerServer
 from .orchestration.engine import OrchestrationEngine
@@ -118,6 +119,7 @@ TOOL_DEFINITIONS = [
             },
         },
     },
+    DRAWIO_TOOL_DEFINITION,
 ]
 
 
@@ -386,6 +388,8 @@ class McpServer:
             return handle_stream_write_file(args, self._workspace)
         if name == "code_kb_export":
             return handle_code_kb_export(args, self._query_layer, self._workspace)
+        if name == "drawio_auto_layout":
+            return handle_drawio_layout(args, self._workspace)
         # Meta-tools (orchestration)
         if self._meta_dispatcher:
             if name in META_TOOL_NAMES:

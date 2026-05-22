@@ -15,6 +15,7 @@ import { registerCodeModules } from './code-modules.js';
 import { registerCodeIndexStatus } from './code-index-status.js';
 import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
+import { handleDrawioLayout, DRAWIO_TOOL_DEFINITION } from './drawio-tool.js';
 import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
 import { EmbeddingService } from '../memory/embedding/index.js';
 import { OrchestrationEngine } from '../orchestration/engine.js';
@@ -135,6 +136,8 @@ async function dispatchByName(
       return handleStreamWriteFile(args, workspace);
     case 'code_kb_export':
       return handleCodeKbExport(args, queryLayer, workspace);
+    case 'drawio_auto_layout':
+      return handleDrawioLayout(args, workspace);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -375,4 +378,5 @@ const TOOL_DEFINITIONS = [
     description: 'Export code intelligence data as Knowledge Base payloads for ingestion.',
     inputSchema: { type: 'object', properties: { module: { type: 'string', description: 'Filter by module name' }, format: { type: 'string', description: 'Output format: json or text' } } },
   },
+  DRAWIO_TOOL_DEFINITION,
 ];

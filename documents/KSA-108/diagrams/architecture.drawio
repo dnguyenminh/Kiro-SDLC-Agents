@@ -1,0 +1,55 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — KSA-108 (Frontend Only)&lt;/b&gt;" style="text;html=1;align=center;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="150" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="browser_box" value="Browser" style="swimlane;startSize=24;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="380" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="dash_html" value="&lt;b&gt;dashboard.html&lt;/b&gt;&#xa;Due Reviews table&#xa;+ Action column" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" vertex="1" parent="browser_box">
+      <mxGeometry x="20" y="40" width="150" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="dash_js" value="&lt;b&gt;dashboard.js&lt;/b&gt;&#xa;markReviewed()&#xa;showToast()&#xa;decrementStaleCount()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" vertex="1" parent="browser_box">
+      <mxGeometry x="200" y="40" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="browser_js" value="&lt;b&gt;browser.js&lt;/b&gt;&#xa;showBrowserDetail()&#xa;+ Mark Reviewed btn" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" vertex="1" parent="browser_box">
+      <mxGeometry x="20" y="140" width="150" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="toast" value="&lt;b&gt;Toast Container&lt;/b&gt;&#xa;(dynamic DOM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="browser_box">
+      <mxGeometry x="200" y="140" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="css" value="ui-tokens.css + ux-components.css" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="browser_box">
+      <mxGeometry x="60" y="235" width="260" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="server_box" value="MCP Server (Existing — No Changes)" style="swimlane;startSize=24;fillColor=#e8f5e9;strokeColor=#388e3c;html=1;" vertex="1" parent="1">
+      <mxGeometry x="480" y="60" width="280" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="ux_routes" value="&lt;b&gt;UxRoutes&lt;/b&gt;&#xa;POST /api/kb/entries/{id}/review&#xa;handleMarkReviewed()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="server_box">
+      <mxGeometry x="40" y="50" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="db" value="&lt;b&gt;SQLite&lt;/b&gt;&#xa;knowledge_entries&#xa;staleness_score, updated_at" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="server_box">
+      <mxGeometry x="70" y="170" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_routes_db" value="UPDATE" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="server_box" source="ux_routes" target="db">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_fetch" value="POST /api/kb/entries/{id}/review" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="dash_js" target="ux_routes">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="440" y="135"/>
+          <mxPoint x="440" y="135"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_response" value="200 {status, entryId}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1" source="ux_routes" target="dash_js">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="440" y="160"/>
+          <mxPoint x="440" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

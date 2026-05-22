@@ -2,7 +2,8 @@
 
 async function load() {
   try {
-    const r = await fetch('/api/kb/dashboard');
+    var basePath = window.__MCP_BASE || '';
+    const r = await fetch(basePath + '/api/kb/dashboard');
     const d = await r.json();
     renderGauge(d.health_score || 0);
     renderMetrics(d);
@@ -70,23 +71,117 @@ function drawMini(id, data, label, color) {
 
 async function loadReminders() {
   try {
-    const r = await fetch('/api/kb/reminders');
+    var basePath = window.__MCP_BASE || '';
+    const r = await fetch(basePath + '/api/kb/reminders');
     const data = await r.json();
     const items = Array.isArray(data) ? data : (data.reminders || data.entries || []);
     const el = document.getElementById('reminders');
     if (!items.length) {
-      el.innerHTML = '<tr><td colspan="4" style="padding:.4rem;font-size:.75rem;opacity:.6">No due reviews</td></tr>';
+      el.innerHTML = '<tr><td colspan="5" style="padding:.4rem;font-size:.75rem;opacity:.6">No due reviews</td></tr>';
       return;
     }
     el.innerHTML = items.slice(0, 10).map(e => {
+      const id = e.id || e.entry_id || '';
       const last = e.last_reviewed_at || e.last_reviewed || 'Never';
       const days = e.days_overdue || e.overdue_days || '—';
-      return `<tr><td style="padding:.4rem;border-bottom:1px solid #1e293b">${e.id || e.entry_id || ''}</td>`
+      return `<tr><td style="padding:.4rem;border-bottom:1px solid #1e293b">${id}</td>`
         + `<td style="padding:.4rem;border-bottom:1px solid #1e293b">${esc(e.summary || '')}</td>`
         + `<td style="padding:.4rem;border-bottom:1px solid #1e293b">${last}</td>`
-        + `<td style="padding:.4rem;border-bottom:1px solid #1e293b;color:#f59e0b">${days}d</td></tr>`;
+        + `<td style="padding:.4rem;border-bottom:1px solid #1e293b;color:#f59e0b">${days}d</td>`
+        + `<td style="padding:.4rem;border-bottom:1px solid #1e293b"><button class="btn-review" aria-label="Mark entry ${id} as reviewed" onclick="markReviewed(${id},this,'dashboard')">Mark Reviewed</button></td></tr>`;
     }).join('');
   } catch (e) { console.error(e); }
+}
+
+async function markReviewed(entryId, buttonEl, context) {
+  buttonEl.disabled = true;
+  var originalHTML = buttonEl.innerHTML;
+  buttonEl.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    var basePath = window.__MCP_BASE || '';
+    var r = await fetch(basePath + '/api/kb/entries/' + entryId + '/review', {
+      method: 'POST'
+    });
+
+    if (!r.ok) {
+      var msg = r.status === 404 ? 'Entry not found'
+        : r.status === 503 ? 'Service unavailable — please try again later'
+        : 'Error: ' + r.status;
+      showToast(msg, 'error');
+      buttonEl.disabled = false;
+      buttonEl.innerHTML = originalHTML;
+      return;
+    }
+
+    showToast('Entry #' + entryId + ' marked as reviewed', 'success');
+
+    if (context === 'dashboard') {
+      var row = buttonEl.closest('tr');
+      row.style.transition = 'opacity 300ms ease-out';
+      row.style.opacity = '0';
+      setTimeout(function() {
+        row.remove();
+        var tbody = document.getElementById('reminders');
+        if (!tbody.children.length) {
+          tbody.innerHTML = '<tr><td colspan="5" style="padding:.4rem;font-size:.75rem;opacity:.6">No due reviews</td></tr>';
+        }
+        decrementStaleCount();
+      }, 300);
+    } else {
+      var badge = document.createElement('span');
+      badge.textContent = 'Reviewed \u2713';
+      badge.className = 'review-badge';
+      buttonEl.replaceWith(badge);
+    }
+  } catch (err) {
+    showToast('Network error — please try again', 'error');
+    buttonEl.disabled = false;
+    buttonEl.innerHTML = originalHTML;
+  }
+}
+
+function showToast(message, type) {
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.setAttribute('role', 'alert');
+    container.setAttribute('aria-live', 'polite');
+    container.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;';
+    document.body.appendChild(container);
+  }
+
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.innerHTML = '<span>' + esc(message) + '</span><span style="cursor:pointer;margin-left:8px;opacity:.7" onclick="this.parentElement.remove()">\u2715</span>';
+  toast.style.cssText = 'min-width:250px;max-width:350px;padding:.75rem 1rem;border-radius:.5rem;font-size:.75rem;'
+    + 'box-shadow:0 4px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:space-between;'
+    + 'opacity:0;transition:opacity 200ms;'
+    + (type === 'success'
+      ? 'background:#166534;color:#bbf7d0;border-left:4px solid #22c55e;'
+      : 'background:#7f1d1d;color:#fecaca;border-left:4px solid #ef4444;');
+
+  container.prepend(toast);
+  requestAnimationFrame(function() { toast.style.opacity = '1'; });
+
+  var timeout = type === 'success' ? 3000 : 5000;
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    setTimeout(function() { toast.remove(); }, 200);
+  }, timeout);
+}
+
+function decrementStaleCount() {
+  var cards = document.querySelectorAll('#metrics .card');
+  cards.forEach(function(card) {
+    var label = card.querySelector('h3');
+    if (label && label.textContent.trim() === 'Stale') {
+      var val = card.querySelector('.val');
+      var current = parseInt(val.textContent) || 0;
+      if (current > 0) val.textContent = current - 1;
+    }
+  });
 }
 
 function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }

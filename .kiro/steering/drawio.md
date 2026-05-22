@@ -12,8 +12,15 @@ Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, S
 
 1. **Generate draw.io XML** in mxGraphModel format for the requested diagram
 2. **Write the XML** to a `.drawio` file in the current working directory using the Write tool
-3. **Post-process edge routing** (optional): If `npx @drawio/postprocess` is available, run it on the `.drawio` file to optimize edge routing (simplify waypoints, fix edge-vertex collisions, straighten approach angles). Skip silently if not available — do not install it or ask the user about it
-4. **If the user requested an export format** (png, svg, pdf), locate the draw.io CLI (see below), export with `--embed-diagram`, then delete the source `.drawio` file. If the CLI is not found, keep the `.drawio` file and tell the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly
+3. **Auto-layout review (MANDATORY)**: Call `drawio_auto_layout(file_path="<path>")` to check for overlaps/crossings.
+   - If `"already_good"` → proceed to export PNG
+   - If `"needs_fix"` → read the `issues` array, fix the drawio XML accordingly (move nodes, adjust positions), then call tool again to verify. Loop until 0 issues.
+   - Common fixes: move overlapping nodes apart (+40px), rearrange nodes so edges don't cross shapes
+   - **Waypoints ARE allowed** — but each segment between waypoints MUST be orthogonal (horizontal or vertical). No diagonal segments.
+   - Example valid waypoints: `<Array as="points"><mxPoint x="400" y="100"/><mxPoint x="400" y="200"/></Array>` (vertical then connects)
+   - **NEVER create diagonal connectors** — if source and target are not aligned, use waypoints to create L-shape or Z-shape orthogonal path
+   - **Do NOT set exitX/exitY/entryX/entryY** unless absolutely necessary — draw.io auto-computes best anchor points
+4. **If the user requested an export format** (png, svg, pdf) AND auto-layout didn't already export PNG, locate the draw.io CLI (see below), export with `--embed-diagram`, then delete the source `.drawio` file. If the CLI is not found, keep the `.drawio` file and tell the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly
 5. **Open the result** — the exported file if exported, or the `.drawio` file otherwise. If the open command fails, print the file path so the user can open it manually
 
 ## Choosing the output format
@@ -437,6 +444,44 @@ This happens when waypoint Y values are in wrong order (decreasing instead of in
   <mxGeometry relative="1" as="geometry"/>
 </mxCell>
 ```
+
+## Use Case Diagrams — Preventing Edge-Node Overlap
+
+**Problem:** When an actor connects to multiple use cases stacked vertically, straight-line edges from the actor to lower use cases pass THROUGH upper use cases, creating visual overlap.
+
+**MANDATORY rules for Use Case Diagrams:**
+
+1. **Layout: spread use cases horizontally, not just vertically.** Place use cases in a 2-column or staggered grid inside the system boundary so that actor→use-case lines have clear paths. Use `col * 220` horizontal spacing and `row * 120` vertical spacing.
+
+2. **Actor placement:** Position actors at the vertical midpoint of their connected use cases (not at the top). This minimizes steep diagonal lines that cross other shapes.
+
+3. **Edge style for actor↔use-case associations:** Use `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;` — orthogonal routing avoids cutting through intermediate ellipses. Do NOT use `edgeStyle=none` (straight lines) when there are 3+ use cases stacked vertically.
+
+4. **`<<include>>` and `<<extend>>` edges:** Use `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endSize=6;` — NEVER override `strokeWidth` or `fillColor` on individual include/extend edges. Keep them visually consistent (thin, dashed).
+
+5. **Minimum vertical gap between use case ellipses: 100px** (not 80px) — use cases are taller (70-80px) and need extra clearance for orthogonal edge routing between them.
+
+6. **No redundant edges:** Do NOT add edges between use cases unless they represent `<<include>>`, `<<extend>>`, or generalization. A plain unlabeled edge between two use cases is invalid UML.
+
+7. **System boundary swimlane:** Use `swimlane;startSize=30;` for the system boundary rectangle. Place all use cases inside it with `parent="systemId"`.
+
+**Example layout (4 use cases, 1 actor left, 1 actor right):**
+```
+Actor1 ──┐     ┌─────────────────────────────┐     ┌── Actor2
+          ├────│  UC1 (col=0, row=0)          │────┤
+          │    │                               │    │
+          ├────│  UC2 (col=0, row=1)          │────┘
+          │    │                               │
+          ├────│  UC3 (col=1, row=0)          │
+          │    │                               │
+          └────│  UC4 (col=1, row=1)          │
+               └─────────────────────────────┘
+```
+
+**Grid for use cases inside system boundary:**
+- `x = col * 220 + 80` (col 0 = 80, col 1 = 300)
+- `y = row * 120 + 50` (row 0 = 50, row 1 = 170, row 2 = 290)
+- Ellipse size: `200×70`
 
 ## Containers and groups
 

@@ -1,0 +1,84 @@
+<mxfile host="65bd71144e">
+    <diagram id="use-case-108" name="Use Case">
+        <mxGraphModel dx="609" dy="439" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="500" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="sys" value="KB Web Viewer — Mark Reviewed" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="30" width="500" height="420" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc1" value="Mark Entry as Reviewed&#10;(Dashboard)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+                    <mxGeometry x="20" y="50" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc2" value="Mark Entry as Reviewed&#10;(Entry Detail)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+                    <mxGeometry x="20" y="180" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc3" value="View Due Reviews" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+                    <mxGeometry x="20" y="310" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc4" value="Receive Toast&#10;Notification" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="sys" vertex="1">
+                    <mxGeometry x="300" y="115" width="190" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="inc1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc1" target="uc4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="250" y="85"/>
+                            <mxPoint x="250" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="inc2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc2" target="uc4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="250" y="215"/>
+                            <mxPoint x="250" y="150"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="actor1" value="KB Administrator" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="200" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor2" value="Backend API" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="125" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ea1" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="115"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea2" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="245"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea3" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc3" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="375"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea5" style="html=1;endArrow=none;" parent="1" source="uc1" target="actor2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="115"/>
+                            <mxPoint x="750" y="155"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea6" style="html=1;endArrow=none;" parent="1" source="uc2" target="actor2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="245"/>
+                            <mxPoint x="750" y="155"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

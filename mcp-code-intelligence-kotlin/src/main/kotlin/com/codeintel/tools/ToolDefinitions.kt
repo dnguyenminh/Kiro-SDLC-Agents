@@ -5,7 +5,7 @@ import kotlinx.serialization.json.*
 
 object ToolDefinitions {
     val ALL: List<JsonObject> by lazy {
-        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport())
+        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport(), drawioAutoLayout())
     }
 
     private fun codeSearch() = buildJsonObject {
@@ -97,6 +97,23 @@ object ToolDefinitions {
                 putJsonObject("module") { put("type", "string"); put("description", "Filter by module name (optional, exports all if omitted)") }
                 putJsonObject("format") { put("type", "string"); put("description", "Output format: json (default) or text") }
             }
+        }
+    }
+
+    private fun drawioAutoLayout() = buildJsonObject {
+        put("name", "drawio_auto_layout")
+        put("description", "Auto-layout draw.io diagrams using graph algorithms. Reads .drawio file, computes optimal node positions, writes back. Preserves all styles/labels.")
+        putJsonObject("inputSchema") {
+            put("type", "object")
+            putJsonObject("properties") {
+                putJsonObject("file_path") { put("type", "string"); put("description", "Path to .drawio file (absolute or relative to workspace)") }
+                putJsonObject("algorithm") { put("type", "string"); put("description", "Layout algorithm: layered|force|mrtree|radial (default: layered)") }
+                putJsonObject("spacing") { put("type", "number"); put("description", "Node spacing in pixels (default: 80)") }
+                putJsonObject("direction") { put("type", "string"); put("description", "Layout direction: DOWN|RIGHT|LEFT|UP (default: DOWN)") }
+                putJsonObject("export_png") { put("type", "boolean"); put("description", "Also export PNG after layout (default: false)") }
+                putJsonObject("force") { put("type", "boolean"); put("description", "Force re-layout even if diagram has no overlaps (default: false)") }
+            }
+            putJsonArray("required") { add("file_path") }
         }
     }
 }
