@@ -94,6 +94,16 @@ class KnowledgeRepository(private val db: MemoryDatabaseManager) {
         }
     }
 
+    /** Update quality_score for an entry (KSA-110 F4). */
+    fun updateQualityScore(id: Long, score: Int) {
+        val sql = "UPDATE knowledge_entries SET quality_score = ?, updated_at = datetime('now') WHERE id = ?"
+        db.conn.prepareStatement(sql).use { stmt ->
+            stmt.setInt(1, score)
+            stmt.setLong(2, id)
+            stmt.executeUpdate()
+        }
+    }
+
     /** Increment access count and update last_accessed_at. */
     fun recordAccess(id: Long) {
         val sql = """

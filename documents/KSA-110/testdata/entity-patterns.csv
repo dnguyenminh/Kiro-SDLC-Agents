@@ -1,0 +1,16 @@
+input_text,expected_entity,expected_type,description
+"Related to KSA-110",KSA-110,ticket,Standard Jira ticket pattern
+"See MTO-25 for details",MTO-25,ticket,Different project ticket
+"Assigned to @ducnguyen",@ducnguyen,person,Person mention with @
+"Team lead @sarah reviewed",@sarah,person,Person in sentence context
+"Uses AuthService for login",AuthService,system,PascalCase class name
+"CoreMemoryManager handles pins",CoreMemoryManager,system,Multi-word PascalCase
+"Modified src/memory/schema.ts",src/memory/schema.ts,file,TypeScript file path
+"Config at config/settings.yml",config/settings.yml,file,YAML config path
+"See https://github.com/user/repo",https://github.com/user/repo,url,GitHub URL
+"Docs at https://docs.example.com/api",https://docs.example.com/api,url,Documentation URL
+"Uses SQLite for storage",SQLite,concept,Technology name
+"ONNX Runtime for embeddings",ONNX,concept,ML framework name
+"Implements MCP protocol",MCP,concept,Protocol acronym
+"ABC-1 minimal ticket",ABC-1,ticket,Short ticket pattern
+"LONGPROJECT-99999 edge case",LONGPROJECT-99999,ticket,Long project key with large number

@@ -1,6 +1,8 @@
 /**
  * HybridSearch — combines FTS5 (BM25) and graph context with RRF fusion.
  * Vector search is optional (requires embedding service).
+ * Auto-prepends pinned entries (Core Memory) to search results.
+ * Enhanced with: agent scope filter, token budget, working tier expiry.
  */
 
 import { SearchResult } from './models.js';
@@ -8,6 +10,10 @@ import { KnowledgeSearchRepository } from './search-repo.js';
 import { KnowledgeGraph } from './knowledge-graph.js';
 import { typesForRole } from './role-filter.js';
 import { tierBoostFactor } from './tier-boost.js';
+import type { CoreMemoryManager } from './core-memory.js';
+import type { AgentScopeFilter } from './v2/agent-scope-filter.js';
+import type { TokenBudget, BudgetResult } from './v2/token-budget.js';
+import type { WorkingTierExpiry, ExpiryAction } from './v2/working-tier-expiry.js';
 
 export interface SearchParams {
   query: string;
@@ -19,13 +25,95 @@ export interface SearchParams {
   graphWeight: number;
 }
 
+export interface EnhancedSearchParams extends SearchParams {
+  agent_scope?: string;
+  max_tokens?: number;
+}
+
+export interface EnhancedSearchResponse {
+  pinnedContext: string;
+  results: SearchResult[];
+  tokens_used: number;
+  tokens_budget: number;
+  results_truncated: boolean;
+  expiry_actions: ExpiryAction[];
+}
+
 export class HybridSearch {
   private readonly ftsRepo: KnowledgeSearchRepository;
   private readonly graph: KnowledgeGraph;
+  private coreMemory: CoreMemoryManager | null = null;
+  private scopeFilter: AgentScopeFilter | null = null;
+  private tokenBudget: TokenBudget | null = null;
+  private workingExpiry: WorkingTierExpiry | null = null;
 
   constructor(ftsRepo: KnowledgeSearchRepository, graph: KnowledgeGraph) {
     this.ftsRepo = ftsRepo;
     this.graph = graph;
+  }
+
+  /** Inject CoreMemoryManager for auto-recall. */
+  setCoreMemory(cm: CoreMemoryManager): void {
+    this.coreMemory = cm;
+  }
+
+  /** Inject AgentScopeFilter for tag-based isolation. */
+  setScopeFilter(filter: AgentScopeFilter): void {
+    this.scopeFilter = filter;
+  }
+
+  /** Inject TokenBudget for result limiting. */
+  setTokenBudget(budget: TokenBudget): void {
+    this.tokenBudget = budget;
+  }
+
+  /** Inject WorkingTierExpiry for lazy auto-expiry. */
+  setWorkingExpiry(expiry: WorkingTierExpiry): void {
+    this.workingExpiry = expiry;
+  }
+
+  /** Get pinned context prefix (for prepending to search results). */
+  getPinnedContext(): string {
+    if (!this.coreMemory) return '';
+    return this.coreMemory.getContext();
+  }
+
+  /** Enhanced search with scope filter, token budget, and expiry. */
+  enhancedSearch(params: EnhancedSearchParams): EnhancedSearchResponse {
+    // 1. Lazy auto-expiry
+    const expiryActions = this.workingExpiry?.processStale() ?? [];
+
+    // 2. Load pinned context
+    const pinnedContext = this.getPinnedContext();
+
+    // 3. Execute hybrid search
+    let results = this.search(params);
+
+    // 4. Apply agent scope filter
+    if (params.agent_scope && this.scopeFilter) {
+      results = this.scopeFilter.filter(results, params.agent_scope);
+    }
+
+    // 5. Apply token budget
+    const maxTokens = params.max_tokens ?? 2000;
+    let tokensUsed = 0;
+    let truncated = false;
+
+    if (this.tokenBudget) {
+      const budgetResult: BudgetResult = this.tokenBudget.apply(results, maxTokens);
+      results = budgetResult.results;
+      tokensUsed = budgetResult.tokensUsed;
+      truncated = budgetResult.truncated;
+    }
+
+    return {
+      pinnedContext,
+      results,
+      tokens_used: tokensUsed,
+      tokens_budget: maxTokens,
+      results_truncated: truncated,
+      expiry_actions: expiryActions,
+    };
   }
 
   /** Execute hybrid search with RRF fusion. */

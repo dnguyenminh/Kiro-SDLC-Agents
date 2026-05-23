@@ -10,7 +10,11 @@ import com.codeintel.memory.ingest.IngestFileExecutor
 import com.codeintel.memory.ingest.IngestGraphLinker
 import com.codeintel.memory.ingest.IngestPipeline
 import com.codeintel.memory.repository.AuditRepository
+import com.codeintel.memory.search.AgentScopeFilter
 import com.codeintel.memory.search.HybridSearch
+import com.codeintel.memory.search.QualityGate
+import com.codeintel.memory.search.TokenBudget
+import com.codeintel.memory.search.WorkingTierExpiry
 import com.codeintel.query.QueryLayer
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -29,6 +33,20 @@ class MemoryToolDispatcher(
     private val hybridSearch = HybridSearch(engine.search, engine.vectors, embeddingService, graph)
     private val consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
     private val audit: AuditRepository get() = engine.audit
+
+    init {
+        // Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
+        val conn = engine.connection
+        val qualityGate = QualityGate(conn)
+        val scopeFilter = AgentScopeFilter(conn)
+        val tokenBudget = TokenBudget()
+        val workingExpiry = WorkingTierExpiry(conn)
+
+        pipeline.setQualityGate(qualityGate)
+        hybridSearch.setScopeFilter(scopeFilter)
+        hybridSearch.setTokenBudget(tokenBudget)
+        hybridSearch.setWorkingExpiry(workingExpiry)
+    }
 
     /** Dispatch a memory tool call. Returns null if not a memory tool. */
     fun dispatch(name: String, args: JsonObject): String? {

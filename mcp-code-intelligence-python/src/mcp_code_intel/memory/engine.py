@@ -69,7 +69,10 @@ class MemoryEngine:
         """Apply memory schema (idempotent)."""
         self._conn.executescript(MEMORY_SCHEMA)
         self._conn.commit()
-        _log("Schema initialized")
+        # Apply V3 migrations (KSA-110)
+        from .migrations_v3 import run_v3_migrations
+        run_v3_migrations(self._conn)
+        _log("Schema initialized (V3 migrations applied)")
 
 
 def _log(msg: str) -> None:

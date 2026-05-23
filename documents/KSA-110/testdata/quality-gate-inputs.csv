@@ -1,0 +1,11 @@
+content,tags,source,type,expected_score_min,expected_score_max,expected_decision
+"Short",,,CONTEXT,0,10,reject
+"This is exactly 49 characters long for testing!",,,CONTEXT,0,0,reject
+"This is exactly fifty characters for testing now!!",,,CONTEXT,0,29,reject
+"This is exactly fifty characters for testing now!!",testing,KSA-110,CONTEXT,30,50,warn
+"Decision: Use SQLite for all persistent storage in the KB system",,,DECISION,0,30,reject
+"Decision: Use SQLite for all persistent storage in the KB system",architecture,KSA-110,DECISION,40,70,accept
+"A moderately long content entry that has enough detail to be useful. It describes the architecture decision to use Repository pattern for database access. This provides good separation of concerns.",testing,KSA-110,ARCHITECTURE,50,80,accept
+"# Architecture Decision\n\nWe decided to use the Repository pattern for all database access.\n\n## Rationale\n\n- Separation of concerns\n- Testability\n- Single responsibility\n\n## Implementation\n\n```typescript\nclass KnowledgeRepo {\n  constructor(private db: Database) {}\n}\n```",architecture,KSA-110,DECISION,70,100,accept
+"duplicate content that already exists in KB with very high similarity score above 0.95 threshold",testing,,CONTEXT,0,30,reject
+"Near-duplicate content that is similar but not identical to existing entry with similarity around 0.92",testing,,CONTEXT,10,50,warn

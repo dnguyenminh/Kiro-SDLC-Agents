@@ -1,0 +1,56 @@
+<mxfile host="65bd71144e">
+    <diagram id="BE9l2Q8GwPaWwP8R4ddC" name="Page-1">
+        <mxGraphModel dx="532" dy="549" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Class Diagram — KB v0.6.0 New Classes&lt;/b&gt;" style="text;html=1;align=center;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmm" value="&lt;b&gt;CoreMemoryManager&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;- config: CoreMemoryConfig&#10;─────────────────&#10;+ pin(entryId): string&#10;+ unpin(entryId): string&#10;+ listPinned(): PinnedEntrySummary[]&#10;+ reorder(entryId, order): string&#10;+ getContext(): string&#10;+ getBudgetStatus(): BudgetStatus" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="qg" value="&lt;b&gt;QualityGate&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;- vectorRepo: VectorRepository&#10;─────────────────&#10;+ validate(content, meta): QualityResult&#10;- calculateScore(content, meta): number&#10;- checkDuplicate(content): DupResult" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="520" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="asf" value="&lt;b&gt;AgentScopeFilter&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;- cache: Map&lt;string, string[]&gt;&#10;─────────────────&#10;+ getScope(role): AgentScope | null&#10;+ filter(results, role): SearchResult[]&#10;+ updateScope(role, tags): void" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="60" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="wte" value="&lt;b&gt;WorkingTierExpiry&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;- expiryHours: number&#10;─────────────────&#10;+ processStale(): ExpiryAction[]&#10;- getStaleEntries(): StaleEntry[]&#10;- promote(id): void&#10;- archive(id): void" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="280" width="220" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="convr" value="&lt;b&gt;ConversationRepository&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;─────────────────&#10;+ saveTurn(session, role, content): number&#10;+ getSession(sessionId, limit): Turn[]&#10;+ listSessions(limit): SessionSummary[]&#10;+ searchTurns(query, limit): Turn[]" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="55" width="240" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="entityr" value="&lt;b&gt;EntityRepository&lt;/b&gt;&#10;─────────────────&#10;- db: Database&#10;─────────────────&#10;+ indexEntities(entryId, entities): void&#10;+ findByEntity(name, limit): number[]&#10;+ findByType(type, limit): number[]&#10;+ getEntities(entryId): EntityRecord[]" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="270" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="hs" value="&lt;b&gt;HybridSearch&lt;/b&gt;&#10;─────────────────&#10;- ftsRepo: SearchRepository&#10;- graph: KnowledgeGraph&#10;- coreMemory: CoreMemoryManager&#10;─────────────────&#10;+ search(params): SearchResult[]&#10;+ getPinnedContext(): string&#10;+ setCoreMemory(cm): void" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="270" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_hs_cm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=diamond;endSize=8;endFill=0;" parent="1" source="hs" target="cmm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_hs_asf" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=8;dashed=1;" parent="1" source="hs" target="asf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_hs_wte" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=8;dashed=1;startArrow=none;" parent="1" source="tbudget" target="wte" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=8;dashed=1;" edge="1" parent="1" source="hs" target="tbudget">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="305" y="820" as="sourcePoint"/>
+                        <mxPoint x="150" y="430" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="460" y="480"/>
+                            <mxPoint x="230" y="480"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="tbudget" value="&lt;b&gt;TokenBudget&lt;/b&gt;&#10;─────────────────&#10;─────────────────&#10;+ apply(results, maxTokens): BudgetResult&#10;- truncateResult(result, remaining): SearchResult" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="550" width="240" height="100" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

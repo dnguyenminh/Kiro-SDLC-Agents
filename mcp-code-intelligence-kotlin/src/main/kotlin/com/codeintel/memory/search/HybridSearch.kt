@@ -21,12 +21,84 @@ data class SearchParams(
     val graphWeight: Double = 0.2
 )
 
+/** Enhanced search parameters with agent scope and token budget. */
+data class EnhancedSearchParams(
+    val query: String,
+    val limit: Int = 10,
+    val tier: String? = null,
+    val type: String? = null,
+    val role: String? = null,
+    val agentScope: String? = null,
+    val maxTokens: Int = 2000
+)
+
+/** Enhanced search response with pinned context, budget info, and expiry actions. */
+data class EnhancedSearchResponse(
+    val pinnedContext: String,
+    val results: List<KnowledgeSearchResult>,
+    val tokensUsed: Int,
+    val tokensBudget: Int,
+    val resultsTruncated: Boolean,
+    val expiryActions: List<ExpiryAction>
+)
+
 class HybridSearch(
     private val ftsRepo: KnowledgeSearchRepository,
     private val vectorRepo: VectorRepository,
     private val embeddingService: EmbeddingService?,
     private val graph: KnowledgeGraph?
 ) {
+    // V2 injectable dependencies (KSA-110 F4)
+    private var scopeFilter: AgentScopeFilter? = null
+    private var tokenBudget: TokenBudget? = null
+    private var workingExpiry: WorkingTierExpiry? = null
+    private var pinnedContextProvider: (() -> String)? = null
+
+    /** Inject AgentScopeFilter for tag-based isolation. */
+    fun setScopeFilter(filter: AgentScopeFilter) { this.scopeFilter = filter }
+
+    /** Inject TokenBudget for result limiting. */
+    fun setTokenBudget(budget: TokenBudget) { this.tokenBudget = budget }
+
+    /** Inject WorkingTierExpiry for lazy auto-expiry. */
+    fun setWorkingExpiry(expiry: WorkingTierExpiry) { this.workingExpiry = expiry }
+
+    /** Inject pinned context provider (CoreMemoryManager.getContext). */
+    fun setPinnedContextProvider(provider: () -> String) { this.pinnedContextProvider = provider }
+
+    /** Enhanced search: expiry → pins → search → scope → budget. */
+    fun enhancedSearch(params: EnhancedSearchParams): EnhancedSearchResponse {
+        // 1. Lazy auto-expiry
+        val expiryActions = workingExpiry?.processStale() ?: emptyList()
+
+        // 2. Load pinned context
+        val pinnedContext = pinnedContextProvider?.invoke() ?: ""
+
+        // 3. Execute hybrid search
+        val searchParams = SearchParams(
+            query = params.query, limit = params.limit,
+            tier = params.tier, type = params.type, role = params.role
+        )
+        var results = search(searchParams)
+
+        // 4. Apply agent scope filter
+        if (params.agentScope != null && scopeFilter != null) {
+            results = scopeFilter!!.filter(results, params.agentScope)
+        }
+
+        // 5. Apply token budget
+        val maxTokens = params.maxTokens
+        var tokensUsed = 0
+        var truncated = false
+        if (tokenBudget != null) {
+            val budgetResult = tokenBudget!!.apply(results, maxTokens)
+            results = budgetResult.results
+            tokensUsed = budgetResult.tokensUsed
+            truncated = budgetResult.truncated
+        }
+
+        return EnhancedSearchResponse(pinnedContext, results, tokensUsed, maxTokens, truncated, expiryActions)
+    }
 
     /** Execute hybrid search with RRF fusion + tier boost + role filter. */
     fun search(params: SearchParams): List<KnowledgeSearchResult> {

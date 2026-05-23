@@ -10,6 +10,10 @@ import { HybridSearch, SearchParams } from './hybrid-search.js';
 import { TierConsolidator } from './tier-consolidator.js';
 import { EmbeddingService } from './embedding/index.js';
 import { MemSyncCode } from './sync-code.js';
+import { QualityGate } from './v2/quality-gate.js';
+import { AgentScopeFilter } from './v2/agent-scope-filter.js';
+import { TokenBudget } from './v2/token-budget.js';
+import { WorkingTierExpiry } from './v2/working-tier-expiry.js';
 
 export class MemoryToolDispatcher {
   private readonly engine: MemoryEngine;
@@ -25,12 +29,26 @@ export class MemoryToolDispatcher {
     this.engine = engine;
     this.workspace = workspace;
     this.pipeline = new IngestPipeline(engine.knowledge, embeddingService);
+    this.pipeline.setEntityRepo(engine.entities);
     this.hybridSearch = new HybridSearch(engine.search, engine.graph);
+    this.hybridSearch.setCoreMemory(engine.coreMemory);
     this.consolidator = new TierConsolidator(engine.knowledge, engine.consolidation);
     this.queryLayer = queryLayer;
     if (queryLayer) {
       this.syncCode = new MemSyncCode(engine, queryLayer, engine.graph);
     }
+
+    // Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
+    const db = engine.db;
+    const qualityGate = new QualityGate(db);
+    const scopeFilter = new AgentScopeFilter(db);
+    const tokenBudget = new TokenBudget();
+    const workingExpiry = new WorkingTierExpiry(db);
+
+    this.pipeline.setQualityGate(qualityGate);
+    this.hybridSearch.setScopeFilter(scopeFilter);
+    this.hybridSearch.setTokenBudget(tokenBudget);
+    this.hybridSearch.setWorkingExpiry(workingExpiry);
   }
 
   /** Dispatch a memory tool call. Returns null if not a memory tool. */
@@ -67,9 +85,17 @@ export class MemoryToolDispatcher {
     this.engine.audit.log('SEARCH', undefined, this.engine.getSessionId() ?? undefined);
     this.logSearchAnalytics(query, results.length);
     this.recordAccessAndCitations(results);
-    if (results.length === 0) return `No knowledge found for "${query}"`;
+
+    const pinnedContext = this.hybridSearch.getPinnedContext();
+    const lines: string[] = [];
+    if (pinnedContext) lines.push(pinnedContext, '');
+
+    if (results.length === 0) {
+      lines.push(`No knowledge found for "${query}"`);
+      return lines.join('\n');
+    }
     const detail = args.detail as boolean ?? false;
-    const lines = [`Found ${results.length} results:\n`];
+    lines.push(`Found ${results.length} results:\n`);
     for (const r of results) {
       lines.push(`[${r.entry.type}] ${r.entry.summary}`);
       lines.push(`  ID: ${r.entry.id} | Tier: ${r.entry.tier} | Score: ${r.score.toFixed(3)} | Source: ${r.entry.source ?? 'n/a'}`);

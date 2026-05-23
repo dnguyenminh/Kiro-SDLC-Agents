@@ -1,4 +1,4 @@
-/** Document ingestion pipeline — parse, chunk, embed, store. */
+/** Document ingestion pipeline — parse, chunk, embed, store. Enhanced with quality gate (KSA-110 F4). */
 package com.codeintel.memory.ingest
 
 import com.codeintel.log
@@ -7,6 +7,9 @@ import com.codeintel.memory.models.KnowledgeEntry
 import com.codeintel.memory.models.KnowledgeType
 import com.codeintel.memory.models.MemoryTier
 import com.codeintel.memory.repository.KnowledgeRepository
+import com.codeintel.memory.search.IngestMeta
+import com.codeintel.memory.search.QualityGate
+import com.codeintel.memory.search.QualityResult
 
 /** Result of ingesting a document. */
 data class IngestResult(
@@ -18,11 +21,19 @@ data class IngestResult(
     val skipReason: String? = null
 )
 
+/** Error thrown when quality gate rejects content. */
+class QualityRejectionException(val quality: QualityResult) :
+    RuntimeException(quality.message ?: "Quality gate rejected content")
+
 class IngestPipeline(
     private val knowledgeRepo: KnowledgeRepository,
     private val embeddingService: EmbeddingService?,
     private val chunker: ChunkingStrategy = SemanticChunker()
 ) {
+    private var qualityGate: QualityGate? = null
+
+    /** Inject QualityGate for ingest validation. */
+    fun setQualityGate(gate: QualityGate) { this.qualityGate = gate }
 
     /** Ingest a markdown document. */
     fun ingestMarkdown(text: String, source: String, type: String = KnowledgeType.CONTEXT.name): IngestResult {
@@ -36,8 +47,14 @@ class IngestPipeline(
         return ingestParsedDocument(doc, type)
     }
 
-    /** Ingest a single knowledge entry directly. */
+    /** Ingest a single knowledge entry directly. Quality gate applied if set. */
     fun ingestEntry(content: String, summary: String, type: String, source: String? = null, tags: String = ""): Long {
+        // Quality gate check
+        qualityGate?.let { gate ->
+            val quality = gate.validate(content, IngestMeta(tags, type, source))
+            if (quality.decision == "reject") throw QualityRejectionException(quality)
+        }
+
         val entry = KnowledgeEntry(
             content = content,
             summary = summary,
@@ -48,7 +65,17 @@ class IngestPipeline(
         )
         val id = knowledgeRepo.insert(entry)
         embeddingService?.embedAndStore(id, summary)
+        trySetQualityScore(id, content, tags, type, source)
         return id
+    }
+
+    /** Set quality score on entry after ingest. */
+    private fun trySetQualityScore(id: Long, content: String, tags: String, type: String, source: String?) {
+        val gate = qualityGate ?: return
+        try {
+            val result = gate.validate(content, IngestMeta(tags, type, source))
+            knowledgeRepo.updateQualityScore(id, result.score)
+        } catch (_: Exception) { /* quality scoring must not break ingest */ }
     }
 
     private fun ingestParsedDocument(doc: ParsedDocument, type: String): IngestResult {

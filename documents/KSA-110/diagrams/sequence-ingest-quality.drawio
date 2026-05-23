@@ -1,0 +1,114 @@
+<mxGraphModel dx="1422" dy="950" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="950" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="title" value="Sequence: mem_ingest with Quality Gate (F3+F4)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="380" y="10" width="380" height="30" as="geometry" />
+    </mxCell>
+    <!-- Lifelines -->
+    <mxCell id="agent" value="AI Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="ingest" value="mem_ingest" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="250" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="quality" value="QualityGate&#xa;[F4]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="450" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="vectordb" value="VectorDB" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="650" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="extractor" value="MapExtractor&#xa;[F3]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="850" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="entityidx" value="EntityIndex&#xa;[F3]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="1050" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="db" value="SQLite DB" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="1230" y="50" width="100" height="850" as="geometry" />
+    </mxCell>
+    <!-- Messages -->
+    <mxCell id="msg1" value="1: ingest(content, tags, source, type)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="130" as="sourcePoint" />
+        <mxPoint x="300" y="130" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg2" value="2: validate(content, metadata)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="300" y="190" as="sourcePoint" />
+        <mxPoint x="500" y="190" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg3" value="3: findSimilar(embedding, top_k=5)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="500" y="250" as="sourcePoint" />
+        <mxPoint x="700" y="250" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg4" value="4: similarity_scores[] (cosine)" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="700" y="310" as="sourcePoint" />
+        <mxPoint x="500" y="310" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg5" value="5: {score, decision: accept|warn|reject}" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="500" y="370" as="sourcePoint" />
+        <mxPoint x="300" y="370" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <!-- Note: reject path -->
+    <mxCell id="note_reject" value="If score &lt; 30 or sim &gt; 0.95:&#xa;STOP → return error to agent" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;fontSize=9;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="310" y="385" width="180" height="40" as="geometry" />
+    </mxCell>
+    <!-- Continue if accepted -->
+    <mxCell id="msg6" value="6: extractStructuredMap(content)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="300" y="460" as="sourcePoint" />
+        <mxPoint x="900" y="460" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <!-- Note: extraction details -->
+    <mxCell id="note_extract" value="Rule-based (no LLM):&#xa;topic, entities, decisions,&#xa;action_items, sentiment" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;fontSize=9;fillColor=#ffffc0;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="920" y="440" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="msg7" value="7: {topic, entities[], decisions[], actions[], sentiment}" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="900" y="530" as="sourcePoint" />
+        <mxPoint x="300" y="530" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg8" value="8: indexEntities(entry_id, entities[])" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="300" y="590" as="sourcePoint" />
+        <mxPoint x="1100" y="590" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg9" value="9: indexed (count)" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1100" y="640" as="sourcePoint" />
+        <mxPoint x="300" y="640" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg10" value="10: INSERT entry + structured_map + quality_score" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="300" y="700" as="sourcePoint" />
+        <mxPoint x="1280" y="700" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg11" value="11: entry_id" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1280" y="750" as="sourcePoint" />
+        <mxPoint x="300" y="750" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg12" value="12: {entry_id, quality_score, structured_map, warning?}" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;fontStyle=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="300" y="810" as="sourcePoint" />
+        <mxPoint x="110" y="810" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
