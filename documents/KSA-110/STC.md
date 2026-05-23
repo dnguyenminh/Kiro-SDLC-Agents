@@ -440,6 +440,8 @@
 
 ### 8.1 Coverage Statistics
 
+![Test Coverage Overview](diagrams/test-coverage.png)
+
 | Metric | Value |
 |--------|-------|
 | Total User Stories | 15 |
@@ -453,6 +455,8 @@
 | Manual | 3 (2.2%) |
 
 ### 8.2 Test Cases per Feature
+
+![Test Execution Flow](diagrams/test-execution-flow.png)
 
 | Feature | PBT | UT | IT | E2E-API | SIT | PERF | Total |
 |---------|-----|----|----|---------|-----|------|-------|
