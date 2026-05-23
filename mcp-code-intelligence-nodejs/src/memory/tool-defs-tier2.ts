@@ -2,6 +2,35 @@
 
 export const TIER2_TOOLS = [
   {
+    name: 'mem_pin',
+    description: 'Core/Archival Memory: pin entries for auto-recall, manage pinned context budget (2000 tokens max).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', description: 'Action: pin, unpin, list, reorder, get_context, budget' },
+        entry_id: { type: 'number', description: 'Entry ID (for pin/unpin/reorder)' },
+        order: { type: 'number', description: 'New position (for reorder)' },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'mem_map',
+    description: 'Structured Map: view/update entry metadata (topic, entities, decisions, action items, sentiment). Search by entity or topic.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', description: 'Action: get, update, search_entity, search_topic, reextract' },
+        entry_id: { type: 'number', description: 'Entry ID (for get/update/reextract)' },
+        entity: { type: 'string', description: 'Entity name to search (for search_entity)' },
+        topic: { type: 'string', description: 'Topic to search (for search_topic)' },
+        map: { type: 'object', description: 'Partial StructuredMap to merge (for update)' },
+        limit: { type: 'number', description: 'Max results (default 10)' },
+      },
+      required: ['action'],
+    },
+  },
+  {
     name: 'mem_crud',
     description: 'CRUD operations on knowledge entries: get, delete, list.',
     inputSchema: {

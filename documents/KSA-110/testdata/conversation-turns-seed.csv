@@ -1,0 +1,11 @@
+session_id,turn_number,role,content,tool_calls,summarized,created_at
+sess_design_001,1,user,"What architecture pattern should we use for the KB upgrade?","",0,2025-05-20T10:00:00Z
+sess_design_001,2,assistant,"I recommend the Repository pattern for all DB access. Each entity (knowledge_entries, conversation_turns, entity_index) gets its own repository class.","[{""name"":""mem_search"",""arguments"":{""query"":""architecture patterns""}}]",0,2025-05-20T10:01:00Z
+sess_design_001,3,user,"Decision: use Repository pattern. What about the quality gate?","",0,2025-05-20T10:02:00Z
+sess_design_001,4,assistant,"The quality gate should run before storage in the ingest pipeline. It validates: minimum length (50 chars), duplicate detection (cosine >0.95), and calculates a quality score (0-100).","",0,2025-05-20T10:03:00Z
+sess_design_001,5,user,"TODO: implement quality gate as first step in IngestPipeline","",0,2025-05-20T10:04:00Z
+sess_impl_002,1,user,"How should we implement token counting?","",0,2025-05-21T14:00:00Z
+sess_impl_002,2,assistant,"Use chars/4 approximation: Math.ceil(content.length / 4). Simple, no external dependency, accurate enough for 2000 token budget.","",0,2025-05-21T14:01:00Z
+sess_impl_002,3,system,"Context: KSA-110 requires token budget enforcement for pinned entries","",0,2025-05-21T14:02:00Z
+sess_impl_002,4,tool,"mem_search results: found 3 entries about token counting","[{""name"":""mem_search"",""arguments"":{""query"":""token counting""}}]",0,2025-05-21T14:03:00Z
+sess_impl_002,5,user,"Decision: use chars/4 method. Next step: implement CoreMemoryManager.","",0,2025-05-21T14:04:00Z

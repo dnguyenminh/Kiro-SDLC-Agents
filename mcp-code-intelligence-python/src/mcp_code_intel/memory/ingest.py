@@ -1,4 +1,4 @@
-"""IngestPipeline — parse, chunk, and store knowledge entries."""
+"""IngestPipeline — parse, chunk, and store knowledge entries. Enhanced with quality gate (KSA-110 F4)."""
 
 import sys
 from typing import Any, TYPE_CHECKING
@@ -9,23 +9,56 @@ from .chunking_strategy import SemanticChunker, TextChunk
 
 if TYPE_CHECKING:
     from .embedding import EmbeddingService
+    from .quality_gate import QualityGate, QualityResult, IngestMeta
+
+
+class QualityRejectionError(Exception):
+    """Error thrown when quality gate rejects content."""
+
+    def __init__(self, quality: "QualityResult") -> None:
+        super().__init__(quality.message or "Quality gate rejected content")
+        self.quality = quality
 
 
 class IngestPipeline:
-    """Document ingestion — parse, chunk, store, embed."""
+    """Document ingestion — parse, chunk, store, embed. Quality gate applied if set."""
 
     def __init__(self, repo: KnowledgeRepository,
                  embedding_service: "EmbeddingService | None" = None) -> None:
         self._repo = repo
         self._embedding = embedding_service
         self._chunker = SemanticChunker(max_chunk_size=1024)
+        self._quality_gate: "QualityGate | None" = None
+
+    def set_quality_gate(self, gate: "QualityGate") -> None:
+        """Inject QualityGate for ingest validation."""
+        self._quality_gate = gate
 
     def ingest_entry(self, content: str, summary: str, type_: str,
                      source: str | None = None, tags: str = "") -> int:
-        """Ingest a single knowledge entry. Returns entry ID."""
+        """Ingest a single knowledge entry. Quality gate applied if set. Returns entry ID."""
+        if self._quality_gate:
+            from .quality_gate import IngestMeta
+            quality = self._quality_gate.validate(content, IngestMeta(tags=tags, type=type_, source=source))
+            if quality.decision == "reject":
+                raise QualityRejectionError(quality)
+
         entry_id = self._repo.insert(content, summary, type_, "WORKING", source, tags)
         self._embed(entry_id, summary)
+        self._try_set_quality_score(entry_id, content, tags, type_, source)
         return entry_id
+
+    def _try_set_quality_score(self, entry_id: int, content: str,
+                              tags: str, type_: str, source: str | None) -> None:
+        """Set quality score on entry after ingest."""
+        if not self._quality_gate:
+            return
+        try:
+            from .quality_gate import IngestMeta
+            result = self._quality_gate.validate(content, IngestMeta(tags=tags, type=type_, source=source))
+            self._repo.update_quality_score(entry_id, result.score)
+        except Exception:
+            pass  # quality scoring must not break ingest
 
     def ingest_markdown(self, text: str, source: str,
                         type_: str = "CONTEXT") -> dict[str, Any]:

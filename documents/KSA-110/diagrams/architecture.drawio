@@ -1,0 +1,72 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KB System v0.6.0 — Architecture Overview&lt;/b&gt;" style="text;html=1;align=center;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="agent" value="&lt;b&gt;AI Agent&lt;/b&gt;&lt;br&gt;(MCP Client)" style="shape=mxgraph.flowchart.terminator;rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="60" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="protocol" value="&lt;b&gt;MCP Protocol Layer&lt;/b&gt;&lt;br&gt;stdio JSON-RPC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="260" y="150" width="260" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="tools" value="&lt;b&gt;Tool Layer&lt;/b&gt;&lt;br&gt;mem_pin | mem_conversation | mem_map | mem_search | mem_ingest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="140" y="230" width="500" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="services" value="&lt;b&gt;Service Layer&lt;/b&gt;" style="swimlane;startSize=25;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="310" width="660" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_core" value="CoreMemory&lt;br&gt;Manager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="10" y="35" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_conv" value="Conversation&lt;br&gt;Summarizer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="120" y="35" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_quality" value="Quality&lt;br&gt;Gate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="230" y="35" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_scope" value="AgentScope&lt;br&gt;Filter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="340" y="35" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_expiry" value="WorkingTier&lt;br&gt;Expiry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="450" y="35" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="svc_budget" value="Token&lt;br&gt;Budget" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="services">
+      <mxGeometry x="560" y="35" width="90" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="search" value="&lt;b&gt;Search Layer&lt;/b&gt;&lt;br&gt;HybridSearch (BM25 + Graph + Vector + RRF)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="140" y="470" width="500" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="repos" value="&lt;b&gt;Repository Layer&lt;/b&gt;&lt;br&gt;KnowledgeRepo | ConversationRepo | EntityRepo | VectorRepo | GraphRepo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="140" y="550" width="500" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="db" value="&lt;b&gt;SQLite Database&lt;/b&gt;&lt;br&gt;.code-intel/index.db" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;size=10;" vertex="1" parent="1">
+      <mxGeometry x="310" y="630" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="onnx" value="&lt;b&gt;ONNX Runtime&lt;/b&gt;&lt;br&gt;all-MiniLM-L6-v2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="560" y="640" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="agent" target="protocol" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="protocol" target="tools" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="tools" target="services" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="services" target="search" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="search" target="repos" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="repos" target="db" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="repos" target="onnx" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,11 @@
+id,content,type,tier,tags,source,pinned,pin_order,quality_score,created_at
+1,"Decision: Use SQLite for all storage. No external DB dependency needed for local MCP server.",DECISION,SEMANTIC,"architecture,design",KSA-110,1,0,85,2025-05-20T10:00:00Z
+2,"Architecture pattern: Repository pattern for all DB access. Each entity gets its own repository class.",ARCHITECTURE,SEMANTIC,"architecture,code",KSA-110,1,1,90,2025-05-20T11:00:00Z
+3,"Error pattern: SQLite BUSY error when concurrent writes attempted. Solution: single-writer pattern with better-sqlite3 synchronous API.",ERROR_PATTERN,EPISODIC,"code,bug",KSA-110,0,0,75,2025-05-20T12:00:00Z
+4,"TODO: Add migration rollback script for V3 schema changes. Currently only forward migrations supported.",CONTEXT,WORKING,"code,deployment",KSA-110,0,0,45,2025-05-22T08:00:00Z
+5,"QA test plan: All new MCP tools must have E2E tests via stdio protocol. Use JSON-RPC format.",PROCEDURE,SEMANTIC,"testing,qa",KSA-110,0,0,80,2025-05-21T09:00:00Z
+6,"Implementation note: Token counting uses chars/4 approximation. Acceptable for 2000 token budget.",CONTEXT,EPISODIC,"code,implementation",KSA-110,0,0,60,2025-05-21T14:00:00Z
+7,"Requirement: Agent scope filtering must not degrade search performance. Filter at query level.",REQUIREMENT,SEMANTIC,"requirement,business",KSA-110,0,0,85,2025-05-20T15:00:00Z
+8,"Short working note",CONTEXT,WORKING,"code",manual,0,0,20,2025-05-19T10:00:00Z
+9,"DevOps: Deploy v0.6.0 requires running backfill script after migration. Script is idempotent.",PROCEDURE,SEMANTIC,"deployment,infrastructure",KSA-110,0,0,70,2025-05-21T16:00:00Z
+10,"Stale WORKING entry that should be expired - created 48 hours ago with low quality score for testing auto-expiry functionality.",CONTEXT,WORKING,"code",test,0,0,25,2025-05-21T06:00:00Z

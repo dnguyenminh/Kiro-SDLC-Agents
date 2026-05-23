@@ -5,6 +5,7 @@
 
 import Database from 'better-sqlite3';
 import { MEMORY_SCHEMA } from './schema.js';
+import { runV3Migrations } from './migrations-v3.js';
 
 export class MemoryDatabaseManager {
   private readonly db: Database.Database;
@@ -18,8 +19,9 @@ export class MemoryDatabaseManager {
   initialize(): void {
     if (this.initialized) return;
     this.db.exec(MEMORY_SCHEMA);
+    runV3Migrations(this.db);
     this.initialized = true;
-    console.error('[memory-db] Schema initialized');
+    console.error('[memory-db] Schema initialized (v3)');
   }
 
   /** Get underlying database instance. */

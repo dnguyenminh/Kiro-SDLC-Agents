@@ -1,6 +1,23 @@
-/** Tier 3 tool definitions — low-frequency scoring and admin tools. */
+/** Tier 3 tool definitions — low-frequency scoring, admin, and conversation tools. */
 
 export const TIER3_TOOLS = [
+  {
+    name: 'mem_conversation',
+    description: 'Structured conversation history: save turns, query sessions, search conversation content.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', description: 'Action: save_turn, get_session, list_sessions, search, summarize' },
+        session_id: { type: 'string', description: 'Session ID (for save_turn/get_session)' },
+        role: { type: 'string', description: 'Role: user, assistant, system, tool (for save_turn)' },
+        content: { type: 'string', description: 'Turn content (for save_turn)' },
+        tool_calls: { type: 'string', description: 'JSON array of tool calls (for save_turn)' },
+        query: { type: 'string', description: 'Search query (for search)' },
+        limit: { type: 'number', description: 'Max results (default: 20)' },
+      },
+      required: ['action'],
+    },
+  },
   {
     name: 'mem_scoring',
     description: 'Quality & confidence scoring + feedback for entries.',

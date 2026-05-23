@@ -1,0 +1,97 @@
+<mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="title" value="Sequence: mem_search with All Features (F1+F4)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="10" width="400" height="30" as="geometry" />
+    </mxCell>
+    <!-- Lifelines -->
+    <mxCell id="agent" value="AI Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <mxCell id="search" value="mem_search" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <mxCell id="expiry" value="WorkingExpiry&#xa;[F4]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="480" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <mxCell id="core" value="CoreMemory&#xa;[F1]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="680" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <mxCell id="hybrid" value="HybridSearch&#xa;[BM25+Vec]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="880" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <mxCell id="budget" value="TokenBudget&#xa;[F4]" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="1080" y="50" width="100" height="750" as="geometry" />
+    </mxCell>
+    <!-- Messages with explicit Y coordinates -->
+    <mxCell id="msg1" value="1: search(query, agent_scope, max_tokens)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="130" as="sourcePoint" />
+        <mxPoint x="330" y="130" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg2" value="2: processWorkingExpiry()" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="190" as="sourcePoint" />
+        <mxPoint x="530" y="190" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg3" value="3: expiry_actions[] (promote/archive stale)" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="250" as="sourcePoint" />
+        <mxPoint x="330" y="250" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg4" value="4: getContext()" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="320" as="sourcePoint" />
+        <mxPoint x="730" y="320" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg5" value="5: pinned_entries[] (≤2000 tokens)" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="730" y="380" as="sourcePoint" />
+        <mxPoint x="330" y="380" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg6" value="6: execute(query, agent_scope_tags)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="440" as="sourcePoint" />
+        <mxPoint x="930" y="440" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg7" value="7: ranked_results[] (BM25+vector+tag filter)" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="930" y="510" as="sourcePoint" />
+        <mxPoint x="330" y="510" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg8" value="8: applyBudget(results, max_tokens)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="570" as="sourcePoint" />
+        <mxPoint x="1130" y="570" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg9" value="9: truncated_results + tokens_used/budget" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1130" y="630" as="sourcePoint" />
+        <mxPoint x="330" y="630" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="msg10" value="10: {results, pinned, tokens_used, expiry_actions}" style="html=1;verticalAlign=bottom;endArrow=open;endFill=0;dashed=1;fontSize=10;fontStyle=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="330" y="700" as="sourcePoint" />
+        <mxPoint x="130" y="700" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <!-- Notes -->
+    <mxCell id="note1" value="Lazy: only runs if&#xa;WORKING entries &gt; 24h old" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;fontSize=9;fillColor=#ffffc0;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="550" y="200" width="150" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="note2" value="Tag filter applied at&#xa;query level (not post-filter)" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;fontSize=9;fillColor=#ffffc0;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="950" y="450" width="160" height="40" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

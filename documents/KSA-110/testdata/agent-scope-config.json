@@ -1,0 +1,44 @@
+{
+  "scopes": [
+    {
+      "agent_role": "QA",
+      "tag_set": ["testing", "qa", "test-plan", "test-case", "bug"]
+    },
+    {
+      "agent_role": "DEV",
+      "tag_set": ["code", "api", "architecture", "implementation", "design"]
+    },
+    {
+      "agent_role": "BA",
+      "tag_set": ["requirement", "business", "stakeholder", "process"]
+    },
+    {
+      "agent_role": "SA",
+      "tag_set": ["architecture", "design", "infrastructure", "security"]
+    },
+    {
+      "agent_role": "DevOps",
+      "tag_set": ["deployment", "infrastructure", "ci-cd", "monitoring"]
+    }
+  ],
+  "test_scenarios": {
+    "qa_search": {
+      "description": "QA agent searches — should see testing/qa tagged entries only",
+      "agent_scope": "QA",
+      "expected_visible_entry_ids": [5],
+      "expected_hidden_entry_ids": [1, 2, 3, 6, 9]
+    },
+    "dev_search": {
+      "description": "DEV agent searches — should see code/architecture tagged entries",
+      "agent_scope": "DEV",
+      "expected_visible_entry_ids": [1, 2, 3, 6],
+      "expected_hidden_entry_ids": [5, 7, 9]
+    },
+    "no_scope": {
+      "description": "No scope — all entries visible",
+      "agent_scope": null,
+      "expected_visible_entry_ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "expected_hidden_entry_ids": []
+    }
+  }
+}

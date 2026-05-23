@@ -63,6 +63,14 @@ class KnowledgeRepository:
         )
         self._conn.commit()
 
+    def update_quality_score(self, entry_id: int, score: int) -> None:
+        """Update quality_score for an entry (KSA-110 F4)."""
+        self._conn.execute(
+            "UPDATE knowledge_entries SET quality_score = ?, updated_at = datetime('now') WHERE id = ?",
+            (score, entry_id),
+        )
+        self._conn.commit()
+
     def record_access(self, entry_id: int) -> None:
         """Increment access count and update last_accessed_at."""
         self._conn.execute(

@@ -11,6 +11,10 @@ from .sync_code import MemSyncCode
 from .dispatcher_v2 import MemoryToolDispatcherV2
 from .dispatcher_consolidated import MemoryToolDispatcherConsolidated
 from .engine_v2 import MemoryEngineV2
+from .quality_gate import QualityGate
+from .agent_scope_filter import AgentScopeFilter
+from .token_budget import TokenBudget
+from .working_tier_expiry import WorkingTierExpiry
 
 if TYPE_CHECKING:
     from .embedding import EmbeddingService
@@ -28,6 +32,18 @@ class MemoryToolDispatcher:
         self._search = HybridSearch(engine.search, engine.graph)
         self._consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
         self._sync_code = MemSyncCode(engine, query_layer, engine.graph) if query_layer else None
+
+        # Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
+        conn = engine._conn
+        quality_gate = QualityGate(conn)
+        scope_filter = AgentScopeFilter(conn)
+        token_budget = TokenBudget()
+        working_expiry = WorkingTierExpiry(conn)
+
+        self._pipeline.set_quality_gate(quality_gate)
+        self._search.set_scope_filter(scope_filter)
+        self._search.set_token_budget(token_budget)
+        self._search.set_working_expiry(working_expiry)
 
         # V2 dispatcher for KB Enhancement tools
         if isinstance(engine, MemoryEngineV2):

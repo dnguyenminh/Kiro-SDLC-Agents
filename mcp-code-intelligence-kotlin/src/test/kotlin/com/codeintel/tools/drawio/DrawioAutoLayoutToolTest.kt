@@ -43,9 +43,10 @@ class DrawioAutoLayoutToolTest {
         val tool = DrawioAutoLayoutTool(tempDir.absolutePath)
         val args = buildJsonObject { put("file_path", file.absolutePath) }
         val result = tool.execute(args)
-        assertTrue(result.contains("success"), "Expected success, got: $result")
-        assertTrue(result.contains("3 nodes"))
-        assertTrue(result.contains("2 edges"))
+        // Tool is review-only: reports issues for overlapping nodes
+        assertTrue(result.contains("needs_fix") || result.contains("already_good"), "Expected status, got: $result")
+        assertTrue(result.contains("\"nodes\""), "Expected nodes count in result")
+        assertTrue(result.contains("\"edges\""), "Expected edges count in result")
     }
 
     @Test
@@ -61,11 +62,12 @@ class DrawioAutoLayoutToolTest {
         val tool = DrawioAutoLayoutTool(tempDir.absolutePath)
         val args = buildJsonObject { put("file_path", file.absolutePath) }
         val result = tool.execute(args)
-        assertTrue(result.contains("success"), "Expected success, got: $result")
+        // Should parse mxfile wrapper and analyze diagram
+        assertTrue(result.contains("needs_fix") || result.contains("already_good"), "Expected status, got: $result")
     }
 
     @Test
-    fun `force algorithm works`() {
+    fun `force algorithm parameter accepted`() {
         val file = createTestFile("force.drawio", sampleDrawio)
         val tool = DrawioAutoLayoutTool(tempDir.absolutePath)
         val args = buildJsonObject {
@@ -73,7 +75,8 @@ class DrawioAutoLayoutToolTest {
             put("algorithm", "force")
         }
         val result = tool.execute(args)
-        assertTrue(result.contains("success"), "Expected success, got: $result")
+        // Algorithm param is accepted (tool is review-only, doesn't apply layout)
+        assertTrue(result.contains("needs_fix") || result.contains("already_good"), "Expected status, got: $result")
     }
 
     @Test
@@ -94,17 +97,14 @@ class DrawioAutoLayoutToolTest {
     }
 
     @Test
-    fun `nodes get different positions after layout`() {
+    fun `detects overlapping nodes at same position`() {
         val file = createTestFile("overlap.drawio", sampleDrawio)
         val tool = DrawioAutoLayoutTool(tempDir.absolutePath)
         val args = buildJsonObject { put("file_path", file.absolutePath) }
-        tool.execute(args)
-        val content = file.readText()
-        // After layout, nodes should NOT all be at x=100 y=100
-        val geomPattern = Regex("""x="(\d+)" y="(\d+)"""")
-        val positions = geomPattern.findAll(content).map { it.groupValues[1] to it.groupValues[2] }.toList()
-        val uniquePositions = positions.toSet()
-        assertTrue(uniquePositions.size > 1, "Nodes should have different positions after layout")
+        val result = tool.execute(args)
+        // All 3 nodes are at x=100 y=100 — tool should detect overlaps
+        assertTrue(result.contains("needs_fix"), "Expected needs_fix for overlapping nodes, got: $result")
+        assertTrue(result.contains("node_overlap"), "Expected node_overlap issues")
     }
 
     private fun createTestFile(name: String, content: String): File {

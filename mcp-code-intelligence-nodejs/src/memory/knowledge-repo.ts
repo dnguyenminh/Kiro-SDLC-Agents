@@ -85,4 +85,26 @@ export class KnowledgeRepository {
   delete(id: number): void {
     this.db.prepare('DELETE FROM knowledge_entries WHERE id = ?').run(id);
   }
+
+  /** Update structured_map JSON for an entry. */
+  updateStructuredMap(id: number, mapJson: string): void {
+    this.db.prepare(
+      "UPDATE knowledge_entries SET structured_map = ?, updated_at = datetime('now') WHERE id = ?"
+    ).run(mapJson, id);
+  }
+
+  /** Update quality_score for an entry. */
+  updateQualityScore(id: number, score: number): void {
+    this.db.prepare(
+      "UPDATE knowledge_entries SET quality_score = ?, updated_at = datetime('now') WHERE id = ?"
+    ).run(score, id);
+  }
+
+  /** Get structured_map for an entry. */
+  getStructuredMap(id: number): string {
+    const row = this.db.prepare(
+      'SELECT structured_map FROM knowledge_entries WHERE id = ?'
+    ).get(id) as { structured_map: string } | undefined;
+    return row?.structured_map ?? '{}';
+  }
 }

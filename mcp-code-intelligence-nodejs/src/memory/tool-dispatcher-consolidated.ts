@@ -1,19 +1,49 @@
 /**
- * Consolidated dispatcher — routes 14 tools + backward-compatible aliases.
+ * Consolidated dispatcher — routes 17 tools + backward-compatible aliases.
  * Thin routing layer that delegates to existing V1/V2 handler classes.
  */
 
 import { TOOL_ALIASES } from './tool-definitions-consolidated.js';
 import type { MemoryToolDispatcherV2 } from './tool-dispatcher-v2.js';
+import type { CoreMemoryManager } from './core-memory.js';
+import type { EntityRepository } from './entity-repo.js';
+import type { KnowledgeRepository } from './knowledge-repo.js';
+import type { ConversationRepository } from './conversation-repo.js';
+import type { ConversationSummarizer } from './conversation-summarizer.js';
+import { extractStructuredMap } from './structured-map-extractor.js';
+import { classifyEntity } from './entity-classifier.js';
 
 type Args = Record<string, unknown>;
 type V1Dispatcher = { dispatch(name: string, args: Args): string | null };
 
 export class MemoryToolDispatcherConsolidated {
+  private coreMemory: CoreMemoryManager | null = null;
+  private entityRepo: EntityRepository | null = null;
+  private knowledgeRepo: KnowledgeRepository | null = null;
+  private conversationRepo: ConversationRepository | null = null;
+  private conversationSummarizer: ConversationSummarizer | null = null;
+
   constructor(
     private readonly v1: V1Dispatcher,
     private readonly v2: MemoryToolDispatcherV2,
   ) {}
+
+  /** Inject CoreMemoryManager after construction (avoids circular deps). */
+  setCoreMemory(cm: CoreMemoryManager): void {
+    this.coreMemory = cm;
+  }
+
+  /** Inject EntityRepository + KnowledgeRepository for mem_map. */
+  setMapDeps(entityRepo: EntityRepository, knowledgeRepo: KnowledgeRepository): void {
+    this.entityRepo = entityRepo;
+    this.knowledgeRepo = knowledgeRepo;
+  }
+
+  /** Inject ConversationRepository + Summarizer for mem_conversation. */
+  setConversationDeps(repo: ConversationRepository, summarizer: ConversationSummarizer): void {
+    this.conversationRepo = repo;
+    this.conversationSummarizer = summarizer;
+  }
 
   /** Dispatch tool call. Handles new names + aliases. */
   dispatch(name: string, args: Args): string | null {
@@ -34,6 +64,154 @@ export class MemoryToolDispatcherConsolidated {
 // --- Handler functions (delegate to V1/V2) ---
 
 type Handler = (d: MemoryToolDispatcherConsolidated, a: Args) => string;
+
+function handlePin(d: MemoryToolDispatcherConsolidated, a: Args): string {
+  const cm = d['coreMemory'];
+  if (!cm) return 'Error: CoreMemoryManager not initialized';
+  const action = (a.action as string) || 'list';
+  const entryId = a.entry_id as number | undefined;
+  switch (action) {
+    case 'pin':
+      if (!entryId) return 'Error: entry_id required for pin';
+      return cm.pin(entryId);
+    case 'unpin':
+      if (!entryId) return 'Error: entry_id required for unpin';
+      return cm.unpin(entryId);
+    case 'list':
+      return JSON.stringify(cm.listPinned(), null, 2);
+    case 'reorder':
+      if (!entryId) return 'Error: entry_id required for reorder';
+      return cm.reorder(entryId, (a.order as number) ?? 0);
+    case 'get_context':
+      return cm.getContext() || '(no pinned entries)';
+    case 'budget':
+      return JSON.stringify(cm.getBudgetStatus(), null, 2);
+    default:
+      return `Error: unknown pin action: ${action}`;
+  }
+}
+
+function handleMap(d: MemoryToolDispatcherConsolidated, a: Args): string {
+  const action = (a.action as string) || 'get';
+  const entryId = a.entry_id as number | undefined;
+  const entityRepoInst = d['entityRepo'];
+  const knowledgeRepoInst = d['knowledgeRepo'];
+
+  switch (action) {
+    case 'get': {
+      if (!entryId) return 'Error: entry_id required';
+      if (!knowledgeRepoInst) return 'Error: KnowledgeRepository not initialized';
+      const mapJson = knowledgeRepoInst.getStructuredMap(entryId);
+      return mapJson;
+    }
+    case 'update': {
+      if (!entryId) return 'Error: entry_id required';
+      if (!knowledgeRepoInst) return 'Error: KnowledgeRepository not initialized';
+      const existing = JSON.parse(knowledgeRepoInst.getStructuredMap(entryId));
+      const updates = a.map as Record<string, unknown> ?? {};
+      const merged = { ...existing, ...updates };
+      knowledgeRepoInst.updateStructuredMap(entryId, JSON.stringify(merged));
+      return `Updated structured map for entry ${entryId}`;
+    }
+    case 'search_entity': {
+      const entity = a.entity as string;
+      if (!entity) return 'Error: entity required for search_entity';
+      if (!entityRepoInst) return 'Error: EntityRepository not initialized';
+      const limit = (a.limit as number) ?? 10;
+      const ids = entityRepoInst.findByEntity(entity, limit);
+      if (ids.length === 0) return `No entries mention entity "${entity}"`;
+      return JSON.stringify({ entity, entry_ids: ids, count: ids.length });
+    }
+    case 'search_topic': {
+      if (!knowledgeRepoInst) return 'Error: KnowledgeRepository not initialized';
+      const topic = a.topic as string;
+      if (!topic) return 'Error: topic required for search_topic';
+      // Search structured_map JSON for topic match
+      return `Topic search for "${topic}" — use mem_search with query instead`;
+    }
+    case 'reextract': {
+      if (!entryId) return 'Error: entry_id required';
+      if (!knowledgeRepoInst) return 'Error: KnowledgeRepository not initialized';
+      const entry = knowledgeRepoInst.findById(entryId);
+      if (!entry) return `Error: entry ${entryId} not found`;
+      const map = extractStructuredMap(entry.content);
+      const mapJson = JSON.stringify(map);
+      knowledgeRepoInst.updateStructuredMap(entryId, mapJson);
+      if (entityRepoInst && map.entities_mentioned.length > 0) {
+        const entities = map.entities_mentioned.map(name => ({ name, type: classifyEntity(name) }));
+        entityRepoInst.indexEntities(entryId, entities);
+      }
+      return `Re-extracted map for entry ${entryId}: ${map.entities_mentioned.length} entities, topic="${map.topic}"`;
+    }
+    default:
+      return `Error: unknown map action: ${action}`;
+  }
+}
+
+function handleConversation(d: MemoryToolDispatcherConsolidated, a: Args): string {
+  const convRepo = d['conversationRepo'];
+  const summarizer = d['conversationSummarizer'];
+  if (!convRepo) return 'Error: ConversationRepository not initialized';
+  const action = (a.action as string) || 'list_sessions';
+
+  switch (action) {
+    case 'save_turn': {
+      const sessionId = a.session_id as string;
+      if (!sessionId) return 'Error: session_id required';
+      const role = a.role as string;
+      if (!role) return 'Error: role required';
+      const content = a.content as string;
+      if (!content) return 'Error: content required';
+      const toolCalls = a.tool_calls ? JSON.parse(a.tool_calls as string) : undefined;
+      const id = convRepo.saveTurn(sessionId, role, content, toolCalls);
+      return `Saved turn #${convRepo.getSessionTurnCount(sessionId)} (id=${id}) for session ${sessionId}`;
+    }
+    case 'get_session': {
+      const sessionId = a.session_id as string;
+      if (!sessionId) return 'Error: session_id required';
+      const limit = (a.limit as number) ?? 50;
+      const turns = convRepo.getSession(sessionId, limit);
+      if (turns.length === 0) return `No turns found for session ${sessionId}`;
+      const lines = [`Session ${sessionId} (${turns.length} turns):\n`];
+      for (const t of turns) {
+        lines.push(`[${t.turn_number}] ${t.role}: ${t.content.slice(0, 200)}`);
+      }
+      return lines.join('\n');
+    }
+    case 'list_sessions': {
+      const limit = (a.limit as number) ?? 20;
+      const sessions = convRepo.listSessions(limit);
+      if (sessions.length === 0) return 'No conversation sessions found';
+      const lines = [`${sessions.length} sessions:\n`];
+      for (const s of sessions) {
+        lines.push(`[${s.session_id}] ${s.turn_count} turns | Roles: ${s.roles.join(',')} | Last: ${s.last_turn_at}`);
+      }
+      return lines.join('\n');
+    }
+    case 'search': {
+      const query = a.query as string;
+      if (!query) return 'Error: query required for search';
+      const limit = (a.limit as number) ?? 20;
+      const turns = convRepo.searchTurns(query, limit);
+      if (turns.length === 0) return `No turns matching "${query}"`;
+      const lines = [`Found ${turns.length} turns:\n`];
+      for (const t of turns) {
+        lines.push(`[${t.session_id}#${t.turn_number}] ${t.role}: ${t.content.slice(0, 150)}`);
+      }
+      return lines.join('\n');
+    }
+    case 'summarize': {
+      const sessionId = a.session_id as string;
+      if (!sessionId) return 'Error: session_id required';
+      if (!summarizer) return 'Error: ConversationSummarizer not initialized';
+      const result = summarizer.summarizeSession(sessionId);
+      if (!result) return `No turns to summarize for session ${sessionId}`;
+      return `Summarized ${result.turnsProcessed} turns → entry #${result.summaryEntryId}`;
+    }
+    default:
+      return `Error: unknown conversation action: ${action}`;
+  }
+}
 
 function handleSearch(d: MemoryToolDispatcherConsolidated, a: Args): string {
   return d['v1'].dispatch('mem_search', a) ?? 'Error: search failed';
@@ -146,6 +324,9 @@ function handleAdmin(d: MemoryToolDispatcherConsolidated, a: Args): string {
 }
 
 const HANDLERS: Record<string, Handler> = {
+  mem_pin: handlePin,
+  mem_map: handleMap,
+  mem_conversation: handleConversation,
   mem_search: handleSearch,
   mem_ingest: handleIngest,
   mem_ingest_file: handleIngestFile,

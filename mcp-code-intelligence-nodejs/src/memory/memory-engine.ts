@@ -13,6 +13,9 @@ import { ConsolidationRepository } from './consolidation-repo.js';
 import { SessionRepository } from './session-repo.js';
 import { AuditRepository } from './audit-repo.js';
 import { KnowledgeGraph } from './knowledge-graph.js';
+import { CoreMemoryManager } from './core-memory.js';
+import { EntityRepository } from './entity-repo.js';
+import { ConversationRepository } from './conversation-repo.js';
 import { TierStats } from './models.js';
 
 export interface MemoryStats {
@@ -31,6 +34,9 @@ export class MemoryEngine {
   readonly sessions: SessionRepository;
   readonly audit: AuditRepository;
   readonly graph: KnowledgeGraph;
+  readonly coreMemory: CoreMemoryManager;
+  readonly entities: EntityRepository;
+  readonly conversations: ConversationRepository;
 
   private readonly _db: Database.Database;
   private currentSessionId: string | null = null;
@@ -52,6 +58,9 @@ export class MemoryEngine {
     this.audit = new AuditRepository(db);
     this.graph = new KnowledgeGraph(this.graphRepo);
     this.graph.loadFromDb();
+    this.coreMemory = new CoreMemoryManager(db);
+    this.entities = new EntityRepository(db);
+    this.conversations = new ConversationRepository(db);
   }
 
   /** Start a new session. */

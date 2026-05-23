@@ -1,0 +1,37 @@
+<mxfile host="65bd71144e">
+    <diagram id="bjo0cljwo6UDfljMq8Dx" name="Page-1">
+        <mxGraphModel dx="532" dy="549" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Physical Database Schema — KB v0.6.0&lt;/b&gt;" style="text;html=1;align=center;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="10" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ke" value="&lt;b&gt;knowledge_entries&lt;/b&gt;&#10;─────────────────────&#10;PK id INTEGER&#10;content TEXT NOT NULL&#10;summary TEXT&#10;type TEXT&#10;tier TEXT&#10;source TEXT&#10;tags TEXT&#10;confidence REAL&#10;access_count INTEGER&#10;─── NEW (v0.6.0) ───&#10;pinned INTEGER DEFAULT 0&#10;pin_order INTEGER DEFAULT 0&#10;structured_map TEXT DEFAULT '{}'&#10;quality_score INTEGER&#10;archived INTEGER DEFAULT 0&#10;─────────────────────&#10;created_at TEXT&#10;updated_at TEXT" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="220" height="340" as="geometry"/>
+                </mxCell>
+                <mxCell id="ct" value="&lt;b&gt;conversation_turns&lt;/b&gt; (NEW)&#10;─────────────────────&#10;PK id INTEGER&#10;FK session_id TEXT NOT NULL&#10;turn_number INTEGER NOT NULL&#10;role TEXT NOT NULL&#10;content TEXT NOT NULL&#10;tool_calls TEXT (JSON)&#10;metadata TEXT (JSON)&#10;summarized INTEGER DEFAULT 0&#10;created_at TEXT" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="60" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ei" value="&lt;b&gt;entity_index&lt;/b&gt; (NEW)&#10;─────────────────────&#10;PK id INTEGER&#10;FK entry_id INTEGER NOT NULL&#10;entity_name TEXT NOT NULL&#10;entity_type TEXT NOT NULL&#10;created_at TEXT" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="410" width="220" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="asc" value="&lt;b&gt;agent_scope_config&lt;/b&gt; (NEW)&#10;─────────────────────&#10;PK id INTEGER&#10;agent_role TEXT UNIQUE&#10;tag_set TEXT (JSON array)&#10;updated_at TEXT" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="270" width="220" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="eifts" value="&lt;b&gt;entity_index_fts&lt;/b&gt; (FTS5)&#10;─────────────────────&#10;entity_name (tokenized)" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="280" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="idx" value="&lt;b&gt;Indexes&lt;/b&gt;&#10;─────────────────────&#10;idx_ke_pinned (pinned, pin_order)&#10;idx_ke_archived (archived)&#10;idx_ke_quality (quality_score)&#10;idx_ke_tier_archived (tier, archived, created_at)&#10;idx_ct_session (session_id, turn_number)&#10;idx_ct_role (role)&#10;idx_ct_created (created_at)&#10;idx_ei_name (entity_name)&#10;idx_ei_type (entity_type)&#10;idx_ei_entry (entry_id)" style="text;html=0;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="60" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk1" value="FK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#7b1fa2;" parent="1" source="ei" target="ke" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk2" value="FTS sync" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;strokeColor=#f57c00;" parent="1" source="ei" target="eifts" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

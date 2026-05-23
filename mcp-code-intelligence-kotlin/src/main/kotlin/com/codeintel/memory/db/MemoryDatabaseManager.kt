@@ -3,6 +3,7 @@ package com.codeintel.memory.db
 
 import com.codeintel.db.DatabaseManager
 import com.codeintel.log
+import com.codeintel.memory.schema.runV3Migrations
 import java.sql.Connection
 
 class MemoryDatabaseManager(private val db: DatabaseManager) {
@@ -12,7 +13,8 @@ class MemoryDatabaseManager(private val db: DatabaseManager) {
     fun initialize() {
         applyMemorySchema()
         migrateAuditSchema()
-        log("Memory schema initialized")
+        runV3Migrations(conn)
+        log("Memory schema initialized (V3 migrations applied)")
     }
 
     private fun applyMemorySchema() {
