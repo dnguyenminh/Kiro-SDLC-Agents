@@ -1,0 +1,51 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="lookup" value="CacheLookup" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="100" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="writer" value="CacheWriter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="100" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="invalidator" value="CacheInvalidator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="100" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="injector" value="InjectionEngine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="260" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="classifier" value="ErrorClassifier" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="260" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="configr" value="ConfigReader" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="260" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="models" value="models.py (ToolCacheEntry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="260" y="420" width="220" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="kb" value="KB Server" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;size=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="420" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="e1" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="lookup" target="kb" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="writer" target="kb" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="invalidator" target="classifier" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="injector" target="lookup" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="injector" target="configr" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e6" value="shared model" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="lookup" target="models" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" value="shared model" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;dashed=1;fontSize=9;" edge="1" source="writer" target="models" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

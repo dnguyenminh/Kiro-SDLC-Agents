@@ -28,6 +28,8 @@ class MemoryToolDispatcher:
                  query_layer: Any = None) -> None:
         self._engine = engine
         self._workspace = workspace
+        self._db = engine._conn  # Exposed for consolidated handlers (KSA-142)
+        self._knowledge_repo = engine.knowledge  # Exposed for summarizer (KSA-142)
         self._pipeline = IngestPipeline(engine.knowledge, embedding_service)
         self._search = HybridSearch(engine.search, engine.graph)
         self._consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
@@ -44,6 +46,11 @@ class MemoryToolDispatcher:
         self._search.set_scope_filter(scope_filter)
         self._search.set_token_budget(token_budget)
         self._search.set_working_expiry(working_expiry)
+
+        # KSA-142 F1: Wire CoreMemory auto-recall into search
+        from .core_memory import CoreMemoryManager
+        self._core_memory = CoreMemoryManager(conn)
+        self._search.set_pinned_context_provider(self._core_memory.get_context)
 
         # V2 dispatcher for KB Enhancement tools
         if isinstance(engine, MemoryEngineV2):
@@ -164,8 +171,18 @@ class MemoryToolDispatcher:
         source = args.get("source")
         tags = args.get("tags", "")
         summary = args.get("summary") or content[:120]
+        agent_name = args.get("agent_name")
 
         entry_id = self._pipeline.ingest_entry(content, summary, type_, source, tags)
+        if agent_name:
+            try:
+                self._engine._conn.execute(
+                    "UPDATE knowledge_entries SET agent_name = ? WHERE id = ?",
+                    (agent_name, entry_id),
+                )
+                self._engine._conn.commit()
+            except Exception:
+                pass  # must not break ingest
         self._engine.audit.log("INGEST", entry_id=entry_id, session_id=self._engine.session_id)
         self._auto_own_entry(entry_id, source)
         self._auto_score_entry(entry_id, content, tags)

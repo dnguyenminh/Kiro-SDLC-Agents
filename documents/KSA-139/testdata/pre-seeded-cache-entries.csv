@@ -1,0 +1,9 @@
+id,tool_name,server_name,description,scope,hits,last_used,tags,purpose
+admin-agent,jira_search,atlassian,Search Jira issues using JQL,agent:ba-agent,25,2026-05-23T10:00:00Z,"tool-cache, agent:ba-agent, server:atlassian",Primary lookup test tool
+global-001,kb_search,kb-server,Search knowledge base entries,global,20,2026-05-22T10:00:00Z,"tool-cache, scope:global, server:kb-server",L1 cache test tool
+global-002,kb_ingest,kb-server,Ingest data into knowledge base,global,15,2026-05-21T10:00:00Z,"tool-cache, scope:global, server:kb-server",L1 cache population test
+ba-001,jira_create,atlassian,Create a new Jira issue,agent:ba-agent,12,2026-05-20T10:00:00Z,"tool-cache, agent:ba-agent, server:atlassian",Agent-specific tool
+ba-002,jira_update,atlassian,Update existing Jira issue,agent:ba-agent,10,2026-05-19T10:00:00Z,"tool-cache, agent:ba-agent, server:atlassian",Agent-specific tool
+sa-001,code_analyze,code-intel,Analyze code structure,agent:sa-agent,8,2026-05-18T10:00:00Z,"tool-cache, agent:sa-agent, server:code-intel",SA agent tool
+dev-001,code_search,code-intel,Search code symbols,agent:dev-agent,5,2026-05-17T10:00:00Z,"tool-cache, agent:dev-agent, server:code-intel",DEV agent tool
+qa-001,test_runner,testing,Run test suites,agent:qa-agent,3,2026-05-16T10:00:00Z,"tool-cache, agent:qa-agent, server:testing",QA agent tool

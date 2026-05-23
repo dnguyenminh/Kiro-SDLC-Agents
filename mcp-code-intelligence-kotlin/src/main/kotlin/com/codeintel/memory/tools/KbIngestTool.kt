@@ -14,8 +14,12 @@ class KbIngestTool(private val pipeline: IngestPipeline) {
         val source = args["source"]?.jsonPrimitive?.content
         val tags = args["tags"]?.jsonPrimitive?.content ?: ""
         val summary = args["summary"]?.jsonPrimitive?.content ?: content.take(120)
+        val agentName = args["agent_name"]?.jsonPrimitive?.content
 
         val id = pipeline.ingestEntry(content, summary, type, source, tags)
+        if (agentName != null) {
+            pipeline.updateAgentName(id, agentName)
+        }
         return "Knowledge entry created: id=$id, type=$type, tier=WORKING"
     }
 }

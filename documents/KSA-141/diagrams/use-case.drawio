@@ -1,0 +1,510 @@
+<mxfile host="65bd71144e">
+    <diagram id="bwRJuk40FXMzmniM82r2" name="Page-1">
+        <mxGraphModel dx="1218" dy="549" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="System Boundary: Code Intelligence Platform" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="40" width="680" height="720" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Kiro IDE User" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="160" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="External AI Client User&#10;(Claude/Cursor/Windsurf)" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="440" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Developer&#10;(Maintainer)" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="660" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="CI/CD Pipeline" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="1000" y="540" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="UC1: Use Code Intelligence&#10;In-Process (Extension)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="70" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="UC2: Install &amp; Activate&#10;Extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="70" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="UC3: First-Call&#10;Interactive Setup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="380" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="UC4: Use Standalone&#10;MCP Server" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="365" y="530" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="UC5: Switch Between&#10;Extension &amp; Standalone Mode" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="300" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="UC6: Maintain&#10;Shared Core Package" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="620" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="UC7: Build &amp; Publish&#10;Independently" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="680" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="UC8: Preserve Data&#10;Across Modes" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="200" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="UC9: Configure&#10;Embedding Provider" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="440" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" style="" parent="1" source="3" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="170" y="110"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="31" style="" parent="1" source="3" target="11" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="220" y="170"/>
+                            <mxPoint x="540" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="32" style="" parent="1" source="4" target="12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="250" y="410"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="33" style="" parent="1" source="4" target="13" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="190" y="570"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="34" style="" parent="1" source="3" target="14" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="220" y="340"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="35" style="" parent="1" source="4" target="14" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="220" y="340"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="36" style="" parent="1" source="5" target="15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="190" y="660"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="37" style="" parent="1" source="6" target="16" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1040" y="720"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="38" style="" parent="1" source="5" target="16" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="190" y="720"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="39" style="" parent="1" source="3" target="17" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="210" y="240"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="40" style="" parent="1" source="4" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" parent="1" source="12" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" parent="1" source="14" target="17" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="760" y="240"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="pKs3dnrz9XUl9wf-PqhP" name="Page-1">
+        <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <!-- System Boundary -->
+                <mxCell id="2" value="System Boundary: Code Intelligence Platform" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="30" width="900" height="840" as="geometry"/>
+                </mxCell>
+                <!-- Actors: Left side, grouped by their primary UCs -->
+                <!-- Actor 1: Kiro IDE User — connects UC1, UC2, UC5, UC8 -->
+                <mxCell id="3" value="Kiro IDE User" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="140" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Actor 2: External AI Client User — connects UC3, UC4, UC5, UC9 -->
+                <mxCell id="4" value="External AI Client User&#10;(Claude/Cursor/Windsurf)" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="440" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Actor 3: Developer — connects UC6, UC7 -->
+                <mxCell id="5" value="Developer&#10;(Maintainer)" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="740" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Actor 4: CI/CD Pipeline — connects UC7 (right side) -->
+                <mxCell id="6" value="CI/CD Pipeline" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1200" y="740" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Row 1: Kiro IDE User UCs (y=80..260) -->
+                <mxCell id="10" value="UC1: Use Code Intelligence&#10;In-Process (Extension)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="80" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="UC2: Install &amp; Activate&#10;Extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="190" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Row 2: Shared UCs between both user types (y=310..380) -->
+                <mxCell id="14" value="UC5: Switch Between&#10;Extension &amp; Standalone Mode" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="310" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="UC8: Preserve Data&#10;Across Modes" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="840" y="310" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Row 3: External AI Client UCs (y=420..560) -->
+                <mxCell id="12" value="UC3: First-Call&#10;Interactive Setup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="420" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="UC4: Use Standalone&#10;MCP Server" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="530" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="UC9: Configure&#10;Embedding Provider" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="640" y="470" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Row 4: Developer/CI UCs (y=720..800) -->
+                <mxCell id="15" value="UC6: Maintain&#10;Shared Core Package" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="730" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="UC7: Build &amp; Publish&#10;Independently" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="640" y="730" width="240" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Edges: Kiro IDE User -->
+                <mxCell id="30" style="" edge="1" source="3" target="10" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" style="" edge="1" source="3" target="11" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" style="" edge="1" source="3" target="14" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" style="" edge="1" source="3" target="17" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Edges: External AI Client User -->
+                <mxCell id="32" style="" edge="1" source="4" target="12" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" style="" edge="1" source="4" target="13" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" style="" edge="1" source="4" target="14" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" style="" edge="1" source="4" target="18" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Edges: Developer -->
+                <mxCell id="36" style="" edge="1" source="5" target="15" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" style="" edge="1" source="5" target="16" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Edges: CI/CD Pipeline -->
+                <mxCell id="37" style="" edge="1" source="6" target="16" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Include relationships -->
+                <mxCell id="41" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="12" target="18" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="14" target="17" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="RxebVN5BMsqeJW4WxM51" name="Page-1">
+        <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <!-- System Boundary -->
+                <mxCell id="2" value="System Boundary: Code Intelligence Platform" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="30" width="700" height="920" as="geometry"/>
+                </mxCell>
+                <!-- === ACTORS LEFT COLUMN (x=40) === -->
+                <!-- Kiro IDE User: centered vertically between its UCs (UC1 y=80, UC2 y=200, UC5 y=340, UC8 y=340) → center ~210 -->
+                <mxCell id="3" value="Kiro IDE User" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="170" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- External AI Client: centered between UC3 y=500, UC4 y=620, UC5 y=340, UC9 y=500 → center ~490 -->
+                <mxCell id="4" value="External AI Client User&#10;(Claude/Cursor/Windsurf)" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="530" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Developer: centered between UC6 y=760, UC7 y=760 → center 760 -->
+                <mxCell id="5" value="Developer&#10;(Maintainer)" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="800" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- === ACTOR RIGHT COLUMN (x=1000) === -->
+                <mxCell id="6" value="CI/CD Pipeline" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="1000" y="800" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- === USE CASES: Single column layout (x=350), stacked vertically with spacing === -->
+                <!-- Group 1: Kiro IDE exclusive (blue) -->
+                <mxCell id="10" value="UC1: Use Code Intelligence&#10;In-Process (Extension)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="80" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="UC2: Install &amp; Activate&#10;Extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="200" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Group 2: Shared (green) — between the two actor groups -->
+                <mxCell id="14" value="UC5: Switch Between&#10;Extension &amp; Standalone Mode" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="340" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="UC8: Preserve Data&#10;Across Modes" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="340" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Group 3: External AI Client exclusive (yellow) -->
+                <mxCell id="12" value="UC3: First-Call&#10;Interactive Setup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="480" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="UC4: Use Standalone&#10;MCP Server" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="600" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="UC9: Configure&#10;Embedding Provider" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="480" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Group 4: Developer/CI (purple) -->
+                <mxCell id="15" value="UC6: Maintain&#10;Shared Core Package" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="760" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="UC7: Build &amp; Publish&#10;Independently" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="760" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <!-- === EDGES === -->
+                <!-- Kiro IDE User edges (actor at y=170+40=210 center) -->
+                <mxCell id="30" style="" edge="1" source="3" target="10" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" style="" edge="1" source="3" target="11" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" style="" edge="1" source="3" target="14" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" style="" edge="1" source="3" target="17" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- External AI Client edges (actor at y=530+40=570 center) -->
+                <mxCell id="32" style="" edge="1" source="4" target="12" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" style="" edge="1" source="4" target="13" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" style="" edge="1" source="4" target="14" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" style="" edge="1" source="4" target="18" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Developer edges -->
+                <mxCell id="36" style="" edge="1" source="5" target="15" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" style="" edge="1" source="5" target="16" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- CI/CD Pipeline edges -->
+                <mxCell id="37" style="" edge="1" source="6" target="16" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <!-- Include relationships -->
+                <mxCell id="41" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="12" target="18" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" source="14" target="17" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="uc-ksa141" name="Page-1">
+        <mxGraphModel dx="1200" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1400" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <!-- Title -->
+                <mxCell id="title" value="Use Case Diagram — KSA-141: Upgrade Extension + First-Call MCP Setup" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="10" width="520" height="30" as="geometry"/>
+                </mxCell>
+                <!-- System Boundary -->
+                <mxCell id="system" value="Code Intelligence Platform" style="shape=umlFrame;whiteSpace=wrap;html=1;width=200;height=22;fontSize=11;fillColor=none;strokeColor=#333333;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="50" width="700" height="1050" as="geometry"/>
+                </mxCell>
+                <!-- === ACTORS === -->
+                <mxCell id="actor_kiro" value="Kiro IDE User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="250" width="50" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_ext" value="External AI Client&#10;(Claude/Cursor/Windsurf)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="620" width="50" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_dev" value="Developer&#10;(Maintainer)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="950" width="50" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_ci" value="CI/CD Pipeline" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1060" y="950" width="50" height="70" as="geometry"/>
+                </mxCell>
+                <!-- === PACKAGE 1: Extension Mode (blue) === -->
+                <mxCell id="pkg_ext" value="«Extension Mode»" style="shape=umlFrame;whiteSpace=wrap;html=1;width=130;height=20;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=40;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="80" width="640" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc1" value="UC1: Use Code Intelligence&#10;In-Process (Extension)" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="120" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc2" value="UC2: Install &amp; Activate&#10;Extension" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="200" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <!-- === PACKAGE 2: Shared / Cross-Mode (green) === -->
+                <mxCell id="pkg_shared" value="«Cross-Mode»" style="shape=umlFrame;whiteSpace=wrap;html=1;width=100;height=20;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;opacity=40;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="310" width="640" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc5" value="UC5: Switch Between&#10;Extension &amp; Standalone Mode" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="350" width="230" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc8" value="UC8: Preserve Data&#10;Across Modes" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="430" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <!-- === PACKAGE 3: Standalone MCP Mode (yellow) === -->
+                <mxCell id="pkg_mcp" value="«Standalone MCP Mode»" style="shape=umlFrame;whiteSpace=wrap;html=1;width=160;height=20;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;opacity=40;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="540" width="640" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc3" value="UC3: First-Call&#10;Interactive Setup" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="580" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc4" value="UC4: Use Standalone&#10;MCP Server" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="660" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc9" value="UC9: Configure&#10;Embedding Provider" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="620" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <!-- === PACKAGE 4: Maintenance (purple) === -->
+                <mxCell id="pkg_maint" value="«Maintenance»" style="shape=umlFrame;whiteSpace=wrap;html=1;width=100;height=20;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=40;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="820" width="640" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc6" value="UC6: Maintain&#10;Shared Core Package" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="870" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc7" value="UC7: Build &amp; Publish&#10;Independently" style="ellipse;whiteSpace=wrap;html=1;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="310" y="960" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <!-- === EDGES: Kiro IDE User === -->
+                <mxCell id="e_kiro_uc1" style="endArrow=none;html=1;strokeColor=#6c8ebf;" parent="1" source="actor_kiro" target="uc1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="148"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_kiro_uc2" style="endArrow=none;html=1;strokeColor=#6c8ebf;" parent="1" source="actor_kiro" target="uc2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="228"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_kiro_uc5" style="endArrow=none;html=1;strokeColor=#82b366;" parent="1" source="actor_kiro" target="uc5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="220" y="378"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_kiro_uc8" style="endArrow=none;html=1;strokeColor=#82b366;" parent="1" source="actor_kiro" target="uc8" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="210" y="458"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <!-- === EDGES: External AI Client === -->
+                <mxCell id="e_ext_uc3" style="endArrow=none;html=1;strokeColor=#d6b656;" parent="1" source="actor_ext" target="uc3" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="608"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_ext_uc4" style="endArrow=none;html=1;strokeColor=#d6b656;" parent="1" source="actor_ext" target="uc4" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="688"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_ext_uc5" style="endArrow=none;html=1;strokeColor=#82b366;" parent="1" source="actor_ext" target="uc5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="530"/>
+                            <mxPoint x="260" y="530"/>
+                            <mxPoint x="260" y="378"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_ext_uc9" style="endArrow=none;html=1;strokeColor=#d6b656;" parent="1" source="actor_ext" target="uc9" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="750"/>
+                            <mxPoint x="580" y="750"/>
+                            <mxPoint x="580" y="648"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <!-- === EDGES: Developer === -->
+                <mxCell id="e_dev_uc6" style="endArrow=none;html=1;strokeColor=#9673a6;" parent="1" source="actor_dev" target="uc6" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="898"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc7" style="endArrow=none;html=1;strokeColor=#9673a6;" parent="1" source="actor_dev" target="uc7" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="988"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <!-- === EDGES: CI/CD Pipeline === -->
+                <mxCell id="e_ci_uc7" style="endArrow=none;html=1;strokeColor=#9673a6;strokeWidth=2;" parent="1" source="actor_ci" target="uc7" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="850" y="988"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <!-- === Include/Extend relationships === -->
+                <mxCell id="inc1" value="«include»" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;fontSize=9;fontStyle=2;strokeColor=#d6b656;" parent="1" source="uc3" target="uc9" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="inc2" value="«include»" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;fontSize=9;fontStyle=2;strokeColor=#82b366;" parent="1" source="uc5" target="uc8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,71 @@
+<mxGraphModel>
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Row 1 -->
+    <!-- KNOWLEDGE_ENTRIES -->
+    <mxCell id="e1" value="&lt;b&gt;KNOWLEDGE_ENTRIES&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;id PK&lt;br/&gt;content&lt;br/&gt;summary&lt;br/&gt;type&lt;br/&gt;tier&lt;br/&gt;source&lt;br/&gt;created_at" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="50" y="50" width="200" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- PINNED_ENTRIES -->
+    <mxCell id="e2" value="&lt;b&gt;PINNED_ENTRIES&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;id PK&lt;br/&gt;entry_id FK&lt;br/&gt;position&lt;br/&gt;token_count&lt;br/&gt;pinned_at" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="50" width="200" height="140" as="geometry" />
+    </mxCell>
+
+    <!-- Row 2 -->
+    <!-- STRUCTURED_MAPS -->
+    <mxCell id="e3" value="&lt;b&gt;STRUCTURED_MAPS&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;id PK&lt;br/&gt;entry_id FK&lt;br/&gt;topic&lt;br/&gt;sentiment&lt;br/&gt;decisions&lt;br/&gt;action_items&lt;br/&gt;extracted_at" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="240" width="200" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- ENTITIES -->
+    <mxCell id="e4" value="&lt;b&gt;ENTITIES&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;id PK&lt;br/&gt;entry_id FK&lt;br/&gt;entity_name&lt;br/&gt;entity_type&lt;br/&gt;mention_count" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="440" width="200" height="140" as="geometry" />
+    </mxCell>
+
+    <!-- Row 3 -->
+    <!-- SESSIONS -->
+    <mxCell id="e5" value="&lt;b&gt;SESSIONS&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;session_id PK&lt;br/&gt;created_at&lt;br/&gt;last_activity&lt;br/&gt;turn_count&lt;br/&gt;summary" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="50" y="440" width="200" height="140" as="geometry" />
+    </mxCell>
+
+    <!-- CONVERSATION_TURNS -->
+    <mxCell id="e6" value="&lt;b&gt;CONVERSATION_TURNS&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;id PK&lt;br/&gt;session_id FK&lt;br/&gt;role&lt;br/&gt;content&lt;br/&gt;tool_calls&lt;br/&gt;sequence_num&lt;br/&gt;timestamp" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="50" y="630" width="200" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- Row 4 -->
+    <!-- CACHE_ENTRIES -->
+    <mxCell id="e7" value="&lt;b&gt;CACHE_ENTRIES&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;key PK&lt;br/&gt;cache_type FK&lt;br/&gt;value&lt;br/&gt;created_at&lt;br/&gt;last_accessed&lt;br/&gt;hit_count&lt;br/&gt;ttl_ms" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="400" y="630" width="200" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- CHILD_SERVERS -->
+    <mxCell id="e8" value="&lt;b&gt;CHILD_SERVERS&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;server_id PK&lt;br/&gt;server_name&lt;br/&gt;transport&lt;br/&gt;endpoint&lt;br/&gt;status&lt;br/&gt;last_health_check&lt;br/&gt;retry_count" style="shape=mxgraph.er.entity;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="50" y="240" width="200" height="160" as="geometry" />
+    </mxCell>
+
+    <!-- Relationships -->
+    <!-- KNOWLEDGE_ENTRIES 1:N PINNED_ENTRIES -->
+    <mxCell id="r1" value="1:N" style="edgeStyle=entityRelationEdgeStyle;fontSize=11;strokeColor=#6c8ebf;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;" edge="1" source="e1" target="e2" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- KNOWLEDGE_ENTRIES 1:1 STRUCTURED_MAPS -->
+    <mxCell id="r2" value="1:1" style="edgeStyle=entityRelationEdgeStyle;fontSize=11;strokeColor=#6c8ebf;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;" edge="1" source="e1" target="e3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- KNOWLEDGE_ENTRIES 1:N ENTITIES -->
+    <mxCell id="r3" value="1:N" style="edgeStyle=entityRelationEdgeStyle;fontSize=11;strokeColor=#6c8ebf;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;" edge="1" source="e1" target="e4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- SESSIONS 1:N CONVERSATION_TURNS -->
+    <mxCell id="r4" value="1:N" style="edgeStyle=entityRelationEdgeStyle;fontSize=11;strokeColor=#6c8ebf;endArrow=ERmandOne;startArrow=ERmandOne;endFill=0;startFill=0;" edge="1" source="e5" target="e6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

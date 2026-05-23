@@ -9,7 +9,7 @@ object MemoryToolDefinitionsConsolidated {
             memSearch(), memIngest(), memIngestFile(), memCrud(),
             memGraph(), memConsolidate(), memLifecycle(), memTemplates(),
             memAttachments(), memDiscover(), memTags(), memCitations(),
-            memScoring(), memAdmin()
+            memScoring(), memAdmin(), memPin(), memConversation(), memMap()
         )
     }
 
@@ -35,6 +35,7 @@ object MemoryToolDefinitionsConsolidated {
         prop("type", "string", "Type: DECISION, ERROR_PATTERN, ARCHITECTURE, API_DESIGN, REQUIREMENT, LESSON_LEARNED, PROCEDURE, CONTEXT")
         prop("source", "string", "Source identifier (file path, ticket, etc)")
         prop("tags", "string", "Comma-separated tags")
+        prop("agent_name", "string", "Agent name (SM, BA, SA, DEV, QA, DevOps, etc.)")
     }
 
     private fun memIngestFile() = tool(
@@ -190,6 +191,45 @@ object MemoryToolDefinitionsConsolidated {
         prop("operation", "string", "Filter audit by operation: INGEST, DELETE, SEARCH, CONSOLIDATE, ACCESS")
         prop("days", "number", "Trend period in days (default: 30)")
         prop("kind", "string", "For sync_code: class, interface, function (default: class+interface)")
+    }
+
+    // --- KSA-142: F1/F2/F3 tool definitions ---
+
+    private fun memPin() = tool(
+        "mem_pin",
+        "Core/Archival Memory: pin entries for auto-recall, manage pinned context budget (2000 tokens max).",
+        required = listOf("action")
+    ) {
+        prop("action", "string", "Action: pin, unpin, list, reorder, get_context, budget")
+        prop("entry_id", "number", "Entry ID (for pin/unpin/reorder)")
+        prop("order", "number", "New position (for reorder)")
+    }
+
+    private fun memConversation() = tool(
+        "mem_conversation",
+        "Structured conversation history: save turns, query sessions, search conversation content.",
+        required = listOf("action")
+    ) {
+        prop("action", "string", "Action: save_turn, get_session, list_sessions, search, summarize")
+        prop("session_id", "string", "Session ID (for save_turn/get_session)")
+        prop("role", "string", "Role: user, assistant, system, tool (for save_turn)")
+        prop("content", "string", "Turn content (for save_turn)")
+        prop("query", "string", "Search query (for search)")
+        prop("tool_calls", "string", "JSON array of tool calls (for save_turn)")
+        prop("limit", "number", "Max results (default: 20)")
+    }
+
+    private fun memMap() = tool(
+        "mem_map",
+        "Structured Map: view/update entry metadata (topic, entities, decisions, action items, sentiment). Search by entity or topic.",
+        required = listOf("action")
+    ) {
+        prop("action", "string", "Action: get, update, search_entity, search_topic, reextract")
+        prop("entry_id", "number", "Entry ID (for get/update/reextract)")
+        prop("entity", "string", "Entity name to search (for search_entity)")
+        prop("topic", "string", "Topic to search (for search_topic)")
+        prop("map", "object", "Partial StructuredMap to merge (for update)")
+        prop("limit", "number", "Max results (default 10)")
     }
 
     // --- DSL helpers (extracted to ToolSchemaDsl.kt) ---

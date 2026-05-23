@@ -1,0 +1,76 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Feature Parity Sync — Business Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="60" width="80" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="identify" value="Identify Feature Gap&lt;br&gt;in Target Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="160" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="analyze" value="Analyze Reference&lt;br&gt;Implementation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="290" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="design" value="Design Port Strategy&lt;br&gt;(Follow Target Patterns)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="420" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="implement" value="Implement Feature&lt;br&gt;in Target Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="550" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="test" value="Validate Parity&lt;br&gt;(Compare with Reference)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="680" width="180" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="fix" value="Fix Discrepancies" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="700" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="integrate" value="Integration Test&lt;br&gt;(No Regressions)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="840" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="done" value="Feature Parity&lt;br&gt;Achieved" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="340" y="970" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="start" target="identify" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="identify" target="analyze" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="analyze" target="design" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="design" target="implement" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="implement" target="test" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="Fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontColor=#c62828;" edge="1" source="test" target="fix" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="fix" target="implement" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="630" y="585"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="Pass" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontColor=#388e3c;" edge="1" source="test" target="integrate" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="integrate" target="done" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_py" value="&lt;b&gt;Python &amp;amp; Kotlin:&lt;/b&gt;&lt;br&gt;F1: Core Memory&lt;br&gt;F2: Conversation&lt;br&gt;F3: Structured Map" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="400" width="170" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_node" value="&lt;b&gt;Node.js:&lt;/b&gt;&lt;br&gt;Cache Layer&lt;br&gt;File Watcher&lt;br&gt;Viewer UI" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="510" width="170" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_kt" value="&lt;b&gt;Kotlin:&lt;/b&gt;&lt;br&gt;Nested Detection" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="620" width="170" height="50" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

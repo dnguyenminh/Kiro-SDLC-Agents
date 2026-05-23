@@ -46,6 +46,7 @@ class IngestPipeline:
         entry_id = self._repo.insert(content, summary, type_, "WORKING", source, tags)
         self._embed(entry_id, summary)
         self._try_set_quality_score(entry_id, content, tags, type_, source)
+        self._extract_structured_map(entry_id, content)
         return entry_id
 
     def _try_set_quality_score(self, entry_id: int, content: str,
@@ -100,6 +101,23 @@ class IngestPipeline:
             self._embedding.embed_and_store(entry_id, text)
         except Exception as e:
             _log(f"Embedding failed for entry {entry_id}: {e}")
+
+    def _extract_structured_map(self, entry_id: int, content: str) -> None:
+        """Extract structured map and index entities (KSA-142 F3)."""
+        try:
+            from .structured_map_extractor import extract_structured_map, EntityRepository
+            smap = extract_structured_map(content)
+            conn = self._repo._conn
+            conn.execute(
+                "UPDATE knowledge_entries SET structured_map = ? WHERE id = ?",
+                (smap.to_json(), entry_id),
+            )
+            conn.commit()
+            if smap.entities_mentioned:
+                entity_repo = EntityRepository(conn)
+                entity_repo.index_entities(entry_id, smap.entities_mentioned)
+        except Exception as e:
+            _log(f"Structured map extraction failed for entry {entry_id}: {e}")
 
 
 def _tier_for_type(type_: str) -> str:

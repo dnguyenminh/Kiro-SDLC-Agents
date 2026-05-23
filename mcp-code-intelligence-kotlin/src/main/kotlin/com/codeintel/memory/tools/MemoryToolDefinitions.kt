@@ -36,6 +36,7 @@ object MemoryToolDefinitions {
                 putJsonObject("type") { put("type", "string"); put("description", "Type: DECISION, ERROR_PATTERN, ARCHITECTURE, API_DESIGN, REQUIREMENT, LESSON_LEARNED, PROCEDURE, CONTEXT") }
                 putJsonObject("source") { put("type", "string"); put("description", "Source identifier (file path, ticket, etc)") }
                 putJsonObject("tags") { put("type", "string"); put("description", "Comma-separated tags") }
+                putJsonObject("agent_name") { put("type", "string"); put("description", "Agent name (SM, BA, SA, DEV, QA, DevOps, etc.)") }
             }
             putJsonArray("required") { add("content") }
         }

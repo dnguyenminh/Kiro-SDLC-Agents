@@ -1,8 +1,9 @@
 /** Analytics page logic — popular queries, zero-result queries, search trends. */
+var basePath = window.__MCP_BASE || '';
 
 async function load() {
   try {
-    const r = await fetch('/api/kb/analytics');
+    const r = await fetch(basePath + '/api/kb/analytics');
     const d = await r.json();
     renderPopular(d.popular_queries || d.popular || []);
     renderGaps(d.zero_results || d.gaps || []);

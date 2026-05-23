@@ -63,6 +63,9 @@ class MemoryToolDispatcher(
             "mem_consolidate" -> executeConsolidate(args)
             "mem_audit" -> KbAuditTool(audit).execute(args)
             "mem_sessions" -> KbSessionsTool(engine.sessions).execute(args)
+            "mem_pin" -> executePin(args)
+            "mem_conversation" -> executeConversation(args)
+            "mem_map" -> executeMap(args)
             else -> null
         }
     }
@@ -227,4 +230,9 @@ class MemoryToolDispatcher(
         audit.log("CONSOLIDATE", sessionId = engine.currentSessionId, details = result.take(200))
         return result
     }
+
+    // KSA-142: F1/F2/F3 — delegated to MemPinConversationMapHandlers.kt
+    private fun executePin(args: JsonObject): String = handlePin(engine, args)
+    private fun executeConversation(args: JsonObject): String = handleConversation(engine, args)
+    private fun executeMap(args: JsonObject): String = handleMap(engine, args)
 }

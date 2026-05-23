@@ -10,14 +10,24 @@ import java.nio.file.attribute.BasicFileAttributes
 
 class FileWatcher(private val config: Config, private val indexer: IndexingEngine) {
 
+    @Volatile
+    private var running = false
+
+    /** Stop the file watcher. */
+    fun stop() {
+        running = false
+        log("File watcher stopped")
+    }
+
     /** Watch workspace for file changes and trigger incremental indexing. */
     suspend fun watch() {
         val watcher = FileSystems.getDefault().newWatchService()
         val workspace = Paths.get(config.workspace)
         registerRecursive(workspace, watcher)
+        running = true
         log("File watcher started")
 
-        while (true) {
+        while (running) {
             val key = watcher.poll()
             if (key == null) {
                 delay(config.watchDebounceMs)

@@ -1,0 +1,23 @@
+test_case_id,action,session_id,role,content,query,limit,expected_result,expected_error,description
+TC-005,save_turn,test-session-1,user,Find all TODO items,,,success,,Save user turn — happy path
+TC-005,save_turn,test-session-1,assistant,Found 5 TODO items in src/,,,success,,Save assistant turn
+TC-006,get_session,s1,,,,,10_turns_ordered,,Get session with 10 turns
+TC-007,search,,,,authentication,,matching_turns,,Search conversations for auth
+TC-103,save_turn,,user,hello,,,auto_session_id,,Auto-generate session_id
+TC-104,save_turn,s-full,user,turn 1001,,,success_with_archive,,Session at 1000 turns — archive oldest
+TC-105,search,,,,xyznonexistent,,empty_array,,Search with no results
+TC-202,save_turn,s1,invalid_role,test,,,error,Invalid role. Use: user assistant system tool,Invalid role
+TC-203,save_turn,s1,user,{15000_chars},,,truncated_warning,,Content exceeds max — truncated
+TC-204,get_session,nonexistent-session,,,,,error,Session 'nonexistent-session' not found,Non-existent session
+TC-207,invalid_action,,,,,,error,Invalid action,Invalid action parameter
+TC-305,save_turn,my-custom-session,user,test,,,success,,User-provided session ID
+TC-306,save_turn,s1,user,turn_{N},,,sequential,,5 rapid turns — verify sequence_nums
+TC-307,search,,,,auth,,fts5_prefix_match,,FTS5 prefix matching
+TC-402,save_turn,{100_chars},user,test,,,success,,Session ID at max length (100)
+TC-402,save_turn,{101_chars},user,test,,,error,,Session ID exceeds max length
+TC-403,save_turn,s1,user,{10000_chars},,,success,,Content at max length boundary
+TC-404,search,,,,{500_chars},,success,,Query at max length
+TC-408,save_turn,s1,user,,,,error,Content is required for save_turn,Empty content
+TC-410,search,,,,test,1,1_result,,Limit=1
+TC-410,search,,,,test,100,up_to_100,,Limit=100
+TC-410,search,,,,test,0,default_20,,Limit=0 uses default

@@ -1,0 +1,9 @@
+test_case_id,server_name,transport,tools,status,expected_result,expected_error,description
+TC-012,child1,stdio,"[tool_a, tool_b]",connected,tools_registered,,Discover child — happy path
+TC-112,basic-server,stdio,"[some_tool]",connected,skipped,,Child without find_tools — skip
+TC-209,child1,stdio,"[tool_a, tool_b]",disconnected,retry_started,,Child disconnects — retry with backoff
+TC-210,child1,stdio,"[slow_tool]",connected,timeout,Tool call timed out after 30s,Tool call timeout 30s
+TC-315,analytics,stdio,"[analyze, report]",connected,prefixed_tools,,Tools prefixed with server name
+TC-316,child1,stdio,"[tool_a]",disconnected,5_retries_then_stop,,Exponential backoff: 1s 2s 4s 8s 16s
+TC-317,child1,stdio,"[slow_35s]",connected,timeout_at_30s,,30s timeout enforced
+TC-704,child1,stdio,"[echo]",connected,forwarded,,Tool call routed to child

@@ -8,6 +8,35 @@ inclusion: manual
 
 Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF with the diagram XML embedded (so the exported file remains editable in draw.io).
 
+## ⛔ CRITICAL RULE: NO orthogonalEdgeStyle for branching/cross-node edges
+
+**BEFORE generating ANY diagram, search KB for proven layout patterns:**
+```
+mem_search("drawio layout pattern proven", detail=true)
+```
+
+**MANDATORY — apply these rules on FIRST attempt (not after user complains):**
+
+1. **NEVER use `edgeStyle=orthogonalEdgeStyle` when an edge must cross other nodes** — auto-router collapses paths and creates overlaps
+2. **ALWAYS use explicit waypoints** (`<Array as="points">`) for:
+   - Edges from 1 source to 3+ targets arranged horizontally (fan-out)
+   - Edges from 3+ sources converging to 1 target (fan-in)
+   - Any edge that must travel past intermediate nodes
+3. **Pattern for fan-out (1 source → 3 targets):**
+   - Left branch: waypoint at `{x: leftTarget.centerX, y: source.bottom + 50}`
+   - Center branch: NO waypoints (straight down)
+   - Right branch: waypoint at `{x: rightTarget.centerX, y: source.bottom + 50}`
+4. **Pattern for fan-in (3 sources → 1 target):**
+   - Left source: waypoints `[{x: source.centerX, y: target.top - 50}, {x: target.centerX, y: target.top - 50}]`
+   - Center source: NO waypoints (straight down)
+   - Right source: waypoints `[{x: source.centerX, y: target.top - 50}, {x: target.centerX, y: target.top - 50}]`
+5. **Only use `edgeStyle=orthogonalEdgeStyle`** for:
+   - Self-loops (source=target)
+   - Simple 1:1 edges between adjacent nodes (no intermediate nodes between them)
+   - Edges within swimlane containers (short horizontal connections)
+
+**If you generate a diagram with orthogonalEdgeStyle on cross-node edges, it WILL be rejected.**
+
 ## How to create a diagram
 
 1. **Generate draw.io XML** in mxGraphModel format for the requested diagram
@@ -188,7 +217,7 @@ Your job is to declare the **logical structure** of the diagram — what nodes e
 - Do NOT compute x/y coordinates in prose. No "column spacings of 160px totaling 1840px width — that's too wide, let me tighten to 1700…" loops. Use the rigid grid below; do the arithmetic in your head and write the XML.
 - Do NOT re-derive drawio mechanics (`horizontal=0`, `startSize=110`, nested-lane coordinates). Use the templates below as-is.
 - Do NOT enumerate columns ("customer lane columns 0-10, web app 1-7"). Place a node, move on.
-- Do NOT add `<Array as="points">` waypoints. Edges are routed automatically.
+- Do NOT add `<Array as="points">` waypoints **for non-use-case diagrams**. Edges are routed automatically. **EXCEPTION: Use Case Diagrams MUST use waypoints** — see the "Use Case Diagrams" section below.
 - Do NOT set `exitX` / `exitY` / `entryX` / `entryY` connection-point overrides unless you have specific geometric intent.
 - Do NOT verify, re-check, or adjust coordinates after placing a node.
 - Do NOT narrate "building the diagram / finalizing the XML / now let me…". Just emit XML.
@@ -228,7 +257,7 @@ Pick a `(col, row)` for each node. The wider spacing ensures orthogonal edges ca
 - **Decide whether to search for shapes** — before generating a diagram, decide if it needs domain-specific shapes from draw.io's extended libraries. **Skip `search_shapes`** for standard diagram types that use basic geometric shapes: flowcharts, UML (class, sequence, state, activity), ERD, org charts, mind maps, Venn diagrams, timelines, wireframes, and any diagram using only rectangles, diamonds, circles, cylinders, and arrows. Also skip if the user explicitly asks to use basic/simple shapes or says not to search. **Use `search_shapes`** when the diagram requires industry-specific or branded icons: cloud architecture (AWS, Azure, GCP), network topology (Cisco, rack equipment), P&ID (valves, instruments, vessels), electrical/circuit diagrams, Kubernetes, BPMN with specific task types, or any domain where the user expects realistic/standardized symbols rather than labeled boxes.
 - **Match the language of labels to the user's language** — if the user writes in German, French, Japanese, etc., all diagram labels, titles, and annotations should be in that same language.
 - **MANDATORY: Validate edges before writing file** — After generating the XML, scan every `edge="1"` cell and confirm it has a `<mxGeometry relative="1" as="geometry"/>` child. If any edge is self-closing (`<mxCell ... edge="1" ... />`), fix it before writing. Self-closing edges are the #1 cause of invisible arrows in exported PNGs.
-- **MANDATORY: Use bare `<mxGraphModel>` only** — Do NOT wrap XML in `<mxfile><diagram>...</diagram></mxfile>`. The draw.io CLI export works with bare `<mxGraphModel>` but may fail or produce corrupt output with the `<mxfile>` wrapper. Always start with `<mxGraphModel adaptiveColors="auto">` and end with `</mxGraphModel>`.
+- **MANDATORY: Use bare `<mxGraphModel>` only for non-use-case diagrams** — Do NOT wrap XML in `<mxfile><diagram>...</diagram></mxfile>`. The draw.io CLI export works with bare `<mxGraphModel>` but may fail or produce corrupt output with the `<mxfile>` wrapper. Always start with `<mxGraphModel adaptiveColors="auto">` and end with `</mxGraphModel>`. **EXCEPTION: Use Case Diagrams MUST use `<mxfile><diagram>` wrapper** — see the "Use Case Diagrams" section.
 
 ## Common styles
 
@@ -445,43 +474,117 @@ This happens when waypoint Y values are in wrong order (decreasing instead of in
 </mxCell>
 ```
 
-## Use Case Diagrams — Preventing Edge-Node Overlap
+## Use Case Diagrams — Layout with Waypoint Routing
 
-**Problem:** When an actor connects to multiple use cases stacked vertically, straight-line edges from the actor to lower use cases pass THROUGH upper use cases, creating visual overlap.
+**Problem:** When an actor connects to multiple use cases, edges cross through intermediate nodes. The solution is **waypoint-based corridor routing** — NOT orthogonal edge style or grid layout.
 
 **MANDATORY rules for Use Case Diagrams:**
 
-1. **Layout: spread use cases horizontally, not just vertically.** Place use cases in a 2-column or staggered grid inside the system boundary so that actor→use-case lines have clear paths. Use `col * 220` horizontal spacing and `row * 120` vertical spacing.
+1. **Layout: FREE-FORM placement.** Do NOT use grid or rigid columns. Place UCs at positions that optimize for edge routing — closer to their primary actor's y-level, spread out to avoid clustering.
 
-2. **Actor placement:** Position actors at the vertical midpoint of their connected use cases (not at the top). This minimizes steep diagonal lines that cross other shapes.
+2. **System boundary:** Use `shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;` — NOT swimlane. All UCs use `parent="1"` (flat, not nested).
 
-3. **Edge style for actor↔use-case associations:** Use `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;endSize=6;` — orthogonal routing avoids cutting through intermediate ellipses. Do NOT use `edgeStyle=none` (straight lines) when there are 3+ use cases stacked vertically.
+3. **Actor style:** Use `shape=actor;whiteSpace=wrap;html=1;` — simple stick figure. NOT `shape=umlActor` or `shape=mxgraph.basic.person`.
 
-4. **`<<include>>` and `<<extend>>` edges:** Use `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endSize=6;` — NEVER override `strokeWidth` or `fillColor` on individual include/extend edges. Keep them visually consistent (thin, dashed).
+4. **Edge style for actor↔UC associations:** Use DEFAULT style (no `edgeStyle` attribute). Add `<Array as="points">` waypoints to route edges through corridors. Do NOT use `edgeStyle=orthogonalEdgeStyle` for actor→UC edges.
 
-5. **Minimum vertical gap between use case ellipses: 100px** (not 80px) — use cases are taller (70-80px) and need extra clearance for orthogonal edge routing between them.
+5. **WAYPOINTS ARE MANDATORY** for every actor→UC edge (except when actor and UC are directly aligned with no obstacles). Waypoints route edges through a "corridor" between actors and UCs to avoid crossing other nodes.
 
-6. **No redundant edges:** Do NOT add edges between use cases unless they represent `<<include>>`, `<<extend>>`, or generalization. A plain unlabeled edge between two use cases is invalid UML.
+6. **Corridor routing pattern:**
+   - Left actors (x≈50-60): corridor at x=160-200 (between actors and UCs)
+   - Right actors (x≈1000+): corridor at x=actor_x+40 (e.g., x=1060)
+   - Each edge goes: actor → waypoint in corridor → UC target
+   - Waypoint Y = approximately UC's center Y (route to UC's row level)
 
-7. **System boundary swimlane:** Use `swimlane;startSize=30;` for the system boundary rectangle. Place all use cases inside it with `parent="systemId"`.
+7. **Merge point technique:** When 2+ actors connect to the SAME UC, use the SAME waypoint coordinate so edges converge before entering the UC. Example: both actors route through `(220, 340)` to reach UC5.
 
-**Example layout (4 use cases, 1 actor left, 1 actor right):**
+8. **Direct line (no waypoints) allowed ONLY when:**
+   - Actor and UC are nearly horizontally aligned (same Y ±20px)
+   - No other node sits between them
+   - Use `<Array as="points"/>` (empty array) to signal intentional direct line
+
+9. **`<<include>>` and `<<extend>>` edges:** Use `edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;fontSize=9;fontStyle=2;` — orthogonal style is OK here because these connect UC-to-UC (not actor-to-UC). Add waypoints if needed to avoid crossing.
+
+10. **UML Notation Compliance — MANDATORY:**
+    - Actor→UC edges: ALWAYS solid line (`dashed` NOT set). This is UML "association".
+    - UC→UC `<<include>>`: dashed line + open arrow pointing to included UC
+    - UC→UC `<<extend>>`: dashed line + open arrow pointing to extended UC
+    - **NEVER use dashed lines from actor to UC** — this is not valid UML notation
+    - Automated/system UCs: mark with `dashed=1` on the **ellipse border** only (not on edges)
+    - Actor→UC edges have NO arrowhead (`endArrow` not set or default)
+
+10. **File format:** Always wrap in `<mxfile host="65bd71144e"><diagram id="..." name="Page-1"><mxGraphModel ...>` format. This is draw.io desktop standard.
+
+11. **Page size:** Use `pageWidth="1169" pageHeight="827"` (standard A3 landscape).
+
+12. **UC ellipse size:** `200×70` or `220×80` depending on label length.
+
+13. **Color coding by feature group:** Use consistent fill colors to group related UCs:
+    - Blue: `fillColor=#dae8fc;strokeColor=#6c8ebf`
+    - Green: `fillColor=#d5e8d4;strokeColor=#82b366`
+    - Yellow: `fillColor=#fff2cc;strokeColor=#d6b656`
+    - Purple: `fillColor=#e1d5e7;strokeColor=#9673a6`
+    - Dashed border for automated/system UCs: add `dashed=1;` to style
+
+14. **Auto-layout tool:** After creating the diagram, call `drawio_auto_layout` for verification. The tool will likely report issues because it does NOT understand waypoints. **Accept the result** — do NOT loop trying to fix. The waypoints ensure correct visual routing in draw.io.
+
+15. **When adding new edges causes crossing → MOVE UC positions first.** Do NOT just change waypoints. Reposition UCs to create clear paths, then set waypoints for the new route. Compact routing (short detour between existing UCs) is better than long detours around the entire diagram.
+
+16. **Waypoints are NOT limited to fixed corridors.** Use any intermediate point that avoids crossing — between two UCs vertically, around a cluster, etc. The corridor (x=160-200 for left, x=actor_x+40 for right) is a starting guideline, not a hard rule.
+
+17. **Legend must use actual color swatches** — small ellipses (16×12) with the same `fillColor`/`strokeColor` as the UCs they represent. NEVER use emoji (🔵🟢🟠🟣) or text-only color descriptions. Each legend entry = small colored ellipse + text label.
+
+**Example — correct use-case diagram structure:**
+```xml
+<mxfile host="65bd71144e">
+  <diagram id="uc-example" name="Page-1">
+    <mxGraphModel dx="1218" dy="549" grid="1" gridSize="10" ...>
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- System boundary: dashed rectangle, NOT swimlane -->
+        <mxCell id="2" value="System Name" style="shape=rectangle;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="40" width="720" height="610" as="geometry"/>
+        </mxCell>
+        <!-- Actor: simple shape=actor -->
+        <mxCell id="actor1" value="User" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="160" width="80" height="80" as="geometry"/>
+        </mxCell>
+        <!-- UC: flat parent="1", NOT nested in system boundary -->
+        <mxCell id="uc1" value="UC1: Do Something" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="70" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <!-- Edge WITH waypoint routing through corridor -->
+        <mxCell id="e1" style="" edge="1" source="actor1" target="uc1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="105"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
 ```
-Actor1 ──┐     ┌─────────────────────────────┐     ┌── Actor2
-          ├────│  UC1 (col=0, row=0)          │────┤
-          │    │                               │    │
-          ├────│  UC2 (col=0, row=1)          │────┘
-          │    │                               │
-          ├────│  UC3 (col=1, row=0)          │
-          │    │                               │
-          └────│  UC4 (col=1, row=1)          │
-               └─────────────────────────────┘
-```
 
-**Grid for use cases inside system boundary:**
-- `x = col * 220 + 80` (col 0 = 80, col 1 = 300)
-- `y = row * 120 + 50` (row 0 = 50, row 1 = 170, row 2 = 290)
-- Ellipse size: `200×70`
+**Waypoint calculation strategy:**
+- For left actor (x=50, center_y=200) connecting to UC at (x=280, center_y=105):
+  - Waypoint: `(170, 105)` — go to corridor x=170, at UC's y-level
+- For left actor connecting to UC far below (y=335):
+  - Waypoint: `(160, 335)` — corridor x=160, at UC's y-level
+- For right actor (x=1020) connecting to UC at (x=700, center_y=115):
+  - Waypoint: `(1060, 115)` — corridor x=1060 (actor_x+40), at UC's y-level
+- For right actor connecting to UC at different x (x=700, y=225):
+  - Waypoint: `(920, 180)` — intermediate point for cleaner routing
+
+**What NOT to do:**
+- ❌ Do NOT use `edgeStyle=orthogonalEdgeStyle` for actor→UC edges
+- ❌ Do NOT nest UCs inside swimlane (`parent="system"`)
+- ❌ Do NOT use grid layout (col*220, row*120)
+- ❌ Do NOT use `shape=umlActor` or `shape=mxgraph.basic.person`
+- ❌ Do NOT omit waypoints and rely on auto-routing for actor→UC edges
+- ❌ Do NOT loop fixing auto-layout tool issues — it doesn't understand waypoints
 
 ## Containers and groups
 

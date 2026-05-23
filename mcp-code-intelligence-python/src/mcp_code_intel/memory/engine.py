@@ -72,7 +72,10 @@ class MemoryEngine:
         # Apply V3 migrations (KSA-110)
         from .migrations_v3 import run_v3_migrations
         run_v3_migrations(self._conn)
-        _log("Schema initialized (V3 migrations applied)")
+        # Apply V4 migrations (agent_name)
+        from .migrations_v4 import run_v4_migrations
+        run_v4_migrations(self._conn)
+        _log("Schema initialized (V4 migrations applied)")
 
 
 def _log(msg: str) -> None:

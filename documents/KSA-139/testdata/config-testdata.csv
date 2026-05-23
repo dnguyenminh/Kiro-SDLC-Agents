@@ -1,0 +1,14 @@
+test_case_id,parameter,value,expected_valid,expected_error,description
+UT-12,inject_count,-1,false,Value must be between 0 and 20,Below minimum
+UT-12,inject_count,21,false,Value must be between 0 and 20,Above maximum
+UT-12,inject_count,0,true,,Minimum valid (disables injection)
+UT-12,inject_count,20,true,,Maximum valid
+UT-12,inject_count,5,true,,Default value
+UT-12,inject_count,abc,false,Value must be integer,Non-integer string
+UT-12,inject_count,,false,Value is required,Null/empty
+UT-23,inject_count,5,true,,Initial config value
+UT-23,inject_count,10,true,,Updated config value (hot-reload)
+IT-10,inject_count,5,true,,Real file — initial
+IT-10,inject_count,8,true,,Real file — after hot-reload
+E2E-API-06,inject_count,5,true,,E2E — initial config
+E2E-API-06,inject_count,3,true,,E2E — changed config

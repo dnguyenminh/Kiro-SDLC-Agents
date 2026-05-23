@@ -10,7 +10,7 @@ import { UnifiedRegistry } from './registry/index.js';
 import { RoutingTable, SmartRouter, ToolMetrics } from './routing/index.js';
 import { AutoLogger } from './logging/auto-logger.js';
 import { MetaToolDispatcher } from './meta/dispatcher.js';
-import { AdaptiveTokenCache } from './cache/index.js';
+import { AdaptiveTokenCache, KbCacheLookup, KbCacheWriter, KbCacheInvalidator, KbInjectionEngine, readKbCacheConfig, KbCacheConfig } from './cache/index.js';
 import { ModelManager } from './models/index.js';
 import { EmbeddingSearcher } from './embedding/index.js';
 
@@ -31,6 +31,11 @@ export class OrchestrationEngine {
   private tokenCache: AdaptiveTokenCache | null = null;
   private modelManager: ModelManager | null = null;
   private embeddingSearcher: EmbeddingSearcher | null = null;
+  private kbCacheLookup: KbCacheLookup | null = null;
+  private kbCacheWriter: KbCacheWriter | null = null;
+  private kbCacheInvalidator: KbCacheInvalidator | null = null;
+  private kbInjectionEngine: KbInjectionEngine | null = null;
+  private kbCacheConfig: KbCacheConfig | null = null;
 
   constructor(config: OrchestrationConfig, memoryEngine: any, appConfig: any) {
     this.config = config;
@@ -110,6 +115,47 @@ export class OrchestrationEngine {
   getModelManager(): ModelManager {
     if (!this.modelManager) this.modelManager = new ModelManager();
     return this.modelManager;
+  }
+
+  /** Get KB cache config (lazy-loaded, hot-reloadable). */
+  getKbCacheConfig(): KbCacheConfig {
+    if (!this.kbCacheConfig) {
+      const configPath = path.join(this.getWorkspace(), '.code-intel', 'orchestration.json');
+      this.kbCacheConfig = readKbCacheConfig(configPath);
+    }
+    return this.kbCacheConfig;
+  }
+
+  /** Get KB cache lookup (L2 → L1 cascade). */
+  getKbCacheLookup(): KbCacheLookup {
+    if (!this.kbCacheLookup) {
+      this.kbCacheLookup = new KbCacheLookup(this.memoryEngine, this.getKbCacheConfig());
+    }
+    return this.kbCacheLookup;
+  }
+
+  /** Get KB cache writer (async fire-and-forget). */
+  getKbCacheWriter(): KbCacheWriter {
+    if (!this.kbCacheWriter) {
+      this.kbCacheWriter = new KbCacheWriter(this.memoryEngine, this.getKbCacheConfig());
+    }
+    return this.kbCacheWriter;
+  }
+
+  /** Get KB cache invalidator. */
+  getKbCacheInvalidator(): KbCacheInvalidator {
+    if (!this.kbCacheInvalidator) {
+      this.kbCacheInvalidator = new KbCacheInvalidator(this.memoryEngine);
+    }
+    return this.kbCacheInvalidator;
+  }
+
+  /** Get KB injection engine for sub-agent prompt enrichment. */
+  getKbInjectionEngine(): KbInjectionEngine {
+    if (!this.kbInjectionEngine) {
+      this.kbInjectionEngine = new KbInjectionEngine(this.memoryEngine, this.getKbCacheConfig());
+    }
+    return this.kbInjectionEngine;
   }
 
   getStatus(): Record<string, any> {

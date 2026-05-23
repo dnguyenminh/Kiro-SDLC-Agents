@@ -27,6 +27,7 @@ TIER1_TOOLS = [
                 "type": {"type": "string", "description": "Type: DECISION, ERROR_PATTERN, ARCHITECTURE, API_DESIGN, REQUIREMENT, LESSON_LEARNED, PROCEDURE, CONTEXT"},
                 "source": {"type": "string", "description": "Source identifier (file path, ticket, etc)"},
                 "tags": {"type": "string", "description": "Comma-separated tags"},
+                "agent_name": {"type": "string", "description": "Agent name (SM, BA, SA, DEV, QA, DevOps, etc.)"},
             },
             "required": ["content"],
         },

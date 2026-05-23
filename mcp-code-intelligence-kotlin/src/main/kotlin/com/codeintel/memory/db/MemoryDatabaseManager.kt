@@ -4,6 +4,7 @@ package com.codeintel.memory.db
 import com.codeintel.db.DatabaseManager
 import com.codeintel.log
 import com.codeintel.memory.schema.runV3Migrations
+import com.codeintel.memory.schema.runV4Migrations
 import java.sql.Connection
 
 class MemoryDatabaseManager(private val db: DatabaseManager) {
@@ -14,7 +15,8 @@ class MemoryDatabaseManager(private val db: DatabaseManager) {
         applyMemorySchema()
         migrateAuditSchema()
         runV3Migrations(conn)
-        log("Memory schema initialized (V3 migrations applied)")
+        runV4Migrations(conn)
+        log("Memory schema initialized (V4 migrations applied)")
     }
 
     private fun applyMemorySchema() {

@@ -1,4 +1,4 @@
-"""Consolidated dispatcher — routes 14 tools + backward-compatible aliases."""
+"""Consolidated dispatcher — routes 17 tools + backward-compatible aliases."""
 
 from typing import Any
 
@@ -11,6 +11,9 @@ from .dispatcher_consolidated_handlers import (
     handle_citations,
     handle_scoring,
     handle_admin,
+    handle_pin,
+    handle_conversation,
+    handle_map,
 )
 
 
@@ -99,4 +102,7 @@ _HANDLERS = {
     "mem_citations": handle_citations,
     "mem_scoring": handle_scoring,
     "mem_admin": handle_admin,
+    "mem_pin": handle_pin,
+    "mem_conversation": handle_conversation,
+    "mem_map": handle_map,
 }

@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Jira workflow rules — link related tickets. Activate khi tạo/update Jira tickets.
+---
+
 # Jira Workflow Rules
 
 ## Quy tắc bắt buộc

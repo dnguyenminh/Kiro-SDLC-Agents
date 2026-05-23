@@ -1,0 +1,14 @@
+test_case_id,tool_name,agent_name,error_type,error_message,classification,expected_l1_action,expected_l2_action,description
+UT-07,old_tool,ba-agent,ToolNotFoundError,Tool 'old_tool' not found on server,PERMANENT,DELETE,DELETE,Permanent error → invalidate both
+UT-08,slow_tool,ba-agent,TimeoutError,Connection timed out after 30s,TRANSIENT,NONE,NONE,Transient error → keep cache
+UT-09,jira_search,ba-agent,ServerDisconnectedError,Server 'atlassian' disconnected,SERVER_LEVEL,DELETE_ALL(server),DELETE_ALL(server),Server disconnect → bulk invalidate
+UT-18,ghost_tool,ba-agent,ToolNotFoundError,Tool 'ghost_tool' not found,PERMANENT,NO-OP(not found),NO-OP(not found),Non-existent entry — no-op
+UT-21,schema_tool,ba-agent,SchemaMismatchError,Schema validation failed,PERMANENT,DELETE,DELETE,Schema mismatch → permanent
+UT-21,denied_tool,ba-agent,PermissionDeniedError,Access denied for tool,PERMANENT,DELETE,DELETE,Permission denied → permanent
+UT-22,timeout_tool,ba-agent,TimeoutError,Request timeout,TRANSIENT,NONE,NONE,Timeout → transient
+UT-22,refused_tool,ba-agent,ConnectionRefusedError,Connection refused,TRANSIENT,NONE,NONE,Connection refused → transient
+UT-22,limited_tool,ba-agent,RateLimitError,Rate limit exceeded,TRANSIENT,NONE,NONE,Rate limited → transient
+IT-04,old_tool,ba-agent,ToolNotFoundError,Tool removed from server,PERMANENT,DELETE,DELETE,Real KB invalidation flow
+E2E-API-02,removable_tool,ba-agent,ToolNotFoundError,Tool not found,PERMANENT,DELETE,DELETE,E2E invalidation + re-discovery
+E2E-API-04,slow_tool,ba-agent,TimeoutError,Timeout,TRANSIENT,NONE,NONE,E2E transient preservation
+E2E-API-10,atlassian_tool_1,ba-agent,ServerDisconnectedError,Server disconnected,SERVER_LEVEL,DELETE_ALL,DELETE_ALL,E2E bulk invalidation

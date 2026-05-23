@@ -1,0 +1,16 @@
+test_case_id,cache_type,key,value,ttl_ms,max_size,expected_result,expected_error,description
+TC-010,registry,key1,"{tools: [mem_pin mem_search]}",600000,,hit,,Cache hit — happy path
+TC-107,kb_search,expired-key,"{results: [...]}",300000,,miss,,Entry expired (TTL exceeded)
+TC-108,registry,nonexistent,,,,,miss,,Entry never stored
+TC-310,registry,new-key,"{value: new}",600000,5,eviction,,LRU eviction at max_size
+TC-311,registry,,,,,invalidated,,Registry cache cleared on event
+TC-312,registry,test-key,value,600000,,ttl_600s,,Default TTL registry=600s
+TC-312,kb_search,test-key,value,300000,,ttl_300s,,Default TTL kb_search=300s
+TC-312,code_intel,test-key,value,120000,,ttl_120s,,Default TTL code_intel=120s
+TC-406,invalid_type,key,value,,,error,Configuration error,Invalid cache type
+TC-409,registry,,,,100,accepted,,Max size at minimum boundary
+TC-409,registry,,,,99,rejected,,Max size below minimum
+TC-409,registry,,,,100000,accepted,,Max size at maximum boundary
+TC-409,registry,,,,100001,rejected,,Max size above maximum
+TC-602,registry,perf-key,value,600000,,latency_lt_1ms,,Performance: cache hit < 1ms
+TC-703,code_intel,,,,,invalidated,,Cache invalidated on file change

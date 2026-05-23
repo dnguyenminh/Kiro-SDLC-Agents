@@ -274,3 +274,196 @@ _ADMIN_ROUTES = {
     "recommendations": _admin_recommendations,
     "trends": _admin_trends,
 }
+
+
+# --- KSA-142: F1/F2/F3 handlers ---
+
+
+def handle_pin(disp: "MemoryToolDispatcherConsolidated", args: dict[str, Any]) -> str:
+    """Route mem_pin actions to CoreMemoryManager."""
+    from .core_memory import CoreMemoryManager
+
+    db = disp._v1._db
+    mgr = CoreMemoryManager(db)
+    action = args.get("action", "list")
+    entry_id = int(args.get("entry_id", 0))
+    if action == "pin":
+        return mgr.pin(entry_id)
+    if action == "unpin":
+        return mgr.unpin(entry_id)
+    if action == "list":
+        pinned = mgr.list_pinned()
+        if not pinned:
+            return "No pinned entries"
+        lines = [f"Pinned entries ({len(pinned)}):"]
+        for p in pinned:
+            lines.append(f"  #{p.id} (order={p.pin_order}, ~{p.tokens} tokens): {p.summary[:80]}")
+        return "\n".join(lines)
+    if action == "reorder":
+        order = int(args.get("order", 1))
+        return mgr.reorder(entry_id, order)
+    if action == "get_context":
+        ctx = mgr.get_context()
+        return ctx if ctx else "No pinned context"
+    if action == "budget":
+        status = mgr.get_budget_status()
+        return (
+            f"Budget: {status.used}/{status.max} tokens used, "
+            f"{status.remaining} remaining"
+            + (" ⚠️ WARNING" if status.warning else "")
+        )
+    return f"Unknown action: {action}"
+
+
+def handle_conversation(
+    disp: "MemoryToolDispatcherConsolidated", args: dict[str, Any]
+) -> str:
+    """Route mem_conversation actions to ConversationRepository."""
+    import json as json_mod
+
+    from .conversation_repo import ConversationRepository
+    from .conversation_summarizer import ConversationSummarizer
+
+    db = disp._v1._db
+    repo = ConversationRepository(db)
+    action = args.get("action", "list_sessions")
+
+    if action == "save_turn":
+        session_id = args.get("session_id", "")
+        role = args.get("role", "user")
+        content = args.get("content", "")
+        tool_calls_str = args.get("tool_calls")
+        tool_calls = json_mod.loads(tool_calls_str) if tool_calls_str else None
+        turn_id = repo.save_turn(session_id, role, content, tool_calls)
+        return f"Saved turn {turn_id} (session={session_id or 'auto'}, role={role})"
+
+    if action == "get_session":
+        session_id = args.get("session_id", "")
+        limit = int(args.get("limit", 100))
+        turns = repo.get_session(session_id, limit)
+        if not turns:
+            return f"No turns found for session: {session_id}"
+        lines = [f"Session {session_id} ({len(turns)} turns):"]
+        for t in turns:
+            lines.append(f"  [{t.role}] {t.content[:120]}")
+        return "\n".join(lines)
+
+    if action == "list_sessions":
+        limit = int(args.get("limit", 20))
+        sessions = repo.list_sessions(limit)
+        if not sessions:
+            return "No conversation sessions found"
+        lines = [f"Sessions ({len(sessions)}):"]
+        for s in sessions:
+            lines.append(
+                f"  {s.session_id}: {s.turn_count} turns, "
+                f"roles={','.join(s.roles)}, last={s.last_turn_at}"
+            )
+        return "\n".join(lines)
+
+    if action == "search":
+        query = args.get("query", "")
+        limit = int(args.get("limit", 20))
+        turns = repo.search_turns(query, limit)
+        if not turns:
+            return f"No turns matching: {query}"
+        lines = [f"Found {len(turns)} turns matching '{query}':"]
+        for t in turns:
+            lines.append(f"  [{t.session_id}/{t.role}] {t.content[:120]}")
+        return "\n".join(lines)
+
+    if action == "summarize":
+        session_id = args.get("session_id", "")
+        knowledge = disp._v1._knowledge_repo
+        summarizer = ConversationSummarizer(repo, knowledge)
+        result = summarizer.summarize_session(session_id)
+        if result is None:
+            return f"No turns to summarize for session: {session_id}"
+        return (
+            f"Summarized {result.turns_processed} turns → "
+            f"entry #{result.summary_entry_id}"
+        )
+
+    return f"Unknown action: {action}"
+
+
+def handle_map(disp: "MemoryToolDispatcherConsolidated", args: dict[str, Any]) -> str:
+    """Route mem_map actions to StructuredMapExtractor + EntityRepository."""
+    import json as json_mod
+
+    from .structured_map_extractor import (
+        EntityRepository,
+        StructuredMap,
+        extract_structured_map,
+    )
+
+    db = disp._v1._db
+    entity_repo = EntityRepository(db)
+    action = args.get("action", "get")
+    entry_id = int(args.get("entry_id", 0))
+
+    if action == "get":
+        cur = db.execute(
+            "SELECT structured_map FROM knowledge_entries WHERE id = ?", (entry_id,)
+        )
+        row = cur.fetchone()
+        if row is None:
+            return f"Error: entry {entry_id} not found"
+        return row[0] or "{}"
+
+    if action == "update":
+        partial_map = args.get("map", {})
+        cur = db.execute(
+            "SELECT structured_map FROM knowledge_entries WHERE id = ?", (entry_id,)
+        )
+        row = cur.fetchone()
+        if row is None:
+            return f"Error: entry {entry_id} not found"
+        existing = json_mod.loads(row[0] or "{}")
+        existing.update(partial_map)
+        db.execute(
+            "UPDATE knowledge_entries SET structured_map = ? WHERE id = ?",
+            (json_mod.dumps(existing), entry_id),
+        )
+        db.commit()
+        return f"Updated structured map for entry {entry_id}"
+
+    if action == "search_entity":
+        entity = args.get("entity", "")
+        limit = int(args.get("limit", 10))
+        entry_ids = entity_repo.find_by_entity(entity, limit)
+        if not entry_ids:
+            return f"No entries found for entity: {entity}"
+        return f"Entries mentioning '{entity}': {entry_ids}"
+
+    if action == "search_topic":
+        topic = args.get("topic", "")
+        limit = int(args.get("limit", 10))
+        cur = db.execute(
+            "SELECT id, structured_map FROM knowledge_entries "
+            "WHERE structured_map LIKE ? LIMIT ?",
+            (f"%{topic}%", limit),
+        )
+        ids = [row[0] for row in cur.fetchall()]
+        if not ids:
+            return f"No entries found for topic: {topic}"
+        return f"Entries with topic '{topic}': {ids}"
+
+    if action == "reextract":
+        cur = db.execute(
+            "SELECT content FROM knowledge_entries WHERE id = ?", (entry_id,)
+        )
+        row = cur.fetchone()
+        if row is None:
+            return f"Error: entry {entry_id} not found"
+        smap = extract_structured_map(row[0] or "")
+        db.execute(
+            "UPDATE knowledge_entries SET structured_map = ? WHERE id = ?",
+            (smap.to_json(), entry_id),
+        )
+        db.commit()
+        # Re-index entities
+        entity_repo.index_entities(entry_id, smap.entities_mentioned)
+        return f"Re-extracted map for entry {entry_id}: topic='{smap.topic}', entities={len(smap.entities_mentioned)}"
+
+    return f"Unknown action: {action}"

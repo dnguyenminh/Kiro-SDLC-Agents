@@ -1,0 +1,10 @@
+test_case_id,agent_name,inject_count,l2_tool_count,l1_tool_count,expected_injected_count,expected_order,description
+UT-10,ba-agent,5,8,10,5,"hits DESC: 25,20,15,12,10",Top-5 by hits from L2
+UT-11,new-agent,5,2,10,5,"2 from L2 + 3 from L1",Supplement from L1 when L2 insufficient
+UT-19,brand-new-agent,5,0,0,0,empty,No cached tools — empty injection
+UT-20,ba-agent,0,8,10,0,empty,Zero inject_count disables feature
+PBT-05,any-agent,{0-20},{0-50},{0-100},<=N,any,Property: never exceeds N
+IT-05,ba-agent,5,8,10,5,"hits DESC: 25,20,15,12,10",Real KB injection query
+IT-11,ba-agent,5,2,10,5,"2 L2 + 3 L1 (deduped)",Dedup shared tools
+E2E-API-03,ba-agent,5,8,10,5,"hits DESC top-5",Full E2E injection into prompt
+E2E-API-08,ba-agent,3,5,10,3,"D(10),E(7),B(5)",Hit ranking accuracy

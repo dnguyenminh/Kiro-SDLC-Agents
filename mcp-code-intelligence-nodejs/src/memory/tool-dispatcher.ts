@@ -146,7 +146,15 @@ export class MemoryToolDispatcher {
     const source = args.source as string | undefined;
     const tags = (args.tags as string) ?? '';
     const summary = (args.summary as string) ?? content.slice(0, 120);
+    const agentName = args.agent_name as string | undefined;
     const id = this.pipeline.ingestEntry(content, summary, type, source, tags);
+    if (agentName) {
+      try {
+        this.engine.db.prepare(
+          'UPDATE knowledge_entries SET agent_name = ? WHERE id = ?'
+        ).run(agentName, id);
+      } catch { /* must not break ingest */ }
+    }
     this.engine.audit.log('INGEST', id, this.engine.getSessionId() ?? undefined);
     this.autoOwnEntry(id, source);
     this.autoScoreEntry(id, content, tags);

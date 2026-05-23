@@ -1,0 +1,16 @@
+test_case_id,action,entry_id,entity,topic,expected_result,expected_error,description
+TC-008,search_entity,,AuthService,,matching_entries,,Search entity — happy path
+TC-008,search_entity,,authservice,,same_results,,Case-insensitive search (BR-16)
+TC-009,reextract,15,,,new_map,,Re-extract structured map
+TC-106,search_entity,,AuthServic,,empty_or_fuzzy,,Typo — suggest similar
+TC-205,search_entity,,,,error,Entity name is required,Empty entity string
+TC-206,reextract,9999,,,error,Entry 9999 not found,Non-existent entry
+TC-207,invalid_action,,,,error,Invalid action,Invalid action
+TC-308,get,{new_entry},,,entities_extracted,,Verify regex extraction of PascalCase
+TC-309,search_entity,,AuthService,,results,,Case variation test 1
+TC-309,search_entity,,AUTHSERVICE,,same_results,,Case variation test 2
+TC-405,search_entity,,{200_chars},,empty,,Entity at max length
+TC-405,search_entity,,{201_chars},,error,,Entity exceeds max length
+TC-702,search_entity,,CoreMemoryManager,,auto_extracted,,Verify auto-extract on ingest
+TC-804,search_entity,,CoreMemoryManager,,parity_check,,Python vs Node.js parity
+TC-805,search_entity,,AuthService,,parity_check,,Kotlin vs Node.js parity

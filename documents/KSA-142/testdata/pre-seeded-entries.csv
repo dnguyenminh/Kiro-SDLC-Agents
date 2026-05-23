@@ -1,0 +1,9 @@
+id,name,summary,type,tier,token_count,description
+1,Architecture Decision,SQLite architecture decision,DECISION,SEMANTIC,6,Base entry for parity tests
+2,Core Memory Docs,Core memory management,ARCHITECTURE,SEMANTIC,4,Entry with PascalCase entities
+3,Auth Flow,Auth flow documentation,PROCEDURE,SEMANTIC,4,Entry with auth-related content
+10,Pin Test Short,Short summary 10,CONTEXT,WORKING,3,Short entry for budget tests
+20,Pin Test Medium,Medium summary 20,CONTEXT,WORKING,4,Medium entry for budget tests
+30,Pin Test Long,Longer summary 30,CONTEXT,WORKING,5,Longer entry for budget tests
+42,Pin Unpin Target,Test entry 42,CONTEXT,WORKING,3,Primary target for pin/unpin operations
+99,Budget Overflow,This is a very long summary that contains approximately two hundred tokens worth of content to test the budget overflow scenario,CONTEXT,WORKING,200,Large entry to trigger budget overflow

@@ -1,0 +1,13 @@
+test_case_id,query,agent_name,seeded_scope,expected_source,expected_tool_name,expected_http_code,description
+UT-01,search jira issues,ba-agent,L2(ba-agent),l2_cache,jira_search,200,L2 hit — tool in agent scope
+UT-02,search knowledge base,qa-agent,L1(global),l1_cache,kb_search,200,L1 hit — tool in global scope only
+UT-03,deploy to production,devops-agent,NONE,None,,200,Full miss — no cache entry exists
+UT-13,search jira,ba-agent,L2(ba-agent),None,,200,KB unavailable — graceful fallback to find_tools
+UT-14,search,ba-agent,L2(ba-agent),None,,200,KB timeout >100ms — abandoned
+UT-15,search,ba-agent,L2(ba-agent) multiple,l2_cache,jira_search,200,Multiple matches — highest hit returned
+IT-01,search jira issues,ba-agent,L2(ba-agent),l2_cache,jira_search,200,Real KB — L2 hit with full metadata
+IT-02,analyze code,qa-agent,L1(global),l1_cache,code_analyze,200,Real KB — L1 hit after L2 miss
+IT-03,create jira issue,ba-agent,NONE,discovered,jira_create,200,Full miss → find_tools → auto-ingest
+IT-12,search jira,ba-agent,NONE then L2,l2_cache,jira_search,200,Second call served from cache
+E2E-API-01,search jira issues,ba-agent,NONE then L2,l2_cache,jira_search,200,Full lifecycle: discover → cache → reuse
+E2E-API-07,search jira,sa-agent,L1(global),l1_cache,jira_search,200,Per-agent scope isolation

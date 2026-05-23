@@ -1,0 +1,19 @@
+test_case_id,action,entry_id,order,expected_result,expected_error,description
+TC-001,pin,42,,success,,Pin entry 42 — happy path
+TC-002,get_context,,,context_string,,Auto-recall 3 pinned entries in order
+TC-003,unpin,42,,success,,Unpin entry 42
+TC-004,reorder,30,1,success,,Move entry 30 to position 1
+TC-100,pin,42,,already_pinned,Entry 42 is already pinned at position 2,Pin already-pinned entry
+TC-101,pin,99,,budget_exceeded,Cannot pin: entry uses 200 tokens only 100 remaining of 2000 budget,Budget overflow
+TC-102,get_context,,,empty,No pinned entries,Get context with nothing pinned
+TC-200,pin,9999,,error,Entry 9999 not found in knowledge base,Non-existent entry
+TC-201,pin,42,,error,Failed to pin entry. Database error.,DB write failure (read-only)
+TC-300,pin,{budget_fill},,success,,Fill budget to exactly 2000 tokens
+TC-301,pin,42,,success,,Verify atomic persist survives restart
+TC-302,reorder,{pos5},2,success,,Reorder shifts all affected positions
+TC-303,pin,{long_content},,success,,Budget uses summary tokens not content tokens
+TC-304,pin,1,,parity_check,,Compare JSON across Node.js/Python/Kotlin
+TC-400,pin,0,,error,,Invalid entry_id=0
+TC-400,pin,-1,,error,,Invalid entry_id=-1
+TC-401,,,,,action is required,Missing action parameter
+TC-407,reorder,{pos1},5,error,,Order exceeds total pinned count

@@ -1,8 +1,9 @@
 /** Quality page logic — stats, score distribution, low-quality table, citations. */
+var basePath = window.__MCP_BASE || '';
 
 async function loadQuality() {
   try {
-    const r = await fetch('/api/kb/quality');
+    const r = await fetch(basePath + '/api/kb/quality');
     const d = await r.json();
     renderStats(d);
     renderDist(d.distribution || d.score_distribution || {});
@@ -11,7 +12,7 @@ async function loadQuality() {
 
 async function loadLow() {
   try {
-    const r = await fetch('/api/kb/quality/low?threshold=40&limit=20');
+    const r = await fetch(basePath + '/api/kb/quality/low?threshold=40&limit=20');
     const entries = await r.json();
     const el = document.getElementById('low-table');
     const items = Array.isArray(entries) ? entries : (entries.entries || []);
@@ -60,7 +61,7 @@ function renderDist(dist) {
 
 async function loadCited() {
   try {
-    const r = await fetch('/api/kb/citations/most?limit=10');
+    const r = await fetch(basePath + '/api/kb/citations/most?limit=10');
     const items = await r.json();
     const el = document.getElementById('cited-table');
     const list = Array.isArray(items) ? items : (items.entries || []);

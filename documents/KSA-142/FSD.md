@@ -1,0 +1,1307 @@
+# Functional Specification Document (FSD)
+
+## MCP Code Intelligence — KSA-142: Feature Parity Sync — Đồng bộ 3 MCP Implementations (Python, Node.js, Kotlin)
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-142 |
+| Title | Feature Parity Sync — Đồng bộ 3 MCP implementations (Python, Node.js, Kotlin) |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-07-25 |
+| Status | Draft |
+| Related BRD | documents/KSA-142/BRD.md |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-07-25 | BA Agent | Initiate document from BRD KSA-142 |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior for porting missing features across the 3 MCP Code Intelligence implementations (Python, Node.js, Kotlin) to achieve 100% feature parity. It defines use cases, data flows, API contracts, processing logic, and data models for each feature being ported.
+
+### 1.2 Scope
+
+- **Port to Python & Kotlin:** Core Memory (Pinned Entries + Auto-Recall), Conversation History, Structured Map & Entity Index
+- **Port to Node.js:** Cache Layer for Orchestration, File Watcher (auto-reindex)
+- **Port to Node.js & Kotlin:** Viewer UI (Web Dashboard)
+- **Port to Kotlin:** Nested Detection (child MCP server discovery)
+
+All ported features must behave identically to their reference implementation. No new features are introduced.
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+|------|------------|
+| MCP | Model Context Protocol — standard for AI tool communication |
+| Core Memory | Pinned knowledge entries auto-recalled at session start |
+| Structured Map | Extracted metadata (entities, topics, decisions) from KB entries |
+| Nested Detection | Auto-discovery of child MCP servers exposing `find_tools` |
+| LRU | Least Recently Used — cache eviction strategy |
+| TTL | Time-To-Live — cache expiration duration |
+| SSE | Server-Sent Events — real-time push from server to client |
+| Debounce | Delay execution until a quiet period after last trigger |
+
+### 1.4 References
+
+| Document | Location |
+|----------|----------|
+| BRD | documents/KSA-142/BRD.md |
+| Node.js Core Memory | `mcp-code-intelligence-nodejs/src/memory/core-memory.ts` |
+| Node.js Conversation | `mcp-code-intelligence-nodejs/src/memory/conversation.ts` |
+| Node.js Structured Map | `mcp-code-intelligence-nodejs/src/memory/structured-map.ts` |
+| Python Cache Layer | `mcp-code-intelligence-python/src/mcp_code_intel/orchestration/cache/` |
+| Python Viewer UI | `mcp-code-intelligence-python/src/mcp_code_intel/viewer/` |
+| Node.js Nested Detection | `mcp-code-intelligence-nodejs/src/orchestration/nested-detection.ts` |
+
+---
+
+## 2. System Overview
+
+### 2.1 System Context Diagram
+
+![System Context](diagrams/system-context.png)
+*[Edit in draw.io](diagrams/system-context.drawio)*
+
+The system consists of 3 independent MCP server implementations that must expose identical tool interfaces:
+
+- **Python MCP Server** — currently has: Cache Layer, File Watcher, Viewer UI. Needs: Core Memory, Conversation History, Structured Map
+- **Node.js MCP Server** — currently has: Core Memory, Conversation History, Structured Map, Nested Detection. Needs: Cache Layer, File Watcher, Viewer UI
+- **Kotlin MCP Server** — currently has: Cache Layer, File Watcher. Needs: Core Memory, Conversation History, Structured Map, Viewer UI, Nested Detection
+
+External actors:
+- **AI Agent (Developer)** — calls MCP tools via any implementation
+- **Workspace Filesystem** — source files monitored by File Watcher
+- **SQLite Database** — backing store for all 3 implementations
+- **Child MCP Servers** — discovered by Nested Detection
+
+### 2.2 System Architecture
+
+![System Architecture](diagrams/architecture.png)
+*[Edit in draw.io](diagrams/architecture.drawio)*
+
+---
+
+## 3. Functional Requirements
+
+
+### 3.1 Feature: Core Memory (Pinned Entries + Auto-Recall)
+
+**Source:** BRD Story 1 | **Port to:** Python & Kotlin | **Reference:** Node.js `core-memory.ts`
+
+#### 3.1.1 Description
+
+Core Memory provides a mechanism to pin important knowledge entries so they are automatically included in the agent's context at session start. A CoreMemoryManager maintains a budget-constrained list of pinned entries (max 2000 tokens) with ordering and lifecycle management.
+
+#### 3.1.2 Use Case: UC-01 — Pin Entry to Core Memory
+
+**Use Case ID:** UC-01
+**Actor:** AI Agent
+**Preconditions:** MCP server running, knowledge entry exists in database
+**Postconditions:** Entry is pinned and will appear in auto-recall context
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_pin(action="pin", entry_id=42)` | | Agent requests to pin an entry |
+| 2 | | Validate entry exists | Check entry_id in knowledge base |
+| 3 | | Check budget | Calculate current pinned tokens + new entry tokens |
+| 4 | | Pin entry | Insert into pinned_entries table with next order position |
+| 5 | | Return success | Respond with pinned entry details and remaining budget |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Entry already pinned | Return current pin status without modification |
+| AF-2 | Budget would be exceeded | Return warning with current usage and entry size, do NOT pin |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Entry ID does not exist | Return error: "Entry not found: {entry_id}" |
+| EF-2 | Database write failure | Return error: "Failed to pin entry. Database error." |
+
+#### 3.1.3 Use Case: UC-02 — Auto-Recall Pinned Context
+
+**Use Case ID:** UC-02
+**Actor:** AI Agent (implicit on session start)
+**Preconditions:** Pinned entries exist
+**Postconditions:** Pinned content delivered to agent context
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_pin(action="get_context")` | | Agent requests pinned context |
+| 2 | | Load pinned entries | Query pinned_entries ordered by position |
+| 3 | | Assemble context | Concatenate entry summaries within 2000-token budget |
+| 4 | | Return context string | Deliver formatted pinned context |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | No pinned entries | Return empty string with message "No pinned entries" |
+| AF-2 | Total exceeds budget after entry edit | Truncate last entry, warn about overflow |
+
+#### 3.1.4 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-01 | Maximum pinned context budget: 2000 tokens | BRD Story 1 AC-2 |
+| BR-02 | Pin/unpin operations must be atomic and persist immediately | BRD Story 1 |
+| BR-03 | Pinned entries are ordered; reorder changes position of all affected entries | BRD Story 1 |
+| BR-04 | Auto-recall returns entries in pinned order (position ascending) | BRD Story 1 |
+| BR-05 | Budget check uses token count of entry summary, not full content | BRD Story 1 |
+| BR-06 | Behavior must match Node.js reference implementation exactly | BRD Story 1 AC-5 |
+
+#### 3.1.5 Data Specifications
+
+**Input Data:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| action | string | Yes | One of: pin, unpin, list, reorder, get_context, budget | Operation to perform |
+| entry_id | number | No | Positive integer, must exist in KB | Required for pin/unpin/reorder |
+| order | number | No | Positive integer, ≤ total pinned count | New position for reorder |
+
+**Output Data (action=get_context):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| context | string | Concatenated pinned entry summaries |
+| token_count | number | Total tokens in returned context |
+| budget_remaining | number | Tokens remaining in 2000-token budget |
+| entries_count | number | Number of pinned entries |
+
+**Output Data (action=list):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| entries | Array | Pinned entries with metadata |
+| entries[].entry_id | number | Knowledge entry ID |
+| entries[].position | number | Order position (1-based) |
+| entries[].summary | string | Entry summary text |
+| entries[].token_count | number | Tokens consumed by this entry |
+| total_tokens | number | Sum of all pinned entry tokens |
+| budget | number | Max budget (2000) |
+
+#### 3.1.6 API Contract (Functional View)
+
+**Tool:** `mem_pin`
+**Purpose:** Manage pinned entries for auto-recall context
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| action | string | Yes | BR-06 | One of: pin, unpin, list, reorder, get_context, budget |
+| entry_id | number | No | BR-01 | Entry to pin/unpin/reorder |
+| order | number | No | BR-03 | Target position for reorder |
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| success | boolean | Operation result |
+| message | string | Human-readable status |
+| data | object | Action-specific response data |
+
+**Business Error Scenarios:**
+
+| Scenario | User Message | Trigger Condition |
+|----------|-------------|-------------------|
+| Entry not found | "Entry {id} not found in knowledge base" | entry_id doesn't exist |
+| Budget exceeded | "Cannot pin: entry uses {n} tokens, only {m} remaining of 2000 budget" | BR-01 violated |
+| Invalid action | "Invalid action. Use: pin, unpin, list, reorder, get_context, budget" | action not in allowed set |
+| Already pinned | "Entry {id} is already pinned at position {pos}" | Duplicate pin attempt |
+
+#### 3.1.7 Sequence Diagram
+
+![Sequence - Core Memory](diagrams/sequence-core-memory.png)
+*[Edit in draw.io](diagrams/sequence-core-memory.drawio)*
+
+---
+
+### 3.2 Feature: Conversation History
+
+**Source:** BRD Story 2 | **Port to:** Python & Kotlin | **Reference:** Node.js `conversation.ts`
+
+#### 3.2.1 Description
+
+Conversation History preserves session context across interactions. Turns (user/assistant/system/tool messages) are grouped into sessions with metadata. Supports full-text search across sessions and session summarization.
+
+#### 3.2.2 Use Case: UC-03 — Save Conversation Turn
+
+**Use Case ID:** UC-03
+**Actor:** AI Agent
+**Preconditions:** MCP server running
+**Postconditions:** Turn persisted in database, session created if new
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_conversation(action="save_turn", session_id="s1", role="user", content="...")` | | Agent saves a turn |
+| 2 | | Validate input | Check role is valid, content non-empty |
+| 3 | | Resolve session | Find or create session by session_id |
+| 4 | | Persist turn | Insert turn with timestamp and sequence number |
+| 5 | | Return confirmation | Respond with turn_id and session metadata |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | session_id not provided | Auto-generate session_id from current date/time |
+| AF-2 | Session at max turns (1000) | Archive oldest turns, continue saving |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Invalid role value | Return error: "Invalid role. Use: user, assistant, system, tool" |
+| EF-2 | Content exceeds max length | Truncate to 10,000 chars with warning |
+
+#### 3.2.3 Use Case: UC-04 — Search Conversation History
+
+**Use Case ID:** UC-04
+**Actor:** AI Agent
+**Preconditions:** Conversation turns exist in database
+**Postconditions:** Matching turns returned
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_conversation(action="search", query="auth")` | | Agent searches conversations |
+| 2 | | Tokenize query | Prepare for FTS5 search |
+| 3 | | Execute search | Full-text search across all turns |
+| 4 | | Rank results | Order by relevance, limit to 20 |
+| 5 | | Return matches | Respond with matching turns and session context |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | No results found | Return empty array with suggestion to broaden query |
+| AF-2 | Query matches > 100 turns | Return top 20 with total count |
+
+#### 3.2.4 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-07 | Sessions are identified by session_id string (user-provided or auto-generated) | BRD Story 2 |
+| BR-08 | Turns within a session are ordered by sequence number (auto-increment) | BRD Story 2 |
+| BR-09 | Maximum 100 sessions before archival of oldest | BRD NFR |
+| BR-10 | Maximum 1000 turns per session before archival | BRD NFR |
+| BR-11 | Search uses SQLite FTS5 for full-text matching | BRD Story 2 AC-4 |
+| BR-12 | Behavior must match Node.js reference implementation exactly | BRD Story 2 AC-5 |
+
+#### 3.2.5 Data Specifications
+
+**Input Data:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| action | string | Yes | One of: save_turn, get_session, list_sessions, search, summarize | Operation |
+| session_id | string | No | Max 100 chars, alphanumeric + hyphens | Session identifier |
+| role | string | No | One of: user, assistant, system, tool | Turn role (required for save_turn) |
+| content | string | No | Max 10,000 chars | Turn content (required for save_turn) |
+| query | string | No | Non-empty, max 500 chars | Search query (required for search) |
+| tool_calls | string | No | Valid JSON array | Tool calls metadata |
+| limit | number | No | 1-100, default 20 | Max results for list/search |
+
+**Output Data (action=get_session):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| session_id | string | Session identifier |
+| created_at | string | ISO8601 session creation time |
+| turn_count | number | Total turns in session |
+| turns | Array | Ordered list of turns |
+| turns[].id | number | Turn ID |
+| turns[].role | string | user/assistant/system/tool |
+| turns[].content | string | Turn content |
+| turns[].timestamp | string | ISO8601 turn time |
+| turns[].tool_calls | Array | Tool calls if role=tool |
+
+#### 3.2.6 API Contract (Functional View)
+
+**Tool:** `mem_conversation`
+**Purpose:** Manage conversation history with session-based grouping
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| action | string | Yes | BR-12 | Operation to perform |
+| session_id | string | No | BR-07 | Session identifier |
+| role | string | No | BR-08 | Turn role |
+| content | string | No | | Turn content |
+| query | string | No | BR-11 | Search query |
+| tool_calls | string | No | | JSON tool calls |
+| limit | number | No | | Max results |
+
+**Business Error Scenarios:**
+
+| Scenario | User Message | Trigger Condition |
+|----------|-------------|-------------------|
+| Invalid action | "Invalid action. Use: save_turn, get_session, list_sessions, search, summarize" | Unknown action |
+| Session not found | "Session '{id}' not found" | get_session with non-existent ID |
+| Missing content | "Content is required for save_turn" | save_turn without content |
+| Invalid role | "Invalid role. Use: user, assistant, system, tool" | Unrecognized role |
+
+---
+
+### 3.3 Feature: Structured Map & Entity Index
+
+**Source:** BRD Story 3 | **Port to:** Python & Kotlin | **Reference:** Node.js `structured-map.ts`
+
+#### 3.3.1 Description
+
+Structured Map extracts and indexes metadata from knowledge entries — entities (class names, services, modules), topics, decisions, action items, and sentiment. The Entity Index enables searching knowledge by entity name or topic with relevance ranking.
+
+#### 3.3.2 Use Case: UC-05 — Search by Entity
+
+**Use Case ID:** UC-05
+**Actor:** AI Agent
+**Preconditions:** Knowledge entries exist with extracted structured maps
+**Postconditions:** Matching entries returned ranked by relevance
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_map(action="search_entity", entity="AuthService")` | | Agent searches by entity |
+| 2 | | Normalize entity name | Lowercase, trim whitespace |
+| 3 | | Query entity index | Find all entries referencing this entity |
+| 4 | | Rank results | Order by mention frequency and recency |
+| 5 | | Return matches | Respond with entry IDs, summaries, and context |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Entity not found | Return empty array with suggestion for similar entities |
+| AF-2 | Partial match | Return fuzzy matches with similarity score |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Empty entity string | Return error: "Entity name is required" |
+
+#### 3.3.3 Use Case: UC-06 — Re-extract Structured Map
+
+**Use Case ID:** UC-06
+**Actor:** AI Agent
+**Preconditions:** Entry exists, content may have been updated
+**Postconditions:** Structured map regenerated from current content
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Calls `mem_map(action="reextract", entry_id=15)` | | Agent requests re-extraction |
+| 2 | | Load entry content | Fetch full content from KB |
+| 3 | | Extract entities | NLP/regex extraction of class names, services, modules |
+| 4 | | Extract topics | Identify main topics from content |
+| 5 | | Extract decisions | Find decision patterns ("decided to", "chose", etc.) |
+| 6 | | Update structured map | Persist new map, update entity index |
+| 7 | | Return new map | Respond with extracted metadata |
+
+#### 3.3.4 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-13 | Entity extraction uses regex patterns for code identifiers (PascalCase, camelCase) | BRD Story 3 |
+| BR-14 | Topic extraction uses TF-IDF or keyword frequency analysis | BRD Story 3 |
+| BR-15 | Structured map is auto-extracted on entry ingest (not just on-demand) | BRD Story 3 |
+| BR-16 | Entity search is case-insensitive | BRD Story 3 AC-1 |
+| BR-17 | Topic search ranks by relevance (mention count × recency) | BRD Story 3 AC-4 |
+| BR-18 | Behavior must match Node.js reference implementation exactly | BRD Story 3 AC-5 |
+
+#### 3.3.5 Data Specifications
+
+**Input Data:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| action | string | Yes | One of: get, update, search_entity, search_topic, reextract | Operation |
+| entry_id | number | No | Positive integer, must exist | Required for get/update/reextract |
+| entity | string | No | Non-empty, max 200 chars | Entity name for search_entity |
+| topic | string | No | Non-empty, max 200 chars | Topic for search_topic |
+| map | object | No | Valid StructuredMap partial | For update action |
+| limit | number | No | 1-50, default 10 | Max results |
+
+**Output Data (action=get):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| entry_id | number | Entry identifier |
+| topic | string | Primary topic |
+| entities | Array\<string\> | Extracted entity names |
+| decisions | Array\<string\> | Extracted decisions |
+| action_items | Array\<string\> | Extracted action items |
+| sentiment | string | Overall sentiment (positive/neutral/negative) |
+| extracted_at | string | ISO8601 extraction timestamp |
+
+#### 3.3.6 API Contract (Functional View)
+
+**Tool:** `mem_map`
+**Purpose:** Manage structured metadata and entity index for knowledge entries
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| action | string | Yes | BR-18 | Operation to perform |
+| entry_id | number | No | | Entry ID for get/update/reextract |
+| entity | string | No | BR-16 | Entity name (case-insensitive search) |
+| topic | string | No | BR-17 | Topic to search |
+| map | object | No | | Partial map to merge on update |
+| limit | number | No | | Max results |
+
+**Business Error Scenarios:**
+
+| Scenario | User Message | Trigger Condition |
+|----------|-------------|-------------------|
+| Entry not found | "Entry {id} not found" | Invalid entry_id |
+| Empty search term | "Entity/topic name is required for search" | Missing entity/topic |
+| Invalid action | "Invalid action. Use: get, update, search_entity, search_topic, reextract" | Unknown action |
+
+---
+
+
+### 3.4 Feature: Cache Layer for Orchestration
+
+**Source:** BRD Story 4 | **Port to:** Node.js | **Reference:** Python `orchestration/cache/`
+
+#### 3.4.1 Description
+
+A multi-tier LRU cache with TTL-based expiration for the orchestration layer. Caches tool registry lookups, KB search results, and code intelligence queries. Invalidation is event-driven (registry change, KB ingest, file change).
+
+#### 3.4.2 Use Case: UC-07 — Cache Lookup (Hit)
+
+**Use Case ID:** UC-07
+**Actor:** Orchestration Layer (internal)
+**Preconditions:** Cache initialized, previous lookup stored
+**Postconditions:** Cached result returned, hit metrics updated
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Orchestration calls `cache.get(type, key)` | | Internal cache lookup |
+| 2 | | Check TTL | Verify entry not expired |
+| 3 | | Return cached value | Deliver stored result |
+| 4 | | Update LRU position | Move entry to front of LRU list |
+| 5 | | Increment hit counter | Update metrics |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Entry expired (TTL exceeded) | Remove entry, return cache miss, proceed to source |
+| AF-2 | Entry not found | Return cache miss, caller fetches from source and calls cache.set() |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Cache corrupted (memory error) | Reset cache partition, log warning, return miss |
+
+#### 3.4.3 Use Case: UC-08 — Cache Invalidation
+
+**Use Case ID:** UC-08
+**Actor:** System Event (tool registry change / KB ingest / file change)
+**Preconditions:** Cache has entries for affected type
+**Postconditions:** Stale entries removed
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Event emitted (e.g., "registry_changed") | | System event triggers invalidation |
+| 2 | | Identify affected cache type | Map event to cache partition |
+| 3 | | Clear partition | Remove all entries in affected cache type |
+| 4 | | Log invalidation | Record event for observability |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Selective invalidation possible | Only remove entries matching changed key pattern |
+
+#### 3.4.4 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-19 | Cache uses LRU eviction when max_size exceeded | BRD Story 4 AC-4 |
+| BR-20 | Each cache type has independent max_size and TTL configuration | BRD Story 4 |
+| BR-21 | Registry cache invalidated on tool register/unregister events | BRD Story 4 AC-3 |
+| BR-22 | KB search cache invalidated on any KB ingest/delete operation | BRD Story 4 |
+| BR-23 | Code intelligence cache invalidated on file watcher events | BRD Story 4 |
+| BR-24 | Default TTL: registry=600s, kb_search=300s, code_intel=120s | BRD Story 4 |
+| BR-25 | Default max_size: 1000 entries per cache type | BRD NFR |
+| BR-26 | Cache hit/miss metrics logged for observability | BRD Story 4 AC-5 |
+
+#### 3.4.5 Data Specifications
+
+**Cache Entry Structure:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| key | string | Yes | Non-empty, max 500 chars | Cache key (query hash or lookup key) |
+| value | any | Yes | Serializable | Cached result |
+| cache_type | string | Yes | One of: registry, kb_search, code_intel | Cache partition |
+| created_at | number | Yes | Unix timestamp ms | When entry was cached |
+| ttl_ms | number | Yes | Positive integer | Time-to-live in milliseconds |
+| last_accessed | number | Yes | Unix timestamp ms | For LRU ordering |
+| hit_count | number | Yes | Non-negative integer | Access counter |
+
+**Configuration:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| cache_type | string | Yes | registry / kb_search / code_intel | Partition identifier |
+| max_size | number | No | 100-100000, default 1000 | Max entries |
+| ttl_seconds | number | No | 10-86400 | Expiration time |
+| enabled | boolean | No | Default true | Enable/disable partition |
+
+#### 3.4.6 API Contract (Functional View)
+
+> Note: Cache layer is internal (not exposed as MCP tool). It is used by orchestration components.
+
+**Internal Interface:** `CacheManager`
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| get(type, key) | cache_type, key string | value \| null | Lookup with LRU update |
+| set(type, key, value) | cache_type, key, value | void | Store with TTL |
+| invalidate(type) | cache_type | void | Clear entire partition |
+| invalidateKey(type, key) | cache_type, key | void | Remove specific entry |
+| getStats() | none | CacheStats | Hit/miss/size metrics |
+
+**Business Error Scenarios:**
+
+| Scenario | Behavior | Trigger Condition |
+|----------|----------|-------------------|
+| Cache full | LRU eviction of oldest entry | max_size reached on set() |
+| Invalid cache type | Throw configuration error | Unknown type string |
+| Serialization failure | Skip caching, log warning | Value not serializable |
+
+#### 3.4.7 State Diagram: Cache Entry Lifecycle
+
+![State - Cache Entry](diagrams/state-cache-entry.png)
+*[Edit in draw.io](diagrams/state-cache-entry.drawio)*
+
+---
+
+### 3.5 Feature: File Watcher (Auto-Reindex)
+
+**Source:** BRD Story 5 | **Port to:** Node.js | **Reference:** Python implementation
+
+#### 3.5.1 Description
+
+Background file system watcher that monitors workspace source files for changes (create, modify, delete). On change detection, triggers incremental re-indexing of affected files with debouncing to batch rapid changes.
+
+#### 3.5.2 Use Case: UC-09 — File Change Detection and Re-index
+
+**Use Case ID:** UC-09
+**Actor:** Filesystem (external event)
+**Preconditions:** File watcher active, workspace path configured
+**Postconditions:** Code index updated for changed files
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | File modified on disk | | OS notifies watcher |
+| 2 | | Receive FS event | Capture file path and event type |
+| 3 | | Check include/exclude patterns | Verify file matches watch configuration |
+| 4 | | Add to change batch | Queue file for re-index |
+| 5 | | Wait debounce window (500ms) | Collect additional changes |
+| 6 | | Trigger incremental re-index | Process all queued files |
+| 7 | | Invalidate code_intel cache | Clear stale cache entries |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | File matches exclude pattern | Ignore event, no re-index |
+| AF-2 | Large batch (>50 files) | Trigger full re-index instead of incremental |
+| AF-3 | File deleted | Remove from index, no re-index needed |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Permission denied on file | Log warning, skip file, continue watching |
+| EF-2 | Watcher crashes | Auto-restart watcher after 5s delay |
+| EF-3 | Too many watchers (OS limit) | Reduce watch scope, log error |
+
+#### 3.5.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-27 | Debounce window: 500ms from last change before triggering re-index | BRD Story 5 |
+| BR-28 | Re-index must complete within 2 seconds of debounce expiry | BRD Story 5 AC-1 |
+| BR-29 | Batch threshold: >50 simultaneous changes triggers full re-index | BRD Story 5 AC-2 |
+| BR-30 | Default exclude patterns: node_modules/, .git/, dist/, build/, __pycache__/ | BRD Story 5 AC-3 |
+| BR-31 | Graceful degradation on permission errors (log and continue) | BRD Story 5 AC-4 |
+| BR-32 | File watcher uses chokidar (Node.js) or native fs.watch as fallback | BRD Story 5 |
+
+#### 3.5.4 Data Specifications
+
+**Configuration:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| enabled | boolean | No | Default true | Enable/disable watcher |
+| include_patterns | Array\<string\> | No | Valid glob patterns | Files to watch (default: **/*.{ts,js,py,kt,java}) |
+| exclude_patterns | Array\<string\> | No | Valid glob patterns | Files to ignore |
+| debounce_ms | number | No | 100-5000, default 500 | Debounce window |
+| batch_threshold | number | No | 10-1000, default 50 | Full re-index trigger |
+
+**File Change Event:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| path | string | Absolute file path |
+| event_type | string | create / modify / delete |
+| timestamp | number | Unix timestamp ms |
+
+#### 3.5.5 API Contract (Functional View)
+
+> Note: File Watcher is a background service, not an MCP tool. It integrates with the code indexer internally.
+
+**Internal Interface:** `FileWatcherService`
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| start(config) | WatcherConfig | void | Start watching workspace |
+| stop() | none | void | Stop all watchers |
+| getStatus() | none | WatcherStatus | Active/paused, files watched, last event |
+
+---
+
+### 3.6 Feature: Viewer UI (Web Dashboard)
+
+**Source:** BRD Story 6 | **Port to:** Node.js & Kotlin | **Reference:** Python `viewer/`
+
+#### 3.6.1 Description
+
+A web-based dashboard served from the MCP server that visualizes knowledge base state, memory statistics, cache metrics, and tool registry. Uses static HTML/JS files (shared from Python implementation) with a backend API for data. Real-time updates via SSE.
+
+#### 3.6.2 Use Case: UC-10 — View Knowledge Base Dashboard
+
+**Use Case ID:** UC-10
+**Actor:** Developer (human, via browser)
+**Preconditions:** Viewer UI enabled in configuration, MCP server running
+**Postconditions:** Dashboard displayed with current KB state
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Opens browser to configured port | | Developer navigates to dashboard URL |
+| 2 | | Serve static HTML/JS | Return index.html and assets |
+| 3 | | Frontend requests data | AJAX calls to /api/kb/entries, /api/stats |
+| 4 | | Return KB data | JSON response with entries, metadata |
+| 5 | | Render dashboard | Frontend displays entries, stats, charts |
+| 6 | | Establish SSE connection | Subscribe to real-time updates |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Viewer disabled (default) | Return 404 or refuse connection |
+| AF-2 | No KB entries | Display empty state with "No entries yet" message |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Port already in use | Log error, disable viewer, continue MCP server |
+| EF-2 | Static files missing | Return 500 with "Viewer assets not found" |
+
+#### 3.6.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-33 | Viewer UI is disabled by default (opt-in via config) | BRD Story 6 AC-4 |
+| BR-34 | Binds to localhost only (127.0.0.1) — no external access | BRD Risk mitigation |
+| BR-35 | Real-time updates via SSE on KB changes | BRD Story 6 AC-3 |
+| BR-36 | Shares Python's static HTML/JS files (same frontend) | BRD Story 6 |
+| BR-37 | No authentication required (localhost-only) | BRD Assumptions |
+| BR-38 | When disabled, zero resource consumption (no port, no threads) | BRD Story 6 AC-4 |
+
+#### 3.6.4 Data Specifications
+
+**Configuration:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| viewer_enabled | boolean | No | Default false | Enable viewer |
+| viewer_port | number | No | 1024-65535, default 8765 | HTTP port |
+| viewer_host | string | No | Default "127.0.0.1" | Bind address |
+
+**Dashboard API Endpoints (internal HTTP):**
+
+| Endpoint | Method | Response | Description |
+|----------|--------|----------|-------------|
+| /api/kb/entries | GET | Array of entries with metadata | List all KB entries |
+| /api/kb/stats | GET | {total, by_type, by_tier} | KB statistics |
+| /api/memory/stats | GET | {pinned, sessions, cache} | Memory subsystem stats |
+| /api/tools/registry | GET | Array of registered tools | Tool registry |
+| /api/events | GET (SSE) | Event stream | Real-time updates |
+
+#### 3.6.5 API Contract (Functional View)
+
+> Note: Viewer UI is an HTTP server, not an MCP tool. It serves a web dashboard.
+
+**SSE Event Types:**
+
+| Event | Data | Trigger |
+|-------|------|---------|
+| kb_entry_added | {entry_id, summary, type} | New entry ingested |
+| kb_entry_deleted | {entry_id} | Entry removed |
+| cache_invalidated | {cache_type} | Cache cleared |
+| tool_registered | {tool_name} | New tool added |
+
+---
+
+### 3.7 Feature: Nested Detection
+
+**Source:** BRD Story 7 | **Port to:** Kotlin | **Reference:** Node.js `nested-detection.ts`
+
+#### 3.7.1 Description
+
+Automatically discovers child MCP servers that expose the `find_tools` capability. Registers discovered tools in the parent's tool registry with server attribution. Handles child server lifecycle (connect, disconnect, reconnect) and propagates tool calls to the appropriate child.
+
+#### 3.7.2 Use Case: UC-11 — Discover Child MCP Server
+
+**Use Case ID:** UC-11
+**Actor:** System (on parent MCP server startup or child connection)
+**Preconditions:** Child MCP server running, exposes find_tools
+**Postconditions:** Child's tools registered in parent registry with attribution
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Child MCP server starts | | Child becomes available |
+| 2 | | Detect child connection | Parent discovers child via configured transport |
+| 3 | | Call child's find_tools | Query child for available tools |
+| 4 | | Register tools | Add child's tools to parent registry with server_name prefix |
+| 5 | | Monitor health | Start periodic health check for child |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | Child has no find_tools | Skip child, log info |
+| AF-2 | Child reconnects with new tools | Update registry (add new, remove stale) |
+| AF-3 | Multiple children | Process each independently, merge registries |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Child disconnects | Mark child's tools as unavailable, retry connection |
+| EF-2 | Child tool call fails | Return error with retry suggestion, mark tool degraded |
+| EF-3 | Child connection timeout | Log warning, skip child, retry after backoff |
+
+#### 3.7.3 Use Case: UC-12 — Propagate Tool Call to Child
+
+**Use Case ID:** UC-12
+**Actor:** AI Agent
+**Preconditions:** Child tool registered in parent registry
+**Postconditions:** Tool call executed on child, result returned to agent
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Agent calls tool (registered from child) | | Tool call arrives at parent |
+| 2 | | Identify target child | Lookup server attribution in registry |
+| 3 | | Forward call to child | Send tool call via MCP transport |
+| 4 | | Receive child response | Get result from child server |
+| 5 | | Return to agent | Deliver child's response to caller |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Child unavailable | Return error: "Tool unavailable — child server disconnected" |
+| EF-2 | Child timeout | Return error after 30s timeout, mark child degraded |
+
+#### 3.7.4 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-39 | Child tools are prefixed with server name in registry (e.g., "child1.tool_name") | BRD Story 7 AC-1 |
+| BR-40 | Health check interval: every 30 seconds per child | BRD Story 7 |
+| BR-41 | On child disconnect: mark tools unavailable, retry with exponential backoff | BRD Story 7 AC-2 |
+| BR-42 | On child reconnect: refresh tool list, update registry | BRD Story 7 AC-3 |
+| BR-43 | find_tools results include tools from all connected children | BRD Story 7 AC-4 |
+| BR-44 | Tool call timeout to child: 30 seconds | BRD Story 7 |
+| BR-45 | Maximum retry attempts on disconnect: 5 with exponential backoff (1s, 2s, 4s, 8s, 16s) | BRD Story 7 |
+
+#### 3.7.5 Data Specifications
+
+**Child Server Registration:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| server_id | string | Yes | Unique child identifier |
+| server_name | string | Yes | Human-readable name (used as tool prefix) |
+| transport | string | Yes | Connection type: stdio / http / websocket |
+| endpoint | string | Yes | Connection endpoint (path or URL) |
+| status | string | Yes | connected / disconnected / degraded |
+| tools | Array\<ToolDef\> | Yes | Tools exposed by this child |
+| last_health_check | string | Yes | ISO8601 timestamp |
+| retry_count | number | Yes | Current retry attempt count |
+
+**Tool Attribution:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| tool_name | string | Original tool name from child |
+| qualified_name | string | server_name.tool_name (registered in parent) |
+| server_id | string | Which child owns this tool |
+| available | boolean | Whether tool is currently callable |
+
+#### 3.7.6 API Contract (Functional View)
+
+> Note: Nested Detection is a background service. It enhances the existing `find_tools` tool and tool call routing.
+
+**Enhanced find_tools behavior:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| query | string | Yes | Search query — now searches parent AND child tools |
+| include_children | boolean | No | Default true — include child server tools |
+
+**Tool call routing:**
+
+When a tool call arrives for a qualified name (e.g., "child1.some_tool"):
+1. Parse server_name from qualified name
+2. Lookup child connection by server_name
+3. Forward original tool call to child
+4. Return child's response transparently
+
+---
+
+
+## 4. Data Model
+
+### 4.1 Entity Relationship Diagram
+
+![ER Diagram](diagrams/er-diagram.png)
+*[Edit in draw.io](diagrams/er-diagram.drawio)*
+
+### 4.2 Logical Entities
+
+#### Entity: PINNED_ENTRIES
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | integer | Yes | Auto-increment | Primary key |
+| entry_id | integer | Yes | BR-01, FK to knowledge_entries | Referenced KB entry |
+| position | integer | Yes | BR-03, BR-04 | Order position (1-based) |
+| token_count | integer | Yes | BR-05 | Tokens consumed by entry summary |
+| pinned_at | datetime | Yes | | When entry was pinned |
+
+#### Entity: CONVERSATION_TURNS
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | integer | Yes | Auto-increment | Primary key |
+| session_id | string | Yes | BR-07, FK to sessions | Session grouping |
+| role | string | Yes | BR-08 | user/assistant/system/tool |
+| content | text | Yes | Max 10,000 chars | Turn content |
+| tool_calls | json | No | | Tool call metadata |
+| sequence_num | integer | Yes | BR-08 | Order within session |
+| timestamp | datetime | Yes | | When turn was saved |
+
+#### Entity: STRUCTURED_MAPS
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | integer | Yes | Auto-increment | Primary key |
+| entry_id | integer | Yes | FK to knowledge_entries | Source entry |
+| topic | string | No | BR-14 | Primary extracted topic |
+| sentiment | string | No | | positive/neutral/negative |
+| decisions | json | No | | Array of extracted decisions |
+| action_items | json | No | | Array of extracted action items |
+| extracted_at | datetime | Yes | BR-15 | Extraction timestamp |
+
+#### Entity: ENTITIES (Index)
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | integer | Yes | Auto-increment | Primary key |
+| entry_id | integer | Yes | FK to knowledge_entries | Source entry |
+| entity_name | string | Yes | BR-13, BR-16 | Extracted entity (case-preserved, search case-insensitive) |
+| entity_type | string | No | | class/service/module/function |
+| mention_count | integer | Yes | BR-17 | Times entity appears in entry |
+
+#### Entity: CACHE_ENTRIES (in-memory, Node.js)
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| key | string | Yes | | Cache key (hash of query/lookup) |
+| cache_type | string | Yes | BR-20 | registry/kb_search/code_intel |
+| value | any | Yes | | Cached result (serialized) |
+| created_at | number | Yes | BR-24 | Unix timestamp ms |
+| last_accessed | number | Yes | BR-19 | For LRU ordering |
+| hit_count | number | Yes | BR-26 | Access counter |
+| ttl_ms | number | Yes | BR-24 | Expiration duration |
+
+#### Entity: CHILD_SERVERS (Kotlin)
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| server_id | string | Yes | | Unique identifier |
+| server_name | string | Yes | BR-39 | Used as tool prefix |
+| transport | string | Yes | | stdio/http/websocket |
+| endpoint | string | Yes | | Connection details |
+| status | string | Yes | BR-41 | connected/disconnected/degraded |
+| last_health_check | datetime | Yes | BR-40 | Last successful check |
+| retry_count | integer | Yes | BR-45 | Current retry attempts |
+
+**Relationships:**
+
+| From Entity | To Entity | Cardinality | Description |
+|-------------|-----------|-------------|-------------|
+| KNOWLEDGE_ENTRIES | PINNED_ENTRIES | 1:0..1 | Entry can be pinned once |
+| KNOWLEDGE_ENTRIES | STRUCTURED_MAPS | 1:1 | Each entry has one map |
+| KNOWLEDGE_ENTRIES | ENTITIES | 1:N | Entry can mention many entities |
+| SESSIONS | CONVERSATION_TURNS | 1:N | Session contains ordered turns |
+| CHILD_SERVERS | CHILD_TOOLS | 1:N | Server exposes multiple tools |
+
+---
+
+## 5. Integration Specifications
+
+### 5.1 Internal System: SQLite Database
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Persistent storage for Core Memory, Conversations, Structured Maps |
+| Direction | Bidirectional (read/write) |
+| Data Format | SQL (SQLite 3.x) |
+| Frequency | Real-time (on every tool call) |
+
+**Data Exchange:**
+
+| Our Data | DB Operation | Direction | Business Rule |
+|----------|-------------|-----------|---------------|
+| Pinned entries | INSERT/UPDATE/DELETE pinned_entries | Send | BR-02: atomic persist |
+| Conversation turns | INSERT conversation_turns | Send | BR-08: ordered |
+| Structured maps | INSERT/UPDATE structured_maps | Send | BR-15: auto on ingest |
+| Entity index | INSERT/DELETE entities | Send | BR-13: regex extraction |
+
+### 5.2 Internal System: File System (File Watcher)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Monitor source files for changes to trigger re-indexing |
+| Direction | Inbound (receive FS events) |
+| Data Format | OS filesystem events (inotify/FSEvents/ReadDirectoryChanges) |
+| Frequency | Real-time (event-driven) |
+
+**Data Exchange:**
+
+| Our Data | External Data | Direction | Business Rule |
+|----------|--------------|-----------|---------------|
+| Watch configuration | FS event subscription | Send | BR-30: exclude patterns |
+| File change batch | FS events (path, type) | Receive | BR-27: debounce 500ms |
+| Re-index trigger | Code indexer API | Send | BR-28: within 2s |
+
+### 5.3 Internal System: Child MCP Servers (Nested Detection)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Discover and proxy tools from child MCP servers |
+| Direction | Bidirectional (discover tools, forward calls) |
+| Data Format | MCP Protocol (JSON-RPC over stdio/HTTP/WebSocket) |
+| Frequency | Real-time (on tool calls) + periodic (health checks every 30s) |
+
+**Data Exchange:**
+
+| Our Data | External Data | Direction | Business Rule |
+|----------|--------------|-----------|---------------|
+| find_tools query | Child tool definitions | Receive | BR-43: include all children |
+| Tool call request | Child tool execution | Send/Receive | BR-44: 30s timeout |
+| Health check ping | Connection status | Send/Receive | BR-40: every 30s |
+
+### 5.4 Internal System: Viewer UI (HTTP)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Serve web dashboard for KB visualization |
+| Direction | Outbound (serve data to browser) |
+| Data Format | JSON (REST API) + HTML/JS (static files) + SSE (events) |
+| Frequency | On-demand (user opens browser) + real-time (SSE) |
+
+---
+
+## 6. Processing Logic
+
+### 6.1 Core Memory Auto-Recall Process
+
+**Trigger:** Agent session start (first tool call or explicit get_context)
+**Input:** Pinned entries from database
+**Output:** Formatted context string within 2000-token budget
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Query pinned_entries ORDER BY position ASC | Return empty on DB error |
+| 2 | For each entry: fetch summary from knowledge_entries | Skip entries with missing KB records |
+| 3 | Accumulate tokens until budget (2000) reached | Truncate last entry if partial fit |
+| 4 | Format as context string with entry separators | |
+| 5 | Return context + metadata (token_count, entries_count) | |
+
+### 6.2 Conversation Turn Persistence Process
+
+**Trigger:** `mem_conversation(action="save_turn")` called
+**Input:** session_id, role, content, tool_calls
+**Output:** Persisted turn with ID and timestamp
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Validate role ∈ {user, assistant, system, tool} | Return error on invalid role |
+| 2 | Find or create session by session_id | Auto-generate ID if not provided |
+| 3 | Get next sequence_num for session | SELECT MAX(sequence_num) + 1 |
+| 4 | INSERT turn with timestamp = now() | Retry once on DB lock |
+| 5 | Update session.last_activity and turn_count | |
+| 6 | Check session turn limit (1000) | Archive oldest 100 turns if exceeded |
+
+### 6.3 Entity Extraction Process
+
+**Trigger:** New KB entry ingested OR `mem_map(action="reextract")` called
+**Input:** Entry content text
+**Output:** Structured map with entities, topics, decisions
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Extract entities via regex: PascalCase, camelCase, UPPER_CASE identifiers | Return empty list on regex error |
+| 2 | Classify entities: class/service/module/function based on naming patterns | Default to "unknown" type |
+| 3 | Extract topics: keyword frequency analysis (TF-IDF lite) | Return "general" if no clear topic |
+| 4 | Extract decisions: pattern match "decided", "chose", "will use", "agreed" | Return empty if none found |
+| 5 | Determine sentiment: positive/neutral/negative keyword scoring | Default "neutral" |
+| 6 | Persist structured_map and entity index entries | Log error, don't fail ingest |
+
+### 6.4 Cache LRU Eviction Process
+
+**Trigger:** `cache.set()` called when partition at max_size
+**Input:** New entry to cache, current cache state
+**Output:** Oldest entry evicted, new entry stored
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Check current size vs max_size | |
+| 2 | If at capacity: find entry with oldest last_accessed | |
+| 3 | Remove evicted entry from cache map | |
+| 4 | Insert new entry with created_at = now(), last_accessed = now() | |
+| 5 | Update metrics (eviction_count++) | |
+
+### 6.5 Nested Detection Discovery Process
+
+**Trigger:** Parent MCP server startup OR new child connection detected
+**Input:** Child server transport configuration
+**Output:** Child tools registered in parent registry
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Establish connection to child via configured transport | Retry with backoff on failure |
+| 2 | Send MCP initialize handshake | Timeout after 10s, mark disconnected |
+| 3 | Call child's find_tools("*") to discover all tools | Skip child if find_tools not available |
+| 4 | For each tool: register as "{server_name}.{tool_name}" in parent | Skip duplicate names |
+| 5 | Start health check timer (30s interval) | |
+| 6 | On health check failure: increment retry_count | After 5 retries: mark disconnected |
+
+### 6.6 File Watcher Debounce Process
+
+**Trigger:** File system event received
+**Input:** File path and event type
+**Output:** Batched re-index trigger
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Receive FS event (path, type: create/modify/delete) | Ignore if path matches exclude |
+| 2 | Add to pending changes Set (dedup by path) | |
+| 3 | Reset debounce timer to 500ms | |
+| 4 | On timer expiry: check batch size | |
+| 5a | If batch ≤ 50: trigger incremental re-index for each file | Log errors per file, continue |
+| 5b | If batch > 50: trigger full workspace re-index | Log if full re-index fails |
+| 6 | Clear pending changes Set | |
+| 7 | Emit "code_intel_invalidated" event (for cache) | |
+
+---
+
+## 7. Security Requirements
+
+### 7.1 Authentication & Authorization
+
+| Role | Permissions | Features |
+|------|-------------|----------|
+| Any MCP client | Full access to all tools | mem_pin, mem_conversation, mem_map, find_tools |
+| Local browser user | Read-only dashboard | Viewer UI (GET endpoints only) |
+
+No authentication required — all components run locally on developer's machine.
+
+### 7.2 Data Sensitivity Classification
+
+| Data Type | Classification | Business Requirement |
+|-----------|---------------|---------------------|
+| Conversation content | Internal | May contain code snippets — workspace-local only |
+| Pinned entries | Internal | Developer's important context — local only |
+| Entity index | Internal | Code structure metadata — local only |
+| Cache entries | Internal | Transient, auto-expires — in-memory only |
+| Child server credentials | Internal | Transport endpoints — config file only |
+
+### 7.3 Audit Trail
+
+| Event | Logged Fields | Retention | Business Reason |
+|-------|--------------|-----------|-----------------|
+| Entry pinned/unpinned | entry_id, action, timestamp | Session lifetime | Debug context issues |
+| Session created | session_id, timestamp | Until archival | Track conversation history |
+| Cache invalidation | cache_type, reason, timestamp | 24 hours | Performance debugging |
+| Child server connect/disconnect | server_id, status, timestamp | 7 days | Connectivity troubleshooting |
+
+---
+
+## 8. Non-Functional Requirements
+
+| Category | Business Requirement | Acceptance Criteria |
+|----------|---------------------|---------------------|
+| Performance | Core Memory auto-recall | < 5ms to load pinned entries on session start |
+| Performance | Conversation search | < 50ms for FTS5 search across all sessions |
+| Performance | Cache hit latency | < 1ms for in-memory cache lookups |
+| Performance | File watcher response | Re-index within 2s of debounce expiry |
+| Performance | Nested Detection tool call | < 30s timeout for child tool execution |
+| Storage | Conversation history | Max 100 sessions, 1000 turns/session before archival |
+| Storage | Cache size | Default 1000 entries per partition, configurable |
+| Storage | Entity index | No explicit limit (grows with KB) |
+| Reliability | Schema migration | Reversible, no data loss on upgrade |
+| Reliability | File watcher | Graceful degradation on permission errors |
+| Reliability | Nested Detection | Auto-reconnect with exponential backoff |
+| Compatibility | Cross-platform | Windows, macOS, Linux for all 3 implementations |
+| Compatibility | Feature parity | Identical MCP tool schemas across Python/Node.js/Kotlin |
+| Compatibility | SQLite version | 3.35+ (for FTS5 and JSON functions) |
+
+---
+
+## 9. Error Handling (User-Facing)
+
+### 9.1 Error Scenarios
+
+| Scenario | Severity | User Message | Expected Behavior |
+|----------|----------|-------------|-------------------|
+| Pin budget exceeded | Warning | "Cannot pin: {n} tokens needed, {m} remaining" | Entry not pinned, user can unpin others |
+| Entry not found | Error | "Entry {id} not found in knowledge base" | Operation aborted, no side effects |
+| Session not found | Warning | "Session '{id}' not found" | Return empty, suggest list_sessions |
+| Cache corrupted | Info | (silent — auto-reset) | Cache cleared, operations continue |
+| File watcher permission denied | Warning | (logged only) | Skip file, continue watching others |
+| Child server disconnected | Warning | "Tool unavailable — server '{name}' disconnected" | Suggest retry, auto-reconnect in background |
+| Child server timeout | Error | "Tool call timed out after 30s" | Return error, mark child degraded |
+| Viewer port in use | Info | (logged only) | Viewer disabled, MCP server continues |
+| DB migration failure | Critical | "Schema migration failed — see logs" | Server refuses to start, manual intervention needed |
+
+### 9.2 Notification Requirements
+
+| Event | Who is Notified | Channel | Timing |
+|-------|----------------|---------|--------|
+| Schema migration applied | Developer | stderr log | On server startup |
+| Child server disconnected | AI Agent | Tool call error response | On next tool call to child |
+| Cache invalidation | Developer | stderr log (debug level) | Immediate |
+| File watcher restart | Developer | stderr log | On auto-restart |
+
+---
+
+## 10. Testing Considerations
+
+### 10.1 Test Scenarios
+
+| ID | Scenario | Input | Expected Output | Priority |
+|----|----------|-------|-----------------|----------|
+| TC-01 | Pin entry within budget | mem_pin(action="pin", entry_id=1) | Entry pinned, position assigned | High |
+| TC-02 | Pin entry exceeding budget | Pin when 1900/2000 tokens used, entry=200 tokens | Error: budget exceeded | High |
+| TC-03 | Auto-recall returns ordered entries | mem_pin(action="get_context") with 3 pinned | Context string in position order | High |
+| TC-04 | Unpin entry | mem_pin(action="unpin", entry_id=1) | Entry removed, positions reordered | High |
+| TC-05 | Reorder pinned entries | mem_pin(action="reorder", entry_id=3, order=1) | Entry moved to position 1 | Medium |
+| TC-06 | Save conversation turn | mem_conversation(action="save_turn", ...) | Turn persisted with sequence_num | High |
+| TC-07 | Get session with all turns | mem_conversation(action="get_session", session_id="s1") | All turns in order | High |
+| TC-08 | Search conversations | mem_conversation(action="search", query="auth") | Matching turns returned | High |
+| TC-09 | List sessions | mem_conversation(action="list_sessions") | All sessions with metadata | Medium |
+| TC-10 | Search entity | mem_map(action="search_entity", entity="AuthService") | Entries mentioning entity | High |
+| TC-11 | Re-extract structured map | mem_map(action="reextract", entry_id=15) | New map generated | Medium |
+| TC-12 | Cache hit | cache.get("registry", "key1") after set | Cached value returned | High |
+| TC-13 | Cache miss (expired) | cache.get() after TTL | null returned | High |
+| TC-14 | Cache LRU eviction | Fill cache to max, add one more | Oldest entry evicted | High |
+| TC-15 | Cache invalidation on event | Emit "registry_changed" | Registry cache cleared | High |
+| TC-16 | File change triggers re-index | Modify .ts file | Index updated within 2s | High |
+| TC-17 | File watcher debounce | 10 rapid changes | Single batched re-index | High |
+| TC-18 | File watcher excludes node_modules | Change in node_modules/ | No re-index triggered | Medium |
+| TC-19 | Viewer dashboard loads | GET http://localhost:8765/ | HTML page returned | Medium |
+| TC-20 | Viewer SSE updates | Ingest KB entry while dashboard open | SSE event received | Medium |
+| TC-21 | Nested detection discovers child | Start child with find_tools | Child tools in parent registry | High |
+| TC-22 | Child disconnect handling | Kill child process | Tools marked unavailable, retry starts | High |
+| TC-23 | Child reconnect updates registry | Restart child with new tool | Registry updated | High |
+| TC-24 | Tool call forwarded to child | Call child1.some_tool | Executed on child, result returned | High |
+| TC-25 | Python parity with Node.js | Same mem_pin calls on both | Identical responses | Critical |
+| TC-26 | Kotlin parity with Node.js | Same mem_conversation calls on both | Identical responses | Critical |
+
+---
+
+## 11. Appendix
+
+### Diagrams
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Sequence: Core Memory Pin Flow | [sequence-core-memory.png](diagrams/sequence-core-memory.png) | [sequence-core-memory.drawio](diagrams/sequence-core-memory.drawio) |
+| 3 | State: Cache Entry Lifecycle | [state-cache-entry.png](diagrams/state-cache-entry.png) | [state-cache-entry.drawio](diagrams/state-cache-entry.drawio) |
+
+### Change Log from BRD
+
+- Added detailed Use Cases with Main/Alternative/Exception flows for all 7 features
+- Specified internal interfaces for Cache Layer and File Watcher (not MCP tools)
+- Added Viewer UI HTTP API endpoints specification
+- Specified Nested Detection health check and retry logic
+- Added entity extraction algorithm details (regex patterns, TF-IDF)
+- Quantified all timeouts and thresholds from BRD NFRs
+- Added 26 test scenarios covering all features and parity validation
+

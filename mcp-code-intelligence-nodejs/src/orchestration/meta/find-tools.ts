@@ -2,12 +2,14 @@
  * FindToolsTool — semantic search across all registered tools + KB + nested delegates.
  * KSA-66: Nested delegation — delegates to child orchestrators for lazy discovery.
  * KSA-102: Adaptive Token Cache (Tier 2) + Embedding Search (Tier 3).
+ * KSA-139: KB-backed 2-Level Agent Tool Cache (Tier 0 — checked first).
  * Behavioral parity with Python find_tools.py.
  */
 
 import { OrchestrationEngine } from '../engine.js';
 import { RegisteredTool } from '../registry/grouper.js';
 import { tokenize } from '../registry/tokenizer.js';
+import { CacheSource } from '../cache/index.js';
 
 /** Execute tokenized search for tools matching query. */
 export function executeFindTools(engine: OrchestrationEngine, args: Record<string, any>): string {
@@ -109,6 +111,11 @@ function retryFailedServersSync(engine: OrchestrationEngine): boolean {
 export async function executeFindToolsAsync(engine: OrchestrationEngine, args: Record<string, any>): Promise<string> {
   const query = args.query;
   if (!query) return JSON.stringify({ error: "Missing 'query'" });
+  const agentName = args.agent_name ?? 'default';
+
+  // Tier 0: KB-backed 2-Level Cache (KSA-139) — fastest path
+  const kbCacheResult = await searchKbCache(engine, query, agentName);
+  if (kbCacheResult) return kbCacheResult;
 
   let registryResults = engine.getRegistry().search(query);
 
@@ -234,6 +241,33 @@ function searchKb(engine: OrchestrationEngine, query: string): RegisteredTool[] 
     return resolveKbResults(engine, results);
   } catch {
     return [];
+  }
+}
+
+/** Tier 0: KB-backed 2-Level Agent Tool Cache (KSA-139). */
+async function searchKbCache(engine: OrchestrationEngine, query: string, agentName: string): Promise<string | null> {
+  try {
+    const lookup = engine.getKbCacheLookup();
+    const result = await lookup.find(query, agentName);
+    if (!result) return null;
+
+    const { entry, source } = result;
+    // Try to resolve from registry for full definition
+    const tool = engine.getRegistry().find(entry.toolName);
+    if (tool) {
+      return JSON.stringify([tool.definition]);
+    }
+    // If not in registry, build definition from cache entry
+    return JSON.stringify([{
+      name: entry.toolName,
+      description: entry.description,
+      inputSchema: entry.inputSchema,
+      _source: source,
+      _server: entry.serverName,
+    }]);
+  } catch (e: any) {
+    console.error(`[find_tools] KB cache error: ${e.message}`);
+    return null;
   }
 }
 

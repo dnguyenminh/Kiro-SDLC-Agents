@@ -1,0 +1,10 @@
+test_case_id,tool_name,server_name,agent_name,source,initial_hits,expected_l1_action,expected_l2_action,expected_final_hits,description
+UT-04,jira_create,atlassian,ba-agent,discovered,0,CREATE(hits=1),CREATE(hits=1),1,New tool → ingest L1+L2
+UT-05,code_search,code-intel,dev-agent,l1_cache,5,INCREMENT(hits=6),CREATE(hits=1),6,L1 tool → create L2 + increment L1
+UT-06,kb_ingest,kb-server,ba-agent,l2_cache,10,NONE,INCREMENT(hits=11),11,L2 hit → increment only
+UT-16,jira_search,atlassian,ba-agent,discovered,5,INCREMENT(hits=6),INCREMENT(hits=6),6,Dedup — same tool re-ingested
+UT-17,new_tool,mock-server,ba-agent,discovered,0,FAIL(KB error),FAIL(KB error),0,Ingest failure — non-blocking
+IT-03,jira_create,atlassian,ba-agent,discovered,0,CREATE(hits=1),CREATE(hits=1),1,Real KB — full ingest flow
+IT-07,tool_{1-10},various,ba-agent,discovered,0,CREATE,CREATE,1,Concurrent writes — 10 tools
+IT-08,popular_tool,code-intel,ba-agent,l2_cache,0,NONE,INCREMENT(hits=20),20,Concurrent hit increments
+E2E-API-01,jira_search,atlassian,ba-agent,discovered,0,CREATE(hits=1),CREATE(hits=1),1,E2E lifecycle ingest

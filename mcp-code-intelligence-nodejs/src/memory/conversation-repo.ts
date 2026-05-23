@@ -33,13 +33,14 @@ export class ConversationRepository {
 
   /** Save a conversation turn. Returns turn ID. */
   saveTurn(sessionId: string, role: string, content: string, toolCalls?: object[], metadata?: object): number {
-    const turnNumber = this.getNextTurnNumber(sessionId);
+    const sid = sessionId || `session-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;
+    const turnNumber = this.getNextTurnNumber(sid);
     const stmt = this.db.prepare(
       `INSERT INTO conversation_turns (session_id, turn_number, role, content, tool_calls, metadata)
        VALUES (?, ?, ?, ?, ?, ?)`
     );
     const result = stmt.run(
-      sessionId, turnNumber, role, content,
+      sid, turnNumber, role, content,
       toolCalls ? JSON.stringify(toolCalls) : null,
       metadata ? JSON.stringify(metadata) : null
     );

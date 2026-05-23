@@ -1,0 +1,117 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="Sequence: mem_pin (Core Memory Pin Flow)" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="150" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_agent" value="AI Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_mcp" value="MCP Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_cm" value="CoreMemory&#xa;Manager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="380" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_db" value="SQLite DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="540" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="l_agent" style="dashed=1;endArrow=none;html=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="90" as="sourcePoint"/>
+        <mxPoint x="110" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_mcp" style="dashed=1;endArrow=none;html=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="90" as="sourcePoint"/>
+        <mxPoint x="270" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_cm" style="dashed=1;endArrow=none;html=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="90" as="sourcePoint"/>
+        <mxPoint x="430" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_db" style="dashed=1;endArrow=none;html=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="90" as="sourcePoint"/>
+        <mxPoint x="590" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m1" value="mem_pin(action=pin, entry_id=42)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="120" as="sourcePoint"/>
+        <mxPoint x="270" y="120" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="pin(entry_id=42)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="150" as="sourcePoint"/>
+        <mxPoint x="430" y="150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="SELECT * FROM entries WHERE id=42" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="180" as="sourcePoint"/>
+        <mxPoint x="590" y="180" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="entry data" style="html=1;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="210" as="sourcePoint"/>
+        <mxPoint x="430" y="210" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="SELECT SUM(tokens) FROM pinned_entries" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="250" as="sourcePoint"/>
+        <mxPoint x="590" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="current_total = 1200" style="html=1;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="280" as="sourcePoint"/>
+        <mxPoint x="430" y="280" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note1" value="Budget check:&#xa;1200 + entry.tokens &lt; 2000?" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=9;size=10;" vertex="1" parent="1">
+      <mxGeometry x="440" y="295" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="m7" value="INSERT INTO pinned_entries(...)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="350" as="sourcePoint"/>
+        <mxPoint x="590" y="350" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="OK" style="html=1;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="380" as="sourcePoint"/>
+        <mxPoint x="430" y="380" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="{success: true, remaining: 600}" style="html=1;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="410" as="sourcePoint"/>
+        <mxPoint x="270" y="410" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="Pin confirmed (budget: 600 remaining)" style="html=1;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="440" as="sourcePoint"/>
+        <mxPoint x="110" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="alt_box" value="alt [Budget Exceeded]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#c62828;dashed=1;fontSize=9;verticalAlign=top;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="380" y="460" width="250" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="m11" value="Error: budget exceeded" style="html=1;endSize=6;fontSize=10;dashed=1;strokeColor=#c62828;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="430" y="490" as="sourcePoint"/>
+        <mxPoint x="270" y="490" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

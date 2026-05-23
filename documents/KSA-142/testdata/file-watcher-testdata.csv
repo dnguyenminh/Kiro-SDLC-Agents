@@ -1,0 +1,7 @@
+test_case_id,event_type,file_path,debounce_ms,batch_size,expected_result,description
+TC-011,modify,src/test-file.ts,500,,reindex_triggered,Single file change triggers re-index
+TC-109,modify,node_modules/lodash/index.js,500,,ignored,Excluded pattern — no re-index
+TC-110,modify,src/file_{1-55}.ts,500,55,full_reindex,Large batch triggers full re-index
+TC-208,modify,/restricted/file.ts,500,,warning_logged,Permission denied — graceful degradation
+TC-313,modify,src/a.ts + src/b.ts + src/c.ts,500,,single_batch,3 changes within debounce — single batch
+TC-603,modify,src/perf-test.ts,500,,reindex_lt_2s,Performance: re-index within 2 seconds

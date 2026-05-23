@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Python MCP Orchestration architecture reference. Activate when debugging orchestration, find_tools, or execute_dynamic_tool issues.
+---
+
 # Python MCP Orchestration — Architecture Guide
 
 ## Overview

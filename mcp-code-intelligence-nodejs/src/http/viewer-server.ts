@@ -117,7 +117,11 @@ export class ViewerServer {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const ct = filename.endsWith('.css') ? 'text/css' : 'application/javascript';
-      res.writeHead(200, { 'Content-Type': ct + '; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': ct + '; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      });
       res.end(content);
     } catch { this.send404(res); }
   }

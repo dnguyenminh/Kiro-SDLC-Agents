@@ -1,8 +1,9 @@
 /** Tags page logic — tag cloud, taxonomy tree, search by tag. */
+var basePath = window.__MCP_BASE || '';
 
 async function loadPopular() {
   try {
-    const r = await fetch('/api/kb/tags/popular?limit=30');
+    const r = await fetch(basePath + '/api/kb/tags/popular?limit=30');
     const tags = await r.json();
     const el = document.getElementById('cloud');
     const max = Math.max(...tags.map(t => t.usage_count || 1), 1);
@@ -19,7 +20,7 @@ async function loadPopular() {
 
 async function loadTaxonomy() {
   try {
-    const r = await fetch('/api/kb/tags');
+    const r = await fetch(basePath + '/api/kb/tags');
     const data = await r.json();
     const el = document.getElementById('tree');
     if (Array.isArray(data) && data.length) {
@@ -47,7 +48,7 @@ function renderNode(node) {
 async function searchTag(tag) {
   document.getElementById('search-tag').value = tag;
   try {
-    const r = await fetch('/api/kb/tags/popular?limit=50');
+    const r = await fetch(basePath + '/api/kb/tags/popular?limit=50');
     const all = await r.json();
     const match = all.find(t => t.tag === tag);
     const el = document.getElementById('results');
@@ -56,7 +57,7 @@ async function searchTag(tag) {
         + `<span class="type">${e.type || 'CONTEXT'}</span> `
         + `${esc(e.summary || '')}</div>`).join('');
     } else {
-      const sr = await fetch('/api/memory/search?q=' + encodeURIComponent(tag));
+      const sr = await fetch(basePath + '/api/memory/search?q=' + encodeURIComponent(tag));
       const entries = await sr.json();
       el.innerHTML = entries.slice(0, 10).map(e => `<div class="entry">`
         + `<span class="type">${e.type || 'CONTEXT'}</span> `
@@ -79,7 +80,7 @@ function debounceAC(q) {
 
 async function fetchAC(q) {
   try {
-    const r = await fetch('/api/kb/suggestions?q=' + encodeURIComponent(q) + '&limit=8');
+    const r = await fetch(basePath + '/api/kb/suggestions?q=' + encodeURIComponent(q) + '&limit=8');
     const items = await r.json();
     const el = document.getElementById('ac-list');
     if (!items.length) { hideAC(); return; }

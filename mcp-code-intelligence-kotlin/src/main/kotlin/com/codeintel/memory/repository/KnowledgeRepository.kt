@@ -104,6 +104,16 @@ class KnowledgeRepository(private val db: MemoryDatabaseManager) {
         }
     }
 
+    /** Update agent_name for an entry. */
+    fun updateAgentName(id: Long, agentName: String) {
+        val sql = "UPDATE knowledge_entries SET agent_name = ? WHERE id = ?"
+        db.conn.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, agentName)
+            stmt.setLong(2, id)
+            stmt.executeUpdate()
+        }
+    }
+
     /** Increment access count and update last_accessed_at. */
     fun recordAccess(id: Long) {
         val sql = """

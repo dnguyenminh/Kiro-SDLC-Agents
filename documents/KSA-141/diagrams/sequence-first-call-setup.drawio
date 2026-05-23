@@ -1,0 +1,108 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="AI Client&#xa;(Claude Desktop)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;newEdgeStyle={&quot;edgeStyle&quot;:&quot;elbowEdgeStyle&quot;,&quot;elbow&quot;:&quot;vertical&quot;,&quot;curved&quot;:0,&quot;rounded&quot;:0};" vertex="1" parent="1">
+      <mxGeometry x="120" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="MCP Server" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;" vertex="1" parent="1">
+      <mxGeometry x="380" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Core Engine" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;" vertex="1" parent="1">
+      <mxGeometry x="620" y="40" width="120" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="User" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;" vertex="1" parent="1">
+      <mxGeometry x="860" y="40" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="1. initialize()" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="180" y="120" as="sourcePoint" />
+        <mxPoint x="440" y="120" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="11" value="capabilities (incl. setup_configure tool)" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="150" as="sourcePoint" />
+        <mxPoint x="180" y="150" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="12" value="2. tools/call(mem_search, {query: &quot;test&quot;})" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="180" y="200" as="sourcePoint" />
+        <mxPoint x="440" y="200" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="13" value="3. Check config → NOT FOUND" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="240" as="sourcePoint" />
+        <mxPoint x="680" y="240" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="14" value="config missing" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="680" y="270" as="sourcePoint" />
+        <mxPoint x="440" y="270" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="15" value="4. Return setup prompt (isError: false)" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="310" as="sourcePoint" />
+        <mxPoint x="180" y="310" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="16" value="5. Present setup questions" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="180" y="360" as="sourcePoint" />
+        <mxPoint x="910" y="360" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="6. User provides answers" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="910" y="400" as="sourcePoint" />
+        <mxPoint x="180" y="400" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" value="7. tools/call(setup_configure, {workspace, provider...})" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="180" y="450" as="sourcePoint" />
+        <mxPoint x="440" y="450" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="19" value="8. Validate + write config" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="490" as="sourcePoint" />
+        <mxPoint x="680" y="490" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="9. Initialize engine" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="530" as="sourcePoint" />
+        <mxPoint x="680" y="530" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="21" value="engine ready (40+ tools)" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="680" y="560" as="sourcePoint" />
+        <mxPoint x="440" y="560" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="22" value="10. &quot;✅ Setup complete! 42 tools ready.&quot;" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="600" as="sourcePoint" />
+        <mxPoint x="180" y="600" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="23" value="11. Retry: tools/call(mem_search, {query: &quot;test&quot;})" style="" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="180" y="650" as="sourcePoint" />
+        <mxPoint x="440" y="650" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="24" value="12. Normal result" style="dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="440" y="680" as="sourcePoint" />
+        <mxPoint x="180" y="680" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

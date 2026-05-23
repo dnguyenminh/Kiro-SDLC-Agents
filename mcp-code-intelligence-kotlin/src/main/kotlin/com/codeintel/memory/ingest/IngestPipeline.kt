@@ -69,6 +69,11 @@ class IngestPipeline(
         return id
     }
 
+    /** Update agent_name for a knowledge entry after ingest. */
+    fun updateAgentName(id: Long, agentName: String) {
+        knowledgeRepo.updateAgentName(id, agentName)
+    }
+
     /** Set quality score on entry after ingest. */
     private fun trySetQualityScore(id: Long, content: String, tags: String, type: String, source: String?) {
         val gate = qualityGate ?: return
