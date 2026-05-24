@@ -1,0 +1,102 @@
+<mxfile host="65bd71144e">
+    <diagram id="d1" name="Page-1">
+        <mxGraphModel dx="628" dy="708" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Component Diagram — KSA-120 Extension v2.0.0&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="10" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_core" value="&lt;b&gt;Extension Core&lt;/b&gt;&#10;extension.ts&#10;activate() / deactivate()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="60" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="cmd_reg" value="&lt;b&gt;CommandRegistry&lt;/b&gt;&#10;registerCommand() x13&#10;handleInjectAll()&#10;handleOpenPanel()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="180" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_mgr" value="&lt;b&gt;McpServerManager&lt;/b&gt;&#10;(Singleton)&#10;spawn() / kill() / restart()&#10;invokeTool(name, args)&#10;onStatusChange: Event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="180" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="panel_mgr" value="&lt;b&gt;WebviewPanelManager&lt;/b&gt;&#10;(Singleton)&#10;openPanel(type)&#10;getPanel(type)&#10;disposeAll()&#10;notifyAllPanels(msg)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="180" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="base_panel" value="&lt;b&gt;BasePanel&lt;/b&gt; (abstract)&#10;create() / reveal() / dispose()&#10;sendMessage(msg)&#10;getHtml() [abstract]&#10;loadData() [abstract]&#10;handleMessage() [abstract]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="340" width="220" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="graph_panel" value="&lt;b&gt;GraphPanel&lt;/b&gt;&#10;Three.js + 3d-force-graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="570" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="dash_panel" value="&lt;b&gt;DashboardPanel&lt;/b&gt;&#10;Chart.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="570" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="tags_panel" value="&lt;b&gt;TagsPanel&lt;/b&gt;&#10;DOM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="570" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="quality_panel" value="&lt;b&gt;QualityPanel&lt;/b&gt;&#10;Chart.js + DOM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="660" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="analytics_panel" value="&lt;b&gt;AnalyticsPanel&lt;/b&gt;&#10;Chart.js + DOM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="660" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="tree_provider" value="&lt;b&gt;TreeViewProvider&lt;/b&gt;&#10;getTreeItem()&#10;getChildren()&#10;refresh()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="300" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="html_engine" target="tree_provider">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="html_engine" value="&lt;b&gt;HtmlTemplateEngine&lt;/b&gt;&#10;getHtml(viewType, nonce)&#10;getScriptUri()&#10;getStyleUri()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="530" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="msg_handler" value="&lt;b&gt;MessageHandler&lt;/b&gt;&#10;handleMessage(msg)&#10;routeToMcp()&#10;routeToPanel()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="340" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="injector" value="&lt;b&gt;Injector&lt;/b&gt;&#10;(existing, unchanged)&#10;injectAll() / safeUpdate()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="650" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_injector" value="&lt;b&gt;McpInjector&lt;/b&gt;&#10;(enhanced)&#10;injectBundledConfig()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="650" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="ext_core" target="cmd_reg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="ext_core" target="mcp_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="ext_core" target="panel_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" parent="1" source="panel_mgr" target="base_panel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="extends" style="rounded=1;html=1;endArrow=block;endSize=12;endFill=0;fontSize=10;" parent="1" source="graph_panel" target="base_panel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="extends" style="rounded=1;html=1;endArrow=block;endSize=12;endFill=0;fontSize=10;" parent="1" source="dash_panel" target="base_panel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="extends" style="rounded=1;html=1;endArrow=block;endSize=12;endFill=0;fontSize=10;" parent="1" source="tags_panel" target="base_panel" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="subscribes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" parent="1" source="tree_provider" target="mcp_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="500" y="320"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e9" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" parent="1" source="base_panel" target="html_engine" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="350" y="430"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e10" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" parent="1" source="base_panel" target="msg_handler" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" value="invokeTool()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="msg_handler" target="mcp_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

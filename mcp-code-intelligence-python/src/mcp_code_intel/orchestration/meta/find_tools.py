@@ -21,12 +21,27 @@ _DELEGATE_EXECUTOR = concurrent.futures.ThreadPoolExecutor(
 
 
 def execute(engine: "OrchestrationEngine", args: dict) -> str:
-    """Search registry + cache + embedding + KB + nested delegates, return top 10."""
+    """Tiered waterfall search: KB Cache → Registry → Token Cache → Embedding → Delegate → KB.
+
+    Each tier only runs if previous tiers miss. This ensures:
+    - Fastest path wins (KB cache 0ms > registry 0ms > embedding 10-50ms > delegate 45s)
+    - Self-learning: embedding hits get cached for future instant lookups
+    - Delegate is a fallback, not a default path
+
+    Tier order: 0 (KB Cache) → 1 (Registry) → 2 (Token Cache) → 3 (Embedding) → 4 (Delegation) → 5 (KB fallback)
+    """
     query = args.get("query")
     if not query:
         return json.dumps({"error": "Missing 'query'"})
 
-    # Tier 1: Registry search (tokenized matching)
+    agent_name: str = args.get("agent_name", "default")
+
+    # Tier 0: KB Cache (agent-specific learned tool mappings, ~0ms)
+    kb_cache_result = _search_kb_cache(engine, query, agent_name)
+    if kb_cache_result:
+        return kb_cache_result
+
+    # Tier 1: Registry search (tokenized matching, ~0ms)
     registry_results = engine.get_registry().search(query)
 
     # If no results from registry, try recovering FAILED servers (lazy retry)
@@ -35,31 +50,24 @@ def execute(engine: "OrchestrationEngine", args: dict) -> str:
         if recovered:
             registry_results = engine.get_registry().search(query)
 
-    # Tier 4: ALWAYS delegate to nested find_tools (lazy discovery — must run every time)
-    delegates = engine.get_find_tools_delegates()
-    nested_results = _delegate_to_nested(engine, query) if delegates else []
+    if registry_results:
+        return json.dumps([t.definition for t in registry_results[:10]])
 
-    # Merge registry + nested (deduplicate by name)
-    seen = {t.definition.get("name", t.name) for t in registry_results}
-    all_definitions = [t.definition for t in registry_results]
-    for tool_def in nested_results:
-        name = tool_def.get("name", "")
-        if name and name not in seen:
-            seen.add(name)
-            all_definitions.append(tool_def)
-
-    if all_definitions:
-        return json.dumps(all_definitions[:10])
-
-    # Tier 2: Adaptive Token Cache (KSA-102)
+    # Tier 2: Adaptive Token Cache (~0ms, learned from previous embedding hits)
     cache_result = _search_cache(engine, query)
     if cache_result:
         return cache_result
 
-    # Tier 3: Embedding Search (KSA-102)
+    # Tier 3: Embedding Search (~10-50ms, semantic similarity)
     embedding_result = _search_embedding(engine, query)
     if embedding_result:
         return embedding_result
+
+    # Tier 4: Delegate to nested find_tools (expensive, up to 45s)
+    delegates = engine.get_find_tools_delegates()
+    nested_results = _delegate_to_nested(engine, query) if delegates else []
+    if nested_results:
+        return json.dumps(nested_results[:10])
 
     # Tier 5: KB fallback
     kb_results = _search_kb(engine, query)
@@ -72,6 +80,38 @@ def execute(engine: "OrchestrationEngine", args: dict) -> str:
         return json.dumps({"tools": [], "_hint": hint})
 
     return json.dumps([])
+
+
+def _search_kb_cache(engine: "OrchestrationEngine", query: str, agent_name: str) -> str | None:
+    """Tier 0: Search KB cache for agent-specific learned tool mappings."""
+    try:
+        lookup = getattr(engine, 'get_kb_cache_lookup', None)
+        if lookup is None:
+            return None
+        kb_cache = lookup()
+        if kb_cache is None:
+            return None
+        hits = kb_cache.find(query, agent_name)
+        if not hits:
+            return None
+        # Sort by hits DESC and resolve tool definitions
+        sorted_hits = sorted(hits, key=lambda h: getattr(h, 'hit_count', 0), reverse=True)
+        definitions: list[dict] = []
+        registry = engine.get_registry()
+        for hit in sorted_hits:
+            tool_name = getattr(hit, 'tool_name', None) or (hit.get('tool_name') if isinstance(hit, dict) else None)
+            if not tool_name:
+                continue
+            tool = registry.find(tool_name)
+            if tool is not None:
+                definitions.append(tool.definition)
+        if definitions:
+            _log(f"KB cache hit: '{query}' agent={agent_name} → {len(definitions)} tools")
+            return json.dumps(definitions[:10])
+        return None
+    except Exception as e:
+        _log(f"KB cache search error: {e}")
+        return None
 
 
 def _search_cache(engine: "OrchestrationEngine", query: str) -> str | None:

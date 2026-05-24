@@ -1,17 +1,14 @@
-"""KSA-84: KB Health Dashboard & Metrics."""
+"""KSA-84: KB Health Dashboard & Metrics.
+
+Uses unified formula consistent across NodeJS/Python/Kotlin:
+  total_entries = COUNT(*) FROM knowledge_entries (no filters)
+  stale_count = updated_at < -90 days
+  unowned_count = source IS NULL OR source = ''
+  health_score = qualityAvg * 0.4 + staleRatio * 0.3 + ownedRatio * 0.3
+"""
 
 import sqlite3
 from typing import Any
-
-
-# Health score weights
-HEALTH_WEIGHTS = {
-    "quality_avg": 0.25,
-    "freshness": 0.20,
-    "coverage": 0.20,
-    "engagement": 0.15,
-    "governance": 0.20,
-}
 
 
 class HealthDashboard:
@@ -22,35 +19,57 @@ class HealthDashboard:
 
     def get_dashboard(self) -> dict[str, Any]:
         """Get full health dashboard with all metrics."""
-        metrics = self._compute_metrics()
-        health_score = self._compute_health_score(metrics)
-        recommendations = self._generate_recommendations(metrics)
+        total = self._count_entries()
+        quality_avg = self._quality_avg()
+        stale_count = self._count_stale()
+        unowned_count = self._count_unowned()
+
+        stale_ratio = (1 - stale_count / total) * 100 if total > 0 else 100
+        owned_ratio = (1 - unowned_count / total) * 100 if total > 0 else 100
+        health_score = 0 if total == 0 else round(
+            min(quality_avg, 100) * 0.4 + stale_ratio * 0.3 + owned_ratio * 0.3
+        )
+
+        recommendations = self._generate_recommendations(
+            total, quality_avg, stale_count, unowned_count
+        )
         trends = self.get_trends(7)
+
         return {
             "health_score": health_score,
-            "total_entries": metrics["total_entries"],
-            "quality_avg": metrics["quality"].get("average", 0),
-            "stale_count": metrics["freshness"].get("stale_count", 0),
-            "unowned_count": metrics["governance"].get("unowned", 0),
-            "recommendations": [
-                {"message": r["action"], "priority": r["priority"]}
-                for r in recommendations
-            ],
+            "total_entries": total,
+            "quality_avg": round(min(quality_avg, 100), 1),
+            "stale_count": stale_count,
+            "unowned_count": unowned_count,
+            "recommendations": recommendations,
             "trends": {
-                "search_volume": trends.get("search_volume", {}),
-                "ingest_volume": trends.get("ingest_volume", {}),
+                "search_volume": trends.get("search_volume", []),
+                "ingest_volume": trends.get("ingest_volume", []),
             },
-            "metrics": metrics,
         }
 
     def get_metrics(self) -> dict[str, Any]:
-        """Get raw metrics without recommendations."""
-        return self._compute_metrics()
+        """Get raw metrics."""
+        total = self._count_entries()
+        quality_avg = self._quality_avg()
+        stale_count = self._count_stale()
+        unowned_count = self._count_unowned()
+        return {
+            "total_entries": total,
+            "quality_avg": round(quality_avg, 1),
+            "stale_count": stale_count,
+            "unowned_count": unowned_count,
+        }
 
     def get_recommendations(self) -> list[dict[str, Any]]:
         """Get actionable recommendations only."""
-        metrics = self._compute_metrics()
-        return self._generate_recommendations(metrics)
+        total = self._count_entries()
+        quality_avg = self._quality_avg()
+        stale_count = self._count_stale()
+        unowned_count = self._count_unowned()
+        return self._generate_recommendations(
+            total, quality_avg, stale_count, unowned_count
+        )
 
     def get_trends(self, days: int = 30) -> dict[str, Any]:
         """Get trend data over time period."""
@@ -58,213 +77,83 @@ class HealthDashboard:
             "period_days": days,
             "search_volume": self._search_trend(days),
             "ingest_volume": self._ingest_trend(days),
-            "quality_trend": self._quality_trend(),
         }
 
-    def _compute_metrics(self) -> dict[str, Any]:
-        """Compute all health metrics."""
-        return {
-            "total_entries": self._count_entries(),
-            "archived_entries": self._count_archived(),
-            "quality": self._quality_metrics(),
-            "freshness": self._freshness_metrics(),
-            "coverage": self._coverage_metrics(),
-            "engagement": self._engagement_metrics(),
-            "governance": self._governance_metrics(),
-        }
-
-    def _compute_health_score(self, metrics: dict) -> float:
-        """Compute overall health score (0-100)."""
-        scores = {
-            "quality_avg": metrics["quality"].get("average", 50),
-            "freshness": metrics["freshness"].get("fresh_pct", 50),
-            "coverage": metrics["coverage"].get("score", 50),
-            "engagement": metrics["engagement"].get("score", 50),
-            "governance": metrics["governance"].get("score", 50),
-        }
-        total = sum(scores[k] * HEALTH_WEIGHTS[k] for k in HEALTH_WEIGHTS)
-        return round(min(total, 100.0), 1)
-
-    def _generate_recommendations(self, metrics: dict) -> list[dict[str, Any]]:
+    def _generate_recommendations(
+        self, total: int, quality_avg: float, stale_count: int, unowned_count: int
+    ) -> list[dict[str, Any]]:
         """Generate actionable recommendations."""
-        recs = []
-        quality = metrics["quality"]
-        if quality.get("average", 100) < 60:
+        recs: list[dict[str, Any]] = []
+        if quality_avg < 60:
             recs.append({
                 "priority": "high",
-                "area": "quality",
-                "action": f"Improve {quality.get('low_count', 0)} low-quality entries",
-                "impact": "Increases search reliability",
+                "message": "Improve low-quality entries",
             })
-
-        freshness = metrics["freshness"]
-        if freshness.get("stale_pct", 0) > 30:
+        if total > 0 and stale_count / total > 0.3:
             recs.append({
                 "priority": "high",
-                "area": "freshness",
-                "action": f"Review {freshness.get('stale_count', 0)} stale entries",
-                "impact": "Reduces outdated information",
+                "message": f"Review {stale_count} stale entries",
             })
-
-        governance = metrics["governance"]
-        if governance.get("unowned_pct", 0) > 50:
+        if total > 0 and unowned_count / total > 0.5:
             recs.append({
                 "priority": "medium",
-                "area": "governance",
-                "action": f"Assign owners to {governance.get('unowned', 0)} entries",
-                "impact": "Improves accountability",
+                "message": f"Assign owners to {unowned_count} entries",
             })
-
-        engagement = metrics["engagement"]
-        if engagement.get("zero_result_rate", 0) > 0.1:
-            recs.append({
-                "priority": "medium",
-                "area": "findability",
-                "action": "Address content gaps from zero-result searches",
-                "impact": "Improves search success rate",
-            })
-
-        coverage = metrics["coverage"]
-        if coverage.get("uncited_pct", 0) > 70:
-            recs.append({
-                "priority": "low",
-                "area": "coverage",
-                "action": f"Review {coverage.get('uncited', 0)} uncited entries",
-                "impact": "May indicate unused content",
-            })
-
         return recs
 
     def _count_entries(self) -> int:
-        """Count active entries."""
+        """Count ALL entries (no filters)."""
+        cur = self._conn.execute("SELECT COUNT(*) FROM knowledge_entries")
+        return cur.fetchone()[0]
+
+    def _count_stale(self) -> int:
+        """Count entries not updated in 90+ days."""
         cur = self._conn.execute(
-            "SELECT COUNT(*) FROM knowledge_entries WHERE archived_at IS NULL"
+            "SELECT COUNT(*) FROM knowledge_entries "
+            "WHERE updated_at < datetime('now', '-90 days')"
         )
         return cur.fetchone()[0]
 
-    def _count_archived(self) -> int:
-        """Count archived entries."""
+    def _count_unowned(self) -> int:
+        """Count entries without source."""
         cur = self._conn.execute(
-            "SELECT COUNT(*) FROM knowledge_entries WHERE archived_at IS NOT NULL"
+            "SELECT COUNT(*) FROM knowledge_entries "
+            "WHERE source IS NULL OR source = ''"
         )
         return cur.fetchone()[0]
 
-    def _quality_metrics(self) -> dict[str, Any]:
-        """Get quality-related metrics."""
+    def _quality_avg(self) -> float:
+        """Get average confidence from knowledge_entries."""
         cur = self._conn.execute(
-            "SELECT AVG(total_score) as avg, COUNT(*) as cnt FROM quality_scores"
+            "SELECT AVG(confidence) FROM knowledge_entries"
         )
         row = cur.fetchone()
-        low = self._conn.execute(
-            "SELECT COUNT(*) FROM quality_scores WHERE total_score < 40"
-        ).fetchone()[0]
-        return {
-            "average": round(row["avg"] or 0, 1),
-            "scored_count": row["cnt"] or 0,
-            "low_count": low,
-        }
+        return row[0] if row and row[0] is not None else 0.0
 
-    def _freshness_metrics(self) -> dict[str, Any]:
-        """Get freshness-related metrics."""
-        total = self._count_entries()
-        stale = self._conn.execute(
-            """SELECT COUNT(*) FROM knowledge_entries
-               WHERE staleness_score >= 0.7 AND archived_at IS NULL"""
-        ).fetchone()[0]
-        fresh = self._conn.execute(
-            """SELECT COUNT(*) FROM knowledge_entries
-               WHERE staleness_score < 0.3 AND archived_at IS NULL"""
-        ).fetchone()[0]
-        return {
-            "stale_count": stale,
-            "fresh_count": fresh,
-            "stale_pct": round(stale / max(total, 1) * 100, 1),
-            "fresh_pct": round(fresh / max(total, 1) * 100, 1),
-        }
+    def _search_trend(self, days: int) -> list[dict[str, Any]]:
+        """Get daily search volume trend."""
+        try:
+            rows = self._conn.execute(
+                "SELECT DATE(searched_at) as date, COUNT(*) as count "
+                "FROM search_log "
+                "WHERE searched_at >= datetime('now', ?) "
+                "GROUP BY DATE(searched_at) ORDER BY date",
+                (f"-{days} days",),
+            ).fetchall()
+            return [{"date": r[0], "count": r[1]} for r in rows]
+        except Exception:
+            return []
 
-    def _coverage_metrics(self) -> dict[str, Any]:
-        """Get coverage metrics (citations, types)."""
-        total = self._count_entries()
-        uncited = self._conn.execute(
-            """SELECT COUNT(*) FROM knowledge_entries ke
-               LEFT JOIN citations c ON ke.id = c.entry_id
-               WHERE c.id IS NULL AND ke.archived_at IS NULL"""
-        ).fetchone()[0]
-        score = round((1 - uncited / max(total, 1)) * 100, 1)
-        return {
-            "uncited": uncited,
-            "uncited_pct": round(uncited / max(total, 1) * 100, 1),
-            "score": score,
-        }
-
-    def _engagement_metrics(self) -> dict[str, Any]:
-        """Get engagement metrics."""
-        search_total = self._conn.execute(
-            "SELECT COUNT(*) FROM search_log"
-        ).fetchone()[0]
-        zero_results = self._conn.execute(
-            "SELECT COUNT(*) FROM search_log WHERE result_count = 0"
-        ).fetchone()[0]
-        rate = zero_results / max(search_total, 1)
-        score = round((1 - rate) * 100, 1)
-        return {
-            "total_searches": search_total,
-            "zero_result_rate": round(rate, 3),
-            "score": score,
-        }
-
-    def _governance_metrics(self) -> dict[str, Any]:
-        """Get governance metrics."""
-        total = self._count_entries()
-        unowned = self._conn.execute(
-            """SELECT COUNT(*) FROM knowledge_entries
-               WHERE (owner IS NULL OR owner = '') AND archived_at IS NULL"""
-        ).fetchone()[0]
-        unreviewed = self._conn.execute(
-            """SELECT COUNT(*) FROM knowledge_entries
-               WHERE last_reviewed_at IS NULL AND archived_at IS NULL"""
-        ).fetchone()[0]
-        score = round((1 - unowned / max(total, 1)) * 100, 1)
-        return {
-            "unowned": unowned,
-            "unowned_pct": round(unowned / max(total, 1) * 100, 1),
-            "unreviewed": unreviewed,
-            "score": score,
-        }
-
-    def _search_trend(self, days: int) -> list[dict[str, int]]:
-        """Get daily search volume trend as array."""
-        cur = self._conn.execute(
-            """SELECT DATE(searched_at) as day, COUNT(*) as cnt
-               FROM search_log
-               WHERE searched_at >= datetime('now', ?)
-               GROUP BY DATE(searched_at)
-               ORDER BY day""",
-            (f"-{days} days",),
-        )
-        rows = cur.fetchall()
-        if rows:
-            return [{"count": r["cnt"]} for r in rows]
-        return []
-
-    def _ingest_trend(self, days: int) -> list[dict[str, int]]:
-        """Get daily ingest volume trend as array."""
-        cur = self._conn.execute(
-            """SELECT DATE(created_at) as day, COUNT(*) as cnt
-               FROM knowledge_entries
-               WHERE created_at >= datetime('now', ?)
-               GROUP BY DATE(created_at)
-               ORDER BY day""",
-            (f"-{days} days",),
-        )
-        rows = cur.fetchall()
-        if rows:
-            return [{"count": r["cnt"]} for r in rows]
-        return []
-
-    def _quality_trend(self) -> dict[str, Any]:
-        """Get quality score trend."""
-        cur = self._conn.execute(
-            "SELECT AVG(total_score) FROM quality_scores"
-        )
-        return {"current_avg": round(cur.fetchone()[0] or 0, 1)}
+    def _ingest_trend(self, days: int) -> list[dict[str, Any]]:
+        """Get daily ingest volume trend."""
+        try:
+            rows = self._conn.execute(
+                "SELECT DATE(created_at) as date, COUNT(*) as count "
+                "FROM memory_audit "
+                "WHERE operation = 'INGEST' AND created_at >= datetime('now', ?) "
+                "GROUP BY DATE(created_at) ORDER BY date",
+                (f"-{days} days",),
+            ).fetchall()
+            return [{"date": r[0], "count": r[1]} for r in rows]
+        except Exception:
+            return []

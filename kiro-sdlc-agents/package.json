@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -55,11 +55,92 @@
       {
         "command": "kiroSdlc.downloadModel",
         "title": "Kiro SDLC: Download Embedding Model"
+      },
+      {
+        "command": "kiroSdlc.openKbGraph",
+        "title": "Kiro SDLC: Open KB Graph"
+      },
+      {
+        "command": "kiroSdlc.openKbDashboard",
+        "title": "Kiro SDLC: Open KB Dashboard"
+      },
+      {
+        "command": "kiroSdlc.openKbTags",
+        "title": "Kiro SDLC: Open KB Tags"
+      },
+      {
+        "command": "kiroSdlc.openKbQuality",
+        "title": "Kiro SDLC: Open KB Quality"
+      },
+      {
+        "command": "kiroSdlc.openKbAnalytics",
+        "title": "Kiro SDLC: Open KB Analytics"
+      },
+      {
+        "command": "kiroSdlc.restartMcpServer",
+        "title": "Kiro SDLC: Restart MCP Server"
+      },
+      {
+        "command": "kiroSdlc.stopMcpServer",
+        "title": "Kiro SDLC: Stop MCP Server"
+      },
+      {
+        "command": "kiroSdlc.openKbBrowser",
+        "title": "Kiro SDLC: Open KB in Browser"
+      },
+      {
+        "command": "kiroSdlc.changePort",
+        "title": "Kiro SDLC: Change MCP Server Port"
+      },
+      {
+        "command": "kiroSdlc.editConfig",
+        "title": "Kiro SDLC: Edit Orchestration Config"
+      },
+      {
+        "command": "kiroSdlc.changeConfig",
+        "title": "Kiro SDLC: Change Config File..."
+      },
+      {
+        "command": "kiroSdlc.openKbBrowser",
+        "title": "Kiro SDLC: Open KB in Browser"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kiroSdlc",
+          "title": "Kiro SDLC",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "kiroSdlc": [
+        {
+          "id": "kiroSdlcTree",
+          "name": "SDLC Agents"
+        }
+      ]
+    },
     "configuration": {
       "title": "Kiro SDLC Agents",
-      "properties": {}
+      "properties": {
+        "kiroSdlc.enableMcpServer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable bundled MCP Code Intelligence server. When disabled, the server will not start automatically."
+        },
+        "kiroSdlc.mcpServerPort": {
+          "type": "number",
+          "default": 9181,
+          "description": "Port for the bundled MCP server. Change if port conflicts with another service."
+        },
+        "kiroSdlc.configPath": {
+          "type": "string",
+          "default": ".code-intel/orchestration.json",
+          "description": "Path to orchestration config file (relative to workspace root). Controls MCP server behavior, child servers, and model routing."
+        }
+      }
     }
   },
   "scripts": {
@@ -68,12 +149,26 @@
     "watch": "tsc -watch -p ./",
     "copy-resources": "node scripts/copy-resources.js",
     "gen-checksums": "node scripts/gen-checksums.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "test": "mocha",
+    "test:watch": "mocha --watch"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.0.0",
-    "typescript": "^5.4.0",
-    "@vscode/vsce": "^2.24.0"
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "glob": "^13.0.6",
+    "mocha": "^10.7.3",
+    "sinon": "^17.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "3d-force-graph": "^1.80.0",
+    "chart.js": "^4.5.1",
+    "three": "^0.184.0"
   }
 }

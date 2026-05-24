@@ -106,7 +106,8 @@ function handleDashboard(res: http.ServerResponse, db: Database.Database | null)
 
     // Recommendations
     const recEngine = new RecommendationEngine(db);
-    const recommendations = recEngine.getRecommendations(5);
+    const recResult = recEngine.getRecommendations(5);
+    const recommendations = Array.isArray(recResult) ? recResult : (recResult.recommendations || []);
 
     // Trends (last 7 days)
     const searchVolume: { date: string; count: number }[] = [];

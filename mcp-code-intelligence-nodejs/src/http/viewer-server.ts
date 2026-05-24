@@ -32,7 +32,10 @@ export class ViewerServer {
   start(): void {
     this.server = http.createServer((req, res) => this.handleRequest(req, res));
     this.server.listen(this.port, () => {
-      console.error(`[code-intel] HTTP viewer starting on port ${this.port}`);
+      const addr = this.server!.address() as any;
+      const actualPort = addr?.port ?? this.port;
+      this.port = actualPort;
+      console.error(`[code-intel] HTTP viewer starting on port ${actualPort}`);
     });
   }
 

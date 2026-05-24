@@ -9,6 +9,9 @@ import com.codeintel.Config
 import com.codeintel.log
 import com.codeintel.memory.MemoryEngine
 import com.codeintel.orchestration.cache.AdaptiveTokenCache
+import com.codeintel.orchestration.cache.KbCacheLookup
+import com.codeintel.orchestration.cache.KbCacheWriter
+import com.codeintel.orchestration.cache.KbCacheInvalidator
 import com.codeintel.orchestration.embedding.EmbeddingSearcher
 import com.codeintel.orchestration.local.ConfigWatcher
 import com.codeintel.orchestration.local.LocalServerManager
@@ -42,6 +45,9 @@ class OrchestrationEngine(
     private var tokenCache: AdaptiveTokenCache? = null
     private var modelManager: ModelManager? = null
     private var embeddingSearcher: EmbeddingSearcher? = null
+    private var kbCacheLookup: KbCacheLookup? = null
+    private var kbCacheWriter: KbCacheWriter? = null
+    private var kbCacheInvalidator: KbCacheInvalidator? = null
 
     val metaToolDispatcher: MetaToolDispatcher by lazy { MetaToolDispatcher(this) }
 
@@ -71,6 +77,24 @@ class OrchestrationEngine(
     fun getModelManager(): ModelManager {
         if (modelManager == null) modelManager = ModelManager()
         return modelManager!!
+    }
+
+    /** Get KB cache lookup (L2 → L1 cascade). KSA-139. */
+    fun getKbCacheLookup(): KbCacheLookup {
+        if (kbCacheLookup == null) kbCacheLookup = KbCacheLookup(memoryEngine)
+        return kbCacheLookup!!
+    }
+
+    /** Get KB cache writer (fire-and-forget). KSA-139. */
+    fun getKbCacheWriter(): KbCacheWriter {
+        if (kbCacheWriter == null) kbCacheWriter = KbCacheWriter(memoryEngine)
+        return kbCacheWriter!!
+    }
+
+    /** Get KB cache invalidator. KSA-139. */
+    fun getKbCacheInvalidator(): KbCacheInvalidator {
+        if (kbCacheInvalidator == null) kbCacheInvalidator = KbCacheInvalidator(memoryEngine)
+        return kbCacheInvalidator!!
     }
 
     /** Start orchestration — spawn all child servers, build routing table, ingest to KB. */

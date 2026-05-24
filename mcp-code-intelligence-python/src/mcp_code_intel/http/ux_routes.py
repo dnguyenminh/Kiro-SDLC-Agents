@@ -250,7 +250,8 @@ def _handle_dashboard(
 
         from .recommendation_engine import RecommendationEngine
         rec_engine = RecommendationEngine(conn)
-        recommendations = rec_engine.get_recommendations(5)
+        rec_result = rec_engine.get_recommendations(5)
+        recommendations = rec_result.get("recommendations", []) if isinstance(rec_result, dict) else rec_result
 
         search_volume = []
         ingest_volume = []

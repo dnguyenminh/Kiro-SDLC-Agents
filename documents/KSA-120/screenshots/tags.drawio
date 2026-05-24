@@ -1,0 +1,111 @@
+<mxfile host="app.diagrams.net" modified="2025-05-23" agent="BA Agent" version="21.0.0" type="device">
+  <diagram id="tags" name="Tags Panel">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Panel Frame -->
+        <mxCell id="2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e1e1e;strokeColor=#3c3c3c;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="810" height="560" as="geometry" />
+        </mxCell>
+        <!-- Tab bar -->
+        <mxCell id="3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="810" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="🏷️ KB Tags" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#1e1e1e;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="25" y="22" width="80" height="26" as="geometry" />
+        </mxCell>
+        <!-- View Toggle -->
+        <mxCell id="5" value="☁️ Cloud" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#264f78;strokeColor=#4ec9b0;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="70" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="🌳 Tree" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;fontColor=#94a3b8;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="115" y="60" width="65" height="25" as="geometry" />
+        </mxCell>
+        <!-- Search -->
+        <mxCell id="7" value="🔍 Search tags..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;fontColor=#666666;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="550" y="60" width="200" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="7b" value="+ Create Tag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#264f78;strokeColor=#4ec9b0;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="60" width="90" height="25" as="geometry" />
+        </mxCell>
+        <!-- Tag Cloud Area -->
+        <mxCell id="10" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="780" height="280" as="geometry" />
+        </mxCell>
+        <!-- Tags with different sizes -->
+        <mxCell id="20" value="python" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#3b82f6;fontSize=28;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="130" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="api" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#10b981;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="135" width="50" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="docker" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#8b5cf6;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="300" y="130" width="80" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="architecture" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#f59e0b;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="420" y="135" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="security" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#ef4444;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="580" y="138" width="80" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="testing" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#06b6d4;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="690" y="140" width="70" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="deployment" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#ec4899;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="100" y="190" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="database" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#14b8a6;fontSize=17;" vertex="1" parent="1">
+          <mxGeometry x="260" y="195" width="90" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="kotlin" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#a78bfa;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="380" y="198" width="60" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="ci-cd" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#fb923c;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="470" y="200" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="monitoring" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#22d3ee;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="550" y="200" width="90" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="performance" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#a3e635;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="670" y="202" width="90" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="mcp" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#c084fc;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="120" y="240" width="50" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="error-handling" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#f87171;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="200" y="245" width="110" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="typescript" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#60a5fa;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="340" y="247" width="80" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="caching" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#34d399;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="248" width="60" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="logging" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#fbbf24;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="250" width="55" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="auth" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#fb7185;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="620" y="250" width="40" height="16" as="geometry" />
+        </mxCell>
+        <!-- Entries list below -->
+        <mxCell id="50" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="780" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="Entries tagged: &quot;python&quot; (42 entries)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#cccccc;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="405" width="230" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="52" value="PROCEDURE  Python async patterns for MCP server&#xa;DECISION   Use asyncio vs threading for I/O&#xa;CONTEXT    Python 3.12 new features summary&#xa;ERROR_PATTERN  Memory leak in long-running tasks&#xa;ARCHITECTURE  Plugin system design with importlib" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#e0e0e0;fontSize=9;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="50" y="430" width="380" height="90" as="geometry" />
+        </mxCell>
+        <!-- Annotation -->
+        <mxCell id="60" value="Chữ to = tag&#xa;được dùng nhiều" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#fff2cc;fontColor=#333333;fontSize=9;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="290" width="100" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="61" value="Click tag →&#xa;xem entries" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#fff2cc;fontColor=#333333;fontSize=9;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="680" y="290" width="80" height="35" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

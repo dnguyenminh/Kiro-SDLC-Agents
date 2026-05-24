@@ -3,6 +3,7 @@
  * by name and description. Merges registry results with KB search + nested delegation.
  * KSA-66: Nested delegation — delegates to child orchestrators when local search has no results.
  * KSA-102: Adaptive Token Cache (Tier 2) + Embedding Search (Tier 3).
+ * KSA-139/141: KB-backed 2-Level Agent Tool Cache (Tier 0 — checked first).
  */
 package com.codeintel.orchestration.meta
 
@@ -20,41 +21,65 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
     fun execute(args: JsonObject): String {
         val query = args["query"]?.jsonPrimitive?.content
             ?: return errorJson("Missing 'query'")
-        var registryResults = engine.getRegistry().search(query)
+        val agentName = args["agent_name"]?.jsonPrimitive?.content ?: "default"
 
-        // If no results from registry, try recovering FAILED servers (lazy retry)
-        if (registryResults.isEmpty()) {
-            val recovered = retryFailedServers()
-            if (recovered.isNotEmpty()) {
-                registryResults = engine.getRegistry().search(query)
+        // Tier 0: KB-backed 2-Level Cache (KSA-139/141) — fastest path
+        val kbCacheResult = searchKbCache(query, agentName)
+        if (kbCacheResult != null) return kbCacheResult
+
+        return searchWithFallback(query)
+    }
+
+    /** Tier 0: KB-backed 2-Level Agent Tool Cache (KSA-139/141). */
+    private fun searchKbCache(query: String, agentName: String): String? {
+        return try {
+            val lookup = engine.getKbCacheLookup()
+            val result = lookup.find(query, agentName) ?: return null
+            val tool = engine.getRegistry().find(result.entry.toolName)
+            if (tool != null) return encodeDefinitions(listOf(tool))
+            // Not in registry — build definition from cache entry
+            val def = buildJsonObject {
+                put("name", result.entry.toolName)
+                put("description", result.entry.description)
+                put("inputSchema", result.entry.inputSchema)
+                put("_source", result.source.name)
+                put("_server", result.entry.serverName)
             }
+            json.encodeToString(JsonArray.serializer(), buildJsonArray { add(def) })
+        } catch (e: Exception) {
+            log("[find_tools] KB cache error: ${e.message}")
+            null
         }
+    }
 
-        // ALWAYS delegate to nested (lazy discovery — must run every time)
-        val nestedResults = delegateToNested(query)
-        val merged = mergeResults(registryResults, nestedResults)
-        if (merged.isNotEmpty()) {
-            return encodeDefinitions(merged.take(10))
+    /** Registry → Token Cache → Embedding → Nested → KB fallback. */
+    private fun searchWithFallback(query: String): String {
+        var registryResults = engine.getRegistry().search(query)
+        if (registryResults.isEmpty()) {
+            retryFailedServers()
+            registryResults = engine.getRegistry().search(query)
         }
+        if (registryResults.isNotEmpty()) return encodeDefinitions(registryResults.take(10))
 
-        // Tier 2: Adaptive Token Cache (KSA-102)
         val cacheResult = searchCache(query)
         if (cacheResult != null) return cacheResult
 
-        // Tier 3: Embedding Search (KSA-102)
         val embeddingResult = searchEmbedding(query)
         if (embeddingResult != null) return embeddingResult
 
-        // Tier 5: KB fallback
-        val kbResults = searchKb(query)
-        if (kbResults.isNotEmpty()) {
-            return encodeDefinitions(kbResults.take(10))
+        val nestedResults = delegateToNested(query)
+        if (nestedResults.isNotEmpty()) {
+            val nestedTools = nestedResults.take(10).map { toolDef ->
+                RegisteredTool(toolDef["name"]?.jsonPrimitive?.content ?: "", toolDef, "nested", 0)
+            }
+            return encodeDefinitions(nestedTools)
         }
 
-        // KSA-102 Story 5: Multilingual hint when non-ASCII query fails
-        val hint = getMultilingualHint(query)
-        if (hint != null) return """{"tools":[],"_hint":"$hint"}"""
+        val kbResults = searchKb(query)
+        if (kbResults.isNotEmpty()) return encodeDefinitions(kbResults.take(10))
 
+        val hint = getMultilingualToolHint(engine, query)
+        if (hint != null) return """{"tools":[],"_hint":"$hint"}"""
         return "[]"
     }
 
@@ -86,11 +111,9 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
             val (toolName, score) = result
             if (score < 0.75f) return null
             val tool = engine.getRegistry().find(toolName) ?: return null
-            // Self-learning: add to cache for future fast lookups
             val tokens = Tokenizer.tokenize(query)
             val cache = engine.getTokenCache()
-            val registryHash = engine.getRegistry().versionHash()
-            cache.add(tokens, toolName, score.toDouble(), registryHash)
+            cache.add(tokens, toolName, score.toDouble(), engine.getRegistry().versionHash())
             cache.schedulePersist()
             log("[find_tools] Embedding hit: '$query' → $toolName (score=${String.format("%.3f", score)})")
             encodeDefinitions(listOf(tool))
@@ -101,13 +124,9 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
     }
 
     /** Attempt to recover FAILED servers (lazy retry on find_tools call). */
-    private fun retryFailedServers(): List<String> {
-        return try {
-            runBlocking { engine.retryFailedServers() }
-        } catch (e: Exception) {
-            log("[find_tools] Retry failed servers error: ${e.message}")
-            emptyList()
-        }
+    private fun retryFailedServers() {
+        try { runBlocking { engine.retryFailedServers() } }
+        catch (e: Exception) { log("[find_tools] Retry failed servers error: ${e.message}") }
     }
 
     /** Delegate find_tools to nested orchestrators and cache results. */
@@ -133,7 +152,6 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
         return allResults
     }
 
-    /** Call find_tools on a nested server (sync wrapper for coroutine). */
     private fun callNestedFindTools(serverName: String, query: String): List<JsonObject> {
         val raw = runBlocking {
             engine.callChild(serverName, "find_tools", buildJsonObject { put("query", query) })
@@ -141,7 +159,6 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
         return parseToolList(raw)
     }
 
-    /** Parse raw JSON response into list of tool definitions. */
     private fun parseToolList(raw: String): List<JsonObject> {
         return try {
             val element = Json.parseToJsonElement(raw)
@@ -158,66 +175,7 @@ class FindToolsTool(private val engine: OrchestrationEngine) {
         }
     }
 
-    /** Session-level flag: only show multilingual hint once. */
-    private var multilingualHintShown = false
-
-    /** Return multilingual model hint if query has non-ASCII and model is English-only. */
-    private fun getMultilingualHint(query: String): String? {
-        if (multilingualHintShown) return null
-        if (query.all { it.code < 128 }) return null
-        val active = engine.getModelManager().getActiveModel()
-        if (active != "all-MiniLM-L6-v2") return null
-        multilingualHintShown = true
-        return "💡 Tip: Current model is English-only. For better multilingual support, run: " +
-            "mem_model_manager(action='download', model_name='paraphrase-multilingual-MiniLM-L12-v2') " +
-            "then mem_model_manager(action='switch', model_name='paraphrase-multilingual-MiniLM-L12-v2')"
-    }
-
-    /** Search KB for tool definitions (best-effort, graceful degradation). */
-    private fun searchKb(query: String): List<RegisteredTool> {
-        val mem = engine.getMemoryEngine() ?: return emptyList()
-        return try {
-            val results = mem.search.search(query, limit = 20)
-            resolveKbResults(results)
-        } catch (e: Exception) {
-            log("[find_tools] KB search failed: ${e.message}")
-            emptyList()
-        }
-    }
-
-    /** Parse KB results → extract tool names → lookup in registry. */
-    private fun resolveKbResults(results: List<Any>): List<RegisteredTool> {
-        val resolved = mutableListOf<RegisteredTool>()
-        for (result in results) {
-            val content = result.toString()
-            for (line in content.lines()) {
-                val trimmed = line.trim()
-                if (trimmed.isEmpty()) continue
-                val toolName = trimmed.split(" [").firstOrNull()?.trim() ?: continue
-                if (toolName.isEmpty()) continue
-                val tool = engine.getRegistry().find(toolName)
-                if (tool != null) resolved.add(tool)
-            }
-        }
-        return resolved
-    }
-
-    /** Merge registry + nested results, deduplicate by tool name. */
-    private fun mergeResults(
-        registry: List<RegisteredTool>,
-        nested: List<JsonObject>
-    ): List<RegisteredTool> {
-        val seen = registry.map { it.definition["name"]?.jsonPrimitive?.content ?: it.name }.toMutableSet()
-        val merged = registry.toMutableList()
-        for (toolDef in nested) {
-            val name = toolDef["name"]?.jsonPrimitive?.content ?: ""
-            if (name.isNotEmpty() && name !in seen) {
-                seen.add(name)
-                merged.add(RegisteredTool(name, toolDef, "nested", 0))
-            }
-        }
-        return merged
-    }
+    private fun searchKb(query: String): List<RegisteredTool> = searchKbForTools(engine, query)
 
     private fun encodeDefinitions(tools: List<RegisteredTool>): String {
         val arr = buildJsonArray { for (tool in tools) add(tool.definition) }

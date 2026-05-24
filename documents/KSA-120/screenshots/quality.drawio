@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" modified="2025-05-23" agent="BA Agent" version="21.0.0" type="device">
+  <diagram id="quality" name="Quality Panel">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Panel Frame -->
+        <mxCell id="2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e1e1e;strokeColor=#3c3c3c;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="810" height="560" as="geometry" />
+        </mxCell>
+        <!-- Tab bar -->
+        <mxCell id="3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="810" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="⭐ KB Quality" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#1e1e1e;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="25" y="22" width="100" height="26" as="geometry" />
+        </mxCell>
+        <!-- Stats Cards -->
+        <mxCell id="10" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="40" y="65" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="Average Score" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="50" y="68" width="85" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="68 / 100" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#4ec9b0;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="86" width="80" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="235" y="65" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Scored Entries" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="245" y="68" width="85" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="247 / 247" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#ffffff;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="245" y="86" width="90" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="430" y="65" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="High Quality (≥60)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="440" y="68" width="110" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="189" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#4ec9b0;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="86" width="50" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="625" y="65" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="Low Quality (&lt;40)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="635" y="68" width="105" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="18" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#ef4444;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="635" y="86" width="35" height="28" as="geometry" />
+        </mxCell>
+        <!-- Histogram -->
+        <mxCell id="30" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="40" y="135" width="400" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="Score Distribution" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#cccccc;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="110" height="18" as="geometry" />
+        </mxCell>
+        <!-- Histogram bars -->
+        <mxCell id="32" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ef4444;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="70" y="290" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="33" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ef4444;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="105" y="275" width="30" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ef4444;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="140" y="285" width="30" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f59e0b;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="175" y="265" width="30" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f59e0b;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="210" y="250" width="30" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f59e0b;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="245" y="240" width="30" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4ec9b0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="280" y="210" width="30" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4ec9b0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="315" y="185" width="30" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="40" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4ec9b0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="350" y="200" width="30" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="41" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4ec9b0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="385" y="230" width="30" height="90" as="geometry" />
+        </mxCell>
+        <!-- X axis labels -->
+        <mxCell id="42" value="0-10  10-20  20-30  30-40  40-50  50-60  60-70  70-80  80-90  90-100" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#666666;fontSize=7;" vertex="1" parent="1">
+          <mxGeometry x="60" y="322" width="360" height="14" as="geometry" />
+        </mxCell>
+        <!-- Low Quality Table -->
+        <mxCell id="50" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="460" y="135" width="360" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="Low Quality Entries (score &lt; 40)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#ef4444;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="470" y="140" width="200" height="18" as="geometry" />
+        </mxCell>
+        <!-- Table header -->
+        <mxCell id="52" value="ID    Type          Summary                    Score" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=8;fontFamily=Courier New;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="470" y="165" width="320" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="53" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="460" y="180" width="360" height="1" as="geometry" />
+        </mxCell>
+        <!-- Table rows -->
+        <mxCell id="54" value="#42   CONTEXT       Old deployment notes...     18&#xa;#67   DECISION      Temporary workaround...     25&#xa;#89   PROCEDURE     Incomplete setup guide...   28&#xa;#103  ERROR_PATTERN Vague error description...  31&#xa;#115  CONTEXT       Meeting notes (no action)   33&#xa;#128  DECISION      Outdated API choice...      35&#xa;#142  PROCEDURE     Missing steps in deploy...  37&#xa;#156  CONTEXT       Draft — never completed...  38" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#e0e0e0;fontSize=8;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="470" y="185" width="340" height="120" as="geometry" />
+        </mxCell>
+        <!-- Bulk action bar -->
+        <mxCell id="55" value="☐ Select All    📦 Archive    🗑️ Delete    📝 Mark for Review" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#1e293b;fontColor=#94a3b8;fontSize=9;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="470" y="310" width="320" height="18" as="geometry" />
+        </mxCell>
+        <!-- Confidence section -->
+        <mxCell id="60" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#252526;strokeColor=#3c3c3c;" vertex="1" parent="1">
+          <mxGeometry x="40" y="355" width="780" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="61" value="Confidence Distribution" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#cccccc;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="360" width="150" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="62" value="Unreliable Entries (low confidence)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#cccccc;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="360" width="230" height="18" as="geometry" />
+        </mxCell>
+        <!-- Annotations -->
+        <mxCell id="70" value="🔴 Đỏ = kém&#xa;🟡 Vàng = TB&#xa;🟢 Xanh = tốt" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#fff2cc;fontColor=#333333;fontSize=9;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="165" width="90" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="71" value="Click entry →&#xa;xem chi tiết" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#fff2cc;fontColor=#333333;fontSize=9;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="140" width="80" height="35" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

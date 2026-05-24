@@ -1,0 +1,51 @@
+"use strict";
+/** Tier 1 tool definitions — high-frequency standalone tools. */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TIER1_TOOLS = void 0;
+exports.TIER1_TOOLS = [
+    {
+        name: 'mem_search',
+        description: 'Hybrid search across local workspace memory (BM25 + vector + graph). Returns ranked results with progressive disclosure.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                query: { type: 'string', description: 'Search query' },
+                limit: { type: 'number', description: 'Max results (default 10)' },
+                tier: { type: 'string', description: 'Filter by tier: WORKING, EPISODIC, SEMANTIC, PROCEDURAL' },
+                type: { type: 'string', description: 'Filter by type: DECISION, ERROR_PATTERN, ARCHITECTURE, etc.' },
+                detail: { type: 'boolean', description: 'If true, include content preview (default: summary only)' },
+            },
+            required: ['query'],
+        },
+    },
+    {
+        name: 'mem_ingest',
+        description: 'Store a knowledge entry into local workspace memory (decision, error pattern, lesson learned, etc).',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                content: { type: 'string', description: 'Full content of the knowledge entry' },
+                summary: { type: 'string', description: 'Brief summary (auto-generated if omitted)' },
+                type: { type: 'string', description: 'Type: DECISION, ERROR_PATTERN, ARCHITECTURE, API_DESIGN, REQUIREMENT, LESSON_LEARNED, PROCEDURE, CONTEXT' },
+                source: { type: 'string', description: 'Source identifier (file path, ticket, etc)' },
+                tags: { type: 'string', description: 'Comma-separated tags' },
+                agent_name: { type: 'string', description: 'Agent name (SM, BA, SA, DEV, QA, DevOps, etc.)' },
+            },
+            required: ['content'],
+        },
+    },
+    {
+        name: 'mem_ingest_file',
+        description: 'Ingest a document from disk by file path. Zero-context: server reads file directly, agent only sends path (~80 tokens). Auto-chunks markdown by sections.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                file_path: { type: 'string', description: 'Path to document file (relative to workspace or absolute)' },
+                type: { type: 'string', description: 'Knowledge type: REQUIREMENT, ARCHITECTURE, DECISION, PROCEDURE, CONTEXT (default: CONTEXT)' },
+                format: { type: 'string', description: 'Format: markdown (default) or text' },
+            },
+            required: ['file_path'],
+        },
+    },
+];
+//# sourceMappingURL=tool-defs-tier1.js.map

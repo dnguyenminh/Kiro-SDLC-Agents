@@ -3,6 +3,7 @@
  * KSA-66: Nested delegation — delegates to child orchestrators for lazy discovery.
  * KSA-102: Adaptive Token Cache (Tier 2) + Embedding Search (Tier 3).
  * KSA-139: KB-backed 2-Level Agent Tool Cache (Tier 0 — checked first).
+ * KSA-141: Sync Tier 0 KB cache in executeFindTools for behavioral parity.
  * Behavioral parity with Python find_tools.py.
  */
 
@@ -16,6 +17,10 @@ export function executeFindTools(engine: OrchestrationEngine, args: Record<strin
   const query = args.query;
   if (!query) return JSON.stringify({ error: "Missing 'query'" });
 
+  // Tier 0: KB-backed 2-Level Cache — sync best-effort (KSA-141)
+  const kbCacheResult = searchKbCacheSync(engine, query);
+  if (kbCacheResult) return kbCacheResult;
+
   let registryResults = engine.getRegistry().search(query);
 
   // If no results from registry, try recovering FAILED servers (lazy retry)
@@ -26,21 +31,24 @@ export function executeFindTools(engine: OrchestrationEngine, args: Record<strin
     }
   }
 
-  // ALWAYS delegate to nested (lazy discovery — must run every time)
-  const nestedResults = delegateToNested(engine, query);
-  const merged = mergeResults(registryResults, nestedResults);
-
-  if (merged.length > 0) {
-    return JSON.stringify(merged.slice(0, 10).map((t) => t.definition));
+  // Tier 1: Registry has results → return immediately
+  if (registryResults.length > 0) {
+    return JSON.stringify(registryResults.slice(0, 10).map((t) => t.definition));
   }
 
-  // Tier 2: Adaptive Token Cache (KSA-102)
+  // Tier 2: Adaptive Token Cache (KSA-102, ~0ms)
   const cacheResult = searchCache(engine, query);
   if (cacheResult) return cacheResult;
 
-  // Tier 3: Embedding Search (KSA-102)
+  // Tier 3: Embedding Search (KSA-102, ~10-50ms)
   const embeddingResult = searchEmbedding(engine, query);
   if (embeddingResult) return embeddingResult;
+
+  // Tier 4: Delegate to nested (sync version fires async, results on next call)
+  const nestedResults = delegateToNested(engine, query);
+  if (nestedResults.length > 0) {
+    return JSON.stringify(nestedResults.slice(0, 10));
+  }
 
   // Tier 5: KB fallback
   const kbResults = searchKb(engine, query);
@@ -127,21 +135,24 @@ export async function executeFindToolsAsync(engine: OrchestrationEngine, args: R
     }
   }
 
-  // ALWAYS delegate to nested (lazy discovery — must run every time)
-  const nestedResults = await delegateToNestedAsync(engine, query);
-  const merged = mergeResults(registryResults, nestedResults);
-
-  if (merged.length > 0) {
-    return JSON.stringify(merged.slice(0, 10).map((t) => t.definition));
+  // Tier 1: Registry has results → return immediately
+  if (registryResults.length > 0) {
+    return JSON.stringify(registryResults.slice(0, 10).map((t) => t.definition));
   }
 
-  // Tier 2: Adaptive Token Cache (KSA-102)
+  // Tier 2: Adaptive Token Cache (KSA-102, ~0ms)
   const cacheResult = searchCache(engine, query);
   if (cacheResult) return cacheResult;
 
-  // Tier 3: Embedding Search (KSA-102)
+  // Tier 3: Embedding Search (KSA-102, ~10-50ms)
   const embeddingResult = searchEmbedding(engine, query);
   if (embeddingResult) return embeddingResult;
+
+  // Tier 4: Delegate to nested find_tools (expensive, up to 45s)
+  const nestedResults = await delegateToNestedAsync(engine, query);
+  if (nestedResults.length > 0) {
+    return JSON.stringify(nestedResults.slice(0, 10));
+  }
 
   // Tier 5: KB fallback
   const kbResults = searchKb(engine, query);
@@ -241,6 +252,35 @@ function searchKb(engine: OrchestrationEngine, query: string): RegisteredTool[] 
     return resolveKbResults(engine, results);
   } catch {
     return [];
+  }
+}
+
+/** Tier 0: KB-backed 2-Level Cache — sync best-effort (KSA-141).
+ *  Uses synchronous in-memory L1 cache if available, returns null otherwise. */
+function searchKbCacheSync(engine: OrchestrationEngine, query: string): string | null {
+  try {
+    const lookup = engine.getKbCacheLookup();
+    if (!lookup) return null;
+    const result = lookup.findSync(query, 'default');
+    if (!result) return null;
+
+    const { entry, source } = result;
+    // Try to resolve from registry for full definition
+    const tool = engine.getRegistry().find(entry.toolName);
+    if (tool) {
+      return JSON.stringify([tool.definition]);
+    }
+    // If not in registry, build definition from cache entry
+    return JSON.stringify([{
+      name: entry.toolName,
+      description: entry.description,
+      inputSchema: entry.inputSchema,
+      _source: source,
+      _server: entry.serverName,
+    }]);
+  } catch {
+    // Non-blocking — sync cache miss is fine, fall through to other tiers
+    return null;
   }
 }
 

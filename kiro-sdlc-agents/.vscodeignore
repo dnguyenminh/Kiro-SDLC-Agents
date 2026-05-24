@@ -1,10 +1,10 @@
 .vscode/**
+.vscode-test/**
 src/**
-node_modules/**
-**/*.ts
-**/*.map
 .gitignore
 tsconfig.json
+.mocharc.yml
+test-register.js
 resources/.analysis/code-intelligence/scripts/nodejs/node_modules/**
 resources/.analysis/code-intelligence/scripts/python/__pycache__/**
 resources/.analysis/code-intelligence/scripts/java/out/**

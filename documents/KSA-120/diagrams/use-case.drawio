@@ -1,0 +1,166 @@
+<mxfile host="65bd71144e">
+    <diagram id="uc1" name="Page-1">
+        <mxGraphModel dx="972" dy="708" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;KSA-120: Use Case Diagram — Bundle MCP Server &amp;amp; Native KB Panels&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="10" width="600" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="boundary" value="&lt;b&gt;kiro-sdlc-agents Extension v2.0&lt;/b&gt;" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="50" width="760" height="640" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="380" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_vscode" value="VS Code&#10;Runtime" style="shape=actor;whiteSpace=wrap;html=1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1020" y="130" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_mcp" value="MCP&#10;Server" style="shape=actor;whiteSpace=wrap;html=1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1020" y="320" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc1_node" value="Install/Update Extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="200" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc4_node" value="Auto-inject mcp.json" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="80" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc2_node" value="Auto-spawn MCP Server" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="130" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc11_node" value="Handle Server Crash&#10;(Auto-restart)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="190" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc3_node" value="Restart/Kill MCP Server" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="600" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc5_node" value="Open KB Graph Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="280" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc6_node" value="Open KB Dashboard Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="370" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc7_node" value="Open KB Tags Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="270" y="600" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc8_node" value="Open KB Quality Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="270" y="480" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc9_node" value="Open KB Analytics Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="600" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc13_node" value="Fetch KB Data&#10;via MCP Tools" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="320" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc10_node" value="Browse Sidebar TreeView" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="480" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc12_node" value="Inject Agents/Steering&#10;(Existing Feature)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="480" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dev_uc1" style="html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" edge="1" target="uc1_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="230"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc3" style="html=1;" parent="1" edge="1" target="uc3_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="580"/>
+                            <mxPoint x="850" y="580"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc5" style="html=1;" parent="1" edge="1" target="uc5_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc6" style="html=1;" parent="1" edge="1" target="uc6_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="350"/>
+                            <mxPoint x="380" y="350"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc7" style="html=1;" parent="1" edge="1" target="uc7_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="580"/>
+                            <mxPoint x="370" y="580"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc8" style="html=1;" parent="1" edge="1" target="uc8_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="460"/>
+                            <mxPoint x="370" y="460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc9" style="html=1;" parent="1" edge="1" target="uc9_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="580"/>
+                            <mxPoint x="620" y="580"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc10" style="html=1;" parent="1" edge="1" target="uc10_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="460"/>
+                            <mxPoint x="610" y="460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_uc12" style="html=1;" parent="1" edge="1" target="uc12_node" source="actor_dev">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="80" y="460"/>
+                            <mxPoint x="850" y="460"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_vscode_uc2" style="html=1;" parent="1" edge="1" target="uc2_node" source="actor_vscode">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_vscode_uc4" style="html=1;" parent="1" edge="1" target="uc4_node" source="actor_vscode">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1040" y="110"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_vscode_uc11" style="html=1;" parent="1" edge="1" target="uc11_node" source="actor_vscode">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1040" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_mcp_uc13" style="html=1;" parent="1" edge="1" target="uc13_node" source="actor_mcp">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_include_1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="uc5_node" target="uc13_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_include_2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="uc6_node" target="uc13_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_include_3" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="uc2_node" target="uc4_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_extend_1" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="uc11_node" target="uc2_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

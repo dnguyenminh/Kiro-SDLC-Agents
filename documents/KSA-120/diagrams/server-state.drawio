@@ -1,0 +1,71 @@
+<mxfile host="65bd71144e">
+    <diagram id="rmU7rUy0HgZ0qhM3VvlR" name="Page-1">
+        <mxGraphModel dx="628" dy="708" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;MCP Server State Machine&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="10" width="250" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="initial" value="" style="ellipse;html=1;shape=doubleCircle;whiteSpace=wrap;fillColor=#000000;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="575" y="60" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="starting" value="&lt;b&gt;STARTING&lt;/b&gt;&#10;Spawning process..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="150" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="running" value="&lt;b&gt;RUNNING&lt;/b&gt;&#10;Server healthy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="290" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="crashed" value="&lt;b&gt;CRASHED&lt;/b&gt;&#10;Exit code ≠ 0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="220" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="stopped" value="&lt;b&gt;STOPPED&lt;/b&gt;&#10;No process" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="510" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="activate()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="initial" target="starting" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="ready signal" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" parent="1" source="starting" target="running" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="630" y="230"/>
+                            <mxPoint x="630" y="230"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" value="timeout / error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="starting" target="crashed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" value="process exit (code ≠ 0)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="running" target="crashed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="deactivate / stop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="running" target="stopped" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="550" y="440"/>
+                            <mxPoint x="260" y="440"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" value="retries &lt; 3 (backoff)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="crashed" target="starting" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="retries ≥ 3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="crashed" target="stopped" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e8" value="manual restart" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="stopped" target="starting" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="710" y="540"/>
+                            <mxPoint x="710" y="180"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,1 @@
+{"version":3,"file":"token-counter.d.ts","sourceRoot":"","sources":["../../src/memory/token-counter.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,uDAAuD;AACvD,wBAAgB,WAAW,CAAC,IAAI,EAAE,MAAM,GAAG,MAAM,CAGhD;AAED,gDAAgD;AAChD,wBAAgB,YAAY,CAAC,IAAI,EAAE,MAAM,EAAE,MAAM,EAAE,MAAM,GAAG,OAAO,CAElE;AAED,wEAAwE;AACxE,wBAAgB,aAAa,CAAC,IAAI,EAAE,MAAM,EAAE,MAAM,EAAE,MAAM,GAAG,MAAM,CAMlE"}

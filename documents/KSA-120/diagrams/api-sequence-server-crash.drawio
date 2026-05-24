@@ -1,0 +1,127 @@
+<mxfile host="65bd71144e">
+    <diagram id="d1" name="Page-1">
+        <mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence: Server Crash — Auto-Restart and Panel Reconnection&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_server" value="MCP Server" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_mgr" value="McpServerMgr" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="60" width="120" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_host" value="Extension Host" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="500" y="60" width="120" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="panels" value="Open Panels" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="720" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="tree_view" value="TreeView" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="920" y="60" width="80" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="new_server" value="New Server" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=16;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="1060" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="m1" value="1. exit(code=1)" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#c62828;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="130" as="sourcePoint"/>
+        <mxPoint x="340" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="2. setStatus('crashed')" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="160" as="sourcePoint"/>
+        <mxPoint x="560" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="3. fire(onStatusChange)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="190" as="sourcePoint"/>
+        <mxPoint x="770" y="190" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="4. {serverStatus: 'disconnected'}" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="220" as="sourcePoint"/>
+        <mxPoint x="770" y="220" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="5. refresh()" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="250" as="sourcePoint"/>
+        <mxPoint x="960" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="6. Show 'Reconnecting...' overlay" style="html=1;endArrow=none;fontSize=10;fontStyle=2;align=left;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="770" y="260" as="sourcePoint"/>
+        <mxPoint x="770" y="280" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="7. wait(backoff: 5s)" style="html=1;endArrow=none;fontSize=10;fontStyle=2;align=center;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="300" as="sourcePoint"/>
+        <mxPoint x="340" y="350" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="8. spawn()" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="370" as="sourcePoint"/>
+        <mxPoint x="1110" y="370" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="9. ready signal" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1110" y="410" as="sourcePoint"/>
+        <mxPoint x="340" y="410" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="10. setStatus('running')" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="440" as="sourcePoint"/>
+        <mxPoint x="560" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m11" value="11. fire(onStatusChange)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="470" as="sourcePoint"/>
+        <mxPoint x="770" y="470" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m12" value="12. {serverStatus: 'connected'}" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="500" as="sourcePoint"/>
+        <mxPoint x="770" y="500" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m13" value="13. refresh()" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="530" as="sourcePoint"/>
+        <mxPoint x="960" y="530" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m14" value="14. Remove overlay, send 'refresh'" style="html=1;endArrow=none;fontSize=10;fontStyle=2;align=left;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="770" y="540" as="sourcePoint"/>
+        <mxPoint x="770" y="560" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m15" value="15. loadData() via MCP" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="770" y="580" as="sourcePoint"/>
+        <mxPoint x="1110" y="580" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m16" value="16. Fresh data" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1110" y="610" as="sourcePoint"/>
+        <mxPoint x="770" y="610" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
+    </diagram>
+</mxfile>

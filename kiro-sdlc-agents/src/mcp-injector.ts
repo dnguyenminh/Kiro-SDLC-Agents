@@ -123,6 +123,35 @@ export function hasMcpConfig(workspaceRoot: string): boolean {
     }
 }
 
+/**
+ * Write HTTP Streamable MCP config after bundled server starts.
+ * Called by McpServerManager once the dynamic port is known.
+ */
+export function writeBundledMcpConfig(workspaceRoot: string, port: number): void {
+    const serverConfig = {
+        url: `http://127.0.0.1:${port}/mcp`,
+        transportType: "httpStream",
+        disabled: false,
+    };
+    writeMcpConfig(workspaceRoot, serverConfig);
+}
+
+/**
+ * Remove the bundled code-intelligence entry from .kiro/settings/mcp.json.
+ * Called when server is intentionally stopped.
+ */
+export function removeBundledMcpConfig(workspaceRoot: string): void {
+    const mcpConfigPath = path.join(workspaceRoot, ".kiro", "settings", "mcp.json");
+    if (!fs.existsSync(mcpConfigPath)) { return; }
+    try {
+        const config = JSON.parse(fs.readFileSync(mcpConfigPath, "utf-8"));
+        if (config?.mcpServers?.["code-intelligence"]) {
+            config.mcpServers["code-intelligence"].disabled = true;
+            fs.writeFileSync(mcpConfigPath, JSON.stringify(config, null, 2));
+        }
+    } catch { /* non-fatal */ }
+}
+
 /** Resolve ${mcpServersDir} placeholder in config args. */
 function resolveConfig(variant: McpVariant, ollamaEnv: Record<string, string>, root: string): Record<string, unknown> {
     const serversDir = getMcpServersDir(root);
@@ -186,7 +215,11 @@ function writeMcpConfig(root: string, serverConfig: Record<string, unknown>): vo
         }
     }
 
-    (config.mcpServers as Record<string, unknown>)["code-intelligence"] = serverConfig;
+    // Merge with existing entry to preserve autoApprove, disabled, and other user settings
+    const servers = config.mcpServers as Record<string, unknown>;
+    const existing = (servers["code-intelligence"] as Record<string, unknown>) || {};
+    servers["code-intelligence"] = { ...existing, ...serverConfig };
+
     fs.mkdirSync(path.dirname(mcpConfigPath), { recursive: true });
     fs.writeFileSync(mcpConfigPath, JSON.stringify(config, null, 2));
 }
