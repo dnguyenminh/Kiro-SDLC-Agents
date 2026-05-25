@@ -11,9 +11,53 @@ on:
         description: 'N-API version target'
         required: true
         default: '9'
+  push:
+    branches: [main]
+    paths:
+      - 'kiro-sdlc-agents/resources/release-manifest.json'
+
+env:
+  DEFAULT_BETTER_SQLITE3_VERSION: '11.7.0'
+  DEFAULT_NAPI_VERSION: '9'
 
 jobs:
+  # Gate job: skip entire workflow if release already exists with all binaries
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check_release.outputs.should_build }}
+      version: ${{ steps.check_release.outputs.version }}
+      napi: ${{ steps.check_release.outputs.napi }}
+    steps:
+      - name: Check if release already complete
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ inputs.better_sqlite3_version || env.DEFAULT_BETTER_SQLITE3_VERSION }}"
+          NAPI="${{ inputs.napi_version || env.DEFAULT_NAPI_VERSION }}"
+          TAG="better-sqlite3-v${VERSION}"
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "napi=${NAPI}" >> $GITHUB_OUTPUT
+
+          # Check if release with all 4 binaries already exists
+          ASSETS=$(gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q '.assets[].name' 2>/dev/null || echo "")
+
+          if echo "$ASSETS" | grep -q "napi-v${NAPI}-win32-x64.node" && \
+             echo "$ASSETS" | grep -q "napi-v${NAPI}-linux-x64.node" && \
+             echo "$ASSETS" | grep -q "napi-v${NAPI}-darwin-x64.node" && \
+             echo "$ASSETS" | grep -q "napi-v${NAPI}-darwin-arm64.node"; then
+            echo "✅ Release $TAG already has all 4 platform binaries. Skipping build."
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "🔨 Release $TAG missing or incomplete. Will build."
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check
+    if: needs.check.outputs.should_build == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -32,7 +76,7 @@ jobs:
             arch: arm64
 
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,36 +89,36 @@ jobs:
           mkdir build-temp
           cd build-temp
           npm init -y
-          npm install better-sqlite3@${{ inputs.better_sqlite3_version }}
+          npm install better-sqlite3@${{ needs.check.outputs.version }}
 
       - name: Locate and rename binary
         shell: bash
         run: |
-          VERSION="${{ inputs.better_sqlite3_version }}"
-          NAPI="${{ inputs.napi_version }}"
+          VERSION="${{ needs.check.outputs.version }}"
+          NAPI="${{ needs.check.outputs.napi }}"
           PLATFORM="${{ matrix.platform }}"
           ARCH="${{ matrix.arch }}"
           FILENAME="better-sqlite3-v${VERSION}-napi-v${NAPI}-${PLATFORM}-${ARCH}.node"
-          
+
           # Find the compiled .node file
           NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" -o -name "*.node" | head -1)
-          
+
           if [ -z "$NODE_FILE" ]; then
             echo "ERROR: No .node file found!"
             find build-temp/node_modules/better-sqlite3 -type f -name "*.node"
             exit 1
           fi
-          
+
           echo "Found: $NODE_FILE"
           cp "$NODE_FILE" "$FILENAME"
-          
+
           # Compute SHA-256 checksum
           if [[ "$PLATFORM" == "darwin" ]]; then
             shasum -a 256 "$FILENAME" | tee "${FILENAME}.sha256"
           else
             sha256sum "$FILENAME" | tee "${FILENAME}.sha256"
           fi
-          
+
           echo "Binary size: $(wc -c < "$FILENAME") bytes"
 
       - name: Upload artifact
@@ -87,11 +131,12 @@ jobs:
           retention-days: 90
 
   release:
-    needs: build
+    needs: [check, build]
+    if: needs.check.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -109,15 +154,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: better-sqlite3-v${{ inputs.better_sqlite3_version }}
-          name: "better-sqlite3 v${{ inputs.better_sqlite3_version }} Prebuilt Binaries"
+          tag_name: better-sqlite3-v${{ needs.check.outputs.version }}
+          name: "better-sqlite3 v${{ needs.check.outputs.version }} Prebuilt Binaries"
           body: |
             Prebuilt `better-sqlite3` native binaries for the kiro-sdlc-agents extension.
-            
-            **Version:** ${{ inputs.better_sqlite3_version }}
-            **N-API:** v${{ inputs.napi_version }}
+
+            **Version:** ${{ needs.check.outputs.version }}
+            **N-API:** v${{ needs.check.outputs.napi }}
             **Platforms:** win32-x64, linux-x64, darwin-x64, darwin-arm64
-            
+
             These binaries are automatically downloaded by the extension on first activation.
           files: |
             *.node
@@ -126,9 +171,12 @@ jobs:
           prerelease: false
 
   update-manifest:
-    needs: [build, release]
+    needs: [check, build, release]
+    if: needs.check.outputs.should_build == 'true'
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -139,10 +187,10 @@ jobs:
       - name: Update release-manifest.json
         shell: bash
         run: |
-          VERSION="${{ inputs.better_sqlite3_version }}"
-          NAPI="${{ inputs.napi_version }}"
+          VERSION="${{ needs.check.outputs.version }}"
+          NAPI="${{ needs.check.outputs.napi }}"
           REPO="${{ github.repository }}"
-          
+
           # Read checksums
           declare -A CHECKSUMS
           declare -A SIZES
@@ -155,7 +203,7 @@ jobs:
             CHECKSUMS["$KEY"]="$HASH"
             SIZES["$KEY"]="$SIZE"
           done
-          
+
           # Generate manifest
           cat > kiro-sdlc-agents/resources/release-manifest.json << EOF
           {
@@ -187,7 +235,7 @@ jobs:
             }
           }
           EOF
-          
+
           echo "=== Updated release-manifest.json ==="
           cat kiro-sdlc-agents/resources/release-manifest.json
 
@@ -196,5 +244,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add kiro-sdlc-agents/resources/release-manifest.json
-          git commit -m "chore: update release-manifest.json for better-sqlite3 v${{ inputs.better_sqlite3_version }}" || echo "No changes"
+          git diff --cached --quiet && echo "No changes" || git commit -m "chore: update release-manifest.json with checksums [skip ci]"
           git push
