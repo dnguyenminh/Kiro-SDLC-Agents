@@ -18,10 +18,17 @@ import { WebviewPanelManager } from "./webview-panel-manager";
 import { KiroTreeViewProvider } from "./sidebar/tree-view-provider";
 import { writeBundledMcpConfig, removeBundledMcpConfig } from "./mcp-injector";
 import { ConfigWatcher } from "./config-watcher";
+import { registerSymbolSearch } from "./symbol-search";
+import { registerDiagnosticsProvider } from "./diagnostics-provider";
+import { registerAIContextCommands } from "./ai-context-commands";
+import { SecurityPanel } from "./panels/security-panel";
+import { showImpactAnalysis } from "./panels/impact-panel";
+import { NativeAddonManager } from "./native-addon-manager";
 
 let mcpManager: McpServerManager | undefined;
 let panelManager: WebviewPanelManager | undefined;
 let configWatcher: ConfigWatcher | undefined;
+let nativeAddonManager: NativeAddonManager | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -35,6 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
 
         mcpManager = new McpServerManager(context.extensionPath, workspaceRoot, outputChannel);
         context.subscriptions.push(mcpManager);
+
+        // Initialize NativeAddonManager for prebuilt binary resolution (KSA-175)
+        nativeAddonManager = new NativeAddonManager(context, outputChannel);
+        mcpManager.setNativeAddonManager(nativeAddonManager);
 
         panelManager = new WebviewPanelManager(mcpManager, context.extensionUri);
         context.subscriptions.push(panelManager);
@@ -102,6 +113,23 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.editConfig", () => handleEditConfig()),
         vscode.commands.registerCommand("kiroSdlc.changeConfig", () => handleChangeConfig()),
     );
+
+    // Register new feature commands (KSA-170 P2)
+    if (mcpManager) {
+        registerSymbolSearch(context, mcpManager);
+        registerDiagnosticsProvider(context, mcpManager);
+        registerAIContextCommands(context, mcpManager);
+
+        context.subscriptions.push(
+            vscode.commands.registerCommand("kiroSdlc.openSecurityPanel", () => {
+                const panel = new SecurityPanel(mcpManager!, context.extensionUri);
+                panel.loadData();
+            }),
+            vscode.commands.registerCommand("kiroSdlc.impactAnalysis", () =>
+                showImpactAnalysis(mcpManager!, context.extensionUri)
+            ),
+        );
+    }
 
     updateStatusBar(statusBar, context);
     checkForUpgrade(context);

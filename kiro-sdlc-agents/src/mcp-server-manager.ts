@@ -23,6 +23,7 @@ import {
   McpSpawnError,
   SERVER_CONSTANTS,
 } from "./types";
+import { NativeAddonManager } from "./native-addon-manager";
 
 export class McpServerManager implements IServerManager, vscode.Disposable {
   private _status: ServerStatus = "stopped";
@@ -32,6 +33,7 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
   private restartCount = 0;
   private isDisposing = false;
   private externalServer = false;
+  private nativeAddonManager: NativeAddonManager | undefined;
 
   private readonly _onStatusChange = new vscode.EventEmitter<ServerStatus>();
   readonly onStatusChange = this._onStatusChange.event;
@@ -41,6 +43,13 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     private readonly workspaceFolder: string,
     private readonly outputChannel: vscode.OutputChannel
   ) {}
+
+  /**
+   * Set the NativeAddonManager for prebuilt binary resolution.
+   */
+  setNativeAddonManager(manager: NativeAddonManager): void {
+    this.nativeAddonManager = manager;
+  }
 
   get status(): ServerStatus {
     return this._status;
@@ -85,6 +94,19 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
       return;
     }
 
+    // Ensure native addon is available (KSA-175: Runtime Self-Download)
+    let nativeBindingPath: string | undefined;
+    if (this.nativeAddonManager) {
+      const addonPath = await this.nativeAddonManager.ensure();
+      if (!addonPath) {
+        this.setStatus("stopped");
+        this.outputChannel.appendLine("[MCP] Native addon unavailable. Server not started.");
+        return;
+      }
+      nativeBindingPath = addonPath;
+      this.outputChannel.appendLine(`[MCP] Native addon resolved: ${addonPath}`);
+    }
+
     // Verify bundle exists
     const entryPath = path.join(this.extensionPath, "mcp-server", "http-entry.js");
     if (!fs.existsSync(entryPath)) {
@@ -94,10 +116,15 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
 
     const configPath = this.getConfigPath();
 
-    // Spawn child process
+    // Spawn child process (with native binding path if available)
     const child = spawn("node", [entryPath, "--port", String(configuredPort), "--config", configPath], {
       cwd: this.workspaceFolder,
-      env: { ...process.env, NODE_ENV: "production", CODE_INTEL_VIEWER_PORT: "0" },
+      env: {
+        ...process.env,
+        NODE_ENV: "production",
+        CODE_INTEL_VIEWER_PORT: "0",
+        ...(nativeBindingPath ? { BETTER_SQLITE3_BINDING: nativeBindingPath } : {}),
+      },
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     });

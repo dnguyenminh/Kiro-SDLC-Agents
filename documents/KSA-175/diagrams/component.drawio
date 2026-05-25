@@ -1,0 +1,57 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — NativeAddonManager&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="nam_class" value="&lt;b&gt;NativeAddonManager&lt;/b&gt;&#10;─────────────&#10;- globalStoragePath: string&#10;- extensionPath: string&#10;- outputChannel: OutputChannel&#10;- manifest: ReleaseManifest&#10;─────────────&#10;+ ensure(): Promise&lt;string | null&gt;&#10;+ getCachedPath(): string | null&#10;+ redownload(): Promise&lt;string | null&gt;&#10;+ getPlatformInfo(): PlatformInfo&#10;─────────────&#10;- loadManifest(): ReleaseManifest&#10;- downloadWithProgress(): Promise&lt;string | null&gt;&#10;- downloadFile(): Promise&lt;void&gt;&#10;- computeSha256(): Promise&lt;string&gt;&#10;- getProxyUrl(): string | undefined" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="300" height="320" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_class" value="&lt;b&gt;McpServerManager&lt;/b&gt;&#10;─────────────&#10;- nativeAddonManager?: NativeAddonManager&#10;─────────────&#10;+ setNativeAddonManager(mgr)&#10;+ spawn(): Promise&lt;void&gt;  [MODIFIED]&#10;+ kill(): Promise&lt;void&gt;&#10;+ restart(): Promise&lt;void&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="60" width="300" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="db_class" value="&lt;b&gt;DatabaseManager&lt;/b&gt;  [MODIFIED]&#10;─────────────&#10;- db: Database&#10;─────────────&#10;+ constructor(dbPath: string)&#10;  reads BETTER_SQLITE3_BINDING env&#10;  passes nativeBinding option" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="300" width="300" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="manifest_file" value="&lt;b&gt;release-manifest.json&lt;/b&gt;  [NEW]&#10;─────────────&#10;version: string&#10;releaseUrl: string&#10;binaries: Record&lt;key, {url, sha256, size}&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="440" width="300" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="workflow_file" value="&lt;b&gt;build-native.yml&lt;/b&gt;  [NEW]&#10;─────────────&#10;Build matrix: 4 platforms&#10;Outputs: .node + .sha256 files&#10;Publishes to GitHub Releases" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="500" width="300" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_nam_mcp" value="passes binding path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="nam_class" target="mcp_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mcp_db" value="env: BETTER_SQLITE3_BINDING" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="mcp_class" target="db_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_nam_manifest" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="nam_class" target="manifest_file" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_workflow_manifest" value="updates checksums" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="workflow_file" target="manifest_file" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="580" width="60" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_green" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="60" y="610" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_green_t" value="New component" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="80" y="604" width="100" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_blue" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="632" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_blue_t" value="Modified component" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="80" y="626" width="120" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_yellow" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="60" y="654" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg_yellow_t" value="New file/config" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="80" y="648" width="100" height="24" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

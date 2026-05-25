@@ -1,0 +1,200 @@
+name: Build Native Addons (better-sqlite3)
+
+on:
+  workflow_dispatch:
+    inputs:
+      better_sqlite3_version:
+        description: 'better-sqlite3 version to build'
+        required: true
+        default: '11.7.0'
+      napi_version:
+        description: 'N-API version target'
+        required: true
+        default: '9'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+          - os: macos-14
+            platform: darwin
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install better-sqlite3
+        run: |
+          mkdir build-temp
+          cd build-temp
+          npm init -y
+          npm install better-sqlite3@${{ inputs.better_sqlite3_version }}
+
+      - name: Locate and rename binary
+        shell: bash
+        run: |
+          VERSION="${{ inputs.better_sqlite3_version }}"
+          NAPI="${{ inputs.napi_version }}"
+          PLATFORM="${{ matrix.platform }}"
+          ARCH="${{ matrix.arch }}"
+          FILENAME="better-sqlite3-v${VERSION}-napi-v${NAPI}-${PLATFORM}-${ARCH}.node"
+          
+          # Find the compiled .node file
+          NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" -o -name "*.node" | head -1)
+          
+          if [ -z "$NODE_FILE" ]; then
+            echo "ERROR: No .node file found!"
+            find build-temp/node_modules/better-sqlite3 -type f -name "*.node"
+            exit 1
+          fi
+          
+          echo "Found: $NODE_FILE"
+          cp "$NODE_FILE" "$FILENAME"
+          
+          # Compute SHA-256 checksum
+          if [[ "$PLATFORM" == "darwin" ]]; then
+            shasum -a 256 "$FILENAME" | tee "${FILENAME}.sha256"
+          else
+            sha256sum "$FILENAME" | tee "${FILENAME}.sha256"
+          fi
+          
+          echo "Binary size: $(wc -c < "$FILENAME") bytes"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            *.node
+            *.sha256
+          retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la *.node *.sha256
+
+      - name: Create checksums.txt
+        run: |
+          cat *.sha256 > checksums.txt
+          echo "=== checksums.txt ==="
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: better-sqlite3-v${{ inputs.better_sqlite3_version }}
+          name: "better-sqlite3 v${{ inputs.better_sqlite3_version }} Prebuilt Binaries"
+          body: |
+            Prebuilt `better-sqlite3` native binaries for the kiro-sdlc-agents extension.
+            
+            **Version:** ${{ inputs.better_sqlite3_version }}
+            **N-API:** v${{ inputs.napi_version }}
+            **Platforms:** win32-x64, linux-x64, darwin-x64, darwin-arm64
+            
+            These binaries are automatically downloaded by the extension on first activation.
+          files: |
+            *.node
+            checksums.txt
+          draft: false
+          prerelease: false
+
+  update-manifest:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Update release-manifest.json
+        shell: bash
+        run: |
+          VERSION="${{ inputs.better_sqlite3_version }}"
+          NAPI="${{ inputs.napi_version }}"
+          REPO="${{ github.repository }}"
+          
+          # Read checksums
+          declare -A CHECKSUMS
+          declare -A SIZES
+          for f in *.sha256; do
+            HASH=$(awk '{print $1}' "$f")
+            NODE_FILE="${f%.sha256}"
+            SIZE=$(wc -c < "$NODE_FILE" | tr -d ' ')
+            KEY=$(echo "$NODE_FILE" | sed "s/better-sqlite3-v${VERSION}-//")
+            KEY="${KEY%.node}"
+            CHECKSUMS["$KEY"]="$HASH"
+            SIZES["$KEY"]="$SIZE"
+          done
+          
+          # Generate manifest
+          cat > kiro-sdlc-agents/resources/release-manifest.json << EOF
+          {
+            "better-sqlite3": {
+              "version": "${VERSION}",
+              "releaseUrl": "https://github.com/${REPO}/releases/tag/better-sqlite3-v${VERSION}",
+              "binaries": {
+                "napi-v${NAPI}-win32-x64": {
+                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-win32-x64.node",
+                  "sha256": "${CHECKSUMS[napi-v${NAPI}-win32-x64]:-placeholder}",
+                  "size": ${SIZES[napi-v${NAPI}-win32-x64]:-5242880}
+                },
+                "napi-v${NAPI}-darwin-x64": {
+                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-darwin-x64.node",
+                  "sha256": "${CHECKSUMS[napi-v${NAPI}-darwin-x64]:-placeholder}",
+                  "size": ${SIZES[napi-v${NAPI}-darwin-x64]:-4194304}
+                },
+                "napi-v${NAPI}-darwin-arm64": {
+                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-darwin-arm64.node",
+                  "sha256": "${CHECKSUMS[napi-v${NAPI}-darwin-arm64]:-placeholder}",
+                  "size": ${SIZES[napi-v${NAPI}-darwin-arm64]:-4194304}
+                },
+                "napi-v${NAPI}-linux-x64": {
+                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-linux-x64.node",
+                  "sha256": "${CHECKSUMS[napi-v${NAPI}-linux-x64]:-placeholder}",
+                  "size": ${SIZES[napi-v${NAPI}-linux-x64]:-5242880}
+                }
+              }
+            }
+          }
+          EOF
+          
+          echo "=== Updated release-manifest.json ==="
+          cat kiro-sdlc-agents/resources/release-manifest.json
+
+      - name: Commit manifest update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kiro-sdlc-agents/resources/release-manifest.json
+          git commit -m "chore: update release-manifest.json for better-sqlite3 v${{ inputs.better_sqlite3_version }}" || echo "No changes"
+          git push

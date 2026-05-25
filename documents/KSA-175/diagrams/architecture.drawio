@@ -1,0 +1,63 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — Runtime Self-Download better-sqlite3&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="460" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary_ext" value="kiro-sdlc-agents (VS Code Extension)" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;fontStyle=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="500" height="380" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_host" value="&lt;b&gt;extension.ts&lt;/b&gt;&#10;activate() / deactivate()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="100" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="native_mgr" value="&lt;b&gt;NativeAddonManager&lt;/b&gt;&#10;ensure() / redownload()&#10;getCachedPath() / getPlatformInfo()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="220" width="220" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_mgr" value="&lt;b&gt;McpServerManager&lt;/b&gt;&#10;spawn() / kill() / restart()&#10;setNativeAddonManager()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="220" width="200" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="manifest" value="&lt;b&gt;release-manifest.json&lt;/b&gt;&#10;URLs + SHA-256 checksums" style="shape=mxgraph.flowchart.document;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="100" y="360" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="cache_store" value="&lt;b&gt;globalStorageUri&lt;/b&gt;&#10;native-addons/better-sqlite3/" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="360" y="360" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary_mcp" value="mcp-code-intelligence-nodejs (Child Process)" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#82b366;verticalAlign=top;fontSize=12;arcSize=8;html=1;fontStyle=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="490" width="500" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="db_mgr" value="&lt;b&gt;DatabaseManager&lt;/b&gt;&#10;new Database(path, {nativeBinding})" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="160" y="530" width="240" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="github_rel" value="&lt;b&gt;GitHub Releases&lt;/b&gt;&#10;Prebuilt .node binaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="640" y="220" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ci_workflow" value="&lt;b&gt;GitHub Actions&lt;/b&gt;&#10;build-native.yml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="640" y="360" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_host" target="native_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_host" target="mcp_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="native_mgr" target="manifest" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="native_mgr" target="cache_store" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="HTTPS download" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="native_mgr" target="github_rel" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="spawn with&#10;BETTER_SQLITE3_BINDING" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="mcp_mgr" target="db_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="publishes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ci_workflow" target="github_rel" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" value="passes path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="native_mgr" target="mcp_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

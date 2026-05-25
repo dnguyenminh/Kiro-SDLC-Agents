@@ -19,7 +19,16 @@ export class DatabaseManager {
   /** Open database, enable WAL, run migrations. */
   initialize(): void {
     this.ensureDirectory();
-    this.db = new Database(this.dbPath);
+
+    // KSA-175: Use prebuilt native binding if provided via environment variable
+    const nativeBinding = process.env.BETTER_SQLITE3_BINDING;
+    if (nativeBinding) {
+      console.error(`[db] Using native binding: ${nativeBinding}`);
+      this.db = new Database(this.dbPath, { nativeBinding });
+    } else {
+      this.db = new Database(this.dbPath);
+    }
+
     this.configureDatabase();
     runMigrations(this.db);
     console.error(`[db] Initialized at ${this.dbPath}`);
