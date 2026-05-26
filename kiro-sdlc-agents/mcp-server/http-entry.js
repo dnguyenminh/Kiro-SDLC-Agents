@@ -116,39 +116,105 @@ function serveFile(relPath, res) {
 
 // === Viewer: API (forwarded as MCP tool calls) ===
 
+function parseSearchResults(raw) {
+  if (!raw) return [];
+  try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) return parsed; } catch {}
+  const entries = [];
+  const lines = raw.split("\n");
+  let current = null;
+  for (const line of lines) {
+    const typeMatch = line.match(/^\[(\w+)\]\s+(.+)/);
+    if (typeMatch) { if (current) entries.push(current); current = { type: typeMatch[1], summary: typeMatch[2] }; }
+    else if (current && line.match(/^\s+ID:\s*(\d+)/)) { const m = line.match(/ID:\s*(\d+)/); if (m) current.id = parseInt(m[1]); }
+    else if (current && line.match(/^\s+Content:/)) { current.content = line.replace(/^\s+Content:\s*/, ""); }
+  }
+  if (current) entries.push(current);
+  return entries;
+}
+
 async function handleViewerApi(url, res) {
   const apiPath = url.pathname.replace("/api/", "");
   try {
     if (apiPath === "memory/status" || apiPath === "kb/status") {
-      sendJson(res, JSON.parse(await callTool("mem_admin", { action: "status" })));
+      try { sendJson(res, JSON.parse(await callTool("mem_admin", { action: "status" }))); }
+      catch { sendJson(res, { totalEntries: 0, totalEdges: 0, totalVectors: 0, tierBreakdown: {} }); }
     } else if (apiPath === "memory/graph/data") {
-      // Graph data: get edges from graph, build nodes
-      const limit = parseInt(url.searchParams.get("limit") || "1000", 10);
-      const raw = await callTool("mem_admin", { action: "dashboard" });
-      const dash = JSON.parse(raw);
-      // Get all edges
-      const edgesRaw = await callTool("mem_graph", { action: "ego", node_id: 1, radius: 100 });
-      // Fallback: return stats only
-      sendJson(res, { nodes: [], edges: [], total_entries: dash.total_entries || 0, total_edges: dash.total_edges || 0 });
+      // Graph data: single call returns both nodes and edges
+      const limit = parseInt(url.searchParams.get("limit") || "15000", 10);
+      try {
+        const raw = await callTool("mem_graph", { action: "graph_data", limit });
+        const data = JSON.parse(raw);
+        sendJson(res, { nodes: data.nodes || [], edges: data.edges || [], total_entries: (data.nodes || []).length, total_edges: (data.edges || []).length });
+      } catch (err) {
+        // Fallback: return empty graph
+        sendJson(res, { nodes: [], edges: [], total_entries: 0, total_edges: 0, error: err.message });
+      }
     } else if (apiPath === "kb/dashboard") {
-      sendJson(res, JSON.parse(await callTool("mem_admin", { action: "dashboard" })));
+      try { sendJson(res, JSON.parse(await callTool("mem_admin", { action: "dashboard" }))); }
+      catch { sendJson(res, { total_entries: 0, total_edges: 0, tier_breakdown: {}, type_breakdown: {} }); }
     } else if (apiPath === "kb/quality") {
-      sendJson(res, JSON.parse(await callTool("mem_scoring", { action: "quality_stats" })));
+      try { sendJson(res, JSON.parse(await callTool("mem_scoring", { action: "quality_stats" }))); }
+      catch { sendJson(res, { average_score: 0, total_scored: 0, distribution: {} }); }
     } else if (apiPath === "kb/quality/low") {
       const threshold = parseInt(url.searchParams.get("threshold") || "40", 10);
       const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-      sendJson(res, JSON.parse(await callTool("mem_scoring", { action: "low_quality", threshold, limit })));
+      try { sendJson(res, JSON.parse(await callTool("mem_scoring", { action: "low_quality", threshold, limit }))); }
+      catch { sendJson(res, []); }
     } else if (apiPath === "kb/analytics") {
-      sendJson(res, JSON.parse(await callTool("mem_admin", { action: "trends", days: 30 })));
+      try {
+        const [trendsR, popR, gapsR] = await Promise.allSettled([
+          callTool("mem_admin", { action: "trends", days: 30 }),
+          callTool("mem_admin", { action: "popular", limit: 15 }),
+          callTool("mem_admin", { action: "zero_results" })
+        ]);
+        const trends = trendsR.status === "fulfilled" ? JSON.parse(trendsR.value) : {};
+        const popular = popR.status === "fulfilled" ? JSON.parse(popR.value) : [];
+        const gaps = gapsR.status === "fulfilled" ? JSON.parse(gapsR.value) : [];
+        const popArr = Array.isArray(popular) ? popular : (popular.queries || []);
+        const gapsArr = Array.isArray(gaps) ? gaps : (gaps.queries || []);
+        sendJson(res, { popular_queries: popArr, zero_results: gapsArr, search_trend: trends.search_volume || [] });
+      } catch { sendJson(res, { popular_queries: [], zero_results: [], search_trend: [] }); }
     } else if (apiPath === "kb/citations/most") {
       const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-      sendJson(res, JSON.parse(await callTool("mem_citations", { action: "most_cited", limit })));
+      try { sendJson(res, JSON.parse(await callTool("mem_citations", { action: "most_cited", limit }))); }
+      catch { sendJson(res, []); }
     } else if (apiPath === "memory/entries") {
       const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-      sendJson(res, JSON.parse(await callTool("mem_crud", { action: "list", limit })));
+      try { sendJson(res, JSON.parse(await callTool("mem_crud", { action: "list", limit }))); }
+      catch { sendJson(res, []); }
     } else if (apiPath === "memory/search") {
       const q = url.searchParams.get("q") || "";
-      sendJson(res, JSON.parse(await callTool("mem_search", { query: q, limit: 20 })));
+      const raw = await callTool("mem_search", { query: q, limit: 20, detail: true });
+      const entries = parseSearchResults(raw);
+      sendJson(res, entries);
+    } else if (apiPath === "kb/tags/search") {
+      const tags = url.searchParams.get("tags") || url.searchParams.get("q") || "";
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+      const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+      try {
+        const all = JSON.parse(await callTool("mem_tags", { action: "search", tags, limit: 500 }));
+        const total = all.length;
+        const page = all.slice(offset, offset + limit);
+        sendJson(res, { entries: page, total, offset, limit });
+      } catch { sendJson(res, { entries: [], total: 0, offset: 0, limit }); }
+    } else if (apiPath === "kb/tags/popular") {
+      const limit = parseInt(url.searchParams.get("limit") || "30", 10);
+      try { sendJson(res, JSON.parse(await callTool("mem_tags", { action: "popular", limit }))); }
+      catch { sendJson(res, []); }
+    } else if (apiPath === "kb/tags") {
+      try {
+        const raw = JSON.parse(await callTool("mem_tags", { action: "taxonomy" }));
+        if (Array.isArray(raw)) {
+          const categories = {};
+          for (const t of raw) { const cat = t.category || "uncategorized"; if (!categories[cat]) categories[cat] = []; categories[cat].push(t.tag); }
+          sendJson(res, { categories });
+        } else { sendJson(res, raw); }
+      } catch { sendJson(res, { categories: {} }); }
+    } else if (apiPath.startsWith("kb/suggestions")) {
+      const q = url.searchParams.get("q") || "";
+      const limit = parseInt(url.searchParams.get("limit") || "5", 10);
+      try { sendJson(res, JSON.parse(await callTool("mem_discover", { action: "suggest", query: q, limit }))); }
+      catch { sendJson(res, []); }
     } else {
       send404(res);
     }
@@ -161,7 +227,9 @@ async function callTool(name, args) {
   const request = { jsonrpc: "2.0", id: ++requestId, method: "tools/call", params: { name, arguments: args } };
   const response = await forwardToChild(request, 30000);
   if (response.error) throw new Error(response.error.message);
-  return response.result?.content?.[0]?.text ?? "{}";
+  const text = response.result?.content?.[0]?.text ?? "{}";
+  if (text.startsWith("Unknown tool:")) throw new Error(text);
+  return text;
 }
 
 // === Router ===

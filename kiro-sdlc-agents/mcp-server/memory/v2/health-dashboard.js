@@ -42,6 +42,7 @@ class HealthDashboard {
             unowned_count: unownedCount,
             metrics,
             recommendations: this.getRecommendations(),
+            trends: this.getTrends({ days: 7 }),
         };
     }
     getMetrics() {

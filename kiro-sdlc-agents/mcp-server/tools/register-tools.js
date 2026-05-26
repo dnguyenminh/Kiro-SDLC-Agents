@@ -54,6 +54,8 @@ const stream_write_file_js_1 = require("./stream-write-file.js");
 const code_kb_export_js_1 = require("./code-kb-export.js");
 const drawio_tool_js_1 = require("./drawio-tool.js");
 const index_js_1 = require("../memory/index.js");
+const tool_dispatcher_consolidated_js_1 = require("../memory/tool-dispatcher-consolidated.js");
+const tool_dispatcher_v2_js_1 = require("../memory/tool-dispatcher-v2.js");
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 function registerTools(server, dbManager, indexer, workspace) {
     const queryLayer = new query_layer_js_1.QueryLayer(dbManager);
@@ -110,7 +112,11 @@ function initOrchestration(engine) {
 let memoryDispatcher = null;
 /** Initialize memory dispatcher with engine and optional embedding. */
 function initMemoryDispatcher(engine, workspace, embeddingService) {
-    memoryDispatcher = new index_js_1.MemoryToolDispatcher(engine, workspace, embeddingService);
+    const v1 = new index_js_1.MemoryToolDispatcher(engine, workspace, embeddingService);
+    const db = engine.db || engine.getDb?.() || null;
+    const v2 = db ? new tool_dispatcher_v2_js_1.MemoryToolDispatcherV2(db) : null;
+    const consolidated = new tool_dispatcher_consolidated_js_1.MemoryToolDispatcherConsolidated(v1, v2);
+    memoryDispatcher = consolidated;
 }
 /** Get the initialized memory dispatcher (for tool-call ingest hook). */
 function getMemoryDispatcherInstance() {
@@ -120,7 +126,10 @@ function getMemoryDispatcher(dbManager, workspace) {
     if (!memoryDispatcher) {
         const engine = new index_js_1.MemoryEngine(dbManager.getDb());
         engine.startSession('mcp-client');
-        memoryDispatcher = new index_js_1.MemoryToolDispatcher(engine, workspace, null);
+        const v1 = new index_js_1.MemoryToolDispatcher(engine, workspace, null);
+        const db = dbManager.getDb();
+        const v2 = db ? new tool_dispatcher_v2_js_1.MemoryToolDispatcherV2(db) : null;
+        memoryDispatcher = new tool_dispatcher_consolidated_js_1.MemoryToolDispatcherConsolidated(v1, v2);
     }
     return memoryDispatcher;
 }

@@ -64,11 +64,15 @@ export class TagsPanel extends BasePanel {
       case "filterByTag":
         if (msg.type === "filterByTag") {
           try {
-            const r = await this.mcpManager.invokeTool("mem_tags", { action: "search", tags: msg.tag });
+            const r = await this.mcpManager.invokeTool("mem_tags", { action: "search", tags: msg.tag, limit: 500 });
             let entries: any[];
             try { const parsed = JSON.parse(r); entries = Array.isArray(parsed) ? parsed : (parsed.entries || []); }
             catch { entries = []; }
-            this.sendMessage({ type: "filteredEntries", entries });
+            const offset = msg.offset || 0;
+              const limit = msg.limit || 20;
+              const total = entries.length;
+              const page = entries.slice(offset, offset + limit);
+              this.sendMessage({ type: "filteredEntries", entries: page, total });
           } catch (err) {
             this.sendMessage({ type: "filteredEntries", entries: [] });
           }
