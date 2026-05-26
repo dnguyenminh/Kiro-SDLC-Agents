@@ -7,299 +7,138 @@ on:
         description: 'better-sqlite3 version to build'
         required: true
         default: '11.7.0'
-  push:
-    branches: [main]
-    paths:
-      - 'kiro-sdlc-agents/resources/release-manifest.json'
+      node_version:
+        description: 'Node.js major version to build for'
+        required: true
+        default: '22'
+        type: choice
+        options:
+          - '20'
+          - '22'
+          - '24'
+          - 'all'
 
 env:
-  DEFAULT_BETTER_SQLITE3_VERSION: '11.7.0'
+  DEFAULT_VERSION: '11.7.0'
 
 jobs:
-  # Gate job: skip entire workflow if release already exists with all binaries
-  check:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
-      should_build: ${{ steps.check_release.outputs.should_build }}
-      version: ${{ steps.check_release.outputs.version }}
+      version: ${{ steps.setup.outputs.version }}
+      matrix: ${{ steps.setup.outputs.matrix }}
     steps:
-      - name: Check if release already complete
-        id: check_release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Setup build matrix
+        id: setup
         run: |
-          VERSION="${{ inputs.better_sqlite3_version || env.DEFAULT_BETTER_SQLITE3_VERSION }}"
-          TAG="better-sqlite3-v${VERSION}"
-
+          VERSION="${{ inputs.better_sqlite3_version || '11.7.0' }}"
+          NODE_INPUT="${{ inputs.node_version || '22' }}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-          # Check if release with all 12 binaries already exists (3 node versions x 4 platforms)
-          ASSETS=$(gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q '.assets[].name' 2>/dev/null || echo "")
-
-          EXPECTED_COUNT=0
-          for NODE_VER in 20 22 24; do
-            for PLAT in "win32-x64" "linux-x64" "darwin-x64" "darwin-arm64"; do
-              if echo "$ASSETS" | grep -q "node-v${NODE_VER}-${PLAT}.node"; then
-                EXPECTED_COUNT=$((EXPECTED_COUNT + 1))
-              fi
-            done
-          done
-
-          if [ "$EXPECTED_COUNT" -eq 12 ]; then
-            echo "✅ Release $TAG already has all 12 platform binaries. Skipping build."
-            echo "should_build=false" >> $GITHUB_OUTPUT
+          if [ "$NODE_INPUT" = "all" ]; then
+            NODES='["20","22","24"]'
           else
-            echo "🔨 Release $TAG has ${EXPECTED_COUNT}/12 binaries. Will build missing ones."
-            echo "should_build=true" >> $GITHUB_OUTPUT
+            NODES="[\"${NODE_INPUT}\"]"
           fi
 
+          MATRIX="{\"node_version\":${NODES},\"include\":["
+          FIRST=true
+          for NV in $(echo $NODES | tr -d '[]"' | tr ',' ' '); do
+            for ENTRY in "windows-latest,win32,x64" "ubuntu-latest,linux,x64" "macos-latest,darwin,x64" "macos-14,darwin,arm64"; do
+              OS=$(echo $ENTRY | cut -d, -f1)
+              PLAT=$(echo $ENTRY | cut -d, -f2)
+              ARCH=$(echo $ENTRY | cut -d, -f3)
+              if [ "$FIRST" = true ]; then FIRST=false; else MATRIX="${MATRIX},"; fi
+              MATRIX="${MATRIX}{\"os\":\"${OS}\",\"platform\":\"${PLAT}\",\"arch\":\"${ARCH}\",\"node_version\":\"${NV}\"}"
+            done
+          done
+          MATRIX="${MATRIX}]}"
+          echo "matrix=${MATRIX}" >> $GITHUB_OUTPUT
+          echo "Matrix: ${MATRIX}"
+
   build:
-    needs: check
-    if: needs.check.outputs.should_build == 'true'
+    needs: prepare
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # Node 20 LTS (N-API v9, MODULE_VERSION 115)
-          - os: windows-latest
-            platform: win32
-            arch: x64
-            node_version: '20'
-            node_label: 'node-v20'
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            node_version: '20'
-            node_label: 'node-v20'
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-            node_version: '20'
-            node_label: 'node-v20'
-          - os: macos-14
-            platform: darwin
-            arch: arm64
-            node_version: '20'
-            node_label: 'node-v20'
-          # Node 22 LTS (N-API v9, MODULE_VERSION 127)
-          - os: windows-latest
-            platform: win32
-            arch: x64
-            node_version: '22'
-            node_label: 'node-v22'
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            node_version: '22'
-            node_label: 'node-v22'
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-            node_version: '22'
-            node_label: 'node-v22'
-          - os: macos-14
-            platform: darwin
-            arch: arm64
-            node_version: '22'
-            node_label: 'node-v22'
-          # Node 24 (N-API v10, MODULE_VERSION 137)
-          - os: windows-latest
-            platform: win32
-            arch: x64
-            node_version: '24'
-            node_label: 'node-v24'
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            node_version: '24'
-            node_label: 'node-v24'
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-            node_version: '24'
-            node_label: 'node-v24'
-          - os: macos-14
-            platform: darwin
-            arch: arm64
-            node_version: '24'
-            node_label: 'node-v24'
-
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
-
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node_version: ${{ matrix.node_version }}
+          node-version: ${{ matrix.node_version }}
 
       - name: Print Node info
-        run: |
-          node -e "console.log('Node:', process.version, '| N-API:', process.versions.napi, '| MODULE_VERSION:', process.config.variables.node_module_version)"
-
-      - name: Install better-sqlite3
-        run: |
-          mkdir build-temp
-          cd build-temp
-          npm init -y
-          npm install better-sqlite3@${{ needs.check.outputs.version }}
-
-      - name: Locate and rename binary
         shell: bash
         run: |
-          VERSION="${{ needs.check.outputs.version }}"
-          NODE_LABEL="${{ matrix.node_label }}"
-          PLATFORM="${{ matrix.platform }}"
-          ARCH="${{ matrix.arch }}"
-          FILENAME="better-sqlite3-v${VERSION}-${NODE_LABEL}-${PLATFORM}-${ARCH}.node"
+          echo "Node: $(node --version)"
+          echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
+          node -e "console.log('MODULE_VERSION:', process.config.variables.node_module_version)"
 
-          # Find the compiled .node file
-          NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" -o -name "*.node" | head -1)
+      - name: Build better-sqlite3
+        shell: bash
+        run: |
+          mkdir build-temp && cd build-temp
+          npm init -y
+          npm install "better-sqlite3@${{ needs.prepare.outputs.version }}"
 
+      - name: Package binary
+        shell: bash
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          FILENAME="better-sqlite3-v${VERSION}-node-v${{ matrix.node_version }}-${{ matrix.platform }}-${{ matrix.arch }}.node"
+
+          NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" | head -1)
           if [ -z "$NODE_FILE" ]; then
-            echo "ERROR: No .node file found!"
-            find build-temp/node_modules/better-sqlite3 -type f -name "*.node"
+            echo "ERROR: .node file not found"
+            find build-temp -name "*.node"
             exit 1
           fi
 
-          echo "Found: $NODE_FILE"
           cp "$NODE_FILE" "$FILENAME"
+          sha256sum "$FILENAME" > "${FILENAME}.sha256" 2>/dev/null || shasum -a 256 "$FILENAME" > "${FILENAME}.sha256"
+          echo "Built: $FILENAME ($(wc -c < "$FILENAME") bytes)"
+          cat "${FILENAME}.sha256"
 
-          # Compute SHA-256 checksum
-          if [[ "$PLATFORM" == "darwin" ]]; then
-            shasum -a 256 "$FILENAME" | tee "${FILENAME}.sha256"
-          else
-            sha256sum "$FILENAME" | tee "${FILENAME}.sha256"
-          fi
-
-          echo "Binary size: $(wc -c < "$FILENAME") bytes"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.node_label }}-${{ matrix.platform }}-${{ matrix.arch }}
+          name: binary-node-v${{ matrix.node_version }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             *.node
             *.sha256
           retention-days: 90
 
   release:
-    needs: [check, build]
-    if: needs.check.outputs.should_build == 'true'
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-
-      - name: List artifacts
-        run: ls -la *.node *.sha256
-
-      - name: Create checksums.txt
-        run: |
-          cat *.sha256 > checksums.txt
-          echo "=== checksums.txt ==="
-          cat checksums.txt
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: better-sqlite3-v${{ needs.check.outputs.version }}
-          name: "better-sqlite3 v${{ needs.check.outputs.version }} Prebuilt Binaries"
-          body: |
-            Prebuilt `better-sqlite3` native binaries for the kiro-sdlc-agents extension.
-
-            **Version:** ${{ needs.check.outputs.version }}
-            **Node versions:** 20 (LTS), 22 (LTS), 24
-            **Platforms:** win32-x64, linux-x64, darwin-x64, darwin-arm64
-
-            ### Naming scheme
-            `better-sqlite3-v{version}-node-v{major}-{platform}-{arch}.node`
-
-            ### Node to N-API to MODULE_VERSION mapping
-            | Node | N-API | MODULE_VERSION |
-            |------|-------|----------------|
-            | 20   | v9    | 115            |
-            | 22   | v9    | 127            |
-            | 24   | v10   | 137            |
-
-            These binaries are automatically downloaded by the extension on first activation.
-          files: |
-            *.node
-            checksums.txt
-          draft: false
-          prerelease: false
-
-  update-manifest:
-    needs: [check, build, release]
-    if: needs.check.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
+          pattern: binary-*
           merge-multiple: true
 
-      - name: Update release-manifest.json
-        shell: bash
+      - name: List binaries
+        run: ls -la *.node *.sha256
+
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${{ needs.check.outputs.version }}"
-          REPO="${{ github.repository }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TAG="better-sqlite3-v${VERSION}"
 
-          # Build JSON entries for all binaries
-          BINARIES=""
-          for NODE_VER in 20 22 24; do
-            for PLAT in "win32-x64" "linux-x64" "darwin-x64" "darwin-arm64"; do
-              KEY="node-v${NODE_VER}-${PLAT}"
-              FILENAME="better-sqlite3-v${VERSION}-${KEY}.node"
+          # Create release if not exists
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --title "better-sqlite3 v${VERSION} Prebuilt Binaries" \
+              --notes "Prebuilt binaries for Node 20/22/24 on win32-x64, linux-x64, darwin-x64, darwin-arm64."
 
-              if [ -f "$FILENAME" ]; then
-                HASH=$(awk '{print $1}' "${FILENAME}.sha256")
-                SIZE=$(wc -c < "$FILENAME" | tr -d ' ')
-              else
-                HASH="placeholder"
-                SIZE=5242880
-              fi
-
-              URL="https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/${FILENAME}"
-
-              if [ -n "$BINARIES" ]; then
-                BINARIES="${BINARIES},"
-              fi
-              BINARIES="${BINARIES}
-        \"${KEY}\": {
-          \"url\": \"${URL}\",
-          \"sha256\": \"${HASH}\",
-          \"size\": ${SIZE}
-        }"
-            done
+          # Upload binaries (overwrite existing)
+          for f in *.node; do
+            gh release upload "$TAG" "$f" --clobber
           done
 
-          cat > kiro-sdlc-agents/resources/release-manifest.json << EOF
-          {
-            "better-sqlite3": {
-              "version": "${VERSION}",
-              "releaseUrl": "https://github.com/${REPO}/releases/tag/better-sqlite3-v${VERSION}",
-              "binaries": {${BINARIES}
-              }
-            }
-          }
-          EOF
-
-          echo "=== Updated release-manifest.json ==="
-          cat kiro-sdlc-agents/resources/release-manifest.json
-
-      - name: Commit manifest update
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add kiro-sdlc-agents/resources/release-manifest.json
-          git diff --cached --quiet && echo "No changes" || git commit -m "chore: update release-manifest.json with checksums [skip ci]"
-          git push
+          echo "Uploaded $(ls *.node | wc -l) binaries to release $TAG"
