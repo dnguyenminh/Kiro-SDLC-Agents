@@ -126,7 +126,7 @@ export class NativeAddonManager {
         const platform = process.platform;
         const arch = process.arch;
         const napiVersion = process.versions.napi || "9";
-        const nodeMajorVersion = process.versions.node.split(".")[0];
+        const nodeMajorVersion = this.getSystemNodeMajorVersion();
         const electronVersion = process.versions.electron || "unknown";
         const version = this.manifest["better-sqlite3"].version;
         const binaries = this.manifest["better-sqlite3"].binaries;
@@ -190,6 +190,25 @@ export class NativeAddonManager {
             throw new Error(`Release manifest not found: ${manifestPath}`);
         }
         return JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    }
+
+    /**
+     * Detect system Node.js major version (the one used by spawn("node")).
+     * Extension host runs Electron's Node (e.g. 22), but child process uses system node.
+     */
+    private getSystemNodeMajorVersion(): string {
+        try {
+            const { execSync } = require("child_process") as typeof import("child_process");
+            const output = execSync("node --version", { encoding: "utf-8", timeout: 5000 }).trim();
+            const major = output.replace("v", "").split(".")[0];
+            this.outputChannel.appendLine(`[NativeAddon] System Node: ${output} (major: ${major})`);
+            return major;
+        } catch {
+            // Fallback to extension host Node version
+            const fallback = process.versions.node.split(".")[0];
+            this.outputChannel.appendLine(`[NativeAddon] Cannot detect system Node, using host: v${fallback}`);
+            return fallback;
+        }
     }
 
     private async downloadWithProgress(info: PlatformInfo): Promise<string | null> {
