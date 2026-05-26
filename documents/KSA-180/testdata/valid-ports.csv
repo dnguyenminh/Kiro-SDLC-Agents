@@ -1,0 +1,9 @@
+port,description
+1,minimum valid
+80,common HTTP
+443,common HTTPS
+3000,dev server
+8080,alternative HTTP
+9181,default MCP
+9999,high port
+65535,maximum valid

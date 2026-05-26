@@ -1,0 +1,12 @@
+src/analyzers/complexity/counters/BaseNodeCounter.ts(6,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/GoCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/JavaCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/KotlinCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/PythonCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/TypeScriptCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(5,37): error TS2307: Cannot find module './CircularDepDetector.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(6,35): error TS2307: Cannot find module './RelatedTestFinder.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(7,33): error TS2307: Cannot find module './HotPathAnalyzer.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(8,36): error TS2307: Cannot find module './DeadImportDetector.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(9,34): error TS2307: Cannot find module './ModuleSummarizer.js' or its corresponding type declarations.
+src/analyzers/graph-analysis/index.ts(13,74): error TS2307: Cannot find module './GraphAnalysisTools.js' or its corresponding type declarations.

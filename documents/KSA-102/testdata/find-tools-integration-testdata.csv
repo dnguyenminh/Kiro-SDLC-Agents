@@ -1,0 +1,15 @@
+test_case_id,query,model_installed,mock_score,expected_result,description
+IT-01,jira_search,yes,N/A,registry_hit,Registry exact match — cache not consulted
+IT-02,search jira,yes,N/A,cache_hit,Cache hit — embedding not called
+IT-03,find jira tickets,yes,0.87,embedding_hit_cached,Embedding finds match and caches it
+IT-04,completely unrelated xyz,yes,0.50,empty_array,All tiers miss — score below threshold
+IT-05,search jira,no,N/A,fallthrough_delegate,No model — graceful degradation to delegate
+IT-06,slow query,yes,0.90,timeout_fallthrough,Embedding takes 200ms — timeout at 100ms
+IT-07,search jira,yes,N/A,stale_miss,Stale cache entry skipped after registry change
+IT-08,search jira,yes,N/A,cache_cleared,Model switch clears all cache entries
+E2E-API-04,search knowledge base semantic,yes,N/A,tool_returned,Semantic query finds relevant tool
+E2E-API-05,,yes,N/A,error,Empty query rejected
+E2E-API-06,search jira issues,yes,N/A,cached_on_repeat,Second call uses cache (faster)
+SIT-02,"tìm kiếm jira",yes_english_only,N/A,hint_shown,Vietnamese query triggers multilingual hint
+SIT-03,search jira,no,N/A,auto_download_started,First use triggers background model download
+SIT-04,search jira,yes,0.87,cache_persisted,Cache survives server restart

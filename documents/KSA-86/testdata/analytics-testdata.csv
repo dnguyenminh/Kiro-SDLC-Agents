@@ -1,0 +1,13 @@
+test_case_id,query,count,avg_results,type,expected_badge,expected_result,description
+TC-005,python setup,8,3.2,popular,badge-info (blue),Row in popular queries table,Popular query — high count
+TC-005,api design,6,2.1,popular,badge-info (blue),Row in popular queries table,Popular query — medium count
+TC-005,docker build,5,4.0,popular,badge-info (blue),Row in popular queries table,Popular query
+TC-005,test patterns,4,1.5,popular,badge-info (blue),Row in popular queries table,Popular query — low count
+TC-005,ci pipeline,3,2.8,popular,badge-info (blue),Row in popular queries table,Popular query — lowest
+TC-005,grpc config,5,0,zero_result,badge-warn (amber),Row in zero-result table with Gap status,Content gap — high count
+TC-005,k8s helm chart,3,0,zero_result,badge-warn (amber),Row in zero-result table with Gap status,Content gap
+TC-005,oauth2 flow,2,0,zero_result,badge-warn (amber),Row in zero-result table with Gap status,Content gap — low count
+TC-005,graphql schema,2,0,zero_result,badge-warn (amber),Row in zero-result table with Gap status,Content gap — lowest
+TC-202,,0,,popular,,No data yet message displayed,Empty state — no search history
+TC-202,,0,,zero_result,,No gaps detected message displayed,Empty state — no gaps
+TC-403,query_01 through query_30,1-30,1.0-5.0,popular,,Only 15 rows displayed (max limit),Boundary — max 15 popular queries

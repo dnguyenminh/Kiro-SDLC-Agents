@@ -1,0 +1,73 @@
+<mxfile>
+  <diagram name="System Context" id="sys_ctx">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-173: Graph Engine — System Context&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="350" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="boundary" value="&lt;b&gt;Graph Engine Module (KSA-173)&lt;/b&gt;" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="120" width="500" height="400" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="30" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_ai" value="AI Agent" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="380" width="30" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="call_graph_builder" value="&lt;b&gt;Call Graph Builder&lt;/b&gt;&#10;Resolves function calls&#10;Creates call edges" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="150" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="dep_graph_builder" value="&lt;b&gt;Dependency Graph Builder&lt;/b&gt;&#10;Resolves imports&#10;Creates dep edges" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="560" y="150" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="traversal" value="&lt;b&gt;Graph Traversal&lt;/b&gt;&#10;BFS, DFS&#10;Shortest path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="260" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="analysis" value="&lt;b&gt;Analysis Engine&lt;/b&gt;&#10;Impact, Cycles&#10;Hot paths" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="560" y="260" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="mcp_tools" value="&lt;b&gt;MCP Tool Interface&lt;/b&gt;&#10;8 graph tools&#10;JSON-RPC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="430" y="380" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="graph_store" value="&lt;b&gt;Graph Store&lt;/b&gt;&#10;In-memory&#10;Adjacency lists" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="400" width="100" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_parser" value="&lt;b&gt;Tree-sitter Parser&lt;/b&gt;&#10;(KSA-172)&#10;AST + Symbols" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="150" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_context" value="&lt;b&gt;AI Context Tools&lt;/b&gt;&#10;(KSA-174)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="270" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_quality" value="&lt;b&gt;Code Quality&lt;/b&gt;&#10;(KSA-175)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="350" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_security" value="&lt;b&gt;Security Analysis&lt;/b&gt;&#10;(KSA-176)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="430" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_dev_mcp" value="MCP calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="actor_dev" target="mcp_tools" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ai_mcp" value="MCP calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="actor_ai" target="mcp_tools" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_parser_call" value="AST + Symbols" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_parser" target="call_graph_builder" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_parser_dep" value="Imports" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_parser" target="dep_graph_builder" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_to_context" value="Graph data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="analysis" target="ext_context" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_to_quality" value="Graph data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="analysis" target="ext_quality" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_to_security" value="Graph data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="analysis" target="ext_security" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,9 @@
+test_case_id,feature,section,expected_http_code,expected_title,description
+TC-006,help_panel,graph,200,"Knowledge Graph 3D",Graph section help content loads
+TC-105,help_panel,graph,200,any,Panel closes on Escape key
+TC-203,help_panel,invalid-section,404,error,Invalid section returns 404
+TC-307,help_panel,dashboard,200,any,Panel closes via X/outside/Escape
+TC-702,help_panel,graph,200,valid_markdown,API returns markdown content
+TC-702,help_panel,dashboard,200,valid_markdown,Dashboard help content
+TC-403,help_panel,<script>alert(1)</script>,404,error,XSS attempt blocked
+TC-403,help_panel,../../etc/passwd,404,error,Path traversal blocked

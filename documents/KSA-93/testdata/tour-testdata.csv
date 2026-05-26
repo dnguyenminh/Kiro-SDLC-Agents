@@ -1,0 +1,9 @@
+test_case_id,feature,scenario,localstorage_state,kb_entries,expected_result,description
+TC-001,tour,first_visit,empty,any,tour_appears,First visit with no localStorage triggers tour
+TC-002,tour,complete_tour,empty,any,tour_completed_flag_saved,Complete all 6 steps saves flag
+TC-100,tour,skip_tour,empty,any,skipped_flag_saved,Skip button saves skipped state
+TC-101,tour,previous_nav,tour_active_step3,any,step_goes_back,Previous button navigates back
+TC-102,tour,restart,tour_completed,any,tour_restarts,Restart from help menu works
+TC-200,tour,missing_target,empty,any,step_skipped,Non-existent CSS selector skips step
+TC-201,tour,no_localstorage,blocked,any,tour_shows_every_time,Graceful degradation without storage
+TC-300,tour,persistence,tour_completed,any,no_tour_on_refresh,Tour never shows again after completion

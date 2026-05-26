@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
+  <img src="https://img.shields.io/badge/Code_Intel-5-teal?style=for-the-badge" alt="Code Intel">
 </p>
 
 <p align="center">
@@ -186,6 +187,21 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Kiro SDLC" to see all available 
 | `Kiro SDLC: Open KB Browser` | Open the web dashboard in your browser |
 | `Kiro SDLC: Edit Config` | Open the orchestration config file for editing |
 | `Kiro SDLC: Change Config...` | Select a different orchestration config file |
+| `Kiro SDLC: Symbol Search` | Quick Pick symbol search across codebase (KSA-179) |
+| `Kiro SDLC: Open Security Panel` | View security findings grouped by severity (KSA-173) |
+| `Kiro SDLC: Impact Analysis` | Analyze blast radius of modifying a symbol (KSA-174) |
+| `Kiro SDLC: Get AI Context` | Copy AI context for symbol at cursor to clipboard (KSA-177) |
+| `Kiro SDLC: Get Edit Context` | Copy edit context for symbol at cursor to clipboard (KSA-177) |
+
+### Code Intelligence Features (KSA-170)
+
+| Feature | Description |
+|---------|-------------|
+| **Symbol Search** | Debounced QuickPick — type to search, navigate to file:line on select |
+| **Security Panel** | Webview showing findings by severity (critical/high/medium/low) with file links |
+| **Diagnostics Provider** | Auto-analyzes on file save, shows issues in VS Code Problems panel with quick fixes |
+| **Impact Analysis** | Blast radius visualization — affected files, callers, tests for any symbol |
+| **AI Context Commands** | Get context for symbol at cursor → copies to clipboard for AI chat |
 
 ---
 

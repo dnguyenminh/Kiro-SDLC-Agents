@@ -46,6 +46,10 @@ export class DashboardPanel extends BasePanel {
   async loadData(): Promise<void> {
     try {
       const dashRaw = await this.mcpManager.invokeTool("mem_admin", { action: "dashboard" });
+      if (dashRaw.startsWith("Unknown tool")) {
+        this.sendMessage({ type: "dashboardData", healthScore: 0, totalEntries: 0, qualityAvg: 0, staleCount: 0, unownedCount: 0, recommendations: [], tierBreakdown: {}, typeBreakdown: {} } as any);
+        return;
+      }
       const dash = JSON.parse(dashRaw);
 
       // New unified format returns top-level fields directly

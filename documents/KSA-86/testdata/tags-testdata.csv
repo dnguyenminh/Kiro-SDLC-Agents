@@ -1,0 +1,15 @@
+test_case_id,tag_name,usage_count,expected_font_size_rem,expected_color_hue,action,expected_result,description
+TC-003,python,15,1.45,184,view,Largest font size (max count),Tag with highest usage
+TC-003,api,12,1.29,241,view,Large font size,High usage tag
+TC-003,testing,8,1.08,296,view,Medium font size,Medium usage tag
+TC-003,docker,5,0.92,148,view,Smaller font size,Lower usage tag
+TC-003,ci,3,0.81,219,view,Small font size,Low usage tag
+TC-003,security,6,0.97,283,view,Medium-small font size,Medium-low usage
+TC-100,python,15,1.45,184,click,Search results for python entries displayed,Click tag triggers search
+TC-101,api,12,1.29,241,type+enter,Search results for api entries displayed,Type and press Enter
+TC-201,,0,,,,Empty cloud container — no tags rendered,Empty KB no tags
+TC-301,python,15,1.45,,verify_size,Font size = 0.65 + (15/15) * 0.8 = 1.45rem,Max font size formula
+TC-301,ci,3,0.81,,verify_size,Font size = 0.65 + (3/15) * 0.8 = 0.81rem,Min-range font size
+TC-303,python,15,,184,verify_color,hsl((112*37)%360) = hsl(184) — consistent on reload,Color hash consistency
+TC-400,tag_01 through tag_50,1-50,,,view,Only 30 tags displayed (API limit),Boundary — max 30 tags
+TC-404,<script>alert('xss')</script>,1,,,view,Tag displayed as escaped text — no script execution,XSS prevention

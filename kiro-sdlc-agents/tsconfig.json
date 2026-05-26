@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["node_modules", "out", "resources", "src/test"]
+  "exclude": ["node_modules", "out", "resources", "src/test", "src/**/__tests__"]
 }

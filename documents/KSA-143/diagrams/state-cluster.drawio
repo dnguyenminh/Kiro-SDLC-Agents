@@ -1,0 +1,61 @@
+<mxfile>
+  <diagram name="Cluster State Machine" id="state_cluster">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;Cluster State Machine&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="320" y="10" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="270" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="collapsed" value="&lt;b&gt;COLLAPSED&lt;/b&gt;&#10;Super node visible&#10;Badge shows child count" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="180" y="250" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="expanding" value="&lt;b&gt;EXPANDING&lt;/b&gt;&#10;Animation: center to orbital&#10;Duration: 400ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="440" y="120" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="expanded" value="&lt;b&gt;EXPANDED&lt;/b&gt;&#10;Child nodes visible&#10;Intra-cluster edges shown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="250" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="collapsing" value="&lt;b&gt;COLLAPSING&lt;/b&gt;&#10;Animation: orbital to center&#10;Duration: 400ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="440" y="380" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="collapsed" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_expand" value="distance &lt; expandThreshold&#10;[budget allows]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="collapsed" target="expanding" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_expanded" value="animation complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="expanding" target="expanded" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_collapse" value="distance &gt; collapseThreshold&#10;[no interaction]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="expanded" target="collapsing" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_collapsed" value="animation complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="collapsing" target="collapsed" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cancel_expand" value="cancelled&#10;(rapid zoom out)" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;" edge="1" source="expanding" target="collapsed" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="155"/>
+              <mxPoint x="380" y="200"/>
+              <mxPoint x="260" y="200"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_cancel_collapse" value="cancelled&#10;(rapid zoom in)" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;" edge="1" source="collapsing" target="expanded" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="415"/>
+              <mxPoint x="680" y="370"/>
+              <mxPoint x="760" y="370"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

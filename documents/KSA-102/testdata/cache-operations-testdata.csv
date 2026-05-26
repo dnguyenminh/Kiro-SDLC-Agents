@@ -1,0 +1,18 @@
+test_case_id,query,cached_tokens,tool_name,score,expected_result,description
+PBT-01,"search jira issues","search,issues,jira",jira_search,0.87,tokens_unchanged,Idempotent normalization — same tokens after double normalize
+PBT-01,"Search JIRA Issues","search,issues,jira",jira_search,0.87,tokens_unchanged,Case normalization — uppercase becomes lowercase
+PBT-02,"jira search issues","issues,jira,search",jira_search,0.87,same_set,Order independence — reordered words produce same token set
+PBT-03,"search jira issues board","board,issues,jira,search",jira_search,0.87,cache_hit,80% overlap (4/5 tokens match cached 5-token entry)
+PBT-03,"search jira","jira,search",jira_search,0.87,cache_miss,60% overlap (2/5 tokens) — below 80% threshold
+PBT-04,N/A,N/A,N/A,N/A,size_le_max,After 200 random adds with max_size=100 cache never exceeds 100
+UT-01,"search jira","jira,search",jira_search,0.87,cache_hit,Exact token match returns cached entry
+UT-02,"search jira issues board","board,issues,jira,search",jira_search,0.87,cache_hit,4/5=80% overlap — fuzzy match succeeds
+UT-02,"search jira issues","issues,jira,search",jira_search,0.87,cache_miss,3/5=60% overlap — below threshold
+UT-03,"deploy kubernetes","deploy,kubernetes",N/A,N/A,cache_miss,No matching entry in cache
+UT-04,"search jira","jira,search",jira_search,0.87,entry_created,New cache entry created from embedding result
+UT-05,"test","test",some_tool,0.60,entry_rejected,Score 0.60 below 0.75 threshold — not cached
+UT-06,"search jira","jira,search",jira_search,0.87,stale_skipped,Entry with old registry hash marked stale and skipped
+UT-07,N/A,N/A,oldest_entry,0.76,evicted,LRU eviction removes entry with oldest last_hit
+UT-08,N/A,N/A,N/A,N/A,file_written,Cache persisted to JSON with atomic write
+UT-09,N/A,N/A,N/A,N/A,cache_loaded,Cache loaded from valid JSON file
+UT-10,N/A,N/A,N/A,N/A,empty_cache,Corrupted JSON results in empty cache (no crash)

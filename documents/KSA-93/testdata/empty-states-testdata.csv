@@ -1,0 +1,7 @@
+test_case_id,feature,page,kb_entry_count,expected_title,expected_action_button,description
+TC-004,empty_states,graph,0,"Your Knowledge Graph is Empty","Learn How to Ingest",Graph page empty state
+TC-004,empty_states,dashboard,0,"No Data Yet","Quick Start Guide",Dashboard empty state
+TC-004,empty_states,tags,0,"No Tags Created","How Tags Work",Tags page empty state
+TC-004,empty_states,analytics,0,"No Search Data","Try a Search",Analytics empty state
+TC-302,empty_states,graph,5,none,none,Data present - no empty state shown
+TC-302,empty_states,any,0_loading,"loading_skeleton",none,Loading skeleton before empty state

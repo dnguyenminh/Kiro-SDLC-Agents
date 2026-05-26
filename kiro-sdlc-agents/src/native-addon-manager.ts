@@ -115,8 +115,32 @@ export class NativeAddonManager {
         const arch = process.arch;
         const napiVersion = process.versions.napi || "9";
         const electronVersion = process.versions.electron || "unknown";
-        const cacheKey = `napi-v${napiVersion}-${platform}-${arch}`;
         const version = this.manifest["better-sqlite3"].version;
+        const binaries = this.manifest["better-sqlite3"].binaries;
+
+        // N-API is forward-compatible: binary built for v9 works on v19+
+        // Find the best matching binary: exact match first, then highest available ≤ runtime
+        let cacheKey = `napi-v${napiVersion}-${platform}-${arch}`;
+        let supported = cacheKey in binaries;
+
+        if (!supported) {
+            // Find available binary for this platform/arch with any N-API version
+            const runtimeNapi = parseInt(napiVersion, 10);
+            const candidates = Object.keys(binaries)
+                .filter(k => k.endsWith(`-${platform}-${arch}`))
+                .map(k => ({ key: k, napi: parseInt(k.match(/napi-v(\d+)/)?.[1] || "0", 10) }))
+                .filter(c => c.napi <= runtimeNapi)
+                .sort((a, b) => b.napi - a.napi);
+
+            if (candidates.length > 0) {
+                cacheKey = candidates[0].key;
+                supported = true;
+                this.outputChannel.appendLine(
+                    `[NativeAddon] Runtime N-API v${napiVersion}, using compatible binary: ${cacheKey}`
+                );
+            }
+        }
+
         const cacheDir = path.join(
             this.globalStoragePath,
             "native-addons",
@@ -124,7 +148,6 @@ export class NativeAddonManager {
             `v${version}`,
             cacheKey
         );
-        const supported = cacheKey in this.manifest["better-sqlite3"].binaries;
 
         return { platform, arch, napiVersion, electronVersion, supported, cacheKey, cacheDir };
     }

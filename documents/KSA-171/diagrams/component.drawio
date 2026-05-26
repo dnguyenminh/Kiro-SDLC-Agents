@@ -1,0 +1,78 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Component Diagram — Kotlin Implementation" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="mcp_comp" value="&lt;&lt;component&gt;&gt;&#xa;MCP Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="400" y="60" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="parser_comp" value="&lt;&lt;component&gt;&gt;&#xa;Parser Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="180" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="graph_comp" value="&lt;&lt;component&gt;&gt;&#xa;Graph Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="180" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="context_comp" value="&lt;&lt;component&gt;&gt;&#xa;Context Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="520" y="180" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="quality_comp" value="&lt;&lt;component&gt;&gt;&#xa;Quality Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="740" y="180" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="security_comp" value="&lt;&lt;component&gt;&gt;&#xa;Security Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="320" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="similarity_comp" value="&lt;&lt;component&gt;&gt;&#xa;Similarity Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="320" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="infra_comp" value="&lt;&lt;component&gt;&gt;&#xa;Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="520" y="320" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="treesitter" value="&lt;&lt;external&gt;&gt;&#xa;Tree-sitter (JNI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="460" width="160" height="45" as="geometry" />
+    </mxCell>
+    <mxCell id="onnx" value="&lt;&lt;external&gt;&gt;&#xa;ONNX Runtime" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="460" width="160" height="45" as="geometry" />
+    </mxCell>
+    <mxCell id="jtokkit" value="&lt;&lt;external&gt;&gt;&#xa;jtokkit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="520" y="460" width="160" height="45" as="geometry" />
+    </mxCell>
+    <mxCell id="em1" edge="1" source="mcp_comp" target="parser_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="em2" edge="1" source="mcp_comp" target="graph_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="em3" edge="1" source="mcp_comp" target="context_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="em4" edge="1" source="mcp_comp" target="quality_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="eg1" edge="1" source="graph_comp" target="parser_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ec1" edge="1" source="context_comp" target="graph_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="es1" edge="1" source="security_comp" target="graph_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="es2" edge="1" source="security_comp" target="parser_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="esi1" edge="1" source="similarity_comp" target="infra_comp" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ep1" edge="1" source="parser_comp" target="treesitter" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="eo1" edge="1" source="similarity_comp" target="onnx" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="et1" edge="1" source="context_comp" target="jtokkit" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,63 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;LOD System — Component Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="300" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="lod_pkg" value="&lt;b&gt;lod/ package&lt;/b&gt;" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#388e3c;verticalAlign=top;fontStyle=1;fontSize=12;spacingTop=5;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="700" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="types" value="&lt;b&gt;types.ts&lt;/b&gt;&#10;─────────&#10;GraphData&#10;Node, Edge&#10;Cluster, ClusterHierarchy&#10;LODConfig, ClusterState&#10;Vector3, LODEvent" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="100" width="180" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="config_mod" value="&lt;b&gt;config.ts&lt;/b&gt;&#10;─────────&#10;DEFAULT_CONFIG&#10;validateConfig()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="270" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="clustering_mod" value="&lt;b&gt;ClusteringAlgorithm.ts&lt;/b&gt;&#10;─────────&#10;cluster(graphData, options)&#10;louvainPass()&#10;splitOversized()&#10;mergeUndersized()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="100" width="200" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="distance_mod" value="&lt;b&gt;DistanceChecker.ts&lt;/b&gt;&#10;─────────&#10;evaluate(camera, clusters)&#10;setThresholds()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="100" width="200" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="budget_mod" value="&lt;b&gt;BudgetManager.ts&lt;/b&gt;&#10;─────────&#10;canExpand(cluster)&#10;getFarthestExpanded()&#10;updateCount(delta)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="230" width="200" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="anim_mod" value="&lt;b&gt;AnimationController.ts&lt;/b&gt;&#10;─────────&#10;animateExpand()&#10;animateCollapse()&#10;cancel()&#10;isAnimating()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="250" width="200" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="orbital_mod" value="&lt;b&gt;OrbitalLayout.ts&lt;/b&gt;&#10;─────────&#10;compute(count, center, radius)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="400" width="200" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="supernode_mod" value="&lt;b&gt;SuperNodeFactory.ts&lt;/b&gt;&#10;─────────&#10;create(cluster): THREE.Group&#10;createBadge()&#10;createLabel()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="370" width="200" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="lodmgr_mod" value="&lt;b&gt;LODManager.ts&lt;/b&gt;&#10;─────────&#10;initialize(graphData)&#10;update(camera)&#10;expandCluster()&#10;collapseCluster()&#10;dispose()" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="380" width="180" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_cluster" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="lodmgr_mod" target="clustering_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_dist" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="lodmgr_mod" target="distance_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_budget" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="lodmgr_mod" target="budget_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_anim" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="lodmgr_mod" target="anim_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_anim_orbital" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="anim_mod" target="orbital_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_super" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="lodmgr_mod" target="supernode_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_types" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;fontSize=9;" edge="1" source="lodmgr_mod" target="types" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_mgr_config" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=open;endSize=6;fontSize=9;" edge="1" source="lodmgr_mod" target="config_mod" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

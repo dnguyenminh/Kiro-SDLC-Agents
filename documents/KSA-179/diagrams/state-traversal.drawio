@@ -1,0 +1,86 @@
+<mxfile>
+  <diagram name="State - Traversal" id="state_traversal">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="600">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;State Machine — BFS Traversal&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="10" width="280" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="resolving" value="&lt;b&gt;RESOLVING&lt;/b&gt;&#10;Symbol lookup" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="160" y="70" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="not_found" value="&lt;b&gt;NOT_FOUND&lt;/b&gt;&#10;Return empty + suggest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="160" y="200" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="traversing" value="&lt;b&gt;TRAVERSING&lt;/b&gt;&#10;BFS queue processing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="70" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="filtering" value="&lt;b&gt;FILTERING&lt;/b&gt;&#10;Apply edge/node filters" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="200" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="expanding" value="&lt;b&gt;EXPANDING&lt;/b&gt;&#10;Get neighbors from DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="660" y="70" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="collecting" value="&lt;b&gt;COLLECTING&lt;/b&gt;&#10;Add to results" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="660" y="200" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="formatting" value="&lt;b&gt;FORMATTING&lt;/b&gt;&#10;Build response + metadata" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="350" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="done" value="&lt;b&gt;DONE&lt;/b&gt;&#10;Return response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="480" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="resolving" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_resolve_fail" value="not found" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="resolving" target="not_found" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_resolve_ok" value="found" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="resolving" target="traversing" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_traverse_filter" value="dequeue node" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="traversing" target="filtering" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_filter_expand" value="passes filter" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="filtering" target="expanding" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_expand_collect" value="neighbors found" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="expanding" target="collecting" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_collect_traverse" value="enqueue&#10;(depth &amp;lt; max)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="collecting" target="traversing" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="740" y="310"/>
+              <mxPoint x="500" y="310"/>
+              <mxPoint x="500" y="150"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_traverse_format" value="queue empty OR&#10;limit reached" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="traversing" target="formatting" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="100"/>
+              <mxPoint x="380" y="380"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_format_done" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="formatting" target="done" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_notfound_done" value="return empty" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="not_found" target="done" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="480"/>
+              <mxPoint x="240" y="510"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

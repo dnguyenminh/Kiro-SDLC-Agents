@@ -26,6 +26,19 @@ Khi cần gọi external tool:
 
 **KHÔNG BAO GIỜ** hardcode tool names, CLI commands, hoặc giả định tool tồn tại.
 
+### 2.0.1: PHẢI tìm kỹ — KHÔNG được báo "không có tool"
+
+**CRITICAL RULE:** Trước khi kết luận "không có tool để làm X", agent PHẢI:
+
+1. Thử **ít nhất 3 query khác nhau** với `find_tools`:
+   - Query mô tả hành động: `find_tools("search jira issues")`
+   - Query tên tool dự đoán: `find_tools("jira")`
+   - Query domain keyword: `find_tools("JQL query filter")`
+2. Nếu `find_tools` trả về tool nhưng `execute_dynamic_tool` báo "not found" → thử lại với **exact tool name** từ kết quả `find_tools`
+3. Nếu server status = CONNECTED nhưng tool không tìm thấy → có thể tool nằm trên **nested orchestrator** — gọi `find_tools` với query khác để trigger lazy discovery
+
+**TUYỆT ĐỐI CẤM** báo user "không có tool" sau chỉ 1 lần tìm thất bại. Minimum 3 attempts với query variations.
+
 ### 2.1: MCP Tools First — KHÔNG viết script riêng khi MCP đã có
 
 Khi task cần thao tác với external service (web browsing, screenshot, Jira, database...):

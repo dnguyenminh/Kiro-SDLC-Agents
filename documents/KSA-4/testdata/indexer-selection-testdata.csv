@@ -1,0 +1,13 @@
+test_case_id,indexer_id,label,description,expected_return,expected_files,description_note
+TC-001,indexer-python,"Python Indexer (recommended — zero dependency)","Python 3.7+ standard library only",Component(indexer-python),"index-config.json;modules/;scripts/README.md;scripts/python/",Happy path — Python selected
+TC-002,indexer-java,"Java Indexer","Java 17+ (for JVM projects)",Component(indexer-java),"index-config.json;modules/;scripts/README.md;scripts/java/",Happy path — Java selected
+TC-003,indexer-powershell,"PowerShell Indexer","PowerShell 5.1+ (Windows built-in)",Component(indexer-powershell),"index-config.json;modules/;scripts/README.md;scripts/powershell/",Happy path — PowerShell selected
+TC-004,indexer-bash,"Bash Indexer","Bash 4+ (Linux/Mac built-in)",Component(indexer-bash),"index-config.json;modules/;scripts/README.md;scripts/bash/",Happy path — Bash selected
+TC-005,indexer-nodejs,"Node.js Indexer (most accurate)","Node.js 18+ (needs npm install)",Component(indexer-nodejs),"index-config.json;modules/;scripts/README.md;scripts/nodejs/",Happy path — Node.js selected
+TC-200,,,,undefined,,User presses ESC — cancellation
+TC-201,,,,undefined,,User clicks outside — cancellation
+TC-202,indexer-python,"Python Indexer","Python 3.7+",false,,Source directory missing — error case
+TC-300,,,,single-item,"canPickMany=false",BR-1 single select enforcement
+TC-301,indexer-python,,,true,"index-config.json;modules/;scripts/README.md",BR-2 base config always copied
+TC-303,indexer-python,,,true,"scripts/python/;scripts/bash/(pre-existing)",BR-5/BR-12 existing files preserved
+TC-305,indexer-java,,,true,"scripts/java/ ONLY",BR-9 only one language dir copied

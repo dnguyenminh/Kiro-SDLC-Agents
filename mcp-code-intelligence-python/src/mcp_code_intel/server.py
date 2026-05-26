@@ -23,6 +23,26 @@ from .tools import (
 from .stream_write import handle_stream_write_file
 from .drawio import handle_drawio_layout, DRAWIO_TOOL_DEFINITION
 from .memory import MemoryEngineV2, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS
+from .analyzers.similarity_tools import (
+    SIMILARITY_TOOL_DEFINITIONS,
+    handle_find_duplicates,
+    handle_find_dead_code,
+    handle_git_search,
+)
+from .graph.tool_definitions import GRAPH_TOOL_DEFINITIONS
+from .graph.tool_handlers import (
+    handle_code_callers,
+    handle_code_callees,
+    handle_code_traverse,
+    handle_code_impact,
+    handle_code_dependencies,
+)
+from .context.tool_definitions import CONTEXT_TOOL_DEFINITIONS
+from .context.tool_handlers import (
+    handle_get_ai_context,
+    handle_get_edit_context,
+    handle_get_curated_context,
+)
 from .http import ViewerServer
 from .orchestration.engine import OrchestrationEngine
 from .orchestration.config import OrchestrationConfig, load_orchestration_config
@@ -120,7 +140,7 @@ TOOL_DEFINITIONS = [
         },
     },
     DRAWIO_TOOL_DEFINITION,
-]
+] + SIMILARITY_TOOL_DEFINITIONS + GRAPH_TOOL_DEFINITIONS + CONTEXT_TOOL_DEFINITIONS
 
 
 class McpServer:
@@ -290,6 +310,7 @@ class McpServer:
         self._memory_dispatcher = MemoryToolDispatcher(
             mem_engine, self._workspace, embedding_service
         )
+        self._embedding_service = embedding_service
 
         # Start HTTP viewer server
         viewer_port = self._config.get("viewer_port", 3201)
@@ -390,6 +411,32 @@ class McpServer:
             return handle_code_kb_export(args, self._query_layer, self._workspace)
         if name == "drawio_auto_layout":
             return handle_drawio_layout(args, self._workspace)
+        # Similarity analysis tools (KSA-168)
+        if name == "find_duplicates":
+            return handle_find_duplicates(args, self._db.conn)
+        if name == "find_dead_code":
+            return handle_find_dead_code(args, self._db.conn, self._workspace)
+        if name == "git_search":
+            embed_svc = self._embedding_service if hasattr(self, '_embedding_service') else None
+            return handle_git_search(args, self._db.conn, self._workspace, embed_svc)
+        # Graph tools (KSA-171)
+        if name == "code_callers":
+            return handle_code_callers(args, self._db.conn, self._workspace)
+        if name == "code_callees":
+            return handle_code_callees(args, self._db.conn, self._workspace)
+        if name == "code_traverse":
+            return handle_code_traverse(args, self._db.conn, self._workspace)
+        if name == "code_impact":
+            return handle_code_impact(args, self._db.conn, self._workspace)
+        if name == "code_dependencies":
+            return handle_code_dependencies(args, self._db.conn, self._workspace)
+        # Context tools (KSA-171)
+        if name == "get_ai_context":
+            return handle_get_ai_context(args, self._db.conn, self._workspace)
+        if name == "get_edit_context":
+            return handle_get_edit_context(args, self._db.conn, self._workspace)
+        if name == "get_curated_context":
+            return handle_get_curated_context(args, self._db.conn, self._workspace, self._query_layer)
         # Meta-tools (orchestration)
         if self._meta_dispatcher:
             if name in META_TOOL_NAMES:

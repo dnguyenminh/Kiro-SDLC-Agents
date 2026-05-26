@@ -1,0 +1,10 @@
+test_case_id,feature,entry_id,issue_type,severity,action_endpoint,action_method,confirm_required,expected_http_code,expected_result,description
+TC-005,recommendations,42,stale,high,/api/kb/entries/42/review,POST,false,200,entry_reviewed,Fix Now marks stale entry as reviewed
+TC-104,recommendations,42,stale,high,/api/kb/entries/42/review,POST,false,500,error_shown_retry_enabled,API failure shows error and retry
+TC-305,recommendations,10,duplicate,critical,/api/kb/entries/merge,POST,true,200,confirm_dialog_first,Destructive merge requires confirmation
+TC-303,recommendations,any,mixed,mixed,/api/kb/recommendations,GET,false,200,max_10_items,Max 10 recommendations returned
+TC-304,recommendations,any,mixed,mixed,/api/kb/recommendations,GET,false,200,sorted_by_severity,Critical first then high/medium/low
+TC-402,recommendations,abc,any,any,/api/kb/entries/abc/auto-tag,POST,false,400,bad_request,Invalid entry ID rejected
+TC-402,recommendations,-1,any,any,/api/kb/entries/-1/auto-tag,POST,false,400,bad_request,Negative entry ID rejected
+TC-402,recommendations,99999,any,any,/api/kb/entries/99999/auto-tag,POST,false,404,not_found,Non-existent entry returns 404
+TC-700,recommendations,any,any,any,/api/kb/recommendations,GET,false,200,valid_schema,API returns correct schema

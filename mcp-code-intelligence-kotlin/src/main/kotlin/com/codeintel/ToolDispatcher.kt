@@ -4,6 +4,7 @@
  */
 package com.codeintel
 
+import com.codeintel.analyzers.similarity.SimilarityToolHandler
 import com.codeintel.indexer.IndexingEngine
 import com.codeintel.memory.MemoryEngine
 import com.codeintel.memory.tools.MemoryToolDispatcher
@@ -12,18 +13,25 @@ import com.codeintel.query.QueryLayer
 import com.codeintel.tools.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
+import java.sql.Connection
 
 class ToolDispatcher(
     private val config: Config,
     private val queryLayer: QueryLayer,
     private val indexer: IndexingEngine,
     private val memoryDispatcher: MemoryToolDispatcher?,
-    private val orchestrationEngine: OrchestrationEngine?
+    private val orchestrationEngine: OrchestrationEngine?,
+    private val conn: Connection? = null,
 ) {
-    /** Dispatch a tool call — tries memory, native, meta-tools, then orchestration. */
+    private val graphDispatcher by lazy { conn?.let { GraphContextToolDispatcher(it, config.workspace, queryLayer) } }
+    private val similarityHandler by lazy { conn?.let { SimilarityToolHandler(it, config.workspace) } }
+
+    /** Dispatch a tool call — tries memory, native, similarity, graph/context, meta-tools, then orchestration. */
     fun dispatch(name: String, args: JsonObject): String {
         memoryDispatcher?.dispatch(name, args)?.let { return it }
         dispatchNative(name, args)?.let { return it }
+        similarityHandler?.dispatch(name, args)?.let { return it }
+        graphDispatcher?.dispatch(name, args)?.let { return it }
         dispatchMeta(name, args)?.let { return it }
         return routeToOrchestration(name, args)
     }

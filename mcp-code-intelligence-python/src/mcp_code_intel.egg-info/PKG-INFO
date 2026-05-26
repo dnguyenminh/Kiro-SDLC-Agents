@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: mcp-code-intel
-Version: 0.2.4
+Version: 0.6.0
 Summary: MCP Code Intelligence Server — Python variant with FTS5 search
 License: MIT
 Requires-Python: >=3.11

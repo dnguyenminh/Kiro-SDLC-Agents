@@ -1,0 +1,8 @@
+test_case_id,input,expected_output,description
+TC-601,"<script>alert(1)</script>","&lt;script&gt;alert(1)&lt;/script&gt;",Basic script tag XSS
+TC-601,"<img src=x onerror=alert(1)>","&lt;img src=x onerror=alert(1)&gt;",Image onerror XSS
+TC-601,null,"",Null input returns empty string
+TC-601,undefined,"",Undefined input returns empty string
+TC-601,Normal text,Normal text,Normal text unchanged
+TC-601,"<div onclick=""alert(1)"">click</div>","&lt;div onclick=""alert(1)""&gt;click&lt;/div&gt;",Div with onclick XSS
+TC-404,"<script>alert('xss')</script>",Tag displayed as escaped text,XSS in tag name — cloud renders safely

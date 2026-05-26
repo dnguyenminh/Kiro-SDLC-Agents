@@ -1,0 +1,17 @@
+src/analyzers/complexity/counters/BaseNodeCounter.ts(6,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/GoCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/JavaCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/KotlinCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/PythonCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/complexity/counters/TypeScriptCounter.ts(5,33): error TS2307: Cannot find module '../../parsers/types.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(5,36): error TS2307: Cannot find module './EntryPointDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(6,35): error TS2307: Cannot find module './FrameworkDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(7,33): error TS2307: Cannot find module './PatternRegistry.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(8,31): error TS2307: Cannot find module './RouteResolver.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(9,33): error TS2307: Cannot find module './EntryPointStore.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(10,37): error TS2307: Cannot find module './detectors/HTTPHandlerDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(11,30): error TS2307: Cannot find module './detectors/MainDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(12,29): error TS2307: Cannot find module './detectors/CLIDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(13,31): error TS2307: Cannot find module './detectors/EventDetector.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(14,67): error TS2307: Cannot find module './EntryPointTool.js' or its corresponding type declarations.
+src/analyzers/entry-points/index.ts(23,8): error TS2307: Cannot find module './types.js' or its corresponding type declarations.

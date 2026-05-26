@@ -9,7 +9,8 @@
   "scripts": {
     "copy-viewer": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'../shared/viewer'),p.resolve(__dirname,'dist/viewer'))\"",
     "build": "tsc && npm run copy-viewer",
-    "test": "tsc && node --test dist/memory/tests/*.test.js",
+    "copy-fixtures": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'src/parsers/languages/__tests__/fixtures'),p.resolve(__dirname,'dist/parsers/languages/__tests__/fixtures'))\"",
+    "test": "tsc && npm run copy-fixtures && node --test dist/parsers/languages/__tests__/java-parser.test.js",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "clean": "rimraf dist",
@@ -37,7 +38,8 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "better-sqlite3": "^11.7.0"
+    "better-sqlite3": "^11.7.0",
+    "web-tree-sitter": "^0.26.9"
   },
   "optionalDependencies": {
     "chokidar": "^4.0.0",
@@ -47,6 +49,7 @@
     "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.14.0",
     "rimraf": "^5.0.0",
+    "tree-sitter-java": "^0.23.4",
     "typescript": "^5.5.0"
   }
 }

@@ -1,0 +1,7 @@
+input,expected_error
+0,Port must be 1-65535
+-1,Port must be 1-65535
+65536,Port must be 1-65535
+70000,Port must be 1-65535
+abc,Port must be 1-65535
+3.14,Port must be 1-65535

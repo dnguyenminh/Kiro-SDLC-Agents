@@ -1,0 +1,63 @@
+<mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Business Flow — Security Analysis (Kotlin)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="s1" value="1. Load AST&#xa;(from Parser K1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="70" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s2" value="2. Build CFG" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="70" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s3" value="3. Build DFG" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="400" y="70" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s4" value="4. Identify&#xa;Taint Sources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="70" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s5" value="5. Identify&#xa;Taint Sinks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="740" y="70" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s6" value="6. Propagate Taint&#xa;(Forward Analysis)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="200" width="200" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s7" value="7. Classify&#xa;Vulnerabilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="200" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s8" value="8. Score Severity&#xa;+ Recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="330" width="180" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="s9" value="9. Return&#xa;Vulnerability Report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="560" y="330" width="170" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="e12" edge="1" source="s1" target="s2" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e23" edge="1" source="s2" target="s3" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e34" edge="1" source="s3" target="s4" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e45" edge="1" source="s4" target="s5" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e56" edge="1" source="s5" target="s6" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e46" edge="1" source="s4" target="s6" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e67" edge="1" source="s6" target="s7" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e78" edge="1" source="s7" target="s8" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e89" edge="1" source="s8" target="s9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

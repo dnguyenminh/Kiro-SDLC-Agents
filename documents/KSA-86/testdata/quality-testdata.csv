@@ -1,0 +1,13 @@
+test_case_id,entry_id,type,summary,quality_score,expected_bar_color,expected_truncated,description
+TC-004,42,CONTEXT,Old deployment notes from 2023 that are no longer relevant to current infrastructure,18,red,Old deployment notes from 2023 that are no longer relev...,Low quality entry — red bar
+TC-004,67,DECISION,Temporary workaround for authentication issue in staging environment,25,red,Temporary workaround for authentication issue in stagin...,Low quality — red bar (< 30)
+TC-004,103,PROCEDURE,Draft: how to configure CI pipeline for multi-stage builds with Docker,32,yellow,Draft: how to configure CI pipeline for multi-stage bui...,Low quality — yellow bar (30-59)
+TC-004,89,CONTEXT,Meeting notes 2024-01-15 about quarterly planning and resource allocation,35,yellow,Meeting notes 2024-01-15 about quarterly planning and r...,Low quality — yellow bar
+TC-104,,,,,,,Stats: average_score=67.3 scored_count=142 high_count=98 low_count=44
+TC-302,42,CONTEXT,Test entry,29,red,,Score bar boundary — red (< 30)
+TC-302,43,CONTEXT,Test entry,30,yellow,,Score bar boundary — yellow (= 30)
+TC-302,44,CONTEXT,Test entry,59,yellow,,Score bar boundary — yellow (= 59)
+TC-302,45,CONTEXT,Test entry,60,green,,Score bar boundary — green (= 60)
+TC-304,1,CONTEXT,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,50,yellow,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,Exactly 60 chars — no truncation
+TC-304,2,CONTEXT,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,50,yellow,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...,61 chars — truncated
+TC-401,,,,,,,50+ entries with score < 40 — only 20 shown in table (API limit)

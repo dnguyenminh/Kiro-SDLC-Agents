@@ -5,6 +5,7 @@
 
 import Database from 'better-sqlite3';
 import { SCHEMA_V1 } from './schema.js';
+import { runGraphMigrations } from '../database/migrator.js';
 
 interface Migration {
   version: number;
@@ -56,6 +57,15 @@ export function runMigrations(db: Database.Database): void {
   // Always run V2 column migration (idempotent)
   if (current < 2) {
     applyMigrationV2(db);
+  }
+
+  // Run V3 graph migrations (KSA-145/153/169) — idempotent
+  if (current < 3) {
+    try {
+      runGraphMigrations(db);
+    } catch (err) {
+      console.error('[migrations] V3 graph migration error (graceful):', err);
+    }
   }
 }
 

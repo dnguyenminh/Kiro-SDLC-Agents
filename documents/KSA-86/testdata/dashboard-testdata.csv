@@ -1,0 +1,12 @@
+test_case_id,page,api_endpoint,health_score,total_entries,quality_avg,stale_count,unowned_count,expected_result,description
+TC-001,dashboard,/api/kb/dashboard,72,156,67.3,12,8,Green gauge showing 72/100 with Healthy label,Happy path — normal health score
+TC-002,dashboard,/api/kb/dashboard,72,156,67.3,12,8,4 metric cards with correct values,Metric cards display
+TC-102,dashboard,/api/kb/dashboard,72,156,67.3,12,8,Recommendations with red/green borders,Priority color coding
+TC-103,dashboard,/api/kb/dashboard,72,156,67.3,12,8,Two bar charts with 7 bars each,Trend charts render
+TC-203,dashboard,/api/kb/dashboard,0,0,0,0,0,Red gauge showing 0 with Critical label,Zero entries state
+TC-300,dashboard,/api/kb/dashboard,70,100,70.0,5,3,Green gauge (boundary: exactly 70),Gauge color threshold — green boundary
+TC-300,dashboard,/api/kb/dashboard,69,100,69.0,5,3,Yellow gauge (boundary: just below 70),Gauge color threshold — yellow boundary
+TC-300,dashboard,/api/kb/dashboard,40,100,40.0,5,3,Yellow gauge (boundary: exactly 40),Gauge color threshold — yellow lower
+TC-300,dashboard,/api/kb/dashboard,39,100,39.0,5,3,Red gauge (boundary: just below 40),Gauge color threshold — red boundary
+TC-402,dashboard,/api/kb/dashboard,0,0,0,0,0,Gauge stroke-dasharray = 0,Score 0 boundary
+TC-402,dashboard,/api/kb/dashboard,100,200,95.0,0,0,Gauge stroke-dasharray = 314 (full arc),Score 100 boundary

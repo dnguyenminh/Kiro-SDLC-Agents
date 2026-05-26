@@ -1,0 +1,344 @@
+# Functional Specification Document (FSD)
+
+## MCP Code Intelligence — KSA-167: [Security] Misconfig + Secrets + SBOM + SARIF
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-167 |
+| Title | [Security] Misconfig + Secrets + SBOM + SARIF |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-06-07 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-167.docx |
+
+---
+
+## 1. Use Cases
+
+### UC-167-01: Scan for Misconfigurations
+
+**Actor:** Security Engineer / AI Agent
+
+**Main Flow:**
+1. User calls `scan_misconfig` (or `security_scan` with category="misconfig")
+2. System scans config files (.env, .yml, .json, .properties, .toml, .xml)
+3. For each config file: match values against 20 misconfiguration patterns
+4. Also scan source code for programmatic misconfigs (e.g., `app.debug = True`)
+5. Classify findings by CWE and severity
+6. Return findings with remediation
+
+**Alternative Flows:**
+- 2a. No config files found → scan code only
+- 3a. Config value is environment variable reference → skip (runtime-determined)
+- 4a. Code misconfig in test file → skip if include_tests=false
+
+### UC-167-02: Detect Hardcoded Secrets
+
+**Actor:** Security Engineer / AI Agent
+
+**Main Flow:**
+1. User calls `detect_secrets`
+2. System scans all source files and config files
+3. For each string literal: compute Shannon entropy
+4. If entropy > 4.5: check against known secret patterns
+5. If pattern matches OR (entropy > 5.0 AND context suggests secret): report
+6. Apply exclusions (test files, placeholder values, known hashes)
+7. Return findings with secret type and remediation
+
+**Alternative Flows:**
+- 3a. String is in test file AND include_tests=false → skip
+- 4a. String matches UUID format → exclude (not a secret)
+- 5a. Variable name contains "example" or "placeholder" → exclude
+- 6a. String is a known library hash constant → exclude
+
+### UC-167-03: Generate SBOM
+
+**Actor:** Compliance Officer / DevOps
+
+**Main Flow:**
+1. User calls `generate_sbom`
+2. System scans workspace for lockfiles (8 supported formats)
+3. For each lockfile: parse dependencies (name, version, hash)
+4. Classify as runtime vs dev dependency
+5. Generate Package URLs (purl) for each component
+6. Output CycloneDX 1.5 JSON document
+7. Optionally write to file
+
+**Alternative Flows:**
+- 2a. No lockfiles found → return error with supported formats list
+- 3a. Lockfile parse error → partial SBOM + warning
+- 5a. License info available → include in SBOM
+
+### UC-167-04: Audit Dependencies for Vulnerabilities
+
+**Actor:** Developer / Security Engineer
+
+**Main Flow:**
+1. User calls `audit_dependencies`
+2. System generates SBOM (or uses cached)
+3. For each component: query OSV API (batch query)
+4. Match vulnerabilities by package name + version range
+5. Return: CVE/GHSA IDs, severity, affected versions, fixed version
+6. Cache results (TTL: 24h)
+
+**Alternative Flows:**
+- 3a. OSV API unavailable → use cached results (stale), warn user
+- 3b. Rate limited → batch smaller, retry with backoff
+- 4a. No vulnerabilities found → return clean report
+
+### UC-167-05: Export SARIF Report
+
+**Actor:** CI/CD Pipeline / DevOps
+
+**Main Flow:**
+1. User calls `export_sarif` (or any scan tool with output_format="sarif")
+2. System collects all security findings (from all detectors)
+3. Format as SARIF v2.1.0 with tool info, rules, results
+4. Each result includes: ruleId (CWE), level, location, message
+5. Write SARIF file to specified path
+6. Return file path and summary
+
+---
+
+## 2. Business Rules
+
+| ID | Rule | Rationale |
+|----|------|-----------|
+| BR-167-01 | Shannon entropy > 4.5 = potential secret candidate | High randomness indicates generated credential |
+| BR-167-02 | Entropy alone insufficient — must combine with context (variable name, pattern) | Reduce false positives |
+| BR-167-03 | Environment variable references in config are NOT secrets | Runtime-determined values |
+| BR-167-04 | SBOM includes transitive dependencies from lockfiles | Complete inventory required |
+| BR-167-05 | Dev dependencies included in SBOM but marked as scope=dev | Compliance needs full picture |
+| BR-167-06 | OSV cache TTL = 24 hours | Balance freshness vs API load |
+| BR-167-07 | SARIF includes ALL security findings in single file | One upload to GitHub/GitLab |
+| BR-167-08 | Misconfig in test/dev config = Low severity (not Critical) | Only production configs are critical |
+| BR-167-09 | DEBUG=True in file named "production" or "prod" = Critical | Production misconfig is urgent |
+| BR-167-10 | Known placeholder patterns excluded from secrets | "your-api-key-here", "changeme", "xxx" |
+
+---
+
+## 3. Data Specifications
+
+### 3.1 Misconfiguration Pattern Registry
+
+| # | Pattern | Detection Method | Files to Scan |
+|---|---------|-----------------|---------------|
+| 1 | DEBUG=True/true/1 | Regex on config values | .env, settings.py, application.yml |
+| 2 | Verbose errors enabled | Key match: "detailed_errors", "show_errors" | Config files |
+| 3 | Stack trace in response | Code: catch block returns error.stack | Source code |
+| 4-6 | CORS wildcards | Header value: "Access-Control-Allow-Origin: *" | Config + code |
+| 7-9 | TLS issues | ssl_verify=false, TLS 1.0/1.1, self-signed | Config + code |
+| 10-12 | Cookie flags | Missing Secure/HttpOnly/SameSite | Code (set-cookie) |
+| 13-15 | Security headers | Missing X-Frame-Options, CSP, X-Content-Type | Config + code |
+| 16-17 | Auth issues | Hardcoded creds, default passwords | Config files |
+| 18 | Session timeout | timeout > 86400 (24h) | Config files |
+| 19 | Sensitive logging | Log statements with password/token/secret vars | Source code |
+| 20 | Weak crypto | MD5/SHA1 for security purposes | Source code |
+
+### 3.2 Secret Pattern Registry
+
+| # | Pattern Name | Regex | Entropy Check |
+|---|-------------|-------|---------------|
+| 1 | AWS Access Key | `AKIA[0-9A-Z]{16}` | No (pattern sufficient) |
+| 2 | AWS Secret Key | `[0-9a-zA-Z/+=]{40}` | Yes (> 4.5) |
+| 3 | GitHub Token | `ghp_[a-zA-Z0-9]{36}` | No |
+| 4 | GitHub OAuth | `gho_[a-zA-Z0-9]{36}` | No |
+| 5 | Slack Token | `xox[baprs]-[0-9a-zA-Z-]+` | No |
+| 6 | JWT | `eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+` | No |
+| 7 | Private Key | `-----BEGIN (RSA\|EC\|DSA\|OPENSSH) PRIVATE KEY-----` | No |
+| 8 | Generic API Key | `(api[_-]?key\|secret\|token)\s*[:=]\s*['"][^'"]{16,}['"]` | Yes (> 4.5) |
+| 9 | Database URL | `(postgres\|mysql\|mongodb)://[^:]+:[^@]+@` | No |
+| 10 | Stripe Key | `sk_(live\|test)_[a-zA-Z0-9]{24,}` | No |
+
+### 3.3 SBOM Output (CycloneDX 1.5)
+
+```json
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-07T10:00:00Z",
+    "tools": [{"name": "mcp-code-intelligence", "version": "2.0.0"}],
+    "component": {"name": "project-name", "version": "1.0.0", "type": "application"}
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "express",
+      "version": "4.18.2",
+      "purl": "pkg:npm/express@4.18.2",
+      "scope": "required",
+      "hashes": [{"alg": "SHA-256", "content": "abc123..."}]
+    }
+  ]
+}
+```
+
+### 3.4 SARIF Output (v2.1.0)
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [{
+    "tool": {
+      "driver": {
+        "name": "mcp-code-intelligence",
+        "version": "2.0.0",
+        "rules": [
+          {"id": "CWE-798", "shortDescription": {"text": "Hardcoded Credentials"}, "defaultConfiguration": {"level": "error"}}
+        ]
+      }
+    },
+    "results": [
+      {
+        "ruleId": "CWE-798",
+        "level": "error",
+        "message": {"text": "Hardcoded API key detected"},
+        "locations": [{"physicalLocation": {"artifactLocation": {"uri": "src/config.py"}, "region": {"startLine": 15}}}]
+      }
+    ]
+  }]
+}
+```
+
+---
+
+## 4. API Specifications
+
+### 4.1 MCP Tool: `scan_misconfig`
+
+**Input:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| file_path | string | No | Scope to specific file |
+| categories | string[] | No | Filter: ["debug", "cors", "tls", "cookies", "headers", "auth", "crypto"] |
+| include_dev | boolean | No | Include dev/test configs (default: false) |
+
+### 4.2 MCP Tool: `detect_secrets`
+
+**Input:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| file_path | string | No | Scope to specific file |
+| min_entropy | float | No | Minimum Shannon entropy (default: 4.5) |
+| include_tests | boolean | No | Scan test files (default: false) |
+| custom_patterns | string[] | No | Additional regex patterns |
+
+### 4.3 MCP Tool: `generate_sbom`
+
+**Input:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| output_path | string | No | Write SBOM to file (default: return in response) |
+| format | string | No | "cyclonedx" (default) or "spdx" |
+| include_dev | boolean | No | Include dev dependencies (default: true) |
+
+### 4.4 MCP Tool: `audit_dependencies`
+
+**Input:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| min_severity | string | No | Minimum severity: "critical", "high", "medium", "low" |
+| ignore_ids | string[] | No | CVE/GHSA IDs to ignore |
+| offline | boolean | No | Use cached data only (default: false) |
+
+### 4.5 MCP Tool: `export_sarif`
+
+**Input:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| output_path | string | Yes | File path for SARIF output |
+| categories | string[] | No | Which scan types to include (default: all) |
+
+---
+
+## 5. Processing Logic
+
+### 5.1 Secrets Detection Pipeline
+
+```
+for each file in workspace (respecting .codeintelignore):
+  if is_binary(file): skip
+  for each string_literal in file:
+    # Step 1: Pattern match (high confidence)
+    for pattern in SECRET_PATTERNS:
+      if pattern.regex.match(string):
+        if not is_excluded(string, file):
+          report(confidence=HIGH)
+    
+    # Step 2: Entropy analysis (medium confidence)
+    entropy = shannon_entropy(string)
+    if entropy > threshold AND context_suggests_secret(variable_name):
+      if not is_excluded(string, file):
+        report(confidence=MEDIUM)
+```
+
+### 5.2 SBOM Generation Pipeline
+
+```
+lockfiles = find_lockfiles(workspace)
+components = []
+for lockfile in lockfiles:
+  parser = get_parser(lockfile.format)
+  deps = parser.parse(lockfile)
+  for dep in deps:
+    component = {
+      name: dep.name,
+      version: dep.version,
+      purl: generate_purl(dep),
+      scope: dep.scope,  # required/dev
+      hashes: dep.hashes
+    }
+    components.append(component)
+return cyclonedx_format(components)
+```
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Metric |
+|----------|-------------|--------|
+| Performance | Misconfig scan | < 10s full project |
+| Performance | Secrets scan | < 15s full project |
+| Performance | SBOM generation | < 5s per lockfile |
+| Performance | Dep audit | < 30s (including API) |
+| Accuracy | Secrets FP rate | < 30% |
+| Compliance | CycloneDX valid | Schema validation pass |
+| Integration | SARIF valid | GitHub accepts upload |
+
+---
+
+## 7. Error Handling
+
+| Scenario | Severity | Behavior |
+|----------|----------|----------|
+| OSV API timeout | Warning | Use cached data, warn user |
+| Lockfile parse error | Warning | Partial SBOM, report unparsed file |
+| Binary file encountered | Info | Skip silently |
+| Entropy calculation overflow | Warning | Skip string, log |
+| SARIF schema validation fail | Error | Fix output, retry |
+
+---
+
+## 8. Appendix
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Secrets Detection Sequence | [sequence-secrets.png](diagrams/sequence-secrets.png) | [sequence-secrets.drawio](diagrams/sequence-secrets.drawio) |
+| 3 | SBOM Generation State | [state-sbom.png](diagrams/state-sbom.png) | [state-sbom.drawio](diagrams/state-sbom.drawio) |

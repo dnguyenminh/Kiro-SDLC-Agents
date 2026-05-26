@@ -1,0 +1,60 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Graph Engine — Component Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="320" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_tools" value="&lt;b&gt;MCP Tools Layer&lt;/b&gt;&#10;code_callers / code_callees&#10;code_dependencies / code_impact&#10;code_traverse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="220" y="60" width="240" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="factory" value="&lt;b&gt;Service Factory&lt;/b&gt;&#10;create_graph_services()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="530" y="70" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="call_graph_svc" value="&lt;b&gt;CallGraphService&lt;/b&gt;&#10;─────────────&#10;+ find_callers(symbol, depth, limit)&#10;+ find_callees(symbol, depth, limit)&#10;- _query_callers(name, kind, limit)&#10;- _match_filter(path, filter)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="200" width="260" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="dep_graph_svc" value="&lt;b&gt;DependencyGraphService&lt;/b&gt;&#10;─────────────&#10;+ query(file, direction, depth)&#10;- _bfs_traversal(root, dir, depth)&#10;- _get_outgoing_deps(file)&#10;- _get_incoming_deps(file)&#10;- _merge_results(out, in)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="200" width="260" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="impact_svc" value="&lt;b&gt;ImpactAnalysisService&lt;/b&gt;&#10;─────────────&#10;+ analyze_impact(symbol, action, depth)&#10;- _classify_severity(depth, action)&#10;- _find_implementors(resolved)&#10;- _generate_recommendations(impacts)&#10;- _deduplicate(impacts)&#10;- _filter_by_severity(impacts, threshold)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="370" width="280" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="traverser_svc" value="&lt;b&gt;GraphTraverser&lt;/b&gt;&#10;─────────────&#10;+ traverse(identifier, edge_types, ...)&#10;- _resolve_node(identifier)&#10;- _get_neighbors(node_id, dir, edges)&#10;- _read_source(file, line, count)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="370" width="260" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="symbol_resolver_svc" value="&lt;b&gt;SymbolResolver&lt;/b&gt;&#10;─────────────&#10;+ resolve(input) → list[ResolvedSymbol]&#10;+ suggest(input, limit) → list[str]&#10;- _exact_match(name)&#10;- _qualified_match(name)&#10;- _file_match(name)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="560" width="260" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="test_detector_svc" value="&lt;b&gt;TestDetector&lt;/b&gt;&#10;─────────────&#10;+ is_test_file(path) → bool&#10;+ find_related_tests(symbols, files)&#10;- TEST_PATH_PATTERNS&#10;- TEST_FILE_PATTERNS" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="530" width="240" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="file_resolver_svc" value="&lt;b&gt;FileResolver&lt;/b&gt;&#10;─────────────&#10;+ resolve_file(file) → str | None&#10;+ is_external(module) → bool&#10;+ resolve_import_target(src, tgt)" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="670" width="240" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_tools_cg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="mcp_tools" target="call_graph_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_tools_dg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="mcp_tools" target="dep_graph_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_tools_impact" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="mcp_tools" target="impact_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_tools_traverse" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="mcp_tools" target="traverser_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_cg_resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="call_graph_svc" target="symbol_resolver_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impact_cg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="impact_svc" target="call_graph_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impact_td" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="impact_svc" target="test_detector_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dg_fr" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="dep_graph_svc" target="file_resolver_svc" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

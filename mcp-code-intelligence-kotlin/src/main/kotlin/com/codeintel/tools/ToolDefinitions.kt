@@ -1,11 +1,15 @@
-/** MCP tool definitions — JSON schemas for all 5 tools. */
+/** MCP tool definitions — JSON schemas for all tools. */
 package com.codeintel.tools
 
+import com.codeintel.analyzers.similarity.SimilarityToolDefinitions
 import kotlinx.serialization.json.*
 
 object ToolDefinitions {
     val ALL: List<JsonObject> by lazy {
-        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport(), drawioAutoLayout())
+        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport(), drawioAutoLayout()) +
+            GraphToolDefinitions.ALL +
+            ContextToolDefinitions.ALL +
+            SimilarityToolDefinitions.ALL
     }
 
     private fun codeSearch() = buildJsonObject {

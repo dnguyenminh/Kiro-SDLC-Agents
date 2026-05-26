@@ -1,0 +1,96 @@
+<mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="900" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Architecture — Code Intelligence Feature Parity" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="mcp" value="MCP Tool Interface" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="60" width="600" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ctx" value="AI Context&#xa;Tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="150" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="qual" value="Code Quality&#xa;Analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="150" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="sec" value="Security&#xa;Analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="150" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="sim" value="Similarity&#xa;Detection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="740" y="150" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="graph" value="Graph Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="280" width="600" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="cg" value="Call Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="210" y="340" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="dg" value="Dep Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="340" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="ia" value="Impact Analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="490" y="340" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="cd" value="Cycle Detect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="630" y="340" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="parser" value="Parser Layer (Tree-sitter)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="430" width="600" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ts" value="Tree-sitter&#xa;Binding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="210" y="490" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="se" value="Symbol&#xa;Extractor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="490" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="ip" value="Incremental&#xa;Parser" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="490" y="490" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="lr" value="Language&#xa;Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="630" y="490" width="120" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="infra" value="Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="580" width="600" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="cache" value="Cache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="210" y="640" width="100" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="config" value="Config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="330" y="640" width="100" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="embed" value="Embeddings&#xa;(ONNX)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="450" y="640" width="100" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="log" value="Logger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="640" width="100" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="emcp" edge="1" source="mcp" target="ctx" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="emcp2" edge="1" source="mcp" target="qual" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="emcp3" edge="1" source="mcp" target="sec" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="emcp4" edge="1" source="mcp" target="sim" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ectx" edge="1" source="ctx" target="graph" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="equal" edge="1" source="qual" target="graph" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="esec" edge="1" source="sec" target="graph" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="egp" edge="1" source="graph" target="parser" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="epi" edge="1" source="parser" target="infra" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

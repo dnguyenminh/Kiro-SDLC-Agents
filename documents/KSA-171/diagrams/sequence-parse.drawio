@@ -1,0 +1,54 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Sequence — Parse and Analyze Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="client" value="MCP Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="parser" value="Parser" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="260" y="60" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="graph" value="Graph Engine" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="440" y="60" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="analyzer" value="Analyzer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="620" y="60" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="embed" value="Embeddings" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlEntity;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="800" y="60" width="100" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="m1" value="parse_file(path)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="client" target="parser">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="130" y="150" as="sourcePoint" /><mxPoint x="310" y="150" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="AST + Symbols" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="parser" target="client">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="310" y="200" as="sourcePoint" /><mxPoint x="130" y="200" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="build_graph(ast)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="parser" target="graph">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="310" y="250" as="sourcePoint" /><mxPoint x="490" y="250" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="graph_ready" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="graph" target="parser">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="490" y="300" as="sourcePoint" /><mxPoint x="310" y="300" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="analyze_security(path)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="client" target="analyzer">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="130" y="370" as="sourcePoint" /><mxPoint x="670" y="370" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="get_graph()" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="analyzer" target="graph">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="670" y="420" as="sourcePoint" /><mxPoint x="490" y="420" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="graph_data" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="graph" target="analyzer">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="490" y="470" as="sourcePoint" /><mxPoint x="670" y="470" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="compute_embeddings()" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="analyzer" target="embed">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="670" y="520" as="sourcePoint" /><mxPoint x="850" y="520" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="embeddings" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="embed" target="analyzer">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="850" y="570" as="sourcePoint" /><mxPoint x="670" y="570" as="targetPoint" /></mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="vulnerability_report" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=horizontal;curved=0;rounded=0;" edge="1" parent="1" source="analyzer" target="client">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="670" y="640" as="sourcePoint" /><mxPoint x="130" y="640" as="targetPoint" /></mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

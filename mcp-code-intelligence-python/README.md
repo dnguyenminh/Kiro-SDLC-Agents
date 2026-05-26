@@ -36,6 +36,8 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 
 ## MCP Tools
 
+### Core Tools
+
 | Tool | Description |
 |------|-------------|
 | `code_search` | Full-text search across indexed symbols (FTS5 + porter stemming) |
@@ -43,6 +45,49 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 | `code_context` | Get source code context around a symbol or line range |
 | `code_modules` | List discovered modules with file/symbol counts |
 | `code_index_status` | Get indexing status, trigger re-index |
+| `stream_write_file` | Write content directly to a file on disk |
+| `code_kb_export` | Export code intelligence data as KB payloads |
+| `drawio_auto_layout` | Auto-layout draw.io diagrams using graph algorithms |
+
+### Graph & Analysis Tools (KSA-171)
+
+| Tool | Description |
+|------|-------------|
+| `code_callers` | Find all callers of a function/method with transitive depth |
+| `code_callees` | Find all callees with transitive depth |
+| `code_traverse` | Generic graph traversal with edge/node type filters |
+| `code_impact` | Predict blast radius of modifying/deleting/renaming a symbol |
+| `code_dependencies` | Analyze file/module import dependencies |
+
+### AI Context Tools (KSA-171)
+
+| Tool | Description |
+|------|-------------|
+| `get_ai_context` | Intent-aware code context with token budgeting |
+| `get_edit_context` | Everything needed before editing a symbol |
+| `get_curated_context` | Natural language query across codebase |
+
+### Similarity & Git Tools
+
+| Tool | Description |
+|------|-------------|
+| `find_duplicates` | Find near-duplicate functions using embedding similarity |
+| `find_dead_code` | Detect potentially dead/unreachable code |
+| `git_search` | Semantic search over git commit history |
+
+### Meta/Orchestration Tools
+
+| Tool | Description |
+|------|-------------|
+| `find_tools` | Search for available tools by description |
+| `execute_dynamic_tool` | Execute a tool on an upstream MCP server |
+| `toggle_tool` | Enable/disable a tool or server |
+| `orchestration_status` | Show orchestration status |
+| `agent_log` | Write execution log entry for agent tracking |
+
+### Memory Tools (30+)
+
+Full KB management: `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_pin`, `mem_map`, `mem_crud`, `mem_graph`, `mem_consolidate`, `mem_lifecycle`, `mem_templates`, `mem_attachments`, `mem_discover`, `mem_tags`, `mem_citations`, `mem_conversation`, `mem_scoring`, `mem_admin`.
 
 ## Embedding Models (KSA-102)
 
@@ -160,14 +205,25 @@ python tests/test_extractor.py
 
 ```
 src/mcp_code_intel/
-├── __main__.py    — Entry point
-├── server.py      — MCP server (stdio JSON-RPC)
-├── config.py      — Configuration loading
-├── db.py          — SQLite lifecycle + schema
-├── scanner.py     — File scanner + language detection
-├── extractor.py   — Signature extraction (regex)
-├── indexer.py     — Full/incremental indexing
-├── query.py       — FTS5 search + symbol lookup
-├── tools.py       — 5 MCP tool handlers
-└── ollama.py      — Optional Ollama client
+├── __main__.py       — Entry point
+├── server.py         — MCP server (stdio JSON-RPC)
+├── config.py         — Configuration loading
+├── db.py             — SQLite lifecycle + schema
+├── scanner.py        — File scanner + language detection
+├── extractor.py      — Signature extraction (regex)
+├── indexer.py        — Full/incremental indexing
+├── query.py          — FTS5 search + symbol lookup
+├── tools.py          — Core MCP tool handlers
+├── stream_write.py   — stream_write_file handler
+├── ollama.py         — Optional Ollama client
+├── graph/            — Call graph, dependency, impact, traversal (KSA-171)
+├── context/          — AI context, edit context, curated context (KSA-171)
+├── analyzers/        — Similarity + Security analysis
+├── parsers/          — Tree-sitter AST utilities + language parsers
+├── memory/           — Knowledge base engine (30+ tools)
+├── orchestration/    — Child MCP server orchestration + meta-tools
+├── drawio/           — Draw.io auto-layout tool
+├── git/              — Git history mining + semantic search
+├── http/             — HTTP viewer server + API routes
+└── viewer/           — Web dashboard (HTML/JS/CSS)
 ```

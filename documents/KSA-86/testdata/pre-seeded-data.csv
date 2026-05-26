@@ -1,0 +1,11 @@
+id,type,summary,quality_score,tags,status,created_at,description
+1,CONTEXT,Python HTTP server setup for MCP tools,72,python;api;http,ACTIVE,2025-01-01T00:00:00Z,Entry with good quality score — used for dashboard metrics
+2,DECISION,How to structure API endpoints for KB viewer,85,api;architecture;design,ACTIVE,2025-01-05T00:00:00Z,High quality entry — appears in high_count
+3,CONTEXT,Old deployment notes from 2023,18,docker;deployment,ACTIVE,2024-01-01T00:00:00Z,Low quality entry — appears in low-quality table
+4,PROCEDURE,Draft: how to configure CI pipeline,25,ci;pipeline;draft,ACTIVE,2024-06-01T00:00:00Z,Low quality entry — score < 30 (red bar)
+5,CONTEXT,Meeting notes 2024-01-15,32,meetings;notes,ACTIVE,2024-01-15T00:00:00Z,Low quality entry — score 30-59 (yellow bar)
+6,ARCHITECTURE,KB memory engine v2 design,90,architecture;kb;design,ACTIVE,2025-01-10T00:00:00Z,High quality entry
+7,CONTEXT,Temporary workaround for auth issue,35,auth;workaround,ACTIVE,2024-03-01T00:00:00Z,Low quality — yellow bar
+8,DECISION,Use SQLite for KB storage,78,database;sqlite;decision,ACTIVE,2025-01-02T00:00:00Z,Good quality
+9,CONTEXT,Kubernetes helm chart notes,45,k8s;helm;infrastructure,ACTIVE,2024-08-01T00:00:00Z,Medium quality
+10,PROCEDURE,Testing patterns for MCP tools,65,testing;mcp;patterns,ACTIVE,2025-01-12T00:00:00Z,Above threshold

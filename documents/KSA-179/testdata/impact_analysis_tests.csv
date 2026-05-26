@@ -1,0 +1,7 @@
+test_id,symbol_name,action,expected_critical,expected_high,expected_medium,expected_tests
+UT-018,processData,delete,3,2,1,2
+UT-019,processData,modify,3,2,1,2
+UT-020,processData,rename,0,3,2,2
+UT-021,processData,modify,3,2,1,2
+UT-022,processData,modify,3,2,0,0
+UT-024,processData,delete,3,2,1,2

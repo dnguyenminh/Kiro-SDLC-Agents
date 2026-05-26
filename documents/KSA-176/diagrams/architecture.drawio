@@ -1,0 +1,84 @@
+<mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Architecture — Security Analysis Module (Kotlin)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="facade" value="SecurityAnalyzerFacade&#xa;(Public API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="380" y="60" width="200" height="45" as="geometry" />
+    </mxCell>
+    <mxCell id="cfg" value="CFGBuilder" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="160" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="dfg" value="DFGBuilder" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="400" y="160" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="taint" value="TaintAnalyzer&#xa;(Core Engine)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="620" y="160" width="150" height="45" as="geometry" />
+    </mxCell>
+    <mxCell id="sources" value="TaintSources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="270" width="110" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="sinks" value="TaintSinks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="340" y="270" width="110" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="sanitizers" value="Sanitizers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="480" y="270" width="110" height="35" as="geometry" />
+    </mxCell>
+    <mxCell id="inj" value="InjectionDetector&#xa;(SQL/XSS/CMD)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="370" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ssrf" value="SSRFDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="370" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="idor" value="IDORDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="540" y="370" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="misc" value="MisconfigDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="700" y="370" width="130" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="parser_ext" value="Parser (K1)&#xa;[external]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="480" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="graph_ext" value="Graph Engine (K2)&#xa;[external]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="480" width="140" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ef1" edge="1" source="facade" target="cfg" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ef2" edge="1" source="facade" target="dfg" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ef3" edge="1" source="facade" target="taint" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="et1" edge="1" source="taint" target="sources" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="et2" edge="1" source="taint" target="sinks" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="et3" edge="1" source="taint" target="sanitizers" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ed1" edge="1" source="taint" target="inj" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ed2" edge="1" source="taint" target="ssrf" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ed3" edge="1" source="taint" target="idor" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ed4" edge="1" source="taint" target="misc" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ep1" edge="1" source="cfg" target="parser_ext" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="eg1" edge="1" source="taint" target="graph_ext" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,6 @@
+test_case_id,feature,page,component,tooltip_content,hover_delay_ms,expected_result,description
+TC-003,tooltips,dashboard,Health Score,"Overall KB health: combines quality, freshness, coverage metrics (0-100)",200,tooltip_visible,Hover shows tooltip within 200ms
+TC-103,tooltips,any,any_icon,any,0,tooltip_on_tap,Touch device tap shows tooltip
+TC-301,tooltips,dashboard,multiple_icons,varies,200,only_one_visible,Only one tooltip visible at a time
+TC-401,tooltips,any,long_content,"Very long tooltip text exceeding 280px width that should wrap correctly within the tooltip container boundary",200,text_wraps_280px,Long content wraps within max-width
+TC-600,tooltips,any,any_icon,any,0,show_le_200ms_hide_le_100ms,Performance timing verification

@@ -1,0 +1,87 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="Use Case Diagram — Code Intelligence Feature Parity" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="actor1" value="Kotlin Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="50" y="300" width="40" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="actor2" value="Python Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="950" y="300" width="40" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="sys" value="Code Intelligence Platform" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#666666;verticalAlign=top;fontSize=12;fontStyle=1;arcSize=5;" vertex="1" parent="1">
+      <mxGeometry x="180" y="50" width="640" height="650" as="geometry" />
+    </mxCell>
+    <mxCell id="uc1" value="Parse Source Code&#xa;(12 languages)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="80" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="uc2" value="Build Call Graph" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="250" y="180" width="160" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="uc3" value="Build Dependency Graph" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="530" y="180" width="170" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="uc4" value="Get AI Context" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="290" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="uc5" value="Analyze Code Quality" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="400" y="290" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="uc6" value="Detect Security&#xa;Vulnerabilities" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="590" y="290" width="170" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="uc7" value="Detect Duplicates" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="400" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="uc8" value="Find Dead Code" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="400" y="400" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="uc9" value="Impact Analysis" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="590" y="400" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="uc10" value="Taint Analysis&#xa;(Source → Sink)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="510" width="170" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="uc11" value="Code Embeddings&#xa;(Similarity Scoring)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="610" width="180" height="55" as="geometry" />
+    </mxCell>
+    <mxCell id="a1uc1" edge="1" source="actor1" target="uc1" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a1uc4" edge="1" source="actor1" target="uc4" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a1uc5" edge="1" source="actor1" target="uc5" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a1uc6" edge="1" source="actor1" target="uc6" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a1uc7" edge="1" source="actor1" target="uc7" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2uc1" edge="1" source="actor2" target="uc1" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2uc4" edge="1" source="actor2" target="uc4" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2uc5" edge="1" source="actor2" target="uc5" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2uc6" edge="1" source="actor2" target="uc6" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2uc8" edge="1" source="actor2" target="uc8" parent="1" style="rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="inc1" edge="1" source="uc6" target="uc10" parent="1" style="dashed=1;endArrow=open;endSize=12;strokeColor=#b85450;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="inc2" edge="1" source="uc7" target="uc11" parent="1" style="dashed=1;endArrow=open;endSize=12;strokeColor=#9673a6;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

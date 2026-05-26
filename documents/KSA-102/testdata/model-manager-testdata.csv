@@ -1,0 +1,9 @@
+test_case_id,action,model_name,expected_http_code,expected_result,description
+UT-11,list,,200,models_array,List returns 2 models with all fields
+UT-12,switch,paraphrase-multilingual-MiniLM-L12-v2,200,success_cache_cleared,Switch to downloaded model clears cache
+UT-13,switch,paraphrase-multilingual-MiniLM-L12-v2,400,MODEL_NOT_DOWNLOADED,Switch to non-downloaded model returns error
+UT-14,invalid,,400,INVALID_ACTION,Invalid action returns error message
+E2E-API-01,list,,200,models_array,MCP protocol list returns 2+ models
+E2E-API-02,status,,200,active_model_info,Status returns active model details
+E2E-API-03,invalid,,400,error_message,Invalid action via MCP protocol
+SIT-01,download,all-MiniLM-L6-v2,200,files_saved,Download model from HuggingFace to disk

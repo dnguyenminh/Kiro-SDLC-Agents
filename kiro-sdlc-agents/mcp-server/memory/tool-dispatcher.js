@@ -307,6 +307,8 @@ class MemoryToolDispatcher {
             case 'add_edge': return this.graphAddEdge(args);
             case 'path': return this.graphPath(args);
             case 'ego': return this.graphEgo(args);
+            case 'all_edges': return this.graphAllEdges(args);
+            case 'graph_data': return this.graphData(args);
             default: return `Unknown action: ${action}`;
         }
     }
@@ -350,6 +352,43 @@ class MemoryToolDispatcher {
         const radius = args.radius ?? 2;
         const nodes = this.engine.graph.egoGraph(nodeId, radius);
         return `Ego graph for ${nodeId} (radius=${radius}): ${nodes.size} nodes\n${[...nodes].join(', ')}`;
+    }
+    graphAllEdges(args) {
+        const limit = args.limit ?? 5000;
+        const edges = this.engine.graphRepo.findAll(limit);
+        return JSON.stringify(edges.map(e => ({ source_id: e.source_id, target_id: e.target_id, relation: e.relation })));
+    }
+    graphData(args) {
+        const limit = args.limit ?? 15000;
+        const edges = this.engine.graphRepo.findAll(limit);
+        // Collect node IDs from edges
+        const nodeIds = new Set();
+        edges.forEach(e => { nodeIds.add(e.source_id); nodeIds.add(e.target_id); });
+        // Also include ALL entries (isolated nodes too) up to limit
+        const allEntries = this.engine.db.prepare(
+            'SELECT id, summary, type, tier, source FROM knowledge_entries ORDER BY updated_at DESC LIMIT ?'
+        ).all(limit);
+        // Build nodes: start with all entries, edge-connected ones already included
+        const nodes = [];
+        const seenIds = new Set();
+        for (const entry of allEntries) {
+            if (!seenIds.has(entry.id)) {
+                seenIds.add(entry.id);
+                nodes.push({ id: entry.id, summary: (entry.summary || '').substring(0, 80), type: entry.type || 'CONTEXT', tier: entry.tier || 'WORKING', source: entry.source || '' });
+            }
+        }
+        // Add any edge-connected nodes not yet in the list
+        for (const nid of nodeIds) {
+            if (!seenIds.has(nid)) {
+                const entry = this.engine.knowledge.findById(nid);
+                if (entry) {
+                    seenIds.add(nid);
+                    nodes.push({ id: entry.id, summary: (entry.summary || '').substring(0, 80), type: entry.type || 'CONTEXT', tier: entry.tier || 'WORKING', source: entry.source || '' });
+                }
+            }
+        }
+        const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+        return JSON.stringify({ nodes, edges: edgeList });
     }
     handleStatus() {
         const stats = this.engine.getStats();

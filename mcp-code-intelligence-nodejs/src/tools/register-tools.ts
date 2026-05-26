@@ -16,9 +16,17 @@ import { registerCodeIndexStatus } from './code-index-status.js';
 import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
 import { handleDrawioLayout, DRAWIO_TOOL_DEFINITION } from './drawio-tool.js';
+import { CALL_GRAPH_TOOL_DEFINITIONS, handleCodeCallers, handleCodeCallees } from './call-graph-tools.js';
+import { DEPENDENCY_TOOL_DEFINITIONS, handleCodeDependencies } from './dependency-tools.js';
+import { IMPACT_TOOL_DEFINITIONS, handleCodeImpact } from './impact-tools.js';
+import { TRAVERSE_TOOL_DEFINITIONS, handleCodeTraverse } from './code-traverse.js';
 import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
 import { EmbeddingService } from '../memory/embedding/index.js';
 import { OrchestrationEngine } from '../orchestration/engine.js';
+import { COMPLEXITY_TOOL_DEFINITION, handleComplexityTool } from '../analyzers/complexity/ComplexityTool.js';
+import { ENTRY_POINT_TOOL_DEFINITION, handleEntryPointTool } from '../analyzers/entry-points/EntryPointTool.js';
+import { GRAPH_ANALYSIS_TOOL_DEFINITIONS, handleGraphAnalysisTool } from '../analyzers/graph-analysis/GraphAnalysisTools.js';
+import { AI_CONTEXT_TOOL_DEFINITIONS, handleGetAIContext, handleGetEditContext, handleGetCuratedContext } from './ai-context-tools.js';
 
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 export function registerTools(
@@ -35,7 +43,7 @@ export function registerTools(
   registerCodeIndexStatus(server, queryLayer, indexer);
   registerStreamWriteFile(server, workspace);
   registerCodeKbExport(server, queryLayer, workspace);
-  console.error('[tools] Registered 7 MCP tools');
+  console.error('[tools] Registered 12 MCP tools (7 core + 5 graph)');
 }
 
 /** Get tool definitions for tools/list response (raw mode). */
@@ -78,7 +86,7 @@ export async function dispatchTool(
   if (memResult !== null) return memResult;
 
   const queryLayer = new QueryLayer(dbManager);
-  return dispatchByName(name, args, queryLayer, indexer, workspace);
+  return dispatchByName(name, args, queryLayer, indexer, workspace, dbManager);
 }
 
 let orchestrationEngine: OrchestrationEngine | null = null;
@@ -116,7 +124,8 @@ async function dispatchByName(
   args: Record<string, unknown>,
   queryLayer: QueryLayer,
   indexer: IndexingEngine,
-  workspace: string
+  workspace: string,
+  dbManager: DatabaseManager
 ): Promise<string> {
   switch (name) {
     case 'code_search': {
@@ -138,6 +147,34 @@ async function dispatchByName(
       return handleCodeKbExport(args, queryLayer, workspace);
     case 'drawio_auto_layout':
       return handleDrawioLayout(args, workspace);
+    case 'code_callers':
+      return handleCodeCallers(args, dbManager.getDb());
+    case 'code_callees':
+      return handleCodeCallees(args, dbManager.getDb());
+    case 'code_dependencies':
+      return handleCodeDependencies(args, dbManager.getDb(), workspace);
+    case 'code_impact':
+      return handleCodeImpact(args, dbManager.getDb(), workspace);
+    case 'code_traverse':
+      return handleCodeTraverse(args, dbManager.getDb(), workspace);
+    case 'complexity_analysis':
+      return handleComplexityTool(args, dbManager.getDb());
+    case 'find_entry_points':
+      return handleEntryPointTool(args, dbManager.getDb());
+    case 'find_circular_deps':
+    case 'find_related_tests':
+    case 'find_hot_paths':
+    case 'find_dead_imports':
+    case 'module_summary': {
+      const result = handleGraphAnalysisTool(name, args, dbManager.getDb());
+      return result ?? `Unknown tool: ${name}`;
+    }
+    case 'get_ai_context':
+      return handleGetAIContext(args, dbManager.getDb(), workspace);
+    case 'get_edit_context':
+      return handleGetEditContext(args, dbManager.getDb(), workspace);
+    case 'get_curated_context':
+      return handleGetCuratedContext(args, dbManager.getDb(), workspace, dbManager);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -379,4 +416,12 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: 'object', properties: { module: { type: 'string', description: 'Filter by module name' }, format: { type: 'string', description: 'Output format: json or text' } } },
   },
   DRAWIO_TOOL_DEFINITION,
+  ...CALL_GRAPH_TOOL_DEFINITIONS,
+  ...DEPENDENCY_TOOL_DEFINITIONS,
+  ...IMPACT_TOOL_DEFINITIONS,
+  ...TRAVERSE_TOOL_DEFINITIONS,
+  COMPLEXITY_TOOL_DEFINITION,
+  ENTRY_POINT_TOOL_DEFINITION,
+  ...GRAPH_ANALYSIS_TOOL_DEFINITIONS,
+  ...AI_CONTEXT_TOOL_DEFINITIONS,
 ];

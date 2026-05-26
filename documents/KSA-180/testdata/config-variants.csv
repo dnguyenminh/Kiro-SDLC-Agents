@@ -1,0 +1,6 @@
+scenario,file_content,expected_action
+valid_running,{"mcpServers":{"code-intelligence":{"url":"http://127.0.0.1:9181/mcp"}}},restart
+disabled,{"mcpServers":{"code-intelligence":{"disabled":true}}},stop
+empty_object,{},no_action
+no_code_intel,{"mcpServers":{"other":{}}},no_action
+invalid_json,{broken,no_action

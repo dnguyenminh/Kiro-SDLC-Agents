@@ -26,6 +26,8 @@ No `--workspace` CLI argument needed.
 
 ## MCP Tools
 
+### Core Tools
+
 | Tool | Description |
 |------|-------------|
 | `code_search` | Full-text search across symbols (FTS5 with porter stemming) |
@@ -33,6 +35,49 @@ No `--workspace` CLI argument needed.
 | `code_context` | Get source code context around a symbol or line range |
 | `code_modules` | List discovered modules with file/symbol counts |
 | `code_index_status` | Get indexing status, trigger re-index |
+| `stream_write_file` | Write content directly to a file on disk |
+| `code_kb_export` | Export code intelligence data as KB payloads |
+| `drawio_auto_layout` | Auto-layout draw.io diagrams using graph algorithms |
+
+### Graph & Analysis Tools (KSA-171)
+
+| Tool | Description |
+|------|-------------|
+| `code_callers` | Find all callers of a function/method with transitive depth |
+| `code_callees` | Find all callees with transitive depth |
+| `code_traverse` | Generic graph traversal with edge/node type filters |
+| `code_impact` | Predict blast radius of modifying/deleting/renaming a symbol |
+| `code_dependencies` | Analyze file/module import dependencies |
+
+### AI Context Tools (KSA-171)
+
+| Tool | Description |
+|------|-------------|
+| `get_ai_context` | Intent-aware code context with token budgeting |
+| `get_edit_context` | Everything needed before editing a symbol |
+| `get_curated_context` | Natural language query across codebase |
+
+### Similarity & Git Tools
+
+| Tool | Description |
+|------|-------------|
+| `find_duplicates` | Find near-duplicate functions using embedding similarity |
+| `find_dead_code` | Detect potentially dead/unreachable code |
+| `git_search` | Semantic search over git commit history |
+
+### Meta/Orchestration Tools
+
+| Tool | Description |
+|------|-------------|
+| `find_tools` | Search for available tools by description |
+| `execute_dynamic_tool` | Execute a tool on an upstream MCP server |
+| `toggle_tool` | Enable/disable a tool or server |
+| `orchestration_status` | Show orchestration status |
+| `agent_log` | Write execution log entry for agent tracking |
+
+### Memory Tools (30+)
+
+Full KB management: `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_pin`, `mem_map`, `mem_crud`, `mem_graph`, `mem_consolidate`, `mem_lifecycle`, `mem_templates`, `mem_attachments`, `mem_discover`, `mem_tags`, `mem_citations`, `mem_conversation`, `mem_scoring`, `mem_admin`.
 
 ## Configuration
 

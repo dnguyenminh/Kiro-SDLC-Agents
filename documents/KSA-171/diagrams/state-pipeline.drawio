@@ -1,0 +1,66 @@
+<mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="State Diagram — Analysis Pipeline" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="400" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;html=1;shape=doubleCircle;whiteSpace=wrap;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="480" y="50" width="30" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="idle" value="Idle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="430" y="120" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="parsing" value="Parsing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="430" y="220" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="graphing" value="Building Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="430" y="320" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="analyzing" value="Analyzing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="430" y="420" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ready" value="Results Ready" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="430" y="520" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="error" value="Error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="320" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="incremental" value="Incremental&#xa;Update" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="180" y="320" width="120" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="es" edge="1" source="start" target="idle" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e1" edge="1" source="idle" target="parsing" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" value="file opened / scan requested">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" edge="1" source="parsing" target="graphing" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" value="AST complete">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" edge="1" source="graphing" target="analyzing" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" value="graph built">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" edge="1" source="analyzing" target="ready" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;" value="analysis complete">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" edge="1" source="ready" target="idle" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" value="results delivered">
+      <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="620" y="540" /><mxPoint x="620" y="140" /></Array></mxGeometry>
+    </mxCell>
+    <mxCell id="e6" edge="1" source="parsing" target="error" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;" value="parse failure">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" edge="1" source="graphing" target="error" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;" value="graph overflow">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e8" edge="1" source="error" target="idle" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;" value="error reported">
+      <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="760" y="140" /></Array></mxGeometry>
+    </mxCell>
+    <mxCell id="e9" edge="1" source="ready" target="incremental" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;" value="file changed">
+      <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="540" /></Array></mxGeometry>
+    </mxCell>
+    <mxCell id="e10" edge="1" source="incremental" target="graphing" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;" value="partial re-parse done">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,6 @@
+test_id,caller_function,callee_function,file_path,expected_edge_type,expected_confidence
+UT-01-01,main,processData,src/main.kt,CALL,1.0
+UT-01-02,handleRequest,validateInput,src/controller.kt,CALL,1.0
+UT-01-03,init,loadConfig,src/app.kt,CALL,1.0
+UT-01-04,run,execute,src/runner.kt,CALL,1.0
+UT-01-05,parse,tokenize,src/parser.kt,CALL,1.0

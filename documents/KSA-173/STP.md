@@ -1,0 +1,316 @@
+# Software Test Plan (STP)
+
+## MCP Code Intelligence — KSA-173: [Kotlin] Graph Engine
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-173 |
+| Title | [Kotlin] Graph Engine — Test Plan |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2026-05-26 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-173.docx |
+| Related FSD | FSD-v1-KSA-173.docx |
+| Related TDD | TDD-v1-KSA-173.docx |
+
+---
+
+## 1. Test Strategy
+
+### 1.1 Scope
+
+Testing covers all Graph Engine functionality:
+- Call graph construction and accuracy
+- Dependency graph construction and accuracy
+- Graph traversal algorithms (BFS, DFS, shortest path)
+- Impact analysis correctness and performance
+- Cycle detection (Tarjan's SCC)
+- Hot path identification
+- Incremental graph updates
+- MCP tool interface
+- Cross-platform parity with nodejs v2
+
+### 1.2 Out of Scope
+- Tree-sitter parsing (KSA-172 — tested separately)
+- Downstream consumers (KSA-174, KSA-175, KSA-176)
+- UI testing (no UI in this module)
+
+### 1.3 Test Levels
+
+| Level | Abbreviation | Description | Automation |
+|-------|-------------|-------------|------------|
+| Property-Based Testing | PBT | Graph invariants, algorithm correctness | 100% automated |
+| Unit Testing | UT | Individual class/function testing | 100% automated |
+| Integration Testing | IT | Builder + Parser interaction, full pipeline | 100% automated |
+| E2E API Testing | E2E-API | MCP tool calls end-to-end | 100% automated |
+| E2E UI Testing | E2E-UI | N/A (no UI) | N/A |
+| System Integration Testing | SIT | Cross-platform parity with nodejs | 90% automated |
+
+---
+
+## 2. Test Environment
+
+### 2.1 Hardware/Software Requirements
+
+| Component | Specification |
+|-----------|--------------|
+| JDK | 17+ (test on 17 and 21) |
+| Kotlin | 1.9+ |
+| Build Tool | Gradle 8.x |
+| Test Framework | JUnit 5 + Kotest |
+| Mocking | MockK 1.13+ |
+| Property Testing | Kotest Property |
+| Performance | JMH benchmarks |
+| CI | GitHub Actions |
+
+### 2.2 Test Data
+
+| Dataset | Description | Size | Location |
+|---------|-------------|------|----------|
+| small-project | 10 files, simple call graph | ~50 nodes | testdata/small-project/ |
+| medium-project | 100 files, moderate complexity | ~500 nodes | testdata/medium-project/ |
+| large-project | 1000 files, complex graph | ~5000 nodes | testdata/large-project/ |
+| cyclic-project | Project with known circular deps | ~30 nodes | testdata/cyclic-project/ |
+| nodejs-fixtures | Shared fixtures from KSA-144 | varies | testdata/nodejs-fixtures/ |
+
+### 2.3 Entry/Exit Criteria
+
+**Entry Criteria:**
+- KSA-172 module compiles and passes its own tests
+- All test fixtures available
+- Test environment configured
+
+**Exit Criteria:**
+- All P0 test cases pass
+- Code coverage > 80%
+- Performance benchmarks meet targets
+- No Critical/High severity bugs open
+- Cross-platform parity > 99%
+
+---
+
+## 3. Test Summary
+
+### 3.1 Test Case Distribution
+
+| Level | Total Cases | Automated | Manual |
+|-------|------------|-----------|--------|
+| PBT | 12 | 12 | 0 |
+| UT | 45 | 45 | 0 |
+| IT | 15 | 15 | 0 |
+| E2E-API | 16 | 16 | 0 |
+| SIT | 8 | 7 | 1 |
+| **Total** | **96** | **95** | **1** |
+
+### 3.2 Requirements Traceability Matrix (RTM)
+
+| BRD Story | FSD Use Case | Test Cases | Coverage |
+|-----------|-------------|------------|----------|
+| STORY-1: Build Call Graph | UC-01 | UT-01..UT-08, IT-01..IT-03, PBT-01..PBT-03 | 100% |
+| STORY-2: Build Dependency Graph | UC-02 | UT-09..UT-14, IT-04..IT-06, PBT-04..PBT-05 | 100% |
+| STORY-3: Impact Analysis | UC-03 | UT-15..UT-20, E2E-API-01..E2E-API-03 | 100% |
+| STORY-4: Graph Traversal | UC-04 | UT-21..UT-28, E2E-API-04..E2E-API-06, PBT-06..PBT-08 | 100% |
+| STORY-5: Cycle Detection | UC-05 | UT-29..UT-34, E2E-API-07..E2E-API-09, PBT-09..PBT-10 | 100% |
+| STORY-6: Cross-Platform Parity | UC-06 | SIT-01..SIT-08 | 100% |
+| STORY-7: Incremental Updates | UC-07 | UT-35..UT-40, IT-07..IT-10 | 100% |
+| STORY-8: Hot Paths | UC-06 | UT-41..UT-45, E2E-API-10..E2E-API-12, PBT-11..PBT-12 | 100% |
+
+---
+
+## 4. Test Levels Detail
+
+### 4.1 Property-Based Testing (PBT)
+
+| ID | Property | Generator | Shrinking |
+|----|----------|-----------|-----------|
+| PBT-01 | Call graph has no dangling edges (all targets exist as nodes) | Random AST with calls | Min failing graph |
+| PBT-02 | Edge count = sum of all call expressions across files | Random project | Min file set |
+| PBT-03 | Self-loops only for recursive functions | Random call patterns | Min function |
+| PBT-04 | Dependency graph is acyclic for known acyclic projects | Acyclic import generator | Min import chain |
+| PBT-05 | All import edges have valid source and target file paths | Random imports | Min import |
+| PBT-06 | BFS visits all reachable nodes exactly once | Random graph + start | Min graph |
+| PBT-07 | DFS visits all reachable nodes exactly once | Random graph + start | Min graph |
+| PBT-08 | Shortest path is actually shortest (no shorter path exists) | Random weighted graph | Min path |
+| PBT-09 | Every node in SCC can reach every other node in same SCC | Random directed graph | Min SCC |
+| PBT-10 | Nodes NOT in same SCC cannot form a cycle | Random directed graph | Min graph |
+| PBT-11 | In-degree of node = number of predecessors | Random graph | Min graph |
+| PBT-12 | Sum of all in-degrees = total edge count | Random graph | Min graph |
+
+### 4.2 Unit Testing (UT)
+
+**Call Graph Builder (UT-01 to UT-08):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-01 | Direct function call creates edge | `fun a() { b() }` | Edge a→b |
+| UT-02 | Method call on object creates edge | `obj.method()` | Edge caller→obj.method |
+| UT-03 | Constructor call creates edge | `val x = Foo()` | Edge caller→Foo.constructor |
+| UT-04 | Unresolved call creates UNRESOLVED edge | `dynamicCall()` | Edge with type=UNRESOLVED |
+| UT-05 | Virtual method creates edges to all impls | `interface.method()` | Edges to all implementations |
+| UT-06 | Self-recursive call creates self-loop | `fun f() { f() }` | Edge f→f |
+| UT-07 | No edge for non-call expressions | `val x = 1 + 2` | No edges |
+| UT-08 | Cross-file call resolves correctly | `import B; B.foo()` | Edge caller→B.foo |
+
+**Dependency Graph Builder (UT-09 to UT-14):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-09 | Static import creates edge | `import com.foo.Bar` | Edge file→Bar.kt |
+| UT-10 | Relative import resolves | `import ../utils` | Edge file→utils.kt |
+| UT-11 | External package creates external node | `import kotlinx.coroutines` | External node |
+| UT-12 | Re-export tracked | `export { foo } from './bar'` | Edge through barrel |
+| UT-13 | Self-import ignored | `import ./self` | No edge |
+| UT-14 | Dynamic import marked | `import("./lazy")` | Edge type=DYNAMIC |
+
+**Impact Analyzer (UT-15 to UT-20):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-15 | Direct callers found | A→B, C→B, query B | Returns [A, C] |
+| UT-16 | Transitive callers found | A→B→C, query C | Returns [B, A] |
+| UT-17 | Depth limit respected | Chain of 10, depth=3 | Only 3 levels |
+| UT-18 | Score decreases with distance | A(d=1), B(d=2) | score(A) > score(B) |
+| UT-19 | Non-existent node returns empty | query "nonexistent" | Empty result |
+| UT-20 | Isolated node has zero impact | No edges to node | totalAffected=0 |
+
+**Traversal (UT-21 to UT-28):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-21 | BFS level-order | Linear A→B→C | Visit order: A,B,C |
+| UT-22 | BFS breadth-first | A→B, A→C, B→D | Visit: A,B,C,D |
+| UT-23 | DFS depth-first | A→B→C, A→D | Visit: A,B,C,D or A,D,B,C |
+| UT-24 | Max depth stops traversal | Chain of 10, depth=2 | Only 3 nodes |
+| UT-25 | Filter excludes nodes | Filter="src/", node in "test/" | Node skipped |
+| UT-26 | Reverse traversal follows predecessors | A→B→C, reverse from C | Visit: C,B,A |
+| UT-27 | Shortest path finds minimum hops | A→B→C, A→C | Path: A→C (length 1) |
+| UT-28 | No path returns null | Disconnected A, B | null |
+
+**Cycle Detector (UT-29 to UT-34):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-29 | Self-recursion detected | A→A | Cycle [A], severity=INFO |
+| UT-30 | Mutual recursion detected | A→B, B→A | Cycle [A,B], severity=WARNING |
+| UT-31 | 3-node cycle detected | A→B→C→A | Cycle [A,B,C], severity=ERROR |
+| UT-32 | No false positives on DAG | A→B, A→C, B→D, C→D | No cycles |
+| UT-33 | Multiple cycles all found | A→B→A, C→D→C | 2 cycles |
+| UT-34 | Scope filter works | Cycle in src/, query test/ | No cycles in scope |
+
+**Incremental Updates (UT-35 to UT-40):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-35 | Modified file updates edges | Change call in file | Old edges removed, new added |
+| UT-36 | Deleted file removes all edges | Delete file | All edges from/to file gone |
+| UT-37 | New file adds edges | Add file with calls | New edges appear |
+| UT-38 | Batch threshold triggers rebuild | 40% files changed | Full rebuild triggered |
+| UT-39 | Generation increments on update | Any update | generation++ |
+| UT-40 | Debounce batches rapid changes | 5 changes in 50ms | Single batch processed |
+
+**Hot Path Analyzer (UT-41 to UT-45):**
+
+| ID | Test Case | Input | Expected |
+|----|-----------|-------|----------|
+| UT-41 | In-degree calculated correctly | A→C, B→C | C.inDegree=2 |
+| UT-42 | Hub classification correct | High in+out degree | "service_hub" |
+| UT-43 | Utility hub classification | High in, low out | "utility_hub" |
+| UT-44 | Top-N respects limit | 100 nodes, topN=5 | 5 results |
+| UT-45 | Scope filter works | Scope="src/services" | Only service nodes |
+
+### 4.3 Integration Testing (IT)
+
+| ID | Test Case | Components | Verification |
+|----|-----------|-----------|--------------|
+| IT-01 | Full call graph build from parsed project | CallGraphBuilder + MockParser | Graph has expected nodes/edges |
+| IT-02 | Full dependency graph build | DepGraphBuilder + MockParser | All imports resolved |
+| IT-03 | Call resolution with real symbol table | CallResolver + SymbolTable | Correct target resolution |
+| IT-04 | Graph build + traversal pipeline | Builder + BFS | Traversal returns correct results |
+| IT-05 | Graph build + impact analysis | Builder + ImpactAnalyzer | Impact scores correct |
+| IT-06 | Graph build + cycle detection | Builder + CycleDetector | Known cycles found |
+| IT-07 | Incremental update after file change | Builder + Updater | Graph consistent after update |
+| IT-08 | Concurrent read during update | Graph + RWLock | No corruption, reads succeed |
+| IT-09 | Large graph performance | 1000-file fixture | Build < 10s |
+| IT-10 | Memory usage within budget | 1000-file fixture | < 500MB heap |
+| IT-11 | Graph build with parse errors | Partial AST data | Partial graph, no crash |
+| IT-12 | Cross-file call resolution | Multi-file project | Cross-file edges correct |
+| IT-13 | Virtual method resolution | Interface + implementations | All impls have edges |
+| IT-14 | Re-export chain resolution | Barrel files | Transitive deps tracked |
+| IT-15 | Graph serialization round-trip | Build → serialize → deserialize | Identical graph |
+
+### 4.4 E2E API Testing (E2E-API)
+
+| ID | Test Case | MCP Tool | Request | Expected Response |
+|----|-----------|----------|---------|-------------------|
+| E2E-API-01 | Build call graph | graph_build | `{path:".", type:"call"}` | Status: success, node/edge counts |
+| E2E-API-02 | Build dependency graph | graph_build | `{path:".", type:"dependency"}` | Status: success |
+| E2E-API-03 | Impact analysis | graph_impact_analysis | `{target:"main::foo", depth:3}` | Affected nodes list |
+| E2E-API-04 | BFS traversal | graph_traverse | `{start:"main::foo", algorithm:"bfs"}` | Ordered node list |
+| E2E-API-05 | DFS traversal | graph_traverse | `{start:"main::foo", algorithm:"dfs"}` | Ordered node list |
+| E2E-API-06 | Shortest path | graph_shortest_path | `{from:"a::x", to:"b::y"}` | Path array |
+| E2E-API-07 | Detect cycles | graph_detect_cycles | `{graph_type:"dependency"}` | Cycle list |
+| E2E-API-08 | Detect cycles (no cycles) | graph_detect_cycles | `{graph_type:"call"}` on DAG | Empty list |
+| E2E-API-09 | Cycle severity filter | graph_detect_cycles | `{min_severity:"error"}` | Only error cycles |
+| E2E-API-10 | Hot paths | graph_hot_paths | `{top_n:5}` | Top 5 ranked nodes |
+| E2E-API-11 | Graph stats | graph_stats | `{graph_type:"call"}` | Node/edge counts |
+| E2E-API-12 | Neighbors | graph_neighbors | `{node:"main::foo", direction:"forward"}` | Neighbor list |
+| E2E-API-13 | Error: graph not built | graph_traverse | Before build | GRAPH_001 error |
+| E2E-API-14 | Error: node not found | graph_impact_analysis | `{target:"nonexistent"}` | GRAPH_002 error |
+| E2E-API-15 | Error: invalid request | graph_build | `{type:"invalid"}` | GRAPH_006 error |
+| E2E-API-16 | Concurrent queries | Multiple graph_traverse | Parallel calls | All succeed, no corruption |
+
+### 4.5 System Integration Testing (SIT)
+
+| ID | Test Case | Automation | Verification |
+|----|-----------|-----------|--------------|
+| SIT-01 | Kotlin call graph matches nodejs for small-project | Automated | JSON diff < 1% |
+| SIT-02 | Kotlin dep graph matches nodejs for small-project | Automated | JSON diff < 1% |
+| SIT-03 | Kotlin traversal order matches nodejs | Automated | Identical sequences |
+| SIT-04 | Kotlin cycle detection matches nodejs | Automated | Same cycles found |
+| SIT-05 | Kotlin impact scores match nodejs (±0.01) | Automated | Score comparison |
+| SIT-06 | Kotlin hot paths match nodejs top-10 | Automated | Same top-10 nodes |
+| SIT-07 | Kotlin graph stats match nodejs | Automated | Identical counts |
+| SIT-08 | Visual inspection of large graph output | Manual | Spot-check 10 random nodes |
+
+---
+
+## 5. Performance Test Targets
+
+| Metric | Target | Test Method |
+|--------|--------|-------------|
+| Call graph build (1000 files) | < 10s | JMH benchmark |
+| Dependency graph build (1000 files) | < 5s | JMH benchmark |
+| Impact analysis (single query) | < 500ms | JMH benchmark |
+| BFS/DFS traversal (10K nodes) | < 100ms | JMH benchmark |
+| Cycle detection (1000 files) | < 2s | JMH benchmark |
+| Incremental update (1 file) | < 100ms | JMH benchmark |
+| Memory (1000-file graph) | < 500MB | Heap profiling |
+
+---
+
+## 6. Risk-Based Testing
+
+| Risk | Test Focus | Priority |
+|------|-----------|----------|
+| Call resolution inaccuracy | Extensive UT for resolution edge cases | P0 |
+| Memory pressure on large graphs | IT-10 memory profiling | P0 |
+| Cycle detection missing cycles | PBT-09, PBT-10 property tests | P0 |
+| Incremental update inconsistency | UT-35..40, IT-07 | P1 |
+| Concurrency bugs | IT-08, E2E-API-16 | P1 |
+| Performance regression | JMH benchmarks in CI | P1 |
+
+---
+
+## 7. Appendix
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Test Coverage Overview | [test-coverage.png](diagrams/test-coverage.png) | [test-coverage.drawio](diagrams/test-coverage.drawio) |
+| 2 | Test Execution Flow | [test-execution-flow.png](diagrams/test-execution-flow.png) | [test-execution-flow.drawio](diagrams/test-execution-flow.drawio) |

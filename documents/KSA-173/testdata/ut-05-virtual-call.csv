@@ -1,0 +1,5 @@
+test_id,interface_name,method_name,impl_class_1,impl_class_2,expected_edge_count,expected_confidence
+UT-05-01,Processor,process,FooProcessor,BarProcessor,2,0.7
+UT-05-02,Repository,findById,SqlRepository,InMemoryRepository,2,0.7
+UT-05-03,Handler,handle,GetHandler,PostHandler,2,0.7
+UT-05-04,Validator,validate,EmailValidator,PhoneValidator,2,0.7

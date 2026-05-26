@@ -96,7 +96,7 @@ class McpServer(args: Array<String> = emptyArray()) {
         viewerServer?.modelManager = orchestrationEngine?.getModelManager()
         toolDispatcher = ToolDispatcher(
             config, result.queryLayer, result.indexer,
-            result.memoryDispatcher, result.orchestrationEngine
+            result.memoryDispatcher, result.orchestrationEngine, result.db.conn
         )
         toolCallIngestHook = ToolCallIngestHook(result.memoryDispatcher)
         initialized = true

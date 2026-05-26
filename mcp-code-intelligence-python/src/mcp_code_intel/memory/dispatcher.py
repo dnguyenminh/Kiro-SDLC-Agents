@@ -5,6 +5,7 @@ from typing import Any, TYPE_CHECKING
 
 from .engine import MemoryEngine
 from .ingest import IngestPipeline
+from .ingest_graph_linker import IngestGraphLinker
 from .hybrid_search import HybridSearch
 from .consolidation import TierConsolidator
 from .sync_code import MemSyncCode
@@ -35,8 +36,13 @@ class MemoryToolDispatcher:
         self._consolidator = TierConsolidator(engine.knowledge, engine.consolidation)
         self._sync_code = MemSyncCode(engine, query_layer, engine.graph) if query_layer else None
 
-        # Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
+        # Wire graph linker for automatic edge creation on ingest
         conn = engine._conn
+        graph_linker = IngestGraphLinker(engine.graph, conn)
+        self._pipeline.set_graph_linker(graph_linker)
+        self._graph_linker = graph_linker
+
+        # Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
         quality_gate = QualityGate(conn)
         scope_filter = AgentScopeFilter(conn)
         token_budget = TokenBudget()
@@ -333,6 +339,8 @@ class MemoryToolDispatcher:
             return self._graph_path(args)
         if action == "ego":
             return self._graph_ego(args)
+        if action == "rebuild":
+            return self._graph_rebuild(args)
         return f"Unknown action: {action}"
 
     def _graph_neighbors(self, args: dict[str, Any]) -> str:
@@ -374,6 +382,45 @@ class MemoryToolDispatcher:
         radius = args.get("radius", 2)
         nodes = self._engine.graph.ego_graph(int(node_id), radius)
         return f"Ego graph for {node_id} (radius={radius}): {len(nodes)} nodes\n{', '.join(str(n) for n in nodes)}"
+
+    def _graph_rebuild(self, args: dict[str, Any]) -> str:
+        """Rebuild graph edges for all existing entries that have no connections."""
+        limit = int(args.get("limit", 500))
+        conn = self._engine._conn
+
+        # Get all entries
+        cur = conn.execute(
+            "SELECT id, source, tags, content FROM knowledge_entries ORDER BY id LIMIT ?",
+            (limit,),
+        )
+        entries = cur.fetchall()
+        total_entries = len(entries)
+        total_edges = 0
+
+        for row in entries:
+            entry_id = row[0]
+            source = row[1] or ""
+            tags = row[2] or ""
+            content = row[3] or ""
+            edges = self._graph_linker.link_entry(entry_id, source, tags, content)
+            total_edges += edges
+
+        # Also create sibling edges for entries from the same source (document)
+        source_groups: dict[str, list[int]] = {}
+        for row in entries:
+            src = row[1] or ""
+            if src:
+                source_groups.setdefault(src, []).append(row[0])
+
+        for src, ids in source_groups.items():
+            if len(ids) >= 2:
+                total_edges += self._graph_linker.link_chunks(ids, src)
+
+        return (
+            f"Graph rebuild complete: processed {total_entries} entries, "
+            f"created {total_edges} edges.\n"
+            f"Total edges now: {self._engine.graph_repo.count_edges()}"
+        )
 
     def _handle_status(self, args: dict[str, Any]) -> str:
         stats = self._engine.get_stats()

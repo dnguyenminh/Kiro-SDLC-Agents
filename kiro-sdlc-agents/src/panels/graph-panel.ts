@@ -372,7 +372,7 @@ export class GraphPanel extends BasePanel {
       try {
         const port = this.mcpManager.port;
         if (port && port > 0) {
-          const resp = await fetch(`http://127.0.0.1:${port}/api/memory/graph/data?limit=5000`);
+          const resp = await fetch(`http://127.0.0.1:${port}/api/memory/graph/data?limit=15000`);
           if (resp.ok) {
             const data = (await resp.json()) as any;
             if (data.nodes && data.edges && data.nodes.length > 0) {
@@ -397,23 +397,15 @@ export class GraphPanel extends BasePanel {
 
       // Fallback: load via MCP tools
       if (!usedViewerApi) {
-        const rawAll = await this.mcpManager.invokeTool("mem_crud", {
-          action: "list",
-          limit: SERVER_CONSTANTS.GRAPH_MAX_NODES,
-        });
-        
-        let allEntries = this.parseEntries(rawAll);
-
-        const contextCount = allEntries.filter(e => e.type === "CONTEXT").length;
-        if (contextCount > allEntries.length * 0.8) {
-          const otherTypes = ["REQUIREMENT", "ARCHITECTURE", "DECISION", "PROCEDURE", "API_DESIGN", "LESSON_LEARNED", "ERROR_PATTERN"];
-          for (const t of otherTypes) {
-            try {
-              const raw = await this.mcpManager.invokeTool("mem_crud", { action: "list", limit: 50, type: t });
-              const parsed = this.parseEntries(raw);
-              allEntries.push(...parsed);
-            } catch { /* skip */ }
-          }
+        // Use mem_search with wildcard to get entries (mem_crud may not be available)
+        let allEntries: any[] = [];
+        const types = ["REQUIREMENT", "ARCHITECTURE", "DECISION", "PROCEDURE", "API_DESIGN", "LESSON_LEARNED", "ERROR_PATTERN", "CONTEXT"];
+        for (const t of types) {
+          try {
+            const raw = await this.mcpManager.invokeTool("mem_search", { query: t, limit: 50, detail: true });
+            const parsed = this.parseSearchResults(raw);
+            allEntries.push(...parsed);
+          } catch { /* skip */ }
         }
 
         const seen = new Set<number>();
@@ -448,7 +440,7 @@ export class GraphPanel extends BasePanel {
       // Use MCP port — viewer is proxied on same port
       const port = this.mcpManager.port;
       if (port && port > 0) {
-        const resp = await fetch(`http://127.0.0.1:${port}/api/memory/graph/data?limit=5000`);
+        const resp = await fetch(`http://127.0.0.1:${port}/api/memory/graph/data?limit=15000`);
         if (resp.ok) {
           const data = (await resp.json()) as any;
           if (data.edges && Array.isArray(data.edges) && data.edges.length > 0) {
@@ -596,6 +588,34 @@ export class GraphPanel extends BasePanel {
       }
       return entries;
     }
+  }
+
+  private parseSearchResults(raw: string): any[] {
+    // Parse mem_search output format:
+    // [TYPE] Summary text
+    //   ID: 123 | Tier: SEMANTIC | Score: 0.015 | Source: path
+    const entries: any[] = [];
+    const lines = raw.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const typeMatch = lines[i].match(/^\[(\w+)\]\s+(.+)/);
+      if (typeMatch) {
+        const type = typeMatch[1];
+        const summary = typeMatch[2].trim();
+        let id = 0, tier = "SEMANTIC", source = "";
+        if (i + 1 < lines.length) {
+          const idMatch = lines[i + 1].match(/ID:\s*(\d+)/);
+          const tierMatch = lines[i + 1].match(/Tier:\s*(\w+)/);
+          const sourceMatch = lines[i + 1].match(/Source:\s*(.+?)(?:\s*$|\s*\|)/);
+          if (idMatch) id = parseInt(idMatch[1], 10);
+          if (tierMatch) tier = tierMatch[1];
+          if (sourceMatch) source = sourceMatch[1].trim();
+        }
+        if (id > 0) {
+          entries.push({ id, type, summary, tier, source, citations: 0 });
+        }
+      }
+    }
+    return entries;
   }
 
   private parseEntryText(raw: string, id: number): any {

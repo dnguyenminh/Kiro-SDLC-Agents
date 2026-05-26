@@ -1,0 +1,5 @@
+test_case_id,feature,node_count,edge_count,expected_insights,max_time_ms,description
+TC-306,graph_analysis,500,1000,"orphans,hubs,clusters,stale",2000,Analysis within 2s for 500 nodes
+TC-601,graph_analysis,500,1000,"orphans,hubs,clusters,stale",2000,Performance test 500 nodes
+TC-505,graph_analysis,150,320,"orphans,hubs",2000,Insights panel shows and highlights nodes
+TC-701,graph_analysis,150,320,valid_schema,5000,API returns correct schema

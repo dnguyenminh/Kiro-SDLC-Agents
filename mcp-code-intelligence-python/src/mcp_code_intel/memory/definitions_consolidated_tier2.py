@@ -18,11 +18,11 @@ TIER2_TOOLS = [
     },
     {
         "name": "mem_graph",
-        "description": "Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego.",
+        "description": "Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego, rebuild.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "action": {"type": "string", "description": "Action: neighbors, add_edge, path, ego"},
+                "action": {"type": "string", "description": "Action: neighbors, add_edge, path, ego, rebuild"},
                 "node_id": {"type": "number", "description": "Node ID for neighbors/ego"},
                 "source_id": {"type": "number", "description": "Source node for add_edge"},
                 "target_id": {"type": "number", "description": "Target node for add_edge"},
@@ -30,6 +30,7 @@ TIER2_TOOLS = [
                 "from_id": {"type": "number", "description": "Start node for path"},
                 "to_id": {"type": "number", "description": "End node for path"},
                 "radius": {"type": "number", "description": "Radius for ego graph (default 2)"},
+                "limit": {"type": "number", "description": "Max entries to process for rebuild (default 500)"},
             },
         },
     },
