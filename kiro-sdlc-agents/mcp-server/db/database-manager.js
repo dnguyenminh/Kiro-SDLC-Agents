@@ -41,7 +41,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseManager = void 0;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+// KSA-175: Lazy-load better-sqlite3 to support prebuilt native binding
+let better_sqlite3_1;
+function getBetterSqlite3() {
+    if (!better_sqlite3_1) {
+        try {
+            better_sqlite3_1 = require("better-sqlite3");
+        } catch (e) {
+            // Fallback: resolve from mcp-server/node_modules relative to this file
+            const p = require('path');
+            const fallbackPath = p.resolve(__dirname, '..', 'node_modules', 'better-sqlite3');
+            better_sqlite3_1 = require(fallbackPath);
+        }
+    }
+    return better_sqlite3_1;
+}
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const migrations_js_1 = require("./migrations.js");
@@ -54,7 +68,16 @@ class DatabaseManager {
     /** Open database, enable WAL, run migrations. */
     initialize() {
         this.ensureDirectory();
-        this.db = new better_sqlite3_1.default(this.dbPath);
+        // KSA-175: Use prebuilt native binding if provided via environment variable
+        const nativeBinding = process.env.BETTER_SQLITE3_BINDING;
+        const Database = getBetterSqlite3();
+        if (nativeBinding) {
+            console.error(`[db] Using native binding: ${nativeBinding}`);
+            this.db = new Database(this.dbPath, { nativeBinding });
+        }
+        else {
+            this.db = new Database(this.dbPath);
+        }
         this.configureDatabase();
         (0, migrations_js_1.runMigrations)(this.db);
         console.error(`[db] Initialized at ${this.dbPath}`);

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.2] - 2025-07-18
+
+### Fixed
+- **KSA-175: VSIX missing `better-sqlite3` JS wrapper** — `.vscodeignore` now explicitly includes `mcp-server/node_modules/**` while excluding native build artifacts (`.build/`, `deps/`, `src/`, binaries). Previously `vsce` respected `.gitignore`'s blanket `node_modules/` exclusion, causing runtime `MODULE_NOT_FOUND` errors.
+- **KSA-175: Lazy-load `better-sqlite3` with binding fallback** — `database-manager.js` now defers `require('better-sqlite3')` and supports `BETTER_SQLITE3_BINDING` env var for prebuilt native addon path. Falls back to resolving from `mcp-server/node_modules/better-sqlite3` if standard require fails.
+
+### Changed
+- **`.vscodeignore` restructured** — added `!mcp-server/node_modules/**` inclusion rule with targeted exclusions for native build artifacts (`better-sqlite3/build/**`, `better-sqlite3/deps/**`, `onnxruntime-node/bin/**`, `prebuild-install/**`, `node-gyp/**`)
+
 ## [1.2.0] - 2026-05-16
 
 ### Breaking Changes
