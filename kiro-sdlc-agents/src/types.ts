@@ -73,7 +73,7 @@ export type WebviewToExtMessage =
   | { type: "refresh" }
   | { type: "filterByType"; types: string[] }
   | { type: "filterByTier"; tiers: string[] }
-  | { type: "filterByTag"; tag: string }
+  | { type: "filterByTag"; tag: string; offset?: number; limit?: number }
   | { type: "nodeClick"; entryId: number }
   | { type: "createTag"; tag: string; category?: string }
   | { type: "searchNodes"; query: string }
@@ -90,7 +90,7 @@ export type ExtToWebviewMessage =
   | { type: "tagsData"; taxonomy: TagTaxonomy; popular: PopularTag[] }
   | { type: "qualityData"; stats: QualityStats; lowQuality: QualityEntry[]; confidence: ConfidenceStats; unreliable: QualityEntry[] }
   | { type: "analyticsData"; volume: VolumePoint[]; popular: PopularQuery[]; gaps: GapEntry[]; recommendations: Recommendation[] }
-  | { type: "filteredEntries"; entries: KbEntry[] }
+  | { type: "filteredEntries"; entries: KbEntry[]; total?: number }
   | { type: "entryDetail"; entry: KbEntry }
   | { type: "serverStatus"; status: "connected" | "disconnected" | "failed" }
   | { type: "error"; message: string; retryable: boolean };
