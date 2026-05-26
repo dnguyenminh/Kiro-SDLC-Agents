@@ -36,14 +36,14 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
           if [ "$NODE_INPUT" = "all" ]; then
-            NODES='["20","22","24"]'
+            NODES="20 22 24"
           else
-            NODES="[\"${NODE_INPUT}\"]"
+            NODES="$NODE_INPUT"
           fi
 
-          MATRIX="{\"node_version\":${NODES},\"include\":["
+          MATRIX="{\"include\":["
           FIRST=true
-          for NV in $(echo $NODES | tr -d '[]"' | tr ',' ' '); do
+          for NV in $NODES; do
             for ENTRY in "windows-latest,win32,x64" "ubuntu-latest,linux,x64" "macos-latest,darwin,x64" "macos-14,darwin,arm64"; do
               OS=$(echo $ENTRY | cut -d, -f1)
               PLAT=$(echo $ENTRY | cut -d, -f2)
