@@ -64,65 +64,65 @@ jobs:
           - os: windows-latest
             platform: win32
             arch: x64
-            node-version: '20'
-            node-label: 'node-v20'
+            node_version: '20'
+            node_label: 'node-v20'
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            node-version: '20'
-            node-label: 'node-v20'
+            node_version: '20'
+            node_label: 'node-v20'
           - os: macos-latest
             platform: darwin
             arch: x64
-            node-version: '20'
-            node-label: 'node-v20'
+            node_version: '20'
+            node_label: 'node-v20'
           - os: macos-14
             platform: darwin
             arch: arm64
-            node-version: '20'
-            node-label: 'node-v20'
+            node_version: '20'
+            node_label: 'node-v20'
           # Node 22 LTS (N-API v9, MODULE_VERSION 127)
           - os: windows-latest
             platform: win32
             arch: x64
-            node-version: '22'
-            node-label: 'node-v22'
+            node_version: '22'
+            node_label: 'node-v22'
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            node-version: '22'
-            node-label: 'node-v22'
+            node_version: '22'
+            node_label: 'node-v22'
           - os: macos-latest
             platform: darwin
             arch: x64
-            node-version: '22'
-            node-label: 'node-v22'
+            node_version: '22'
+            node_label: 'node-v22'
           - os: macos-14
             platform: darwin
             arch: arm64
-            node-version: '22'
-            node-label: 'node-v22'
+            node_version: '22'
+            node_label: 'node-v22'
           # Node 24 (N-API v10, MODULE_VERSION 137)
           - os: windows-latest
             platform: win32
             arch: x64
-            node-version: '24'
-            node-label: 'node-v24'
+            node_version: '24'
+            node_label: 'node-v24'
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            node-version: '24'
-            node-label: 'node-v24'
+            node_version: '24'
+            node_label: 'node-v24'
           - os: macos-latest
             platform: darwin
             arch: x64
-            node-version: '24'
-            node-label: 'node-v24'
+            node_version: '24'
+            node_label: 'node-v24'
           - os: macos-14
             platform: darwin
             arch: arm64
-            node-version: '24'
-            node-label: 'node-v24'
+            node_version: '24'
+            node_label: 'node-v24'
 
     runs-on: ${{ matrix.os }}
 
@@ -131,7 +131,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node_version: ${{ matrix.node_version }}
 
       - name: Print Node info
         run: |
@@ -148,7 +148,7 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.check.outputs.version }}"
-          NODE_LABEL="${{ matrix.node-label }}"
+          NODE_LABEL="${{ matrix.node_label }}"
           PLATFORM="${{ matrix.platform }}"
           ARCH="${{ matrix.arch }}"
           FILENAME="better-sqlite3-v${VERSION}-${NODE_LABEL}-${PLATFORM}-${ARCH}.node"
@@ -177,7 +177,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.node-label }}-${{ matrix.platform }}-${{ matrix.arch }}
+          name: native-${{ matrix.node_label }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             *.node
             *.sha256
