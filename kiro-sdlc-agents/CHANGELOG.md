@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0] - 2025-07-20
+
+### Added
+- **KSA-111: Prebuilt onnxruntime-node binaries** — extension now ships with prebuilt `onnxruntime-node` native binaries for all supported platforms (win32-x64, linux-x64, darwin-x64, darwin-arm64), eliminating the need for users to compile native addons
+- **GitHub Release asset hosting** — onnxruntime-node v1.22.0 binaries hosted on GitHub Release `onnxruntime-node-v1.22.0` for reliable distribution
+- **`NativeAddonManager` onnxruntime support** — extended native addon resolution to handle onnxruntime-node alongside better-sqlite3, with platform-specific binary selection
+
+### Changed
+- **`onnxruntime-node` dependency** — upgraded to ^1.22.0 with prebuilt binary support
+- **`.vscodeignore` updated** — includes onnxruntime-node prebuilt binaries while excluding source/build artifacts
+- **`build-native.yml` workflow** — extended matrix to build onnxruntime-node binaries alongside better-sqlite3
+
 ## [1.9.4] - 2025-07-19
 
 ### Added
