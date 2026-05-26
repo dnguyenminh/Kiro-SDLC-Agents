@@ -2,44 +2,69 @@
   "better-sqlite3": {
     "version": "11.7.0",
     "releaseUrl": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/tag/better-sqlite3-v11.7.0",
+    "nodeVersionMap": {
+      "20": { "napiVersion": 9, "moduleVersion": 115 },
+      "22": { "napiVersion": 9, "moduleVersion": 127 },
+      "24": { "napiVersion": 10, "moduleVersion": 137 }
+    },
     "binaries": {
-      "napi-v9-win32-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v9-win32-x64.node",
-        "sha256": "f6452fd1bb04a7d6102f824cf6ef0706cc3ff5998b86beb399f7c8e2515efdaf",
+      "node-v20-win32-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v20-win32-x64.node",
+        "sha256": "placeholder",
         "size": 1714688
       },
-      "napi-v9-darwin-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v9-darwin-x64.node",
-        "sha256": "8909d507cd17811552154d6286218130bdf1f350b5faf7f179852c823fecf6f6",
+      "node-v20-darwin-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v20-darwin-x64.node",
+        "sha256": "placeholder",
         "size": 1884256
       },
-      "napi-v9-darwin-arm64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v9-darwin-arm64.node",
-        "sha256": "8909d507cd17811552154d6286218130bdf1f350b5faf7f179852c823fecf6f6",
+      "node-v20-darwin-arm64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v20-darwin-arm64.node",
+        "sha256": "placeholder",
         "size": 1884256
       },
-      "napi-v9-linux-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v9-linux-x64.node",
-        "sha256": "8ab0764d88681a8d8b83648c6a7f47e638f7d51bf6e94abcdd6e2eb85976946c",
+      "node-v20-linux-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v20-linux-x64.node",
+        "sha256": "placeholder",
         "size": 2102360
       },
-      "napi-v10-win32-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v10-win32-x64.node",
+      "node-v22-win32-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v22-win32-x64.node",
         "sha256": "placeholder",
         "size": 1714688
       },
-      "napi-v10-darwin-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v10-darwin-x64.node",
+      "node-v22-darwin-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v22-darwin-x64.node",
         "sha256": "placeholder",
         "size": 1884256
       },
-      "napi-v10-darwin-arm64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v10-darwin-arm64.node",
+      "node-v22-darwin-arm64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v22-darwin-arm64.node",
         "sha256": "placeholder",
         "size": 1884256
       },
-      "napi-v10-linux-x64": {
-        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-napi-v10-linux-x64.node",
+      "node-v22-linux-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v22-linux-x64.node",
+        "sha256": "placeholder",
+        "size": 2102360
+      },
+      "node-v24-win32-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v24-win32-x64.node",
+        "sha256": "placeholder",
+        "size": 1714688
+      },
+      "node-v24-darwin-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v24-darwin-x64.node",
+        "sha256": "placeholder",
+        "size": 1884256
+      },
+      "node-v24-darwin-arm64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v24-darwin-arm64.node",
+        "sha256": "placeholder",
+        "size": 1884256
+      },
+      "node-v24-linux-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v24-linux-x64.node",
         "sha256": "placeholder",
         "size": 2102360
       }

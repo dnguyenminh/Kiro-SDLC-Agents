@@ -7,10 +7,6 @@ on:
         description: 'better-sqlite3 version to build'
         required: true
         default: '11.7.0'
-      napi_version:
-        description: 'N-API version target'
-        required: true
-        default: '9'
   push:
     branches: [main]
     paths:
@@ -18,7 +14,6 @@ on:
 
 env:
   DEFAULT_BETTER_SQLITE3_VERSION: '11.7.0'
-  DEFAULT_NAPI_VERSION: '9'
 
 jobs:
   # Gate job: skip entire workflow if release already exists with all binaries
@@ -27,7 +22,6 @@ jobs:
     outputs:
       should_build: ${{ steps.check_release.outputs.should_build }}
       version: ${{ steps.check_release.outputs.version }}
-      napi: ${{ steps.check_release.outputs.napi }}
     steps:
       - name: Check if release already complete
         id: check_release
@@ -35,23 +29,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ inputs.better_sqlite3_version || env.DEFAULT_BETTER_SQLITE3_VERSION }}"
-          NAPI="${{ inputs.napi_version || env.DEFAULT_NAPI_VERSION }}"
           TAG="better-sqlite3-v${VERSION}"
 
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "napi=${NAPI}" >> $GITHUB_OUTPUT
 
-          # Check if release with all 4 binaries already exists
+          # Check if release with all 12 binaries already exists (3 node versions x 4 platforms)
           ASSETS=$(gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q '.assets[].name' 2>/dev/null || echo "")
 
-          if echo "$ASSETS" | grep -q "napi-v${NAPI}-win32-x64.node" && \
-             echo "$ASSETS" | grep -q "napi-v${NAPI}-linux-x64.node" && \
-             echo "$ASSETS" | grep -q "napi-v${NAPI}-darwin-x64.node" && \
-             echo "$ASSETS" | grep -q "napi-v${NAPI}-darwin-arm64.node"; then
-            echo "✅ Release $TAG already has all 4 platform binaries. Skipping build."
+          EXPECTED_COUNT=0
+          for NODE_VER in 20 22 24; do
+            for PLAT in "win32-x64" "linux-x64" "darwin-x64" "darwin-arm64"; do
+              if echo "$ASSETS" | grep -q "node-v${NODE_VER}-${PLAT}.node"; then
+                EXPECTED_COUNT=$((EXPECTED_COUNT + 1))
+              fi
+            done
+          done
+
+          if [ "$EXPECTED_COUNT" -eq 12 ]; then
+            echo "✅ Release $TAG already has all 12 platform binaries. Skipping build."
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
-            echo "🔨 Release $TAG missing or incomplete. Will build."
+            echo "🔨 Release $TAG has ${EXPECTED_COUNT}/12 binaries. Will build missing ones."
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
@@ -62,48 +60,69 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Node 20 (LTS) builds — NODE_MODULE_VERSION 115
+          # Node 20 LTS (N-API v9, MODULE_VERSION 115)
           - os: windows-latest
             platform: win32
             arch: x64
             node-version: '20'
-            napi-label: 'napi-v9'
+            node-label: 'node-v20'
           - os: ubuntu-latest
             platform: linux
             arch: x64
             node-version: '20'
-            napi-label: 'napi-v9'
+            node-label: 'node-v20'
           - os: macos-latest
             platform: darwin
             arch: x64
             node-version: '20'
-            napi-label: 'napi-v9'
+            node-label: 'node-v20'
           - os: macos-14
             platform: darwin
             arch: arm64
             node-version: '20'
-            napi-label: 'napi-v9'
-          # Node 24 builds — NODE_MODULE_VERSION 137
+            node-label: 'node-v20'
+          # Node 22 LTS (N-API v9, MODULE_VERSION 127)
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            node-version: '22'
+            node-label: 'node-v22'
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            node-version: '22'
+            node-label: 'node-v22'
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            node-version: '22'
+            node-label: 'node-v22'
+          - os: macos-14
+            platform: darwin
+            arch: arm64
+            node-version: '22'
+            node-label: 'node-v22'
+          # Node 24 (N-API v10, MODULE_VERSION 137)
           - os: windows-latest
             platform: win32
             arch: x64
             node-version: '24'
-            napi-label: 'napi-v10'
+            node-label: 'node-v24'
           - os: ubuntu-latest
             platform: linux
             arch: x64
             node-version: '24'
-            napi-label: 'napi-v10'
+            node-label: 'node-v24'
           - os: macos-latest
             platform: darwin
             arch: x64
             node-version: '24'
-            napi-label: 'napi-v10'
+            node-label: 'node-v24'
           - os: macos-14
             platform: darwin
             arch: arm64
             node-version: '24'
-            napi-label: 'napi-v10'
+            node-label: 'node-v24'
 
     runs-on: ${{ matrix.os }}
 
@@ -113,6 +132,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Print Node info
+        run: |
+          node -e "console.log('Node:', process.version, '| N-API:', process.versions.napi, '| MODULE_VERSION:', process.config.variables.node_module_version)"
 
       - name: Install better-sqlite3
         run: |
@@ -125,10 +148,10 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.check.outputs.version }}"
-          NAPI_LABEL="${{ matrix.napi-label }}"
+          NODE_LABEL="${{ matrix.node-label }}"
           PLATFORM="${{ matrix.platform }}"
           ARCH="${{ matrix.arch }}"
-          FILENAME="better-sqlite3-v${VERSION}-${NAPI_LABEL}-${PLATFORM}-${ARCH}.node"
+          FILENAME="better-sqlite3-v${VERSION}-${NODE_LABEL}-${PLATFORM}-${ARCH}.node"
 
           # Find the compiled .node file
           NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" -o -name "*.node" | head -1)
@@ -154,7 +177,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.platform }}-${{ matrix.arch }}
+          name: native-${{ matrix.node-label }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             *.node
             *.sha256
@@ -190,8 +213,18 @@ jobs:
             Prebuilt `better-sqlite3` native binaries for the kiro-sdlc-agents extension.
 
             **Version:** ${{ needs.check.outputs.version }}
-            **N-API:** v${{ needs.check.outputs.napi }}
+            **Node versions:** 20 (LTS), 22 (LTS), 24
             **Platforms:** win32-x64, linux-x64, darwin-x64, darwin-arm64
+
+            ### Naming scheme
+            `better-sqlite3-v{version}-node-v{major}-{platform}-{arch}.node`
+
+            ### Node to N-API to MODULE_VERSION mapping
+            | Node | N-API | MODULE_VERSION |
+            |------|-------|----------------|
+            | 20   | v9    | 115            |
+            | 22   | v9    | 127            |
+            | 24   | v10   | 137            |
 
             These binaries are automatically downloaded by the extension on first activation.
           files: |
@@ -218,49 +251,43 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.check.outputs.version }}"
-          NAPI="${{ needs.check.outputs.napi }}"
           REPO="${{ github.repository }}"
 
-          # Read checksums
-          declare -A CHECKSUMS
-          declare -A SIZES
-          for f in *.sha256; do
-            HASH=$(awk '{print $1}' "$f")
-            NODE_FILE="${f%.sha256}"
-            SIZE=$(wc -c < "$NODE_FILE" | tr -d ' ')
-            KEY=$(echo "$NODE_FILE" | sed "s/better-sqlite3-v${VERSION}-//")
-            KEY="${KEY%.node}"
-            CHECKSUMS["$KEY"]="$HASH"
-            SIZES["$KEY"]="$SIZE"
+          # Build JSON entries for all binaries
+          BINARIES=""
+          for NODE_VER in 20 22 24; do
+            for PLAT in "win32-x64" "linux-x64" "darwin-x64" "darwin-arm64"; do
+              KEY="node-v${NODE_VER}-${PLAT}"
+              FILENAME="better-sqlite3-v${VERSION}-${KEY}.node"
+
+              if [ -f "$FILENAME" ]; then
+                HASH=$(awk '{print $1}' "${FILENAME}.sha256")
+                SIZE=$(wc -c < "$FILENAME" | tr -d ' ')
+              else
+                HASH="placeholder"
+                SIZE=5242880
+              fi
+
+              URL="https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/${FILENAME}"
+
+              if [ -n "$BINARIES" ]; then
+                BINARIES="${BINARIES},"
+              fi
+              BINARIES="${BINARIES}
+        \"${KEY}\": {
+          \"url\": \"${URL}\",
+          \"sha256\": \"${HASH}\",
+          \"size\": ${SIZE}
+        }"
+            done
           done
 
-          # Generate manifest
           cat > kiro-sdlc-agents/resources/release-manifest.json << EOF
           {
             "better-sqlite3": {
               "version": "${VERSION}",
               "releaseUrl": "https://github.com/${REPO}/releases/tag/better-sqlite3-v${VERSION}",
-              "binaries": {
-                "napi-v${NAPI}-win32-x64": {
-                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-win32-x64.node",
-                  "sha256": "${CHECKSUMS[napi-v${NAPI}-win32-x64]:-placeholder}",
-                  "size": ${SIZES[napi-v${NAPI}-win32-x64]:-5242880}
-                },
-                "napi-v${NAPI}-darwin-x64": {
-                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-darwin-x64.node",
-                  "sha256": "${CHECKSUMS[napi-v${NAPI}-darwin-x64]:-placeholder}",
-                  "size": ${SIZES[napi-v${NAPI}-darwin-x64]:-4194304}
-                },
-                "napi-v${NAPI}-darwin-arm64": {
-                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-darwin-arm64.node",
-                  "sha256": "${CHECKSUMS[napi-v${NAPI}-darwin-arm64]:-placeholder}",
-                  "size": ${SIZES[napi-v${NAPI}-darwin-arm64]:-4194304}
-                },
-                "napi-v${NAPI}-linux-x64": {
-                  "url": "https://github.com/${REPO}/releases/download/better-sqlite3-v${VERSION}/better-sqlite3-v${VERSION}-napi-v${NAPI}-linux-x64.node",
-                  "sha256": "${CHECKSUMS[napi-v${NAPI}-linux-x64]:-placeholder}",
-                  "size": ${SIZES[napi-v${NAPI}-linux-x64]:-5242880}
-                }
+              "binaries": {${BINARIES}
               }
             }
           }

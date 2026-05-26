@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.4] - 2025-07-19
+
+### Added
+- **Multi-version Node binary support** — prebuilt `better-sqlite3` binaries now built for Node 20, 22, and 24 (12 binaries total: 3 Node versions × 4 platforms)
+- **Node 22 LTS support** — N-API v9, MODULE_VERSION 127
+
+### Changed
+- **Binary naming scheme** — switched from `napi-v{n}-{platform}-{arch}` to `node-v{major}-{platform}-{arch}` to correctly distinguish Node 20 vs 22 (both share N-API v9)
+- **`NativeAddonManager` resolution strategy** — now resolves by Node major version first, falls back to closest lower Node version, then legacy N-API-based keys for backward compatibility
+- **`build-native.yml` workflow** — builds 12 matrix entries (3 Node versions × 4 platforms), removed `napi_version` input parameter
+- **`release-manifest.json`** — added `nodeVersionMap` metadata and 12 binary entries with new naming scheme
+
+### Fixed
+- **Node 20 vs 22 binary mismatch** — previously both resolved to same `napi-v9` binary despite having different MODULE_VERSION (115 vs 127), causing potential ABI incompatibility
+
 ## [1.9.2] - 2025-07-18
 
 ### Fixed

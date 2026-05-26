@@ -19,10 +19,16 @@ interface BinaryManifestEntry {
     size: number;
 }
 
+interface NodeVersionInfo {
+    napiVersion: number;
+    moduleVersion: number;
+}
+
 interface ReleaseManifest {
     "better-sqlite3": {
         version: string;
         releaseUrl: string;
+        nodeVersionMap?: Record<string, NodeVersionInfo>;
         binaries: Record<string, BinaryManifestEntry>;
     };
 }
@@ -31,6 +37,7 @@ export interface PlatformInfo {
     platform: NodeJS.Platform;
     arch: string;
     napiVersion: string;
+    nodeMajorVersion: string;
     electronVersion: string;
     supported: boolean;
     cacheKey: string;
@@ -109,34 +116,57 @@ export class NativeAddonManager {
 
     /**
      * Get platform info for diagnostics.
+     *
+     * Resolution strategy (v1.9.4+):
+     * 1. Try exact match: `node-v{major}-{platform}-{arch}` (new scheme)
+     * 2. Try closest lower Node major version for same platform/arch
+     * 3. Fallback to legacy `napi-v{n}-{platform}-{arch}` keys (backward compat)
      */
     getPlatformInfo(): PlatformInfo {
         const platform = process.platform;
         const arch = process.arch;
         const napiVersion = process.versions.napi || "9";
+        const nodeMajorVersion = process.versions.node.split(".")[0];
         const electronVersion = process.versions.electron || "unknown";
         const version = this.manifest["better-sqlite3"].version;
         const binaries = this.manifest["better-sqlite3"].binaries;
 
-        // N-API is forward-compatible: binary built for v9 works on v19+
-        // Find the best matching binary: exact match first, then highest available ≤ runtime
-        let cacheKey = `napi-v${napiVersion}-${platform}-${arch}`;
+        // Strategy 1: Exact match by Node major version (new naming scheme)
+        let cacheKey = `node-v${nodeMajorVersion}-${platform}-${arch}`;
         let supported = cacheKey in binaries;
 
         if (!supported) {
-            // Find available binary for this platform/arch with any N-API version
+            // Strategy 2: Find closest lower Node major version for this platform/arch
+            const runtimeMajor = parseInt(nodeMajorVersion, 10);
+            const nodeCandidates = Object.keys(binaries)
+                .filter(k => k.startsWith("node-v") && k.endsWith(`-${platform}-${arch}`))
+                .map(k => ({ key: k, major: parseInt(k.match(/node-v(\d+)/)?.[1] || "0", 10) }))
+                .filter(c => c.major <= runtimeMajor)
+                .sort((a, b) => b.major - a.major);
+
+            if (nodeCandidates.length > 0) {
+                cacheKey = nodeCandidates[0].key;
+                supported = true;
+                this.outputChannel.appendLine(
+                    `[NativeAddon] Node v${nodeMajorVersion}, using compatible binary: ${cacheKey}`
+                );
+            }
+        }
+
+        if (!supported) {
+            // Strategy 3: Legacy fallback — match by N-API version (napi-v9-platform-arch)
             const runtimeNapi = parseInt(napiVersion, 10);
-            const candidates = Object.keys(binaries)
-                .filter(k => k.endsWith(`-${platform}-${arch}`))
+            const legacyCandidates = Object.keys(binaries)
+                .filter(k => k.startsWith("napi-v") && k.endsWith(`-${platform}-${arch}`))
                 .map(k => ({ key: k, napi: parseInt(k.match(/napi-v(\d+)/)?.[1] || "0", 10) }))
                 .filter(c => c.napi <= runtimeNapi)
                 .sort((a, b) => b.napi - a.napi);
 
-            if (candidates.length > 0) {
-                cacheKey = candidates[0].key;
+            if (legacyCandidates.length > 0) {
+                cacheKey = legacyCandidates[0].key;
                 supported = true;
                 this.outputChannel.appendLine(
-                    `[NativeAddon] Runtime N-API v${napiVersion}, using compatible binary: ${cacheKey}`
+                    `[NativeAddon] Legacy fallback — N-API v${napiVersion}, using: ${cacheKey}`
                 );
             }
         }
@@ -149,7 +179,7 @@ export class NativeAddonManager {
             cacheKey
         );
 
-        return { platform, arch, napiVersion, electronVersion, supported, cacheKey, cacheDir };
+        return { platform, arch, napiVersion, nodeMajorVersion, electronVersion, supported, cacheKey, cacheDir };
     }
 
     // ─── Private Methods ─────────────────────────────────────────────────────
@@ -368,7 +398,7 @@ export class NativeAddonManager {
     }
 
     private showUnsupportedError(info: PlatformInfo): void {
-        const msg = `Platform ${info.platform}-${info.arch} (N-API v${info.napiVersion}) is not supported. MCP server cannot start.`;
+        const msg = `Platform ${info.platform}-${info.arch} (Node v${info.nodeMajorVersion}, N-API v${info.napiVersion}) is not supported. MCP server cannot start.`;
         this.outputChannel.appendLine(`[NativeAddon] ❌ ${msg}`);
         vscode.window.showErrorMessage(msg, "View Documentation").then((action) => {
             if (action === "View Documentation") {
