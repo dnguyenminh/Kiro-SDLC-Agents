@@ -62,18 +62,48 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Node 20 (LTS) builds — NODE_MODULE_VERSION 115
           - os: windows-latest
             platform: win32
             arch: x64
+            node-version: '20'
+            napi-label: 'napi-v9'
           - os: ubuntu-latest
             platform: linux
             arch: x64
+            node-version: '20'
+            napi-label: 'napi-v9'
           - os: macos-latest
             platform: darwin
             arch: x64
+            node-version: '20'
+            napi-label: 'napi-v9'
           - os: macos-14
             platform: darwin
             arch: arm64
+            node-version: '20'
+            napi-label: 'napi-v9'
+          # Node 24 builds — NODE_MODULE_VERSION 137
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            node-version: '24'
+            napi-label: 'napi-v10'
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            node-version: '24'
+            napi-label: 'napi-v10'
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            node-version: '24'
+            napi-label: 'napi-v10'
+          - os: macos-14
+            platform: darwin
+            arch: arm64
+            node-version: '24'
+            napi-label: 'napi-v10'
 
     runs-on: ${{ matrix.os }}
 
@@ -82,7 +112,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
 
       - name: Install better-sqlite3
         run: |
@@ -95,10 +125,10 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ needs.check.outputs.version }}"
-          NAPI="${{ needs.check.outputs.napi }}"
+          NAPI_LABEL="${{ matrix.napi-label }}"
           PLATFORM="${{ matrix.platform }}"
           ARCH="${{ matrix.arch }}"
-          FILENAME="better-sqlite3-v${VERSION}-napi-v${NAPI}-${PLATFORM}-${ARCH}.node"
+          FILENAME="better-sqlite3-v${VERSION}-${NAPI_LABEL}-${PLATFORM}-${ARCH}.node"
 
           # Find the compiled .node file
           NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" -o -name "*.node" | head -1)
