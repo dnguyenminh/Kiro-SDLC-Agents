@@ -24,11 +24,13 @@ import { registerAIContextCommands } from "./ai-context-commands";
 import { SecurityPanel } from "./panels/security-panel";
 import { showImpactAnalysis } from "./panels/impact-panel";
 import { NativeAddonManager } from "./native-addon-manager";
+import { OnnxAddonManager } from "./onnx-addon-manager";
 
 let mcpManager: McpServerManager | undefined;
 let panelManager: WebviewPanelManager | undefined;
 let configWatcher: ConfigWatcher | undefined;
 let nativeAddonManager: NativeAddonManager | undefined;
+let onnxAddonManager: OnnxAddonManager | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -47,6 +49,10 @@ export function activate(context: vscode.ExtensionContext) {
         nativeAddonManager = new NativeAddonManager(context, outputChannel);
         mcpManager.setNativeAddonManager(nativeAddonManager);
 
+        // Initialize OnnxAddonManager for prebuilt ONNX Runtime resolution
+        onnxAddonManager = new OnnxAddonManager(context, outputChannel);
+        mcpManager.setOnnxAddonManager(onnxAddonManager);
+
         panelManager = new WebviewPanelManager(mcpManager, context.extensionUri);
         context.subscriptions.push(panelManager);
 
@@ -55,6 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
         const treeView = vscode.window.createTreeView("kiroSdlcTree", { treeDataProvider: treeProvider });
         treeProvider.setTreeView(treeView);
         context.subscriptions.push(treeView);
+
+        // Fallback: handle selection change to trigger commands (Kiro IDE compatibility)
+        treeView.onDidChangeSelection((e) => {
+            const selected = e.selection[0];
+            if (selected?.contextValue?.startsWith("cmd:")) {
+                const cmd = selected.contextValue.replace("cmd:", "");
+                vscode.commands.executeCommand(cmd);
+            }
+        });
 
         // Initialize config watcher for mcp.json changes
         configWatcher = new ConfigWatcher(workspaceRoot, mcpManager, outputChannel);
@@ -278,18 +293,32 @@ async function checkForUpgrade(context: vscode.ExtensionContext) {
 }
 
 async function handleInjectAll(context: vscode.ExtensionContext) {
+    const channel = getDebugChannel();
+    channel.appendLine(`[InjectAll] triggered at ${new Date().toISOString()}`);
+
     const root = getWorkspaceRoot();
-    if (!root) { return; }
+    if (!root) {
+        channel.appendLine("[InjectAll] ERROR: no workspace root");
+        return;
+    }
+    channel.appendLine(`[InjectAll] workspace root: ${root}`);
 
     const confirm = await vscode.window.showInformationMessage(
         "Inject all SDLC agents, steering, hooks, templates, and MCP config into this workspace?",
         "Yes", "Cancel"
     );
+    channel.appendLine(`[InjectAll] user chose: ${confirm}`);
     if (confirm !== "Yes") { return; }
 
-    const injected = await injectAll(root, context.extensionPath);
-    vscode.window.showInformationMessage(`✅ Injected ${injected.length} components: ${injected.join(", ")}`);
-    await promptIndexAfterInject(root);
+    try {
+        const injected = await injectAll(root, context.extensionPath);
+        vscode.window.showInformationMessage(`✅ Injected ${injected.length} components: ${injected.join(", ")}`);
+        channel.appendLine(`[InjectAll] success: ${injected.join(", ")}`);
+        await promptIndexAfterInject(root);
+    } catch (err) {
+        channel.appendLine(`[InjectAll] ERROR: ${(err as Error).message}`);
+        vscode.window.showErrorMessage(`Inject failed: ${(err as Error).message}`);
+    }
 }
 
 async function handleInjectSelective(context: vscode.ExtensionContext) {
@@ -314,25 +343,39 @@ async function handleUpdate(context: vscode.ExtensionContext) {
 }
 
 async function handleStatus(context: vscode.ExtensionContext) {
+    const channel = getDebugChannel();
+    channel.appendLine(`[Status] triggered at ${new Date().toISOString()}`);
+
     const root = getWorkspaceRoot();
-    if (!root) { return; }
+    if (!root) {
+        channel.appendLine("[Status] ERROR: no workspace root");
+        return;
+    }
+    channel.appendLine(`[Status] workspace root: ${root}`);
 
-    const status = checkStatus(root);
-    const report = getVersionReport(root, context.extensionPath);
-    const lines = Object.entries(status).map(([id, exists]) =>
-        `${exists ? "✅" : "❌"} ${id}`
-    );
+    try {
+        const status = checkStatus(root);
+        const report = getVersionReport(root, context.extensionPath);
+        const lines = Object.entries(status).map(([id, exists]) =>
+            `${exists ? "✅" : "❌"} ${id}`
+        );
+        channel.appendLine(`[Status] components: ${lines.join(", ")}`);
 
-    const action = await vscode.window.showInformationMessage(
-        `SDLC Status:\n${lines.join("\n")}`,
-        "Show File Versions", "Inject Missing", "Close"
-    );
-    if (action === "Show File Versions") {
-        const channel = vscode.window.createOutputChannel("SDLC File Versions");
-        channel.show();
-        channel.appendLine(report);
-    } else if (action === "Inject Missing") {
-        vscode.commands.executeCommand("kiroSdlc.injectSelective");
+        const action = await vscode.window.showInformationMessage(
+            `SDLC Status:\n${lines.join("\n")}`,
+            "Show File Versions", "Inject Missing", "Close"
+        );
+        channel.appendLine(`[Status] user chose: ${action}`);
+        if (action === "Show File Versions") {
+            const versionChannel = vscode.window.createOutputChannel("SDLC File Versions");
+            versionChannel.show();
+            versionChannel.appendLine(report);
+        } else if (action === "Inject Missing") {
+            vscode.commands.executeCommand("kiroSdlc.injectSelective");
+        }
+    } catch (err) {
+        channel.appendLine(`[Status] ERROR: ${(err as Error).message}`);
+        vscode.window.showErrorMessage(`Status check failed: ${(err as Error).message}`);
     }
 }
 
@@ -343,6 +386,14 @@ function getWorkspaceRoot(): string | undefined {
         return undefined;
     }
     return folders[0].uri.fsPath;
+}
+
+let _debugChannel: vscode.OutputChannel | undefined;
+function getDebugChannel(): vscode.OutputChannel {
+    if (!_debugChannel) {
+        _debugChannel = vscode.window.createOutputChannel("Kiro SDLC Debug");
+    }
+    return _debugChannel;
 }
 
 function createStatusBar(): vscode.StatusBarItem {

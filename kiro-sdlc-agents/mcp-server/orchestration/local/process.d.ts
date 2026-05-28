@@ -5,6 +5,7 @@
  */
 import { ServerEntry } from '../config.js';
 import { StdioJsonRpc } from './rpc.js';
+import { IServerProcess } from './transport.js';
 export declare enum ServerState {
     STARTING = "STARTING",
     READY = "READY",
@@ -15,7 +16,7 @@ export declare enum ServerState {
     DEAD = "DEAD",
     FAILED = "FAILED"
 }
-export declare class ServerProcess {
+export declare class ServerProcess implements IServerProcess {
     readonly name: string;
     state: ServerState;
     tools: Record<string, any>[];

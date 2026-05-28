@@ -5,10 +5,12 @@
 
 import { OrchestrationConfig, ServerEntry, enabledServers } from '../config.js';
 import { ServerProcess, ServerState } from './process.js';
+import { IServerProcess, detectTransport } from './transport.js';
+import { HttpStreamProcess } from './http-stream-process.js';
 
 export class LocalServerManager {
   private config: OrchestrationConfig;
-  private servers = new Map<string, ServerProcess>();
+  private servers = new Map<string, IServerProcess>();
   private healthInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: OrchestrationConfig) { this.config = config; }
@@ -21,10 +23,13 @@ export class LocalServerManager {
     console.error(`[orchestration] Starting ${entries.size} child servers...`);
     let started = 0;
     for (const [name, entry] of entries) {
-      const server = new ServerProcess(name, entry);
+      const transport = detectTransport(entry);
+      const server: IServerProcess = transport === 'httpStream'
+        ? new HttpStreamProcess(name, entry)
+        : new ServerProcess(name, entry);
       this.servers.set(name, server);
       if (await server.start()) started++;
-      else console.error(`[${name}] Failed to start`);
+      else console.error(`[${name}] Failed to start (transport: ${transport})`);
     }
     this.startHealthMonitor();
     return started;

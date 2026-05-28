@@ -24,6 +24,12 @@ java -jar build/libs/mcp-code-intelligence-0.1.0.jar
 Workspace is resolved from the MCP `initialize` request's `roots[0].uri` field.
 No `--workspace` CLI argument needed.
 
+## SQLite Note
+
+This variant uses **JDBC `sqlite-jdbc`** which is bundled inside the shadow JAR. No separate native binary needed — the JDBC driver includes platform-specific SQLite binaries for all major OS/arch combinations.
+
+The database schema is **cross-compatible** with the Node.js and Python variants. All three can share the same `.code-intel/index.db` file.
+
 ## MCP Tools
 
 ### Core Tools
@@ -134,4 +140,4 @@ SQLite database stored at `{workspace}/.code-intel/index.db` with WAL mode. Sche
 - **Coroutines** — Background indexing without blocking MCP requests
 - **NIO WatchService** — Real-time file change detection
 - **FTS5** — Porter stemming full-text search
-- **Shadow JAR** — Single-file deployment
+- **Shadow JAR** — Single-file deployment (sqlite-jdbc bundled, no external native binary needed)

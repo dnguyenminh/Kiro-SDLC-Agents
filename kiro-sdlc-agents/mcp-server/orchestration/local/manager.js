@@ -7,6 +7,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocalServerManager = void 0;
 const config_js_1 = require("../config.js");
 const process_js_1 = require("./process.js");
+const transport_js_1 = require("./transport.js");
+const http_stream_process_js_1 = require("./http-stream-process.js");
 class LocalServerManager {
     config;
     servers = new Map();
@@ -19,12 +21,15 @@ class LocalServerManager {
         console.error(`[orchestration] Starting ${entries.size} child servers...`);
         let started = 0;
         for (const [name, entry] of entries) {
-            const server = new process_js_1.ServerProcess(name, entry);
+            const transport = (0, transport_js_1.detectTransport)(entry);
+            const server = transport === 'httpStream'
+                ? new http_stream_process_js_1.HttpStreamProcess(name, entry)
+                : new process_js_1.ServerProcess(name, entry);
             this.servers.set(name, server);
             if (await server.start())
                 started++;
             else
-                console.error(`[${name}] Failed to start`);
+                console.error(`[${name}] Failed to start (transport: ${transport})`);
         }
         this.startHealthMonitor();
         return started;

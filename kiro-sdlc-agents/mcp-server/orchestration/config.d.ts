@@ -3,10 +3,13 @@
  * Reads orchestration.json from .code-intel/ directory.
  * Same format as Kotlin OrchestrationConfig.kt.
  */
+export type TransportType = 'stdio' | 'httpStream';
 export interface ServerEntry {
-    command: string;
+    command?: string;
     args: string[];
     env: Record<string, string>;
+    url?: string;
+    transportType?: TransportType;
     disabled: boolean;
     timeout: number;
     autoApprove: string[];

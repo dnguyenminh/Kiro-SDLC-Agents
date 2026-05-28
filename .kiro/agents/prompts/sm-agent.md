@@ -394,6 +394,37 @@ SM **không dừng lại để hỏi** về template. Thông báo rồi chạy t
 5. **Nếu sanity PASS** → SM transition Jira: READY FOR PRODUCT → DONE (transition "Complete")
 6. **Nếu sanity FAIL** → DevOps rollback → transition "Fix bugs" → SM giữ ticket ở IN PROGRESS → báo cáo user
 
+### ⛔ Release Process — SM Kiểm Soát DevOps (MANDATORY)
+
+**Sau khi deploy thành công + sanity pass, SM PHẢI yêu cầu DevOps thực hiện Release Process. SM kiểm soát và verify từng bước.**
+
+**DevOps agent PHẢI thực hiện đủ 3 bước sau (SM verify output):**
+
+| # | Bước | DevOps Action | SM Verify |
+|---|------|---------------|-----------|
+| 1 | **Merge code vào master** | `git merge {TICKET} → master`, push | Confirm merge commit exists on master |
+| 2 | **Bump version** | Tạo git tag `v{VERSION}`, push tag | Confirm tag exists, version hợp lệ (semver) |
+| 3 | **Cập nhật README** | Update README.md với changelog/version mới | Confirm README.md đã thay đổi, có version mới |
+
+**SM invoke DevOps với prompt rõ ràng:**
+```
+invokeSubAgent(
+  name: "devops-agent",
+  prompt: "Release {TICKET} — Deploy đã thành công. Thực hiện release process:
+  1. Merge branch {TICKET} vào master (--no-ff)
+  2. Bump version — tạo git tag (semver: minor cho feature, patch cho bugfix)
+  3. Cập nhật README.md — thêm entry mới vào changelog section với version, date, ticket key, và summary thay đổi
+  Báo cáo kết quả từng bước."
+)
+```
+
+**SM verify sau khi DevOps hoàn thành:**
+1. Kiểm tra DevOps report có đủ 3 bước
+2. Nếu thiếu bước nào → yêu cầu DevOps làm lại bước đó
+3. Chỉ khi cả 3 bước PASS → SM mới transition READY FOR PRODUCT → DONE
+
+**⛔ SM KHÔNG ĐƯỢC transition DONE nếu DevOps chưa hoàn thành release process.**
+
 ### ⛔ Transitions SM KHÔNG ĐƯỢC tự động thực hiện
 
 | Transition | Ai thực hiện | Lý do |

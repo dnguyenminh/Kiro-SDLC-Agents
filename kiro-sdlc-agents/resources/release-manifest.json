@@ -1,4 +1,30 @@
 {
+  "onnxruntime-node": {
+    "version": "1.22.0",
+    "releaseUrl": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/tag/onnxruntime-node-v1.22.0",
+    "binaries": {
+      "win32-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/onnxruntime-node-v1.22.0/onnxruntime-node-v1.22.0-win32-x64.tar.gz",
+        "sha256": "c0ad166ab389b7a3c4c0e7015c73e412f42b6b3991db4ad6382b40da05722efc",
+        "size": 26126051
+      },
+      "linux-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/onnxruntime-node-v1.22.0/onnxruntime-node-v1.22.0-linux-x64.tar.gz",
+        "sha256": "6b29eb21b30d706b23fabfcb2922329ba288e30598fcfca1e939b52f357c1a0a",
+        "size": 11620029
+      },
+      "darwin-x64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/onnxruntime-node-v1.22.0/onnxruntime-node-v1.22.0-darwin-x64.tar.gz",
+        "sha256": "6a771439219433766da7f2341ef224ba757617dfd39379f282ba0d32ed356790",
+        "size": 10892843
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/onnxruntime-node-v1.22.0/onnxruntime-node-v1.22.0-darwin-arm64.tar.gz",
+        "sha256": "ce7d01aa3ad958dfcef248952fc9a7bada44a0fc451f67d4e0c4346c7a76e37a",
+        "size": 9647242
+      }
+    }
+  },
   "better-sqlite3": {
     "version": "11.7.0",
     "releaseUrl": "https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/tag/better-sqlite3-v11.7.0",

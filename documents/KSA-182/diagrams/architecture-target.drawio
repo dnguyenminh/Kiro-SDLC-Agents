@@ -1,0 +1,61 @@
+<mxfile host="65bd71144e">
+    <diagram id="target-state-fixed" name="Target State (Fixed)">
+        <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="750" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Architecture — Target State (Fixed)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="260" y="20" width="300" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="config_file" value="orchestration.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="70" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="parse_config" value="parseConfig()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="150" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="server_entry" value="ServerEntry&#10;{ command?, url?, transportType }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="290" y="230" width="220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="manager" value="LocalServerManager&#10;.startAll()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="310" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="detect_transport" value="detectTransport(entry)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="310" y="390" width="180" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="stdio_process" value="ServerProcess (stdio)&#10;spawn + StdioJsonRpc" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="120" y="520" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="http_process" value="HttpStreamProcess (HTTP)&#10;fetch + HttpJsonRpc" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="500" y="520" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="iface" value="«interface»&#10;IServerProcess" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="630" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="config_file" target="parse_config" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="parse_config" target="server_entry" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="server_entry" target="manager" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="manager" target="detect_transport" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="stdio" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="detect_transport" target="stdio_process" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="httpStream" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="detect_transport" target="http_process" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="endArrow=block;endSize=12;endFill=0;dashed=1;html=1;" edge="1" source="stdio_process" target="iface" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="endArrow=block;endSize=12;endFill=0;dashed=1;html=1;" edge="1" source="http_process" target="iface" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -14,18 +14,18 @@ import kotlinx.serialization.json.*
 enum class ServerState { STARTING, READY, ACTIVE, CRASHED, RESTARTING, STOPPING, DEAD, FAILED }
 
 class ServerProcess(
-    val name: String,
+    override val name: String,
     private val entry: ServerEntry,
     private val scope: CoroutineScope
-) {
+) : IServerProcess {
     val rpc = StdioJsonRpc()
-    var state: ServerState = ServerState.STARTING; private set
-    var tools: List<JsonObject> = emptyList(); private set
-    var retryCount: Int = 0; private set
+    override var state: ServerState = ServerState.STARTING
+    override var tools: List<JsonObject> = emptyList()
+    override var retryCount: Int = 0
     private var process: Process? = null
 
     /** Start the child process, initialize MCP handshake, fetch tools. */
-    suspend fun start(): Boolean {
+    override suspend fun start(): Boolean {
         state = ServerState.STARTING
         val proc = spawnProcess() ?: return markFailed("Failed to spawn process")
         process = proc
@@ -39,7 +39,7 @@ class ServerProcess(
     }
 
     /** Stop the child process gracefully. */
-    fun stop() {
+    override fun stop() {
         state = ServerState.STOPPING
         rpc.detach()
         destroyProcess()
@@ -48,7 +48,7 @@ class ServerProcess(
     }
 
     /** Restart after crash — exponential backoff. */
-    suspend fun restart(maxRetries: Int): Boolean {
+    override suspend fun restart(maxRetries: Int): Boolean {
         if (retryCount >= maxRetries) { state = ServerState.DEAD; return false }
         state = ServerState.RESTARTING
         retryCount++
@@ -60,7 +60,7 @@ class ServerProcess(
     }
 
     /** Call a tool on this child server via JSON-RPC. */
-    suspend fun callTool(toolName: String, args: JsonObject, timeoutMs: Long): JsonElement? {
+    override suspend fun callTool(toolName: String, args: JsonObject, timeoutMs: Long): JsonElement? {
         val params = buildJsonObject {
             put("name", toolName)
             put("arguments", args)
@@ -69,7 +69,7 @@ class ServerProcess(
     }
 
     /** Health check — send tools/list as ping, expect response within 5s. */
-    suspend fun healthCheck(): Boolean {
+    override suspend fun healthCheck(): Boolean {
         return try {
             rpc.sendRequest("tools/list", buildJsonObject {}, 5_000)
             true
@@ -79,12 +79,13 @@ class ServerProcess(
     }
 
     /** Check if the OS process is still alive. */
-    fun isAlive(): Boolean = process?.isAlive == true
+    override fun isAlive(): Boolean = process?.isAlive == true
 
     private fun spawnProcess(): Process? {
         return try {
+            val cmd = entry.command ?: return null
             val args = buildChildArgs()
-            val command = resolveCommand(entry.command)
+            val command = resolveCommand(cmd)
             val pb = ProcessBuilder(command + args)
             pb.environment().putAll(entry.env)
             pb.redirectErrorStream(false)

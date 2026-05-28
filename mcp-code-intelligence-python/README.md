@@ -8,6 +8,12 @@ Uses Python's built-in `sqlite3` module with FTS5 for full-text search.
 - Python 3.11+ (stdlib only — zero external dependencies)
 - Optional: `watchdog` for file watching
 
+## SQLite Note
+
+This variant uses Python's **stdlib `sqlite3`** module. No native binary compilation needed — no `better-sqlite3`, no `node-gyp`, no C++ toolchain.
+
+The database schema is **cross-compatible** with the Node.js and Kotlin variants. All three can share the same `.code-intel/index.db` file. You can index with one variant and query with another.
+
 ## Installation
 
 ```bash
@@ -193,7 +199,7 @@ Configuration is loaded from (priority: env > initialize roots > file > defaults
 ## Database
 
 SQLite database stored at `{workspace}/.code-intel/index.db`.
-Schema is cross-compatible with the Node.js variant.
+Schema is cross-compatible with the Node.js and Kotlin variants — all three can share the same database file.
 
 ## Running Tests
 

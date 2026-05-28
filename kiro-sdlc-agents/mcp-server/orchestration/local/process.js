@@ -88,6 +88,10 @@ class ServerProcess {
     isAlive() { return this.proc !== null && this.proc.exitCode === null; }
     spawnProcess() {
         try {
+            if (!this.entry.command) {
+                this.log('No command specified for stdio server');
+                return null;
+            }
             const isWin = process.platform === 'win32';
             return (0, child_process_1.spawn)(this.entry.command, this.entry.args, {
                 stdio: ['pipe', 'pipe', 'pipe'],

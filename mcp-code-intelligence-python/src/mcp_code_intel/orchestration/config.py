@@ -10,7 +10,15 @@ import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from enum import Enum
 from typing import Any
+
+
+class TransportType(Enum):
+    """Transport type for MCP server communication."""
+
+    STDIO = "stdio"
+    HTTP_STREAM = "httpStream"
 
 
 @dataclass
@@ -39,9 +47,11 @@ class OrchestrationSettings:
 class ServerEntry:
     """Single child MCP server configuration."""
 
-    command: str
+    command: str | None = None
     args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
+    url: str | None = None
+    transport_type: TransportType | None = None
     disabled: bool = False
     timeout: int = 30_000
     auto_approve: list[str] = field(default_factory=list)
@@ -76,10 +86,18 @@ def _parse_config(data: dict[str, Any]) -> OrchestrationConfig:
     """Parse raw JSON dict into OrchestrationConfig."""
     servers = {}
     for name, entry in data.get("mcpServers", {}).items():
+        transport_raw = entry.get("transportType")
+        transport_type = None
+        if transport_raw == "httpStream":
+            transport_type = TransportType.HTTP_STREAM
+        elif transport_raw == "stdio":
+            transport_type = TransportType.STDIO
         servers[name] = ServerEntry(
-            command=entry["command"],
+            command=entry.get("command"),
             args=entry.get("args", []),
             env=entry.get("env", {}),
+            url=entry.get("url"),
+            transport_type=transport_type,
             disabled=entry.get("disabled", False),
             timeout=entry.get("timeout", 30_000),
             auto_approve=entry.get("autoApprove", []),

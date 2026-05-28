@@ -109,12 +109,14 @@ async function main() {
             const memDispatcher = (0, register_tools_js_1.getMemoryDispatcherInstance)();
             if (memDispatcher)
                 (0, tool_call_ingest_js_1.setIngestDispatcher)(memDispatcher);
-            // Start viewer server
-            const viewerServer = new viewer_server_js_1.ViewerServer(config.viewerPort, config.workspace);
-            viewerServer.memoryEngine = memoryEngine;
-            viewerServer.knowledgeGraph = memoryEngine.graph;
-            viewerServer.start();
-            _viewerServer = viewerServer;
+            // Start viewer server (skip if port < 0)
+            if (config.viewerPort >= 0) {
+                const viewerServer = new viewer_server_js_1.ViewerServer(config.viewerPort, config.workspace);
+                viewerServer.memoryEngine = memoryEngine;
+                viewerServer.knowledgeGraph = memoryEngine.graph;
+                viewerServer.start();
+                _viewerServer = viewerServer;
+            }
             // Initialize orchestration engine (nullable — skipped if no config)
             const orchConfigPath = (0, config_js_1.resolveOrchestrationConfigPath)();
             const orchConfig = orchConfigPath
@@ -125,7 +127,8 @@ async function main() {
                 await orchEngine.start();
                 _orchEngine = orchEngine;
                 (0, register_tools_js_1.initOrchestration)(orchEngine);
-                viewerServer.modelManager = orchEngine.getModelManager();
+                if (_viewerServer)
+                    _viewerServer.modelManager = orchEngine.getModelManager();
                 console.error('[code-intel] OrchestrationEngine started');
             }
             else {

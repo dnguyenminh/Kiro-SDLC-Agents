@@ -30,6 +30,9 @@ async function main(): Promise<void> {
   let memEngine: MemoryEngine | null = null;
   let initialized = false;
 
+  // Pre-resolve native binding (downloads prebuilt binary in standalone mode)
+  await DatabaseManager.preResolveBinding();
+
   console.error('[code-intel] Server starting (workspace deferred until initialize)');
 
   const rl = readline.createInterface({ input: process.stdin, terminal: false });

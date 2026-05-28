@@ -28,13 +28,22 @@
     "scrum",
     "mcp"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:kiroSdlcTree",
+    "onCommand:kiroSdlc.injectAll",
+    "onCommand:kiroSdlc.status",
+    "onCommand:kiroSdlc.indexWorkspace",
+    "onCommand:kiroSdlc.injectSelective",
+    "onCommand:kiroSdlc.update",
+    "onCommand:kiroSdlc.downloadModel"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "kiroSdlc.injectAll",
-        "title": "Kiro SDLC: Inject All Agents"
+        "title": "Kiro SDLC: Inject All Agents",
+        "icon": "$(cloud-download)"
       },
       {
         "command": "kiroSdlc.injectSelective",
@@ -46,7 +55,8 @@
       },
       {
         "command": "kiroSdlc.status",
-        "title": "Kiro SDLC: Show Status"
+        "title": "Kiro SDLC: Show Status",
+        "icon": "$(info)"
       },
       {
         "command": "kiroSdlc.indexWorkspace",
@@ -161,6 +171,20 @@
           "description": "Path to orchestration config file (relative to workspace root). Controls MCP server behavior, child servers, and model routing."
         }
       }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "kiroSdlc.injectAll",
+          "when": "view == kiroSdlcTree",
+          "group": "navigation"
+        },
+        {
+          "command": "kiroSdlc.status",
+          "when": "view == kiroSdlcTree",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {

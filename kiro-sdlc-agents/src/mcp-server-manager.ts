@@ -24,6 +24,7 @@ import {
   SERVER_CONSTANTS,
 } from "./types";
 import { NativeAddonManager } from "./native-addon-manager";
+import { OnnxAddonManager } from "./onnx-addon-manager";
 
 export class McpServerManager implements IServerManager, vscode.Disposable {
   private _status: ServerStatus = "stopped";
@@ -34,6 +35,10 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
   private isDisposing = false;
   private externalServer = false;
   private nativeAddonManager: NativeAddonManager | undefined;
+  private onnxAddonManager: OnnxAddonManager | undefined;
+  // KSA-112: Track ERR_DLOPEN_FAILED for auto-recovery
+  private dlopenErrorDetected = false;
+  private mismatchRecoveryAttempted = false;
 
   private readonly _onStatusChange = new vscode.EventEmitter<ServerStatus>();
   readonly onStatusChange = this._onStatusChange.event;
@@ -49,6 +54,13 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
    */
   setNativeAddonManager(manager: NativeAddonManager): void {
     this.nativeAddonManager = manager;
+  }
+
+  /**
+   * Set the OnnxAddonManager for prebuilt ONNX Runtime binary resolution.
+   */
+  setOnnxAddonManager(manager: OnnxAddonManager): void {
+    this.onnxAddonManager = manager;
   }
 
   get status(): ServerStatus {
@@ -95,6 +107,7 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     }
 
     // Ensure native addon is available (KSA-175: Runtime Self-Download)
+    // KSA-112: Detect and recover from NODE_MODULE_VERSION mismatch
     let nativeBindingPath: string | undefined;
     if (this.nativeAddonManager) {
       const addonPath = await this.nativeAddonManager.ensure();
@@ -105,6 +118,18 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
       }
       nativeBindingPath = addonPath;
       this.outputChannel.appendLine(`[MCP] Native addon resolved: ${addonPath}`);
+    }
+
+    // Ensure ONNX Runtime is available (optional — embedding features)
+    let onnxRuntimePath: string | undefined;
+    if (this.onnxAddonManager) {
+      const onnxPath = await this.onnxAddonManager.ensure();
+      if (onnxPath) {
+        onnxRuntimePath = onnxPath;
+        this.outputChannel.appendLine(`[MCP] ONNX Runtime resolved: ${onnxPath}`);
+      } else {
+        this.outputChannel.appendLine("[MCP] ONNX Runtime unavailable — embedding features disabled.");
+      }
     }
 
     // Verify bundle exists
@@ -122,8 +147,9 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
       env: {
         ...process.env,
         NODE_ENV: "production",
-        CODE_INTEL_VIEWER_PORT: "0",
+        CODE_INTEL_VIEWER_PORT: "-1",
         ...(nativeBindingPath ? { BETTER_SQLITE3_BINDING: nativeBindingPath } : {}),
+        ...(onnxRuntimePath ? { ONNX_RUNTIME_PATH: onnxRuntimePath } : {}),
       },
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
@@ -156,6 +182,17 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
       this.childProc = null;
       this.removePidFile();
 
+      // KSA-112: Check if crash was due to MODULE_VERSION mismatch
+      if (this.dlopenErrorDetected && this.nativeAddonManager && !this.mismatchRecoveryAttempted) {
+        this.mismatchRecoveryAttempted = true;
+        this.dlopenErrorDetected = false;
+        this.outputChannel.appendLine("[MCP] ⚠️ ERR_DLOPEN_FAILED detected — NODE_MODULE_VERSION mismatch.");
+        this.outputChannel.appendLine("[MCP] Auto-recovering: deleting cached addon and re-downloading for correct runtime...");
+        this.handleModuleVersionMismatch();
+        return;
+      }
+      this.dlopenErrorDetected = false;
+
       if (this.restartCount < SERVER_CONSTANTS.MAX_RESTARTS) {
         this.setStatus("crashed");
         const backoff = SERVER_CONSTANTS.BACKOFF_MS[this.restartCount] ?? 30000;
@@ -175,8 +212,13 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     });
 
     // Pipe stderr to output channel (after port detection)
+    // KSA-112: Also detect ERR_DLOPEN_FAILED for auto-recovery
     child.stderr?.on("data", (chunk: Buffer) => {
-      this.outputChannel.appendLine(chunk.toString().trimEnd());
+      const text = chunk.toString();
+      this.outputChannel.appendLine(text.trimEnd());
+      if (text.includes("ERR_DLOPEN_FAILED") || text.includes("NODE_MODULE_VERSION")) {
+        this.dlopenErrorDetected = true;
+      }
     });
   }
 
@@ -282,6 +324,50 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     this.isDisposing = true;
     this.kill().catch(() => {});
     this._onStatusChange.dispose();
+  }
+
+  /**
+   * KSA-112: Handle NODE_MODULE_VERSION mismatch.
+   * Deletes the wrong cached addon and re-downloads for the correct runtime version.
+   * Then restarts the server.
+   */
+  private async handleModuleVersionMismatch(): Promise<void> {
+    this.setStatus("starting");
+
+    try {
+      if (this.nativeAddonManager) {
+        this.outputChannel.appendLine("[MCP] Deleting mismatched native addon cache...");
+        const newPath = await this.nativeAddonManager.redownload();
+        if (newPath) {
+          this.outputChannel.appendLine(`[MCP] ✅ Re-downloaded correct addon: ${newPath}`);
+          // Reset restart count — this is a recovery, not a crash loop
+          this.restartCount = 0;
+          await this.spawn();
+          return;
+        }
+      }
+
+      // Recovery failed — report to user
+      this.setStatus("crashed");
+      this.outputChannel.appendLine("[MCP] ❌ Auto-recovery failed. Please restart Kiro IDE.");
+      vscode.window.showErrorMessage(
+        "MCP server crashed due to Node.js version mismatch (ERR_DLOPEN_FAILED). " +
+        "Auto-recovery failed. Try: 1) Restart Kiro IDE, or 2) Delete native addon cache manually.",
+        "Retry",
+        "Open Output"
+      ).then((action) => {
+        if (action === "Retry") {
+          this.mismatchRecoveryAttempted = false;
+          this.restartCount = 0;
+          this.spawn().catch(() => {});
+        } else if (action === "Open Output") {
+          this.outputChannel.show();
+        }
+      });
+    } catch (err: any) {
+      this.setStatus("crashed");
+      this.outputChannel.appendLine(`[MCP] Recovery error: ${err.message}`);
+    }
   }
 
   // ─── Private Methods ───────────────────────────────────────────────────────

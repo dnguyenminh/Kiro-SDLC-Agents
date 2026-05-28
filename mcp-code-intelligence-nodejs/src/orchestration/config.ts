@@ -7,10 +7,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+export type TransportType = 'stdio' | 'httpStream';
+
 export interface ServerEntry {
-  command: string;
+  command?: string;
   args: string[];
   env: Record<string, string>;
+  url?: string;
+  transportType?: TransportType;
   disabled: boolean;
   timeout: number;
   autoApprove: string[];
@@ -82,6 +86,8 @@ function parseConfig(data: any): OrchestrationConfig {
       command: e.command,
       args: e.args ?? [],
       env: e.env ?? {},
+      url: e.url,
+      transportType: e.transportType,
       disabled: e.disabled ?? false,
       timeout: e.timeout ?? 30_000,
       autoApprove: e.autoApprove ?? [],
