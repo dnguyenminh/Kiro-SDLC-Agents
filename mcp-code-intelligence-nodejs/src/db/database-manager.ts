@@ -7,25 +7,39 @@ import Database from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
 import { runMigrations } from './migrations.js';
+import { resolveNativeBinding, resolveNativeBindingSync } from './native-addon-resolver.js';
 
 export class DatabaseManager {
   private db: Database.Database | null = null;
   private readonly dbPath: string;
+  private static resolvedBinding: string | undefined | null = null; // null = not yet resolved
 
   constructor(dbPath: string) {
     this.dbPath = dbPath;
+  }
+
+  /**
+   * Pre-resolve native binding (async). Call once at server startup before initialize().
+   * Downloads prebuilt binary if needed (standalone mode).
+   */
+  static async preResolveBinding(): Promise<void> {
+    DatabaseManager.resolvedBinding = await resolveNativeBinding();
   }
 
   /** Open database, enable WAL, run migrations. */
   initialize(): void {
     this.ensureDirectory();
 
-    // KSA-175: Use prebuilt native binding if provided via environment variable
-    const nativeBinding = process.env.BETTER_SQLITE3_BINDING;
+    // Use pre-resolved binding, or try sync resolve as fallback
+    const nativeBinding = DatabaseManager.resolvedBinding !== null
+      ? DatabaseManager.resolvedBinding
+      : resolveNativeBindingSync();
+
     if (nativeBinding) {
       console.error(`[db] Using native binding: ${nativeBinding}`);
       this.db = new Database(this.dbPath, { nativeBinding });
     } else {
+      console.error('[db] Using npm-installed better-sqlite3');
       this.db = new Database(this.dbPath);
     }
 

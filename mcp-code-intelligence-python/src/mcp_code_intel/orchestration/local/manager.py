@@ -10,8 +10,10 @@ import asyncio
 import sys
 from typing import Any
 
-from ..config import OrchestrationConfig, ServerEntry
+from ..config import OrchestrationConfig, ServerEntry, TransportType
 from .process import ServerProcess, ServerState
+from .transport import detect_transport
+from .http_stream_process import HttpStreamProcess
 
 
 class LocalServerManager:
@@ -19,7 +21,7 @@ class LocalServerManager:
 
     def __init__(self, config: OrchestrationConfig) -> None:
         self._config = config
-        self._servers: dict[str, ServerProcess] = {}
+        self._servers: dict[str, ServerProcess | HttpStreamProcess] = {}
         self._health_task: asyncio.Task | None = None
 
     def update_config(self, new_config: OrchestrationConfig) -> None:
@@ -32,12 +34,16 @@ class LocalServerManager:
         _log(f"Starting {len(entries)} child servers...")
         started = 0
         for name, entry in entries.items():
-            server = ServerProcess(name, entry)
+            transport = detect_transport(entry)
+            if transport == TransportType.HTTP_STREAM:
+                server = HttpStreamProcess(name, entry)
+            else:
+                server = ServerProcess(name, entry)
             self._servers[name] = server
             if await server.start():
                 started += 1
             else:
-                _log(f"[{name}] Failed to start")
+                _log(f"[{name}] Failed to start (transport: {transport.value})")
         self._start_health_monitor()
         return started
 

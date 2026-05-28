@@ -60,8 +60,14 @@ export class OnnxEmbeddingProvider implements EmbeddingProvider {
     if (this.session !== null) return;
     let ort: any;
     try {
-      // @ts-ignore — onnxruntime-node is an optional dependency
-      ort = await import('onnxruntime-node');
+      // Try loading from ONNX_RUNTIME_PATH (prebuilt binary from extension)
+      const onnxPath = process.env.ONNX_RUNTIME_PATH;
+      if (onnxPath) {
+        ort = require(onnxPath);
+      } else {
+        // @ts-ignore — onnxruntime-node is an optional dependency
+        ort = await import('onnxruntime-node');
+      }
     } catch {
       throw new Error(
         'onnxruntime-node not installed. Install with: npm install onnxruntime-node'
@@ -75,7 +81,9 @@ export class OnnxEmbeddingProvider implements EmbeddingProvider {
   /** Tokenize, run ONNX, mean-pool, normalize. */
   private async runInference(text: string): Promise<number[]> {
     // @ts-ignore — onnxruntime-node is an optional dependency
-    const ort = await import('onnxruntime-node');
+    const ort = process.env.ONNX_RUNTIME_PATH
+      ? require(process.env.ONNX_RUNTIME_PATH)
+      : await import('onnxruntime-node');
     const encoded = this.tokenizer!.encode(text, MAX_SEQ_LENGTH);
     const feeds = {
       input_ids: new ort.Tensor('int64', encoded.inputIds, [1, MAX_SEQ_LENGTH]),

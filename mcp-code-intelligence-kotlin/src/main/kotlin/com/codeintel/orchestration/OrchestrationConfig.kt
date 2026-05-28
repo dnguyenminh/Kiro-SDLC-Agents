@@ -40,12 +40,17 @@ data class OrchestrationConfig(
 
 @Serializable
 data class ServerEntry(
-    val command: String,
+    val command: String? = null,
     val args: List<String> = emptyList(),
     val env: Map<String, String> = emptyMap(),
+    val url: String? = null,
+    val transportType: TransportType? = null,
     val disabled: Boolean = false,
     val timeout: Long = 30_000
 )
+
+@Serializable
+enum class TransportType { stdio, httpStream }
 
 @Serializable
 data class OrchSettings(

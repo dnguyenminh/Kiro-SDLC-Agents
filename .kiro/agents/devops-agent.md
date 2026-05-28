@@ -387,3 +387,76 @@ Sau khi deploy (thành công hoặc rollback), tạo báo cáo:
 - Steps: {what was rolled back}
 - Verification: {rollback confirmed successful}
 ```
+
+## ⛔ Git Release Process (MANDATORY after successful deployment)
+
+**Khi deploy thành công + sanity pass, DevOps agent PHẢI thực hiện merge và tag:**
+
+### Quy tắc
+
+- **Mỗi ticket implement = 1 branch riêng** (branch name = `{TICKET}`)
+- **Mỗi khi merge vào master = 1 version mới + git tag**
+- KHÔNG merge nếu sanity test chưa pass
+- KHÔNG tạo tag trên branch — chỉ tag trên master sau merge
+
+### Merge & Tag Steps
+
+1. **Merge branch vào master:**
+   ```
+   git checkout master
+   git pull origin master
+   git merge {TICKET} --no-ff -m "Merge {TICKET}: {summary}"
+   git push origin master
+   ```
+2. **Tạo version tag (Bump version):**
+   - Lấy latest tag: `git describe --tags --abbrev=0` (ví dụ: `v1.1.0`)
+   - Bump version theo quy tắc:
+     - MAJOR: Breaking changes
+     - MINOR: New feature (default cho mỗi ticket implement)
+     - PATCH: Bug fix, hotfix
+   - Tạo annotated tag:
+   ```
+   git tag -a v{VERSION} -m "{TICKET}: {summary}"
+   git push origin v{VERSION}
+   ```
+3. **Cập nhật README.md (MANDATORY):**
+   - Mở `README.md` ở root project
+   - Thêm entry mới vào section `## Changelog` (hoặc tạo section nếu chưa có):
+     ```markdown
+     ## Changelog
+     
+     ### v{VERSION} — {YYYY-MM-DD}
+     - **{TICKET}**: {summary of changes}
+     ```
+   - Nếu README có section "Version" hoặc badge → cập nhật version number
+   - Commit README change:
+   ```
+   git add README.md
+   git commit -m "docs: update README changelog for v{VERSION} ({TICKET})"
+   git push origin master
+   ```
+4. **Cleanup branch:**
+   ```
+   git branch -d {TICKET}
+   git push origin --delete {TICKET}
+   ```
+5. **Cập nhật Release Notes** — ghi version tag vào RLN.md header
+6. **Báo cáo:**
+   ```
+   ✅ Release:
+   - Merged: {TICKET} → master
+   - Tag: v{VERSION}
+   - README.md updated (changelog + version)
+   - Branch {TICKET} deleted
+   ```
+
+### Version trong Deployment Report
+
+Thêm vào Deployment Report:
+```markdown
+### Release Info
+- **Version:** v{VERSION}
+- **Git Tag:** v{VERSION}
+- **Branch:** {TICKET} (merged & deleted)
+- **Commit:** {merge commit hash}
+```

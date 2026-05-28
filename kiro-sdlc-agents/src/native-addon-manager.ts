@@ -193,22 +193,72 @@ export class NativeAddonManager {
     }
 
     /**
-     * Detect system Node.js major version (the one used by spawn("node")).
-     * Extension host runs Electron's Node (e.g. 22), but child process uses system node.
+     * Detect the Node.js major version that will ACTUALLY run the MCP server.
+     *
+     * Problem (KSA-112): Kiro IDE may override PATH and use an embedded Node (e.g. v20)
+     * that differs from the system Node (e.g. v22). We must detect the RUNTIME version,
+     * not the system version, to download the correct native addon ABI.
+     *
+     * Strategy:
+     * 1. Run `node -p "process.versions.modules"` to get actual MODULE_VERSION
+     * 2. Map MODULE_VERSION → Node major version
+     * 3. Fallback to `node --version` if step 1 fails
+     * 4. Final fallback to extension host Node version
      */
     private getSystemNodeMajorVersion(): string {
         try {
             const { execSync } = require("child_process") as typeof import("child_process");
+
+            // Strategy 1: Get MODULE_VERSION from the actual `node` binary that will be spawned
+            // This correctly handles Kiro IDE's embedded Node override
+            try {
+                const moduleVersion = execSync(
+                    'node -p "process.versions.modules"',
+                    { encoding: "utf-8", timeout: 5000 }
+                ).trim();
+
+                const major = this.moduleVersionToNodeMajor(moduleVersion);
+                if (major) {
+                    this.outputChannel.appendLine(
+                        `[NativeAddon] Runtime Node MODULE_VERSION=${moduleVersion} → Node v${major}`
+                    );
+                    return major;
+                }
+            } catch {
+                // Strategy 1 failed, try strategy 2
+            }
+
+            // Strategy 2: node --version (may be wrong if IDE overrides PATH at spawn time)
             const output = execSync("node --version", { encoding: "utf-8", timeout: 5000 }).trim();
             const major = output.replace("v", "").split(".")[0];
             this.outputChannel.appendLine(`[NativeAddon] System Node: ${output} (major: ${major})`);
             return major;
         } catch {
-            // Fallback to extension host Node version
+            // Strategy 3: Fallback to extension host Node version
             const fallback = process.versions.node.split(".")[0];
             this.outputChannel.appendLine(`[NativeAddon] Cannot detect system Node, using host: v${fallback}`);
             return fallback;
         }
+    }
+
+    /**
+     * Map NODE_MODULE_VERSION to Node.js major version.
+     * See: https://nodejs.org/en/download/releases
+     */
+    private moduleVersionToNodeMajor(moduleVersion: string): string | null {
+        const map: Record<string, string> = {
+            "83": "14",
+            "93": "16",
+            "108": "18",
+            "115": "20",
+            "127": "20",
+            "131": "22",
+            "137": "22",
+            "132": "23",
+            "135": "24",
+            "139": "24",
+        };
+        return map[moduleVersion] || null;
     }
 
     private async downloadWithProgress(info: PlatformInfo): Promise<string | null> {

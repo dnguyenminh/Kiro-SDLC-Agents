@@ -87,6 +87,8 @@ function parseConfig(data) {
             command: e.command,
             args: e.args ?? [],
             env: e.env ?? {},
+            url: e.url,
+            transportType: e.transportType,
             disabled: e.disabled ?? false,
             timeout: e.timeout ?? 30_000,
             autoApprove: e.autoApprove ?? [],

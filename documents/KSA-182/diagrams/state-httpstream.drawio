@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="65bd71144e">
+  <diagram id="state-httpstream" name="httpStream State Diagram">
+    <mxGraphModel dx="628" dy="549" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Title -->
+        <mxCell id="title" value="httpStream Server State Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="10" width="280" height="30" as="geometry" />
+        </mxCell>
+        <!-- Initial state -->
+        <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="30" height="30" as="geometry" />
+        </mxCell>
+        <!-- STARTING - col A, row 1 -->
+        <mxCell id="starting" value="&lt;b&gt;STARTING&lt;/b&gt;&#10;initialize + fetchTools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="85" width="160" height="60" as="geometry" />
+        </mxCell>
+        <!-- READY - col B, row 1 (same row as STARTING) -->
+        <mxCell id="ready" value="&lt;b&gt;READY&lt;/b&gt;&#10;serving requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="500" y="85" width="160" height="60" as="geometry" />
+        </mxCell>
+        <!-- FAILED - col B, row 2 (same column as READY) -->
+        <mxCell id="failed" value="&lt;b&gt;FAILED&lt;/b&gt;&#10;awaiting restart" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="500" y="260" width="160" height="60" as="geometry" />
+        </mxCell>
+        <!-- STOPPED - col C, row 1 -->
+        <mxCell id="stopped" value="&lt;b&gt;STOPPED&lt;/b&gt;&#10;HTTP client closed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="85" width="160" height="60" as="geometry" />
+        </mxCell>
+        <!-- DEAD - col C, row 2 -->
+        <mxCell id="dead" value="&lt;b&gt;DEAD&lt;/b&gt;&#10;max retries exceeded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="780" y="260" width="160" height="60" as="geometry" />
+        </mxCell>
+        <!-- Edge: initial -> STARTING -->
+        <mxCell id="e1" value="config loaded" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="initial" target="starting" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Edge: STARTING -> READY (horizontal, same row) -->
+        <mxCell id="e2" value="initialize() +&#10;fetchTools() OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="starting" target="ready" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Edge: STARTING -> FAILED (down then right, below STARTING row to FAILED row) -->
+        <mxCell id="e3" value="timeout / error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="starting" target="failed" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <!-- Edge: READY -> FAILED (vertical, same column) -->
+        <mxCell id="e4" value="health check fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="ready" target="failed" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Edge: FAILED -> STARTING (left then up) -->
+        <mxCell id="e5" value="restart()&#10;retries &lt; max" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" source="failed" target="starting" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <!-- Edge: FAILED -> DEAD (horizontal, same row) -->
+        <mxCell id="e6" value="retries &gt;= max" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="failed" target="dead" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Edge: READY -> STOPPED (horizontal, same row) -->
+        <mxCell id="e7" value="stop()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ready" target="stopped" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Note -->
+        <mxCell id="note" value="httpStream differences:&#10;• No isAlive() — no OS process&#10;• Restart = re-initialize HTTP&#10;• Stop = close HTTP client (no kill)" style="shape=note;whiteSpace=wrap;html=1;size=14;align=left;spacingLeft=8;fillColor=#ffffcc;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="380" width="250" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

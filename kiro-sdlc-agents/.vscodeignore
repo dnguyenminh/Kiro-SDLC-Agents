@@ -11,10 +11,11 @@ resources/.analysis/code-intelligence/scripts/java/out/**
 
 # Include mcp-server node_modules (JS wrappers needed at runtime)
 !mcp-server/node_modules/**
-# Exclude native build artifacts (downloaded at runtime via NativeAddonManager)
+# Exclude native build artifacts (downloaded at runtime via NativeAddonManager/OnnxAddonManager)
 mcp-server/node_modules/better-sqlite3/build/**
 mcp-server/node_modules/better-sqlite3/deps/**
 mcp-server/node_modules/better-sqlite3/src/**
-mcp-server/node_modules/onnxruntime-node/bin/**
+mcp-server/node_modules/onnxruntime-node/**
+mcp-server/node_modules/onnxruntime-common/**
 mcp-server/node_modules/prebuild-install/**
 mcp-server/node_modules/**/node-gyp/**

@@ -72,7 +72,7 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
       );
       warningItem.iconPath = new vscode.ThemeIcon("warning", new vscode.ThemeColor("problemsWarningIcon.foreground"));
       warningItem.description = "Server not running";
-      warningItem.command = { command: "kiroSdlc.restartMcpServer", title: "Restart Server" };
+      warningItem.command = { command: "kiroSdlc.restartMcpServer", title: "Restart Server", arguments: [] };
       items.push(warningItem);
     } else {
       const runningItem = new KiroTreeItem(
@@ -128,8 +128,9 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
 
   private createCommandItem(label: string, command: string, icon: string): KiroTreeItem {
     const item = new KiroTreeItem(label, vscode.TreeItemCollapsibleState.None);
-    item.command = { command, title: label };
+    item.command = { command, title: label, arguments: [] };
     item.iconPath = new vscode.ThemeIcon(icon);
+    item.contextValue = `cmd:${command}`;
     return item;
   }
 

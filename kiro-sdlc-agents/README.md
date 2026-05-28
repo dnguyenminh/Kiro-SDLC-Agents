@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.9.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.9.6-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
@@ -24,6 +24,7 @@
   <a href="#-commands">Commands</a> •
   <a href="#-using-mcp-server">MCP Server</a> •
   <a href="#-web-dashboard">Web Dashboard</a> •
+  <a href="#-native-binary-management">Native Binaries</a> •
   <a href="#-troubleshooting">Troubleshooting</a>
 </p>
 
@@ -270,17 +271,57 @@ Both servers use the **same SQLite database** file (`.code-intel/index.db`). Run
 
 ## 🌐 Web Dashboard
 
-The MCP server also serves a web dashboard at `http://localhost:3202`. It shows the same data as the sidebar panels, but in your browser:
+The MCP server serves a web dashboard at `http://localhost:9181`. It shows the same data as the sidebar panels, but in your browser:
 
 | Page | URL |
 |------|-----|
-| Graph | `localhost:3202/` |
-| Dashboard | `localhost:3202/dashboard` |
-| Tags | `localhost:3202/tags` |
-| Quality | `localhost:3202/quality` |
-| Analytics | `localhost:3202/analytics` |
+| Graph | `localhost:9181/` |
+| Dashboard | `localhost:9181/dashboard` |
+| Tags | `localhost:9181/tags` |
+| Quality | `localhost:9181/quality` |
+| Analytics | `localhost:9181/analytics` |
 
-> The web dashboard uses the same API as extension panels — data is always in sync.
+> The web dashboard runs on the same port as the MCP server. No separate viewer process needed.
+
+---
+
+## 📦 Native Binary Management
+
+The MCP server's Node.js variant depends on `better-sqlite3`, which requires a platform-specific native binary (`.node` file). The extension handles this automatically — no C++ build tools needed on your machine.
+
+### How It Works
+
+1. On activation, the extension detects your Node version and platform
+2. Downloads the matching prebuilt `better-sqlite3` binary from GitHub Releases
+3. Verifies SHA-256 checksum
+4. Caches the binary for future use
+
+### Supported Platforms
+
+| Node Version | win32-x64 | darwin-x64 | darwin-arm64 | linux-x64 |
+|:---:|:---:|:---:|:---:|:---:|
+| 20 | ✅ | ✅ | ✅ | ✅ |
+| 22 | ✅ | ✅ | ✅ | ✅ |
+| 24 | ✅ | ✅ | ✅ | ✅ |
+
+### Cache Location
+
+Binaries are cached at:
+
+```
+%APPDATA%/Kiro/User/globalStorage/dnguyenminh.kiro-sdlc-agents/native-addons/
+  better-sqlite3/v11.7.0/{platform-key}/better_sqlite3.node
+```
+
+On macOS/Linux: `~/.config/Kiro/User/globalStorage/dnguyenminh.kiro-sdlc-agents/native-addons/`
+
+### Troubleshooting Native Binaries
+
+If you get errors like `Could not load better-sqlite3 native binding`:
+
+1. Delete the cache folder: `%APPDATA%/Kiro/User/globalStorage/dnguyenminh.kiro-sdlc-agents/native-addons/`
+2. Restart the IDE
+3. The extension will re-download the correct binary
 
 ---
 
@@ -289,23 +330,23 @@ The MCP server also serves a web dashboard at `http://localhost:3202`. It shows 
 Here is how all the pieces fit together:
 
 ```
-┌─────────────────────────────────────────────┐
-│  Kiro IDE                                    │
-│  ┌─────────────────┐  ┌──────────────────┐  │
-│  │ Extension Host   │  │ Webview Panels   │  │
-│  │ (TypeScript)     │  │ (HTML/JS/Canvas) │  │
-│  │                  │  │                  │  │
-│  │ McpServerManager │──│ Graph, Dashboard │  │
-│  │ Panel Managers   │  │ Quality, Analytics│  │
-│  └────────┬─────────┘  └──────────────────┘  │
-│           │ HTTP (port 9181)                  │
-│  ┌────────▼─────────┐                        │
-│  │ MCP Server        │                        │
-│  │ (http-entry.js)   │                        │
-│  │   └─ index.js     │── Viewer (port 3202)  │
-│  │      └─ SQLite DB │                        │
-│  └───────────────────┘                        │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Kiro IDE                                        │
+│  ┌─────────────────┐  ┌──────────────────────┐  │
+│  │ Extension Host   │  │ Webview Panels       │  │
+│  │ (TypeScript)     │  │ (HTML/JS/Canvas)     │  │
+│  │                  │  │                      │  │
+│  │ McpServerManager │──│ Graph, Dashboard     │  │
+│  │ NativeAddonMgr   │  │ Quality, Analytics   │  │
+│  └────────┬─────────┘  └──────────────────────┘  │
+│           │ HTTP (port 9181)                      │
+│  ┌────────▼──────────────────────────────┐       │
+│  │ MCP Server (port 9181)                 │       │
+│  │ ├─ MCP tools (JSON-RPC over HTTP)      │       │
+│  │ ├─ Web Dashboard (viewer routes)       │       │
+│  │ └─ SQLite DB (.code-intel/index.db)    │       │
+│  └────────────────────────────────────────┘       │
+└───────────────────────────────────────────────────┘
 ```
 
 **How it works:**
@@ -313,6 +354,7 @@ Here is how all the pieces fit together:
 - **Panels** communicate via `postMessage` (extension ↔ webview)
 - **Data** is fetched via MCP tool calls OR viewer HTTP API
 - **Charts** are rendered with Canvas 2D (no external chart libraries — CSP compatible)
+- **Web Dashboard** is served by the MCP server on the same port (9181)
 
 ---
 
@@ -368,6 +410,15 @@ Having issues? Here are the most common problems and how to fix them:
 1. Make sure only ONE server is running (see [MCP Server section](#-using-mcp-server))
 2. Disable extension server (`kiroSdlc.enableMcpServer` = `false`) if using standalone
 3. Or stop standalone server if using extension's built-in server
+
+### "Could not load better-sqlite3 native binding"
+
+**Cause**: Native binary missing, corrupted, or incompatible with current Node version.
+
+**Fix**:
+1. Delete cache: `%APPDATA%/Kiro/User/globalStorage/dnguyenminh.kiro-sdlc-agents/native-addons/`
+2. Restart the IDE — extension will re-download the correct binary
+3. Check that your Node version is 20, 22, or 24
 
 ---
 

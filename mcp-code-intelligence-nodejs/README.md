@@ -1,4 +1,4 @@
-# MCP Code Intelligence
+# MCP Code Intelligence — Node.js
 
 Standalone MCP server providing local code intelligence via SQLite FTS5 full-text search with optional Ollama semantic embeddings.
 
@@ -13,7 +13,7 @@ Standalone MCP server providing local code intelligence via SQLite FTS5 full-tex
 ## Quick Start
 
 ```bash
-cd mcp-code-intelligence
+cd mcp-code-intelligence-nodejs
 npm install
 npm run build
 node dist/index.js
@@ -29,12 +29,28 @@ No `--workspace` CLI argument needed.
   "mcpServers": {
     "code-intelligence": {
       "command": "node",
-      "args": ["path/to/mcp-code-intelligence/dist/index.js"],
+      "args": ["path/to/mcp-code-intelligence-nodejs/dist/index.js"],
       "roots": ["/your/project"]
     }
   }
 }
 ```
+
+## Native Dependencies
+
+This server uses `better-sqlite3` which requires a platform-specific native binary (`.node` file).
+
+### When used via the Kiro SDLC Agents extension
+
+The extension **automatically downloads** the correct prebuilt binary for your platform. No action needed — it sets the `BETTER_SQLITE3_BINDING` environment variable pointing to the cached binary.
+
+### When used standalone (without the extension)
+
+Run `npm install` in this directory. This triggers `node-gyp` to compile `better-sqlite3` from source, which requires:
+- Python 3.x
+- C++ build tools (Visual Studio Build Tools on Windows, Xcode CLI on macOS, `build-essential` on Linux)
+
+Alternatively, set `BETTER_SQLITE3_BINDING` to point to a prebuilt `.node` file if you have one.
 
 ## Configuration
 
@@ -61,10 +77,15 @@ Config file: `{workspace}/.code-intel/config.json`
 | `CODE_INTEL_DEBOUNCE` | Debounce ms | `500` |
 | `OLLAMA_URL` | Ollama API URL | `null` (disabled) |
 | `OLLAMA_MODEL` | Embedding model | `nomic-embed-text` |
+| `BETTER_SQLITE3_BINDING` | Path to prebuilt `better_sqlite3.node` binary | `null` (uses npm-installed) |
 
 ## Supported Languages
 
 TypeScript, JavaScript, Kotlin, Java, Python, Go, Rust, C/C++, C#, Ruby, PHP, Swift, Scala, SQL, Bash, PowerShell
+
+## Database
+
+SQLite database stored at `{workspace}/.code-intel/index.db` with WAL mode. Schema is cross-compatible with the Python and Kotlin variants — all three can read/write the same database.
 
 ## Architecture
 

@@ -6,6 +6,7 @@ package com.codeintel.orchestration.local
 
 import com.codeintel.log
 import com.codeintel.orchestration.OrchestrationConfig
+import com.codeintel.orchestration.TransportType
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -17,7 +18,7 @@ class LocalServerManager(
     private var config: OrchestrationConfig,
     private val scope: CoroutineScope
 ) {
-    private val servers = mutableMapOf<String, ServerProcess>()
+    private val servers = mutableMapOf<String, IServerProcess>()
     private var healthJob: Job? = null
 
     /** Update config reference (used by hot-reload). */
@@ -29,9 +30,14 @@ class LocalServerManager(
         log("Starting ${entries.size} child servers...")
         var started = 0
         for ((name, entry) in entries) {
-            val server = ServerProcess(name, entry, scope)
+            val transport = detectTransport(entry)
+            val server: IServerProcess = if (transport == TransportType.httpStream) {
+                HttpStreamProcess(name, entry)
+            } else {
+                ServerProcess(name, entry, scope)
+            }
             servers[name] = server
-            if (server.start()) started++ else log("[$name] Failed to start")
+            if (server.start()) started++ else log("[$name] Failed to start (transport: $transport)")
         }
         startHealthMonitor()
         return started
@@ -133,7 +139,7 @@ class LocalServerManager(
         }
     }
 
-    private suspend fun handleCrash(server: ServerProcess) {
+    private suspend fun handleCrash(server: IServerProcess) {
         val maxRetries = config.settings.maxRestartRetries
         if (!server.restart(maxRetries)) {
             log("[${server.name}] Permanently dead after $maxRetries retries")

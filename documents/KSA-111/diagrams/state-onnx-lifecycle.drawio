@@ -1,0 +1,108 @@
+<mxfile host="65bd71144e">
+    <diagram id="state-ksa111" name="State Diagram">
+        <mxGraphModel dx="900" dy="680" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;KSA-111: OnnxAddonManager State Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="20" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="60" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_init" value="Initializing&#10;(load manifest)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="110" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_checking" value="Checking Cache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="200" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_downloading" value="Downloading&#10;(with progress)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="310" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_verifying" value="Verifying SHA-256" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="410" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_extracting" value="Extracting tar.gz" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="510" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_ready" value="Ready&#10;(path available)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="620" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_unavailable" value="Unavailable&#10;(null returned)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="700" y="310" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="s_retrying" value="Retrying&#10;(backoff wait)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="360" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_ok" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="710" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_fail" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;strokeWidth=3;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="400" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="start" target="s_init" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="manifest loaded" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_init" target="s_checking" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="no manifest /&#10;unsupported platform" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_init" target="s_unavailable" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="135"/>
+                            <mxPoint x="600" y="135"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="cache miss" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_checking" target="s_downloading" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="cache hit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_checking" target="s_ready" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="370" y="225"/>
+                            <mxPoint x="370" y="645"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" value="download complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_downloading" target="s_verifying" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="cancelled" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_downloading" target="s_unavailable" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="hash match" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_verifying" target="s_extracting" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" value="hash mismatch&#10;(retries &lt; 3)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_verifying" target="s_retrying" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="backoff done" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_retrying" target="s_downloading" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="265" y="335"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e11" value="max retries" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_retrying" target="s_unavailable" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="265" y="420"/>
+                            <mxPoint x="680" y="420"/>
+                            <mxPoint x="680" y="335"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e12" value="extracted OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="s_extracting" target="s_ready" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="s_ready" target="end_ok" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="s_unavailable" target="end_fail" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

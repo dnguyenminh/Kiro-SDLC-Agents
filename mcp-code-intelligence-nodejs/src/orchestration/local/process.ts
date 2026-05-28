@@ -7,6 +7,7 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import { ServerEntry } from '../config.js';
 import { StdioJsonRpc } from './rpc.js';
+import { IServerProcess } from './transport.js';
 
 export enum ServerState {
   STARTING = 'STARTING', READY = 'READY', ACTIVE = 'ACTIVE',
@@ -14,7 +15,7 @@ export enum ServerState {
   STOPPING = 'STOPPING', DEAD = 'DEAD', FAILED = 'FAILED',
 }
 
-export class ServerProcess {
+export class ServerProcess implements IServerProcess {
   readonly name: string;
   state: ServerState = ServerState.STARTING;
   tools: Record<string, any>[] = [];
@@ -80,6 +81,10 @@ export class ServerProcess {
 
   private spawnProcess(): ChildProcess | null {
     try {
+      if (!this.entry.command) {
+        this.log('No command specified for stdio server');
+        return null;
+      }
       const isWin = process.platform === 'win32';
       return spawn(this.entry.command, this.entry.args, {
         stdio: ['pipe', 'pipe', 'pipe'],

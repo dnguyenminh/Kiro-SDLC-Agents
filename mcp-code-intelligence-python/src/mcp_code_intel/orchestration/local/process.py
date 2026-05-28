@@ -101,6 +101,9 @@ class ServerProcess:
     async def _spawn(self) -> asyncio.subprocess.Process | None:
         """Spawn child process with configured command and args."""
         try:
+            if not self._entry.command:
+                self._log("No command specified")
+                return None
             cmd = self._resolve_command(self._entry.command)
             args = list(self._entry.args)
             # Note: depth args NOT injected for third-party servers

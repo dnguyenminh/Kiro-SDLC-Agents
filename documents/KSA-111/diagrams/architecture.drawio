@@ -1,0 +1,100 @@
+<mxfile host="65bd71144e">
+    <diagram id="arch-ksa111" name="Architecture">
+        <mxGraphModel dx="1000" dy="750" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;KSA-111: Architecture — Download-Verify-Cache-Inject Pattern&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="250" y="10" width="550" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_ext" value="Extension Layer (VS Code)" style="shape=rectangle;dashed=1;fillColor=#e8f5e9;strokeColor=#388e3c;verticalAlign=top;fontStyle=1;fontSize=12;spacingTop=8;html=1;rounded=1;opacity=30;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="50" width="700" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_storage" value="Storage Layer (File System)" style="shape=rectangle;dashed=1;fillColor=#fff3e0;strokeColor=#f57c00;verticalAlign=top;fontStyle=1;fontSize=12;spacingTop=8;html=1;rounded=1;opacity=30;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="280" width="700" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_process" value="Process Layer (Child Process)" style="shape=rectangle;dashed=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;verticalAlign=top;fontStyle=1;fontSize=12;spacingTop=8;html=1;rounded=1;opacity=30;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="460" width="700" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer_network" value="Network Layer" style="shape=rectangle;dashed=1;fillColor=#fce4ec;strokeColor=#c62828;verticalAlign=top;fontStyle=1;fontSize=12;spacingTop=8;html=1;rounded=1;opacity=30;" vertex="1" parent="1">
+                    <mxGeometry x="800" y="50" width="300" height="560" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_ts" value="extension.ts&#10;(activation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="90" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="onnx_mgr" value="OnnxAddonManager&#10;ensure() / redownload()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="260" y="80" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_mgr" value="MCP Server Manager&#10;spawn(env: ONNX_RUNTIME_PATH)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="260" y="170" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="vscode_api" value="VS Code API&#10;(Progress, OutputChannel)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="540" y="90" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="manifest" value="release-manifest.json&#10;(URLs + SHA-256)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="320" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="cache" value="globalStorage Cache&#10;/native-addons/onnxruntime-node/&#10;v{ver}/{platform}-{arch}/" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;size=10;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="310" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="tar_gz" value="onnxruntime.tar.gz&#10;(temp file)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;dashed=1;" vertex="1" parent="1">
+                    <mxGeometry x="590" y="320" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_server" value="MCP Code Intelligence Server&#10;(Node.js child process)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="500" width="230" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="onnx_provider" value="onnx-provider.ts&#10;require(ONNX_RUNTIME_PATH)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="370" y="500" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="inference" value="InferenceSession&#10;(ONNX model)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="620" y="500" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="github_rel" value="GitHub Releases&#10;(CDN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="870" y="150" width="150" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="github_ci" value="GitHub Actions CI&#10;(build-onnxruntime.yml)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="870" y="280" width="170" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="npm_ort" value="npm: onnxruntime-node&#10;@1.22.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="870" y="400" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="onnx_mgr" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="onnx_mgr" target="mcp_mgr" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="progress" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="onnx_mgr" target="vscode_api" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" value="read" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="onnx_mgr" target="manifest" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="onnx_mgr" target="cache" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="HTTPS download" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="onnx_mgr" target="github_rel" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="spawn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="mcp_mgr" target="mcp_server" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="require()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="mcp_server" target="onnx_provider" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="onnx_provider" target="inference" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="reads binary from" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" source="onnx_provider" target="cache" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" value="uploads" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="github_ci" target="github_rel" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" value="npm install" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="github_ci" target="npm_ort" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
