@@ -77,10 +77,27 @@ jobs:
 
       - name: Install onnxruntime-node
         shell: bash
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: '0'
         run: |
           mkdir build-temp && cd build-temp
           npm init -y
-          npm install "onnxruntime-node@${{ needs.prepare.outputs.version }}"
+          # Try normal install first; if GPU download fails, retry with --ignore-scripts
+          npm install "onnxruntime-node@${{ needs.prepare.outputs.version }}" || \
+            npm install "onnxruntime-node@${{ needs.prepare.outputs.version }}" --ignore-scripts
+
+      - name: Verify native binaries exist
+        shell: bash
+        run: |
+          ORT_DIR="build-temp/node_modules/onnxruntime-node"
+          if [ -d "$ORT_DIR/bin" ]; then
+            echo "✅ Native binaries found:"
+            ls -la "$ORT_DIR/bin/" || true
+            find "$ORT_DIR/bin" -type f | head -20
+          else
+            echo "⚠️ No bin/ directory — checking for alternative locations..."
+            find "$ORT_DIR" -name "*.so" -o -name "*.dylib" -o -name "*.dll" 2>/dev/null | head -20
+          fi
 
       - name: Package native binaries
         shell: bash
