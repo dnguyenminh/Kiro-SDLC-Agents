@@ -133,7 +133,7 @@ jobs:
           # Print info
           echo "Archive: $ARCHIVE_NAME ($(wc -c < "$ARCHIVE_NAME") bytes)"
           echo "Contents:"
-          tar -tzf "$ARCHIVE_NAME" | head -30
+          tar -tzf "$ARCHIVE_NAME" | head -30 || true
           cat "${ARCHIVE_NAME}.sha256"
 
       - uses: actions/upload-artifact@v4
