@@ -1,0 +1,63 @@
+<mxfile host="65bd71144e">
+    <diagram id="system-context-1" name="System Context">
+        <mxGraphModel dx="800" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;System Context: esbuild Build Pipeline&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="270" y="10" width="310" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="source_ts" value="Developer Source (.ts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="330" y="60" width="190" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="esbuild_config" value="esbuild.js config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="345" y="160" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="production_mode" value="Production&#10;- minify&#10;- tree-shake&#10;- no sourcemap" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+                    <mxGeometry x="180" y="280" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="dev_mode" value="Dev/Watch&#10;- sourcemap&#10;- incremental&#10;- fast rebuild" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+                    <mxGeometry x="510" y="280" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="output_js" value="out/extension.js&#10;(single bundled file)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="430" width="210" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="vsce_package" value="vsce package" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="345" y="550" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="vsix_output" value=".vsix&#10;(excludes node_modules)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="325" y="660" width="200" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="source_ts" target="esbuild_config" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="esbuild_config" target="production_mode" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="425" y="240"/><mxPoint x="260" y="240"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="esbuild_config" target="dev_mode" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="425" y="240"/><mxPoint x="590" y="240"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="production_mode" target="output_js" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="260" y="400"/><mxPoint x="425" y="400"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="dev_mode" target="output_js" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="590" y="400"/><mxPoint x="425" y="400"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="output_js" target="vsce_package" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="vsce_package" target="vsix_output" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -6,7 +6,7 @@ on:
       better_sqlite3_version:
         description: 'better-sqlite3 version to build'
         required: true
-        default: '11.7.0'
+        default: '12.10.0'
       node_version:
         description: 'Node.js major version to build for'
         required: true
@@ -20,7 +20,7 @@ on:
           - 'all'
 
 env:
-  DEFAULT_VERSION: '11.7.0'
+  DEFAULT_VERSION: '12.10.0'
 
 jobs:
   prepare:
@@ -32,7 +32,7 @@ jobs:
       - name: Setup build matrix
         id: setup
         run: |
-          VERSION="${{ inputs.better_sqlite3_version || '11.7.0' }}"
+          VERSION="${{ inputs.better_sqlite3_version || '12.10.0' }}"
           NODE_INPUT="${{ inputs.node_version || '22' }}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 

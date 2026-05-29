@@ -1,0 +1,82 @@
+<mxfile host="65bd71144e">
+    <diagram id="data-flow-1" name="Data Flow">
+        <mxGraphModel dx="900" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Data Flow: Publish Pipeline&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="10" width="250" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="push_tag" value="Developer pushes tag v1.x.x" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="310" y="60" width="220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="gh_actions" value="GitHub Actions triggers publish.yml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="160" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="npm_ci" value="npm ci&#10;(installs esbuild + deps)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="310" y="260" width="220" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="vsce_cmd" value="vsce package --no-dependencies" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="295" y="365" width="250" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="prepublish" value="vscode:prepublish hook fires" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="310" y="465" width="220" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="copy_resources" value="copy-resources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="140" y="570" width="140" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="gen_checksums" value="gen-checksums" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="350" y="570" width="140" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="esbuild_prod" value="esbuild-production" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="570" width="150" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="output_bundle" value="out/extension.js&#10;(bundled, minified)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="550" y="670" width="170" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="vsix_created" value=".vsix created&#10;(excludes node_modules, src, esbuild.js)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="780" width="280" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="publish_target" value="Publish to Marketplace + Open VSX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="890" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="push_tag" target="gh_actions" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="gh_actions" target="npm_ci" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="npm_ci" target="vsce_cmd" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="vsce_cmd" target="prepublish" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="prepublish" target="copy_resources" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="420" y="540"/><mxPoint x="210" y="540"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="prepublish" target="gen_checksums" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="prepublish" target="esbuild_prod" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="420" y="540"/><mxPoint x="635" y="540"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="esbuild_prod" target="output_bundle" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="output_bundle" target="vsix_created" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points"><mxPoint x="635" y="740"/><mxPoint x="420" y="740"/></Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="vsix_created" target="publish_target" parent="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
