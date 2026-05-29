@@ -257,6 +257,7 @@ export class NativeAddonManager {
             "135": "24",
             "137": "24",
             "139": "24",
+            "141": "25",
         };
         return map[moduleVersion] || null;
     }

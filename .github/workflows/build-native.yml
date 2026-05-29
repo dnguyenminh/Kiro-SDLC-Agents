@@ -16,6 +16,7 @@ on:
           - '20'
           - '22'
           - '24'
+          - '25'
           - 'all'
 
 env:
@@ -36,7 +37,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
           if [ "$NODE_INPUT" = "all" ]; then
-            NODES="20 22 24"
+            NODES="20 22 24 25"
           else
             NODES="$NODE_INPUT"
           fi
@@ -134,7 +135,7 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" \
               --title "better-sqlite3 v${VERSION} Prebuilt Binaries" \
-              --notes "Prebuilt binaries for Node 20/22/24 on win32-x64, linux-x64, darwin-x64, darwin-arm64."
+              --notes "Prebuilt binaries for Node 20/22/24/25 on win32-x64, linux-x64, darwin-x64, darwin-arm64."
 
           # Upload binaries (overwrite existing)
           for f in *.node; do

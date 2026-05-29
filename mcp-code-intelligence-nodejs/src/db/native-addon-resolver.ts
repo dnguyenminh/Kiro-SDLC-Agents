@@ -94,6 +94,26 @@ const MANIFEST: NativeManifest = {
       sha256: '888e23af998e507066d7bb934fffd5dc031a9183d44f9c8c7b19b4880e24c413',
       size: 2172256,
     },
+    'node-v25-win32-x64': {
+      url: 'https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v25-win32-x64.node',
+      sha256: 'PLACEHOLDER_BUILD_REQUIRED',
+      size: 0,
+    },
+    'node-v25-darwin-x64': {
+      url: 'https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v25-darwin-x64.node',
+      sha256: 'PLACEHOLDER_BUILD_REQUIRED',
+      size: 0,
+    },
+    'node-v25-darwin-arm64': {
+      url: 'https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v25-darwin-arm64.node',
+      sha256: 'PLACEHOLDER_BUILD_REQUIRED',
+      size: 0,
+    },
+    'node-v25-linux-x64': {
+      url: 'https://github.com/dnguyenminh/Kiro-SDLC-Agents/releases/download/better-sqlite3-v11.7.0/better-sqlite3-v11.7.0-node-v25-linux-x64.node',
+      sha256: 'PLACEHOLDER_BUILD_REQUIRED',
+      size: 0,
+    },
   },
 };
 
