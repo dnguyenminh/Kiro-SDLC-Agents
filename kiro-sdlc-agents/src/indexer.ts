@@ -176,7 +176,19 @@ function resolveViewerPort(root: string): number {
             const raw = fs.readFileSync(mcpPath, "utf-8");
             const config = JSON.parse(raw);
             const servers = config.mcpServers || {};
+
+            // Priority 1: active httpStream server with "code-intel" in name — parse port from URL
+            for (const [name, server] of Object.entries(servers) as [string, any][]) {
+                if (server.disabled) { continue; }
+                if (name.includes("code-intel") && server.url) {
+                    const match = server.url.match(/:(\d+)/);
+                    if (match) { return parseInt(match[1], 10); }
+                }
+            }
+
+            // Priority 2: active server with CODE_INTEL_VIEWER_PORT env
             for (const server of Object.values(servers) as any[]) {
+                if (server.disabled) { continue; }
                 const env = server.env || {};
                 if (env.CODE_INTEL_VIEWER_PORT) {
                     return parseInt(env.CODE_INTEL_VIEWER_PORT, 10);

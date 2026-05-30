@@ -191,16 +191,22 @@ def _handle_graph_data(
     engine: MemoryEngine | None,
     graph: KnowledgeGraph | None,
 ) -> None:
-    """GET /api/memory/graph/data?limit=X — nodes from edges."""
+    """GET /api/memory/graph/data?limit=X&lod=true — nodes from edges."""
     if not engine or not graph:
         send_error(handler, 503, "Not initialized")
         return
-    limit = int(first_param(query, "limit", "500"))
+    lod = first_param(query, "lod", "false") == "true"  # KSA-143: LOD support
+    default_limit = 5000 if lod else 500  # KSA-143: higher limit for LOD
+    limit = min(int(first_param(query, "limit", str(default_limit))), 10000)
     edges = engine.graph_repo.find_all(limit)
     if not edges:
         entries = engine.knowledge.find_by_tier("WORKING", 50)
         nodes = [to_graph_node(e) for e in entries]
-        send_json(handler, {"nodes": nodes, "edges": []})
+        result: dict = {"nodes": nodes, "edges": []}
+        if lod:
+            result["totalNodes"] = len(nodes)
+            result["totalEdges"] = 0
+        send_json(handler, result)
         return
     node_ids: set[int] = set()
     for e in edges:
@@ -215,7 +221,12 @@ def _handle_graph_data(
         {"source": e["source_id"], "target": e["target_id"], "relation": e["relation"]}
         for e in edges
     ]
-    send_json(handler, {"nodes": nodes, "edges": edge_list})
+    result = {"nodes": nodes, "edges": edge_list}
+    if lod:
+        stats = engine.get_stats()
+        result["totalNodes"] = stats.get("total_entries", len(nodes))
+        result["totalEdges"] = stats.get("total_edges", len(edge_list))
+    send_json(handler, result)
 
 
 def _handle_audit(

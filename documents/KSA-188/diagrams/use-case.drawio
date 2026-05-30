@@ -1,0 +1,72 @@
+<mxfile host="65bd71144e">
+  <diagram id="use-case-ksa188" name="Use Case Diagram">
+    <mxGraphModel dx="900" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-188 — Use Case Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="10" width="280" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="sys_boundary" value="Incremental Prebuilt Binary Pipeline" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="50" width="660" height="700" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_ci" value="CI Maintainer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_cron" value="Scheduled Cron" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="550" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_user" value="Extension User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="400" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc1_trigger" value="Trigger Build&#10;(Manual)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="260" y="120" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc2_force" value="Force Rebuild&#10;Specific Binaries" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="260" y="260" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc3_skip" value="Skip Existing&#10;Binaries" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="120" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc4_verify" value="Verify Binary&#10;Architecture" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="260" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc5_scan" value="Scan for New&#10;Node.js LTS Versions" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="260" y="530" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc6_release" value="Auto-Release&#10;Extension" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="400" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ci_uc1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="actor_ci" target="uc1_trigger" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ci_uc2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="actor_ci" target="uc2_force" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cron_uc5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="actor_cron" target="uc5_scan" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_uc6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="actor_user" target="uc6_release" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;" edge="1" source="uc1_trigger" target="uc3_skip" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;" edge="1" source="uc3_skip" target="uc4_verify" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_extend_1" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;" edge="1" source="uc2_force" target="uc1_trigger" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_3" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;" edge="1" source="uc5_scan" target="uc1_trigger" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="560"/>
+              <mxPoint x="230" y="150"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

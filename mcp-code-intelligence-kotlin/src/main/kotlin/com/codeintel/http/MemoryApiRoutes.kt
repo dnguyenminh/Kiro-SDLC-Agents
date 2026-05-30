@@ -77,21 +77,23 @@ private suspend fun RoutingContext.handleGraphNeighbors(engine: MemoryEngine?, g
 private suspend fun RoutingContext.handleGraphData(engine: MemoryEngine?, graph: KnowledgeGraph?) {
     if (engine == null || graph == null) { call.respond(HttpStatusCode.ServiceUnavailable, "Not initialized"); return }
     val stats = engine.getStats()
+    val lod = call.request.queryParameters["lod"] == "true"
     if (stats.totalEdges == 0) {
-        // No edges yet — return entries as unconnected nodes (no DB query for edges)
         val entries = engine.knowledge.findByTier("WORKING", 50)
         val nodes = entries.map { GraphNodeResponse(it.id, it.summary.take(60), it.type, it.tier, it.source) }
-        call.respond(GraphDataResponse(nodes, emptyList()))
+        val tN = if (lod) stats.totalEntries else null
+        call.respond(GraphDataResponse(nodes, emptyList(), tN, if (lod) 0 else null))
         return
     }
-    val limit = call.parameters["limit"]?.toIntOrNull() ?: 100
+    val defaultLimit = if (lod) 5000 else 100
+    val limit = minOf(call.request.queryParameters["limit"]?.toIntOrNull() ?: defaultLimit, 10000)
     val edges = engine.graph.findAll(limit)
     val nodeIds = edges.flatMap { listOf(it.sourceId, it.targetId) }.distinct()
     val nodes = nodeIds.mapNotNull { id ->
         engine.knowledge.findById(id)?.let { GraphNodeResponse(it.id, it.summary.take(60), it.type, it.tier, it.source) }
     }
     val edgeList = edges.map { GraphEdgeResponse(it.sourceId, it.targetId, it.relation) }
-    call.respond(GraphDataResponse(nodes, edgeList))
+    call.respond(GraphDataResponse(nodes, edgeList, if (lod) stats.totalEntries else null, if (lod) stats.totalEdges else null))
 }
 
 private suspend fun RoutingContext.handleAudit(engine: MemoryEngine?) {
@@ -172,5 +174,7 @@ data class GraphEdgeResponse(
 @Serializable
 data class GraphDataResponse(
     val nodes: List<GraphNodeResponse>,
-    val edges: List<GraphEdgeResponse>
+    val edges: List<GraphEdgeResponse>,
+    val totalNodes: Int? = null,
+    val totalEdges: Int? = null
 )

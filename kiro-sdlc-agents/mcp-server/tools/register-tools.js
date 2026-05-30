@@ -53,6 +53,7 @@ const code_index_status_js_1 = require("./code-index-status.js");
 const stream_write_file_js_1 = require("./stream-write-file.js");
 const code_kb_export_js_1 = require("./code-kb-export.js");
 const drawio_tool_js_1 = require("./drawio-tool.js");
+const drawio_export_png_js_1 = require("./drawio-export-png.js");
 const index_js_1 = require("../memory/index.js");
 const tool_dispatcher_consolidated_js_1 = require("../memory/tool-dispatcher-consolidated.js");
 const tool_dispatcher_v2_js_1 = require("../memory/tool-dispatcher-v2.js");
@@ -71,6 +72,9 @@ function registerTools(server, dbManager, indexer, workspace) {
 /** Get tool definitions for tools/list response (raw mode). */
 function getToolDefinitions() {
     const defs = [...TOOL_DEFINITIONS, ...index_js_1.MEMORY_TOOL_DEFINITIONS];
+    if ((0, drawio_export_png_js_1.isExportPngAvailable)(orchestrationEngine)) {
+        defs.push(drawio_export_png_js_1.DRAWIO_EXPORT_PNG_DEFINITION);
+    }
     if (orchestrationEngine) {
         defs.push(...orchestrationEngine.metaToolDispatcher.getDefinitions());
     }
@@ -154,6 +158,8 @@ async function dispatchByName(name, args, queryLayer, indexer, workspace) {
             return handleCodeKbExport(args, queryLayer, workspace);
         case 'drawio_auto_layout':
             return (0, drawio_tool_js_1.handleDrawioLayout)(args, workspace);
+        case 'drawio_export_png':
+            return (0, drawio_export_png_js_1.handleDrawioExportPng)(args, workspace, orchestrationEngine);
         default:
             return `Unknown tool: ${name}`;
     }

@@ -18,6 +18,26 @@ on:
           - '24'
           - '25'
           - 'all'
+      force_rebuild:
+        description: 'Force rebuild even if binary exists'
+        required: false
+        default: 'false'
+        type: boolean
+  workflow_call:
+    inputs:
+      better_sqlite3_version:
+        description: 'better-sqlite3 version to build'
+        required: true
+        type: string
+      node_version:
+        description: 'Node.js major version'
+        required: true
+        type: string
+      force_rebuild:
+        description: 'Force rebuild'
+        required: false
+        type: boolean
+        default: false
 
 env:
   DEFAULT_VERSION: '12.10.0'
@@ -42,10 +62,12 @@ jobs:
             NODES="$NODE_INPUT"
           fi
 
+          # Platforms: runner,platform,arch
+          # macos-13 = Intel x86_64, macos-14 = Apple Silicon arm64
           MATRIX="{\"include\":["
           FIRST=true
           for NV in $NODES; do
-            for ENTRY in "windows-latest,win32,x64" "ubuntu-latest,linux,x64" "macos-latest,darwin,x64" "macos-14,darwin,arm64"; do
+            for ENTRY in "windows-latest,win32,x64" "ubuntu-latest,linux,x64" "macos-13,darwin,x64" "macos-14,darwin,arm64"; do
               OS=$(echo $ENTRY | cut -d, -f1)
               PLAT=$(echo $ENTRY | cut -d, -f2)
               ARCH=$(echo $ENTRY | cut -d, -f3)
@@ -64,11 +86,34 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
 
+      - name: Check if binary already exists in release
+        id: check_existing
+        if: inputs.force_rebuild != true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          TAG="better-sqlite3-v${VERSION}"
+          FILENAME="better-sqlite3-v${VERSION}-node-v${{ matrix.node_version }}-${{ matrix.platform }}-${{ matrix.arch }}.node"
+
+          # Check if release and asset exist
+          if gh release view "$TAG" --json assets -q ".assets[].name" 2>/dev/null | grep -qF "$FILENAME"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️ $FILENAME already exists in release $TAG — skipping build"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "🔨 $FILENAME not found — will build"
+          fi
+
       - name: Print Node info
+        if: steps.check_existing.outputs.skip != 'true'
         shell: bash
         run: |
           echo "Node: $(node --version)"
@@ -76,13 +121,47 @@ jobs:
           node -e "console.log('MODULE_VERSION:', process.config.variables.node_module_version)"
 
       - name: Build better-sqlite3
+        if: steps.check_existing.outputs.skip != 'true'
         shell: bash
         run: |
           mkdir build-temp && cd build-temp
           npm init -y
           npm install "better-sqlite3@${{ needs.prepare.outputs.version }}"
 
+      - name: Verify architecture
+        if: steps.check_existing.outputs.skip != 'true'
+        shell: bash
+        run: |
+          NODE_FILE=$(find build-temp/node_modules/better-sqlite3 -name "better_sqlite3.node" | head -1)
+          if [ -z "$NODE_FILE" ]; then
+            echo "ERROR: .node file not found"
+            exit 1
+          fi
+
+          echo "Binary: $NODE_FILE"
+          # Verify architecture matches expected
+          if command -v file &>/dev/null; then
+            FILE_INFO=$(file "$NODE_FILE")
+            echo "File info: $FILE_INFO"
+            
+            EXPECTED_ARCH="${{ matrix.arch }}"
+            if [ "$EXPECTED_ARCH" = "x64" ]; then
+              if echo "$FILE_INFO" | grep -qi "arm64\|aarch64"; then
+                echo "❌ ERROR: Binary is arm64 but expected x64!"
+                exit 1
+              fi
+              echo "✅ Architecture verified: x64"
+            elif [ "$EXPECTED_ARCH" = "arm64" ]; then
+              if echo "$FILE_INFO" | grep -qi "x86_64\|x86-64"; then
+                echo "❌ ERROR: Binary is x64 but expected arm64!"
+                exit 1
+              fi
+              echo "✅ Architecture verified: arm64"
+            fi
+          fi
+
       - name: Package binary
+        if: steps.check_existing.outputs.skip != 'true'
         shell: bash
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
@@ -101,6 +180,7 @@ jobs:
           cat "${FILENAME}.sha256"
 
       - uses: actions/upload-artifact@v4
+        if: steps.check_existing.outputs.skip != 'true'
         with:
           name: binary-node-v${{ matrix.node_version }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
@@ -120,11 +200,22 @@ jobs:
         with:
           pattern: binary-*
           merge-multiple: true
+        continue-on-error: true  # No artifacts if all skipped
 
-      - name: List binaries
-        run: ls -la *.node *.sha256
+      - name: Check for new binaries
+        id: check_binaries
+        run: |
+          if ls *.node 1>/dev/null 2>&1; then
+            echo "has_binaries=true" >> $GITHUB_OUTPUT
+            echo "Found $(ls *.node | wc -l) new binaries to upload"
+            ls -la *.node
+          else
+            echo "has_binaries=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No new binaries to upload — all builds were skipped"
+          fi
 
       - name: Upload to GitHub Release
+        if: steps.check_binaries.outputs.has_binaries == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -135,11 +226,11 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" \
               --title "better-sqlite3 v${VERSION} Prebuilt Binaries" \
-              --notes "Prebuilt binaries for Node 20/22/24/25 on win32-x64, linux-x64, darwin-x64, darwin-arm64."
+              --notes "Prebuilt binaries for better-sqlite3 on win32-x64, linux-x64, darwin-x64, darwin-arm64. Auto-built by CI."
 
           # Upload binaries (overwrite existing)
           for f in *.node; do
             gh release upload "$TAG" "$f" --clobber
           done
 
-          echo "Uploaded $(ls *.node | wc -l) binaries to release $TAG"
+          echo "✅ Uploaded $(ls *.node | wc -l) binaries to release $TAG"

@@ -136,19 +136,21 @@ export class GraphRepository {
         'DELETE FROM relationships WHERE file_path = ?'
       ),
       findCallers: this.db.prepare(`
-        SELECT s.name, s.kind, s.file_path, s.start_line as def_line, r.line as call_line,
+        SELECT s.name, s.kind, f.relative_path as file_path, s.start_line as def_line, r.line as call_line,
                s.parent_symbol as parameters, s.visibility as is_async, s.id
         FROM relationships r
         JOIN symbols s ON s.id = r.source_symbol_id
+        JOIN files f ON f.id = s.file_id
         WHERE r.target_symbol = ? AND r.kind = ?
-        ORDER BY s.file_path, r.line
+        ORDER BY f.relative_path, r.line
         LIMIT ?
       `),
       findCallees: this.db.prepare(`
         SELECT r.target_symbol as name, r.line as call_line, r.metadata,
-               ts.kind, ts.file_path, ts.start_line as def_line
+               ts.kind, tf.relative_path as file_path, ts.start_line as def_line
         FROM relationships r
         LEFT JOIN symbols ts ON ts.id = r.target_symbol_id
+        LEFT JOIN files tf ON tf.id = ts.file_id
         WHERE r.source_symbol_id = ? AND r.kind = ?
         ORDER BY r.line
         LIMIT ?

@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import { EmbeddingProvider } from './provider.js';
 import { Tokenizer, TokenizedInput } from './tokenizer.js';
+import { ensureOnnxRuntime } from './onnx-bootstrap.js';
 
 const MAX_SEQ_LENGTH = 128;
 
@@ -60,8 +61,17 @@ export class OnnxEmbeddingProvider implements EmbeddingProvider {
     if (this.session !== null) return;
     let ort: any;
     try {
-      // Try loading from ONNX_RUNTIME_PATH (prebuilt binary from extension)
-      const onnxPath = process.env.ONNX_RUNTIME_PATH;
+      // Try loading from ONNX_RUNTIME_PATH (prebuilt binary from extension or bootstrap)
+      let onnxPath = process.env.ONNX_RUNTIME_PATH;
+
+      // If not set, try self-download via bootstrap
+      if (!onnxPath) {
+        const bootstrapPath = await ensureOnnxRuntime();
+        if (bootstrapPath) {
+          onnxPath = bootstrapPath;
+        }
+      }
+
       if (onnxPath) {
         ort = require(onnxPath);
       } else {
@@ -80,9 +90,11 @@ export class OnnxEmbeddingProvider implements EmbeddingProvider {
 
   /** Tokenize, run ONNX, mean-pool, normalize. */
   private async runInference(text: string): Promise<number[]> {
+    // Use ONNX_RUNTIME_PATH (already resolved by ensureLoaded)
+    const onnxPath = process.env.ONNX_RUNTIME_PATH;
     // @ts-ignore — onnxruntime-node is an optional dependency
-    const ort = process.env.ONNX_RUNTIME_PATH
-      ? require(process.env.ONNX_RUNTIME_PATH)
+    const ort = onnxPath
+      ? require(onnxPath)
       : await import('onnxruntime-node');
     const encoded = this.tokenizer!.encode(text, MAX_SEQ_LENGTH);
     const feeds = {

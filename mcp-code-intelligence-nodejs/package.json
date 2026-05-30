@@ -8,7 +8,8 @@
   },
   "scripts": {
     "copy-viewer": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'../shared/viewer'),p.resolve(__dirname,'dist/viewer'))\"",
-    "build": "tsc && npm run copy-viewer",
+    "copy-parsers": "node -e \"const fs=require('fs');const p=require('path');const src=p.resolve(__dirname,'src/parsers');const dst=p.resolve(__dirname,'dist/parsers');['grammar-config.json'].forEach(f=>{if(fs.existsSync(p.join(src,f)))fs.copyFileSync(p.join(src,f),p.join(dst,f))});const gs=p.join(src,'grammars'),gd=p.join(dst,'grammars');if(fs.existsSync(gs)){fs.mkdirSync(gd,{recursive:true});fs.readdirSync(gs).forEach(f=>fs.copyFileSync(p.join(gs,f),p.join(gd,f)))}\"",
+    "build": "tsc && npm run copy-viewer && npm run copy-parsers",
     "copy-fixtures": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'src/parsers/languages/__tests__/fixtures'),p.resolve(__dirname,'dist/parsers/languages/__tests__/fixtures'))\"",
     "test": "tsc && npm run copy-fixtures && node --test dist/parsers/languages/__tests__/java-parser.test.js",
     "start": "node dist/index.js",

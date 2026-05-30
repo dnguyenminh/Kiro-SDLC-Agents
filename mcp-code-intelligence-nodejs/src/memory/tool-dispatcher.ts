@@ -276,6 +276,7 @@ export class MemoryToolDispatcher {
       case 'add_edge': return this.graphAddEdge(args);
       case 'path': return this.graphPath(args);
       case 'ego': return this.graphEgo(args);
+      case 'graph_data': return this.graphData(args);
       default: return `Unknown action: ${action}`;
     }
   }
@@ -317,6 +318,25 @@ export class MemoryToolDispatcher {
     const radius = (args.radius as number) ?? 2;
     const nodes = this.engine.graph.egoGraph(nodeId, radius);
     return `Ego graph for ${nodeId} (radius=${radius}): ${nodes.size} nodes\n${[...nodes].join(', ')}`;
+  }
+
+  private graphData(args: Record<string, unknown>): string {
+    const limit = Math.min((args.limit as number) ?? 15000, 15000);
+    // Get all edges
+    const edges = this.engine.graphRepo.findAll(limit);
+    const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+    // Get ALL entries — LOD handles rendering budget
+    const allEntries = this.engine.db.prepare(
+      'SELECT id, summary, type, tier, source FROM knowledge_entries ORDER BY id DESC LIMIT ?'
+    ).all(limit) as Array<{ id: number; summary: string; type: string; tier: string; source: string }>;
+    const nodes = allEntries.map(e => ({
+      id: e.id,
+      summary: (e.summary ?? '').substring(0, 60),
+      type: e.type,
+      tier: e.tier,
+      source: e.source ?? ''
+    }));
+    return JSON.stringify({ nodes, edges: edgeList, totalNodes: nodes.length, totalEdges: edgeList.length });
   }
 
   private handleStatus(): string {

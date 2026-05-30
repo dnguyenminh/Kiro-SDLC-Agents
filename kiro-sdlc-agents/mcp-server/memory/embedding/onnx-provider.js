@@ -86,8 +86,19 @@ class OnnxEmbeddingProvider {
             return;
         let ort;
         try {
-            // Try loading from ONNX_RUNTIME_PATH (prebuilt binary from extension)
-            const onnxPath = process.env.ONNX_RUNTIME_PATH;
+            // Try loading from ONNX_RUNTIME_PATH (prebuilt binary from extension or bootstrap)
+            let onnxPath = process.env.ONNX_RUNTIME_PATH;
+            // If not set, try self-download via bootstrap
+            if (!onnxPath) {
+                try {
+                    const { ensureOnnxRuntime } = require('./onnx-bootstrap.js');
+                    const bootstrapPath = await ensureOnnxRuntime();
+                    if (bootstrapPath) {
+                        onnxPath = bootstrapPath;
+                    }
+                }
+                catch { /* bootstrap not available */ }
+            }
             if (onnxPath) {
                 ort = require(onnxPath);
             }
@@ -105,9 +116,11 @@ class OnnxEmbeddingProvider {
     }
     /** Tokenize, run ONNX, mean-pool, normalize. */
     async runInference(text) {
+        // Use ONNX_RUNTIME_PATH (already resolved by ensureLoaded)
+        const onnxPath = process.env.ONNX_RUNTIME_PATH;
         // @ts-ignore — onnxruntime-node is an optional dependency
-        const ort = process.env.ONNX_RUNTIME_PATH
-            ? require(process.env.ONNX_RUNTIME_PATH)
+        const ort = onnxPath
+            ? require(onnxPath)
             : await import('onnxruntime-node');
         const encoded = this.tokenizer.encode(text, MAX_SEQ_LENGTH);
         const feeds = {

@@ -13,7 +13,7 @@ const path = require("path");
 
 const SERVER_PATH = path.join(__dirname, "index.js");
 const VIEWER_DIR = path.join(__dirname, "viewer");
-const READY_TIMEOUT_MS = 10000;
+const READY_TIMEOUT_MS = 30000;
 const CONTENT_TYPE_JSON = "application/json";
 const MAX_BODY_SIZE = 4 * 1024 * 1024;
 
@@ -136,18 +136,27 @@ async function handleViewerApi(url, res) {
   const apiPath = url.pathname.replace("/api/", "");
   try {
     if (apiPath === "memory/status" || apiPath === "kb/status") {
-      try { sendJson(res, JSON.parse(await callTool("mem_admin", { action: "status" }))); }
-      catch { sendJson(res, { totalEntries: 0, totalEdges: 0, totalVectors: 0, tierBreakdown: {} }); }
+      try {
+        const raw = await callTool("mem_admin", { action: "status" });
+        // mem_admin status returns plain text — parse it
+        const totalEntries = parseInt((raw.match(/Total entries:\s*(\d+)/) || [])[1] || "0", 10);
+        const totalEdges = parseInt((raw.match(/Total edges:\s*(\d+)/) || [])[1] || "0", 10);
+        const totalVectors = parseInt((raw.match(/Total vectors:\s*(\d+)/) || [])[1] || "0", 10);
+        const tierBreakdown = {};
+        const tierMatches = raw.matchAll(/(\w+):\s*(\d+)\s*entries/g);
+        for (const m of tierMatches) tierBreakdown[m[1]] = { entry_count: parseInt(m[2], 10) };
+        sendJson(res, { totalEntries, totalEdges, totalVectors, tierBreakdown });
+      } catch { sendJson(res, { totalEntries: 0, totalEdges: 0, totalVectors: 0, tierBreakdown: {} }); }
     } else if (apiPath === "memory/graph/data") {
       // Graph data: single call returns both nodes and edges
       const limit = parseInt(url.searchParams.get("limit") || "15000", 10);
       try {
         const raw = await callTool("mem_graph", { action: "graph_data", limit });
         const data = JSON.parse(raw);
-        sendJson(res, { nodes: data.nodes || [], edges: data.edges || [], total_entries: (data.nodes || []).length, total_edges: (data.edges || []).length });
+        sendJson(res, { nodes: data.nodes || [], edges: data.edges || [], totalNodes: data.totalNodes || (data.nodes || []).length, totalEdges: data.totalEdges || (data.edges || []).length });
       } catch (err) {
         // Fallback: return empty graph
-        sendJson(res, { nodes: [], edges: [], total_entries: 0, total_edges: 0, error: err.message });
+        sendJson(res, { nodes: [], edges: [], totalNodes: 0, totalEdges: 0, error: err.message });
       }
     } else if (apiPath === "kb/dashboard") {
       try { sendJson(res, JSON.parse(await callTool("mem_admin", { action: "dashboard" }))); }
@@ -232,6 +241,40 @@ async function callTool(name, args) {
   return text;
 }
 
+// === Ingest File API (POST /api/memory/ingest-file) ===
+
+async function handleIngestFileApi(req, res) {
+  let body;
+  try { body = await readBody(req); } catch (e) {
+    res.writeHead(400, { "Content-Type": CONTENT_TYPE_JSON });
+    res.end(JSON.stringify({ error: e.message }));
+    return;
+  }
+  let parsed;
+  try { parsed = JSON.parse(body); } catch {
+    res.writeHead(400, { "Content-Type": CONTENT_TYPE_JSON });
+    res.end(JSON.stringify({ error: "Invalid JSON" }));
+    return;
+  }
+  const files = parsed.files || [parsed];
+  const results = [];
+  for (const f of files) {
+    try {
+      const raw = await callTool("mem_ingest_file", {
+        file_path: f.file_path,
+        type: f.type || "CONTEXT",
+        format: f.format || "markdown"
+      });
+      results.push({ file_path: f.file_path, result: raw, skipped: false });
+    } catch (err) {
+      results.push({ file_path: f.file_path, error: err.message, skipped: true });
+    }
+  }
+  const ingested = results.filter(r => !r.skipped).length;
+  const skipped = results.filter(r => r.skipped).length;
+  sendJson(res, { ingested, skipped, total: files.length, results });
+}
+
 // === Router ===
 
 function requestHandler(req, res) {
@@ -247,6 +290,11 @@ function requestHandler(req, res) {
   if (p === "/mcp") { handleMcp(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } }); return; }
   // Health
   if (p === "/health") { res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON }); res.end('{"status":"ok"}'); return; }
+  // Viewer API — POST ingest-file
+  if (p === "/api/memory/ingest-file" && req.method === "POST") {
+    handleIngestFileApi(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } });
+    return;
+  }
   // Viewer API
   if (p.startsWith("/api/")) { handleViewerApi(url, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } }); return; }
   // Viewer pages

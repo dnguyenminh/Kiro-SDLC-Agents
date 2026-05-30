@@ -6,7 +6,7 @@ import kotlinx.serialization.json.*
 
 object ToolDefinitions {
     val ALL: List<JsonObject> by lazy {
-        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport(), drawioAutoLayout()) +
+        listOf(codeSearch(), codeSymbols(), codeContext(), codeModules(), codeIndexStatus(), streamWriteFile(), codeKbExport(), drawioAutoLayout(), drawioExportPng()) +
             GraphToolDefinitions.ALL +
             ContextToolDefinitions.ALL +
             SimilarityToolDefinitions.ALL
@@ -116,6 +116,18 @@ object ToolDefinitions {
                 putJsonObject("direction") { put("type", "string"); put("description", "Layout direction: DOWN|RIGHT|LEFT|UP (default: DOWN)") }
                 putJsonObject("export_png") { put("type", "boolean"); put("description", "Also export PNG after layout (default: false)") }
                 putJsonObject("force") { put("type", "boolean"); put("description", "Force re-layout even if diagram has no overlaps (default: false)") }
+            }
+            putJsonArray("required") { add("file_path") }
+        }
+    }
+
+    private fun drawioExportPng() = buildJsonObject {
+        put("name", "drawio_export_png")
+        put("description", "Export a .drawio diagram file to PNG image. Returns the relative path to the exported PNG file.")
+        putJsonObject("inputSchema") {
+            put("type", "object")
+            putJsonObject("properties") {
+                putJsonObject("file_path") { put("type", "string"); put("description", "Relative path to .drawio file (relative to workspace root)") }
             }
             putJsonArray("required") { add("file_path") }
         }

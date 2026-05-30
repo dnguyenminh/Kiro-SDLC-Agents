@@ -133,7 +133,7 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     }
 
     // Verify bundle exists
-    const entryPath = path.join(this.extensionPath, "mcp-server", "http-entry.js");
+    const entryPath = path.join(this.extensionPath, "mcp-server-bundle", "http-entry.js");
     if (!fs.existsSync(entryPath)) {
       this.setStatus("stopped");
       throw new McpBundleMissingError();

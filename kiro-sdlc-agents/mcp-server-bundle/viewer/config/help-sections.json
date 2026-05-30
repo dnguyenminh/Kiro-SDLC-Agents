@@ -1,0 +1,52 @@
+{
+  "sections": [
+    {
+      "id": "graph",
+      "title": "Knowledge Graph 3D",
+      "icon": "🧠",
+      "description": "Trực quan hóa entries và relationships"
+    },
+    {
+      "id": "sessions",
+      "title": "Sessions",
+      "icon": "📋",
+      "description": "Lịch sử phiên làm việc của agents"
+    },
+    {
+      "id": "browser",
+      "title": "Entry Browser",
+      "icon": "🔍",
+      "description": "Duyệt và tìm kiếm entries"
+    },
+    {
+      "id": "stream",
+      "title": "Live Stream",
+      "icon": "⚡",
+      "description": "Events real-time"
+    },
+    {
+      "id": "dashboard",
+      "title": "Health Dashboard",
+      "icon": "📊",
+      "description": "Tổng quan sức khỏe KB"
+    },
+    {
+      "id": "tags",
+      "title": "Tag Management",
+      "icon": "🏷️",
+      "description": "Quản lý taxonomy tags"
+    },
+    {
+      "id": "quality",
+      "title": "Quality Scores",
+      "icon": "📈",
+      "description": "Theo dõi chất lượng entries"
+    },
+    {
+      "id": "analytics",
+      "title": "Search Analytics",
+      "icon": "🔎",
+      "description": "Phân tích search patterns"
+    }
+  ]
+}

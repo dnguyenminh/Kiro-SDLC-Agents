@@ -1,0 +1,76 @@
+<mxfile host="65bd71144e">
+  <diagram id="architecture-ksa188" name="Architecture Overview">
+    <mxGraphModel dx="1000" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-188 — Architecture Overview&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="10" width="320" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="sys_boundary" value="GitHub Actions CI/CD Pipeline" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="1020" height="820" as="geometry"/>
+        </mxCell>
+        <mxCell id="cron_trigger" value="Cron Schedule&#10;(Monday 00:00 UTC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="manual_trigger" value="Manual Trigger&#10;(workflow_dispatch)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="440" y="100" width="180" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="wf_scan" value="scheduled-prebuild-scan.yml&#10;&#10;• Fetch nodejs.org API&#10;• Detect new LTS versions&#10;• Trigger build workflows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="220" width="220" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="wf_build_native" value="build-native.yml&#10;&#10;• Check existing binary&#10;• Build better-sqlite3&#10;• Verify architecture&#10;• Upload to release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="220" width="200" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="wf_build_onnx" value="build-onnxruntime.yml&#10;&#10;• Check existing binary&#10;• Build onnxruntime-node&#10;• Verify architecture&#10;• Upload to release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="600" y="220" width="200" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_releases" value="GitHub&#10;Releases" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="410" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="wf_auto_release" value="auto-release.yml&#10;&#10;• Check new binaries&#10;• Bump patch version&#10;• Commit + tag + push" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="440" y="540" width="200" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="wf_publish" value="publish.yml (existing)&#10;&#10;• Build extension VSIX&#10;• Publish to Marketplace&#10;• Publish to Open VSX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="440" y="710" width="200" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_nodejs" value="nodejs.org&#10;Release API" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="410" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_marketplace" value="VS Code Marketplace&#10;+ Open VSX" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="740" y="740" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cron_scan" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="cron_trigger" target="wf_scan" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_manual_native" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="manual_trigger" target="wf_build_native" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_scan_native" value="triggers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" source="wf_scan" target="wf_build_native" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_scan_onnx" value="triggers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" source="wf_scan" target="wf_build_onnx" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_native_releases" value="upload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="wf_build_native" target="ext_releases" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_onnx_releases" value="upload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="wf_build_onnx" target="ext_releases" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_releases_auto" value="new binaries?" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" source="ext_releases" target="wf_auto_release" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_auto_publish" value="tag push v*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="wf_auto_release" target="wf_publish" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_scan_nodejs" value="GET /dist/index.json" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="wf_scan" target="ext_nodejs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_publish_market" value="publish VSIX" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="wf_publish" target="ext_marketplace" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

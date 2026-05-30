@@ -32,7 +32,7 @@ let configWatcher: ConfigWatcher | undefined;
 let nativeAddonManager: NativeAddonManager | undefined;
 let onnxAddonManager: OnnxAddonManager | undefined;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
     context.subscriptions.push(statusBar);
 
@@ -92,9 +92,11 @@ export function activate(context: vscode.ExtensionContext) {
         const config = vscode.workspace.getConfiguration("kiroSdlc");
         const serverEnabled = config.get<boolean>("enableMcpServer", true);
         if (serverEnabled) {
-            mcpManager.spawn().catch((err) => {
+            try {
+                await mcpManager.spawn();
+            } catch (err) {
                 outputChannel.appendLine(`[WARN] Auto-spawn failed: ${(err as Error).message}`);
-            });
+            }
         } else {
             outputChannel.appendLine("[MCP] Server disabled by setting kiroSdlc.enableMcpServer");
         }

@@ -188,10 +188,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run copy-resources && npm run gen-checksums && npm run esbuild-production",
+    "vscode:prepublish": "npm run copy-resources && npm run gen-checksums && npm run esbuild-production && npm run esbuild-mcp",
     "compile": "tsc -p ./",
     "esbuild": "node esbuild.js",
     "esbuild-production": "node esbuild.js --production",
+    "esbuild-mcp": "node esbuild-mcp.js --production",
     "esbuild-watch": "node esbuild.js --watch",
     "watch": "tsc -watch -p ./",
     "copy-resources": "node scripts/copy-resources.js",

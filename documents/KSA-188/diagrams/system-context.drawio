@@ -1,0 +1,58 @@
+<mxfile host="65bd71144e">
+  <diagram id="system-context-ksa188" name="System Context">
+    <mxGraphModel dx="1200" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-188 — System Context Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="10" width="320" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_ci" value="CI Maintainer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="230" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="system" value="Incremental Prebuilt&#10;Binary Pipeline&#10;&#10;(GitHub Actions Workflows)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="220" width="240" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_user" value="Extension User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="230" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_releases" value="GitHub&#10;Releases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="260" y="60" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_nodejs" value="Node.js&#10;Release API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="260" y="420" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_git" value="Git Repository&#10;(GitHub)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="490" y="420" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_marketplace" value="VS Code&#10;Marketplace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="60" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext_openvsx" value="Open VSX&#10;Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="420" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_ci_sys" value="trigger / force rebuild" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="actor_ci" target="system" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_user" value="auto-publish new version" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="actor_user" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_releases" value="check / upload binaries" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="ext_releases" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_nodejs" value="fetch versions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="ext_nodejs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_git" value="commit + tag + push" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="ext_git" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_marketplace" value="publish VSIX" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="ext_marketplace" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sys_openvsx" value="publish VSIX" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="system" target="ext_openvsx" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
