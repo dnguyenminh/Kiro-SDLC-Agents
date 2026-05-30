@@ -56,15 +56,5 @@ jobs:
           node-version: '20'
       - run: npm ci
         working-directory: kiro-sdlc-agents
-      - run: npm ci
-        working-directory: mcp-code-intelligence-nodejs
-      - run: npm run build
-        working-directory: mcp-code-intelligence-nodejs
-      - name: Copy MCP server dist to extension
-        run: |
-          cp -r mcp-code-intelligence-nodejs/dist/* kiro-sdlc-agents/mcp-server/
-          cp -r mcp-code-intelligence-nodejs/node_modules kiro-sdlc-agents/mcp-server/node_modules
-      - run: npm run esbuild-production
-        working-directory: kiro-sdlc-agents
-      - run: npm run esbuild-mcp
+      - run: npm run compile
         working-directory: kiro-sdlc-agents
