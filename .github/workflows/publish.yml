@@ -152,8 +152,7 @@ jobs:
           npm run build
       - name: Copy MCP server dist to extension
         run: |
-          rm -rf kiro-sdlc-agents/mcp-server
-          cp -r mcp-code-intelligence-nodejs/dist kiro-sdlc-agents/mcp-server
+          cp -r mcp-code-intelligence-nodejs/dist/* kiro-sdlc-agents/mcp-server/
           cp -r mcp-code-intelligence-nodejs/node_modules kiro-sdlc-agents/mcp-server/node_modules
         working-directory: .
       - run: npm run copy-resources
