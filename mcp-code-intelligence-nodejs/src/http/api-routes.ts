@@ -97,13 +97,17 @@ function handleGraphData(
 ): void {
   if (!engine || !graph) { sendError(res, 503, 'Not initialized'); return; }
   const stats = engine.getStats();
+  const lod = url.searchParams.get('lod') === 'true'; // KSA-143: LOD support
   if (stats.totalEdges === 0) {
     const entries = engine.knowledge.findByTier('WORKING', 50);
     const nodes = entries.map(e => toGraphNode(e));
-    sendJson(res, { nodes, edges: [] });
+    const result: Record<string, unknown> = { nodes, edges: [] };
+    if (lod) { result.totalNodes = stats.totalEntries ?? nodes.length; result.totalEdges = 0; }
+    sendJson(res, result);
     return;
   }
-  const limit = parseInt(url.searchParams.get('limit') ?? '100', 10);
+  const defaultLimit = lod ? 5000 : 100; // KSA-143: higher limit for LOD
+  const limit = Math.min(parseInt(url.searchParams.get('limit') ?? String(defaultLimit), 10), 10000);
   const edges = engine.graphRepo.findAll(limit);
   const nodeIds = [...new Set(edges.flatMap(e => [e.source_id, e.target_id]))];
   const nodes = nodeIds
@@ -111,7 +115,9 @@ function handleGraphData(
     .filter((e): e is KnowledgeEntry => e !== undefined)
     .map(e => toGraphNode(e));
   const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
-  sendJson(res, { nodes, edges: edgeList });
+  const result: Record<string, unknown> = { nodes, edges: edgeList };
+  if (lod) { result.totalNodes = stats.totalEntries ?? nodes.length; result.totalEdges = stats.totalEdges ?? edgeList.length; }
+  sendJson(res, result);
 }
 
 function handleSessions(url: URL, res: http.ServerResponse, engine: MemoryEngine | null): void {
