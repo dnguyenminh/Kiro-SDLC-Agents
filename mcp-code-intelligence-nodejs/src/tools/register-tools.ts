@@ -16,6 +16,7 @@ import { registerCodeIndexStatus } from './code-index-status.js';
 import { registerStreamWriteFile } from './stream-write-file.js';
 import { registerCodeKbExport } from './code-kb-export.js';
 import { handleDrawioLayout, DRAWIO_TOOL_DEFINITION } from './drawio-tool.js';
+import { handleDrawioExportPng, DRAWIO_EXPORT_PNG_DEFINITION, isExportPngAvailable } from './drawio-export-png.js';
 import { CALL_GRAPH_TOOL_DEFINITIONS, handleCodeCallers, handleCodeCallees } from './call-graph-tools.js';
 import { DEPENDENCY_TOOL_DEFINITIONS, handleCodeDependencies } from './dependency-tools.js';
 import { IMPACT_TOOL_DEFINITIONS, handleCodeImpact } from './impact-tools.js';
@@ -27,6 +28,7 @@ import { COMPLEXITY_TOOL_DEFINITION, handleComplexityTool } from '../analyzers/c
 import { ENTRY_POINT_TOOL_DEFINITION, handleEntryPointTool } from '../analyzers/entry-points/EntryPointTool.js';
 import { GRAPH_ANALYSIS_TOOL_DEFINITIONS, handleGraphAnalysisTool } from '../analyzers/graph-analysis/GraphAnalysisTools.js';
 import { AI_CONTEXT_TOOL_DEFINITIONS, handleGetAIContext, handleGetEditContext, handleGetCuratedContext } from './ai-context-tools.js';
+import { SIMILARITY_TOOL_DEFINITIONS, handleSimilarityTool } from '../analyzers/similarity/SimilarityTools.js';
 
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 export function registerTools(
@@ -51,6 +53,10 @@ export function getToolDefinitions(): object[] {
   const defs: object[] = [...TOOL_DEFINITIONS, ...MEMORY_TOOL_DEFINITIONS];
   if (orchestrationEngine) {
     defs.push(...orchestrationEngine.metaToolDispatcher.getDefinitions());
+  }
+  // Conditionally include drawio_export_png only if a renderer is available
+  if (isExportPngAvailable(orchestrationEngine)) {
+    defs.push(DRAWIO_EXPORT_PNG_DEFINITION);
   }
   return defs;
 }
@@ -147,6 +153,8 @@ async function dispatchByName(
       return handleCodeKbExport(args, queryLayer, workspace);
     case 'drawio_auto_layout':
       return handleDrawioLayout(args, workspace);
+    case 'drawio_export_png':
+      return handleDrawioExportPng(args, workspace, orchestrationEngine);
     case 'code_callers':
       return handleCodeCallers(args, dbManager.getDb());
     case 'code_callees':
@@ -175,6 +183,13 @@ async function dispatchByName(
       return handleGetEditContext(args, dbManager.getDb(), workspace);
     case 'get_curated_context':
       return handleGetCuratedContext(args, dbManager.getDb(), workspace, dbManager);
+    case 'find_duplicates':
+    case 'find_dead_code':
+    case 'git_search':
+    case 'git_index': {
+      const simResult = handleSimilarityTool(name, args, dbManager.getDb(), workspace);
+      return simResult ?? `Unknown tool: ${name}`;
+    }
     default:
       return `Unknown tool: ${name}`;
   }
@@ -280,9 +295,11 @@ async function handleCodeIndexStatus(
 ): Promise<string> {
   if (args.reindex) await indexer.runFullIndex();
   const status = ql.getIndexStatus();
+  const tsStats = indexer.getTreeSitterStats();
   const lines = [
     'Code Intelligence Index Status\n',
     `State: ${indexer.isRunning() ? 'Indexing...' : 'Idle'}`,
+    `Parser: ${tsStats.ready ? `tree-sitter (${tsStats.languages.join(', ')})` : 'regex fallback'}`,
     `Files: ${status.totalFiles}`,
     `Symbols: ${status.totalSymbols}`,
     `Modules: ${status.totalModules}`,
@@ -424,4 +441,5 @@ const TOOL_DEFINITIONS = [
   ENTRY_POINT_TOOL_DEFINITION,
   ...GRAPH_ANALYSIS_TOOL_DEFINITIONS,
   ...AI_CONTEXT_TOOL_DEFINITIONS,
+  ...SIMILARITY_TOOL_DEFINITIONS,
 ];

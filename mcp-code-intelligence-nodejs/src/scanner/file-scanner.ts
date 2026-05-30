@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { AppConfig } from '../config.js';
+import { createIgnoreParser, IgnoreParser } from '../parsers/ignore/index.js';
 
 export interface ScannedFile {
   absolutePath: string;
@@ -43,8 +44,8 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
 /** Scan workspace and return list of indexable files. */
 export function scanWorkspace(config: AppConfig): ScannedFile[] {
   const results: ScannedFile[] = [];
-  const gitignorePatterns = loadGitignore(config.workspace);
-  traverseDirectory(config.workspace, config, gitignorePatterns, results);
+  const ignoreParser = createIgnoreParser(config.workspace);
+  traverseDirectory(config.workspace, config, ignoreParser, results);
   return results;
 }
 
@@ -87,7 +88,7 @@ function hashContent(content: string): string {
 function traverseDirectory(
   dir: string,
   config: AppConfig,
-  gitignore: string[],
+  ignoreParser: IgnoreParser,
   results: ScannedFile[]
 ): void {
   const entries = safeReadDir(dir);
@@ -95,10 +96,10 @@ function traverseDirectory(
     const fullPath = path.join(dir, entry.name);
     const relPath = path.relative(config.workspace, fullPath).replace(/\\/g, '/');
 
-    if (shouldExclude(relPath, entry.name, config.excludePatterns, gitignore)) continue;
+    if (shouldExclude(relPath, entry.name, config.excludePatterns, ignoreParser)) continue;
 
     if (entry.isDirectory()) {
-      traverseDirectory(fullPath, config, gitignore, results);
+      traverseDirectory(fullPath, config, ignoreParser, results);
     } else if (entry.isFile()) {
       const file = processFile(fullPath, relPath, config);
       if (file) results.push(file);
@@ -134,37 +135,19 @@ function processFile(fullPath: string, relPath: string, config: AppConfig): Scan
 }
 
 function shouldExclude(
-  relPath: string, name: string, excludes: string[], gitignore: string[]
+  relPath: string, name: string, excludes: string[], ignoreParser: IgnoreParser
 ): boolean {
   if (name.startsWith('.') && name !== '.') return true;
   for (const pattern of excludes) {
     if (relPath.includes(pattern) || name === pattern) return true;
   }
-  for (const pattern of gitignore) {
-    if (relPath.startsWith(pattern) || relPath.includes('/' + pattern)) return true;
-  }
-  return false;
+  return ignoreParser.shouldIgnore(relPath);
 }
 
 function isBinary(content: string): boolean {
   const sample = content.slice(0, 1024);
   const nullCount = (sample.match(/\0/g) || []).length;
   return nullCount > 2;
-}
-
-function loadGitignore(workspace: string): string[] {
-  const gitignorePath = path.join(workspace, '.gitignore');
-  try {
-    if (!fs.existsSync(gitignorePath)) return [];
-    const content = fs.readFileSync(gitignorePath, 'utf-8');
-    return content
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('#'))
-      .map(l => l.replace(/\/$/, ''));
-  } catch {
-    return [];
-  }
 }
 
 function safeReadDir(dir: string): fs.Dirent[] {

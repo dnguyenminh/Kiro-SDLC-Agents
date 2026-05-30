@@ -56,7 +56,10 @@ export class TreeSitterIndexer {
     }
 
     // Atomic database update
-    this.storeResults(relativePath, result);
+    const symbolIds = this.storeResults(relativePath, result);
+
+    // Extract and store function bodies for embedding-based similarity (KSA-169)
+    this.extractAndStoreBodies(relativePath, source, result, symbolIds);
 
     return {
       filePath: relativePath,
@@ -79,7 +82,8 @@ export class TreeSitterIndexer {
   }
 
   /** Store parse results in the database atomically. */
-  private storeResults(filePath: string, result: ParseResult): void {
+  private storeResults(filePath: string, result: ParseResult): Map<string, number> {
+    const symbolIds = new Map<string, number>();
     const transaction = this.db.transaction(() => {
       // Get file_id
       const fileRow = this.db.prepare(
@@ -100,7 +104,6 @@ export class TreeSitterIndexer {
       }
 
       // Insert new symbols
-      const symbolIds = new Map<string, number>();
       const insertSym = this.db.prepare(`
         INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line,
           parent_symbol, visibility, doc_comment)
@@ -144,6 +147,7 @@ export class TreeSitterIndexer {
     });
 
     transaction();
+    return symbolIds;
   }
 
   private regexFallback(
@@ -154,6 +158,11 @@ export class TreeSitterIndexer {
       const ext = path.extname(filePath).toLowerCase();
       const language = this.extToLanguage(ext);
       const symbols = extractSymbols(source, language);
+
+      // Store regex-extracted symbols in the database
+      if (symbols.length > 0) {
+        this.storeRegexResults(relativePath, symbols);
+      }
 
       return {
         filePath: relativePath,
@@ -175,6 +184,38 @@ export class TreeSitterIndexer {
     }
   }
 
+  /** Store regex-extracted symbols in the database. */
+  private storeRegexResults(filePath: string, symbols: ReturnType<typeof extractSymbols>): void {
+    const transaction = this.db.transaction(() => {
+      const fileRow = this.db.prepare(
+        'SELECT id FROM files WHERE relative_path = ?'
+      ).get(filePath) as { id: number } | undefined;
+
+      if (!fileRow) return;
+      const fileId = fileRow.id;
+
+      // Delete old symbols
+      this.db.prepare('DELETE FROM symbols WHERE file_id = ?').run(fileId);
+
+      // Insert new symbols
+      const insertSym = this.db.prepare(`
+        INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line,
+          parent_symbol, visibility, doc_comment)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const sym of symbols) {
+        insertSym.run(
+          fileId, sym.name, sym.kind, sym.signature,
+          sym.startLine, sym.endLine, sym.parentSymbol,
+          sym.visibility, sym.docComment
+        );
+      }
+    });
+
+    transaction();
+  }
+
   private extToLanguage(ext: string): string {
     const map: Record<string, string> = {
       '.ts': 'typescript', '.tsx': 'typescript',
@@ -183,5 +224,39 @@ export class TreeSitterIndexer {
       '.java': 'java', '.go': 'go', '.rs': 'rust',
     };
     return map[ext] ?? 'generic';
+  }
+
+  /** Extract and store function body text for embedding-based similarity (KSA-169). */
+  private extractAndStoreBodies(
+    filePath: string, source: string, result: ParseResult, symbolIds: Map<string, number>
+  ): void {
+    try {
+      const lines = source.split('\n');
+      const functionKinds = new Set(['function', 'method', 'arrow_function', 'generator', 'function_declaration']);
+      const minBodyLines = 3;
+
+      const insertBody = this.db.prepare(`
+        INSERT OR REPLACE INTO body_embeddings (symbol_id, chunk_index, embedding, token_count)
+        VALUES (?, ?, ?, ?)
+      `);
+
+      for (const sym of result.symbols) {
+        if (!functionKinds.has(sym.kind)) continue;
+        const symbolId = symbolIds.get(sym.name);
+        if (!symbolId) continue;
+
+        const bodyLines = lines.slice(sym.startLine - 1, sym.endLine);
+        if (bodyLines.length < minBodyLines) continue;
+
+        const bodyText = bodyLines.join('\n');
+        const tokenCount = bodyText.split(/\s+/).filter(Boolean).length;
+
+        // Store body text as raw bytes (embedding generated later by embedding service)
+        const textBuffer = Buffer.from(bodyText, 'utf-8');
+        insertBody.run(symbolId, 0, textBuffer, tokenCount);
+      }
+    } catch {
+      // Body extraction is optional — don't fail indexing
+    }
   }
 }
