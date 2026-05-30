@@ -9,236 +9,397 @@
 | Field | Value |
 |-------|-------|
 | Jira Ticket | KSA-143 |
-| Author | QA Agent |
-| Version | 1.0 |
-| Date | 2026-05-25 |
-| Related STP | STP-v1-KSA-143.docx |
+| Version | 2.0 |
+| Date | 2026-05-29 |
+| Related STP | STP-v2-KSA-143.docx |
 
 ---
 
-## 1. Property-Based Tests (PBT)
+## 1. PBT (Property-Based Testing)
 
-### TC-PBT-01: Clustering Determinism
-
-| Field | Value |
-|-------|-------|
-| ID | TC-PBT-01 |
-| Level | PBT |
-| Priority | Critical |
-| Automation | Yes |
-| Property | For any graph G, cluster(G) always produces the same result |
-
-**Generator:** Random graphs with 10-1000 nodes, 20-5000 edges, 3-10 types
-**Property:** `cluster(G) === cluster(G)` (deep equality)
-**Runs:** 100
-
-### TC-PBT-02: Budget Invariant
+### PBT-01: All Nodes Assigned to Exactly 1 Cluster
 
 | Field | Value |
 |-------|-------|
-| ID | TC-PBT-02 |
-| Level | PBT |
-| Priority | Critical |
-| Automation | Yes |
-| Property | At any point, visibleNodeCount <= maxVisibleNodes |
+| Property | For any graph with > 100 nodes, every non-isolated node belongs to exactly 1 cluster |
+| Generator | Random graphs: 101-5000 nodes, 1-3x edges |
+| Runs | 1000 |
+| Framework | fast-check |
+| Assertion | `clusters.flatMap(c => c.childNodeIds).length === nonIsolatedNodes.length` |
+| No duplicates | `new Set(allChildIds).size === allChildIds.length` |
 
-**Generator:** Random camera positions, random expand/collapse sequences
-**Property:** After each operation, `getVisibleNodeCount() <= config.maxVisibleNodes`
-**Runs:** 200
-
-### TC-PBT-03: Cluster Size Bounds
+### PBT-02: Cluster Size Bounds
 
 | Field | Value |
 |-------|-------|
-| ID | TC-PBT-03 |
-| Level | PBT |
-| Priority | High |
-| Automation | Yes |
-| Property | All clusters have size between minClusterSize and maxClusterSize |
+| Property | Every cluster has 5 <= size <= 50 |
+| Generator | Random graphs 200-5000 nodes |
+| Assertion | `clusters.every(c => c.childNodeIds.length >= 5 && c.childNodeIds.length <= 50)` |
 
-**Generator:** Random graphs with 100-5000 nodes
-**Property:** `clusters.every(c => c.childNodeIds.length >= min && c.childNodeIds.length <= max)`
-**Exception:** Isolated nodes (0 edges) are excluded
+### PBT-03: Isolated Nodes Never Clustered
+
+| Field | Value |
+|-------|-------|
+| Property | Nodes with 0 edges are not in any cluster |
+| Generator | Graphs with 10-50% isolated nodes |
+| Assertion | `isolatedIds.every(id => !clusterNodeIds.includes(id))` |
+
+### PBT-04: Budget Never Exceeded
+
+| Field | Value |
+|-------|-------|
+| Property | visibleNodeCount <= maxVisibleNodes at all times |
+| Generator | Random camera position sequences (100 steps) |
+| Assertion | After each step: `manager.getVisibleNodeCount() <= config.maxVisibleNodes` |
+
+### PBT-05: Hysteresis Prevents Oscillation
+
+| Field | Value |
+|-------|-------|
+| Property | Camera at distance between expand and collapse thresholds causes no state change |
+| Generator | Distances in range [expandThreshold, collapseThreshold] |
+| Assertion | Cluster state unchanged after 100 ticks |
+
+### PBT-06: Deterministic Clustering
+
+| Field | Value |
+|-------|-------|
+| Property | Same input always produces same output |
+| Generator | Fixed random seed graphs |
+| Assertion | `JSON.stringify(run1) === JSON.stringify(run2)` for 10 runs |
 
 ---
 
 ## 2. Unit Tests (UT)
 
-### 2.1 ClusteringAlgorithm
+### UT-01: Empty Graph Returns 0 Clusters
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-01 | Cluster connected graph | 20 nodes, 3 dense groups | 3 clusters | Critical |
-| TC-UT-02 | Handle empty graph | 0 nodes, 0 edges | Empty hierarchy, no error | High |
-| TC-UT-03 | Handle single node | 1 node, 0 edges | 1 isolated node, 0 clusters | High |
-| TC-UT-04 | Respect max cluster size | 100 nodes all connected | Multiple clusters, each <= 50 | Critical |
-| TC-UT-05 | Respect min cluster size | 10 nodes, 2 groups of 3 + 4 isolated | Merge small groups or keep isolated | High |
-| TC-UT-06 | Type affinity | 20 nodes (10 type A, 10 type B), mixed edges | Type A nodes tend to cluster together | Medium |
+| Field | Value |
+|-------|-------|
+| Module | lod-clustering.js |
+| Input | nodes=[], edges=[] |
+| Expected | clusters.length === 0 |
+| Setup | `const c = new LODClustering(); const result = c.compute([], []);` |
 
-### 2.2 DistanceChecker
+### UT-02: Single Node Returns 0 Clusters
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-07 | Trigger expand | Camera at distance 40, threshold 50 | EXPAND event emitted | Critical |
-| TC-UT-08 | No trigger in hysteresis zone | Camera at distance 60, expand=50, collapse=70 | No event | Critical |
-| TC-UT-09 | Trigger collapse | Camera at distance 80, collapse threshold 70 | COLLAPSE event emitted | Critical |
-| TC-UT-10 | Multiple clusters | 3 clusters at different distances | Correct events for each | High |
+| Field | Value |
+|-------|-------|
+| Module | lod-clustering.js |
+| Input | nodes=[{id:'n1'}], edges=[] |
+| Expected | clusters.length === 0 (isolated, not clustered) |
 
-### 2.3 BudgetManager
+### UT-03: 5 Connected Nodes = 1 Cluster
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-12 | Allow expand within budget | Current 60, cluster has 30 children, max 100 | canExpand = true | Critical |
-| TC-UT-13 | Deny expand over budget | Current 80, cluster has 30 children, max 100 | canExpand = false | Critical |
-| TC-UT-14 | Get farthest expanded | 3 expanded clusters at distances 30, 50, 70 | Returns cluster at 70 | High |
+| Field | Value |
+|-------|-------|
+| Module | lod-clustering.js |
+| Input | 5 nodes fully connected (10 edges) |
+| Expected | clusters.length === 1, cluster.childNodeIds.length === 5 |
 
-### 2.4 AnimationController
+### UT-04: Two Communities Detected
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-15 | Expand animation completes | Cluster with 10 children | All children at orbital positions after 400ms | High |
-| TC-UT-16 | Collapse animation completes | Expanded cluster | All children at center, removed after 400ms | High |
-| TC-UT-17 | Cancel animation | Start expand, cancel at 200ms | Snap to nearest stable state | Medium |
+| Field | Value |
+|-------|-------|
+| Module | lod-clustering.js |
+| Input | 100 nodes, 2 dense groups with 1 bridge edge |
+| Expected | clusters.length === 2, each ~50 nodes |
 
-### 2.5 OrbitalLayout
+### UT-05: Max Cluster Size Enforced
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-18 | Single ring (<=20 nodes) | 10 nodes, center (0,0,0), radius 5 | 10 positions evenly spaced on circle | High |
-| TC-UT-19 | Double ring (>20 nodes) | 30 nodes | 10 inner + 20 outer positions | High |
-| TC-UT-20 | No overlap | Any count | Min distance between positions > node radius | Medium |
+| Field | Value |
+|-------|-------|
+| Module | lod-clustering.js |
+| Input | 200 nodes in 1 dense community |
+| Expected | Multiple clusters, each <= 50 nodes |
 
-### 2.6 SuperNodeFactory
+### UT-06: Expand Changes State
 
-| ID | Test Case | Input | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| TC-UT-11 | Badge shows correct count | Cluster with 42 children | Badge text = "42" | High |
-| TC-UT-21 | Size scales with count | Clusters of 5, 20, 50 | Radius increases with count | Medium |
-| TC-UT-22 | Color matches dominant type | Cluster dominant type = "class" | Color = class color | Medium |
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | Manager with 1 collapsed cluster |
+| Action | `manager.expandCluster('c1')` |
+| Expected | cluster.state === 'EXPANDING' |
+
+### UT-07: Budget Rejects Expand
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | visibleNodes = 95, cluster has 10 children |
+| Action | `manager.expandCluster('c1')` |
+| Expected | Returns false, state unchanged |
+
+### UT-08: Budget Overflow Collapses Farthest
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | 2 expanded clusters, budget at limit |
+| Action | Attempt expand 3rd cluster |
+| Expected | Farthest cluster collapsed first, then expand succeeds |
+
+### UT-09: Collapse Changes State
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | 1 expanded cluster |
+| Action | `manager.collapseCluster('c1')` |
+| Expected | cluster.state === 'COLLAPSING' |
+
+### UT-10: Interaction Lock
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | Expanded cluster with interacting=true |
+| Action | Camera moves beyond collapseThreshold |
+| Expected | Cluster stays EXPANDED |
+
+### UT-11: Dispose Cancels rAF
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Action | `manager.dispose()` |
+| Expected | _rafId is null, no more ticks |
+
+### UT-12: Visible Count Accurate
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | 3 clusters: 1 expanded (15 children), 2 collapsed |
+| Expected | getVisibleNodeCount() === 15 + 2 (super nodes) |
+
+### UT-13: setConfig Updates Thresholds
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Action | `manager.setConfig({ expandThreshold: 30 })` |
+| Expected | _config.expandThreshold === 30, collapseThreshold === 42 |
+
+### UT-14: Skip LOD Below 100 Nodes
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Input | 50 nodes |
+| Expected | initialize() returns early, no clusters created |
+
+### UT-15: Expand Animation Duration
+
+| Field | Value |
+|-------|-------|
+| Module | lod-animation.js |
+| Action | expand(cluster, onComplete) |
+| Expected | onComplete called after 400ms (+-50ms tolerance) |
+
+### UT-16: Collapse Animation Duration
+
+| Field | Value |
+|-------|-------|
+| Module | lod-animation.js |
+| Action | collapse(cluster, onComplete) |
+| Expected | onComplete called after 400ms (+-50ms tolerance) |
+
+### UT-17: Cancel Mid-Animation
+
+| Field | Value |
+|-------|-------|
+| Module | lod-animation.js |
+| Action | expand(cluster), then cancel(clusterId) at 200ms |
+| Expected | Animation stops, onComplete not called |
+
+### UT-18: Hysteresis Gap
+
+| Field | Value |
+|-------|-------|
+| Module | lod-manager.js |
+| Setup | Expanded cluster, camera at expandThreshold + 5 |
+| Expected | No collapse (distance < collapseThreshold) |
 
 ---
 
 ## 3. Integration Tests (IT)
 
-| ID | Test Case | Components | Scenario | Expected | Priority |
-|----|-----------|-----------|----------|----------|----------|
-| TC-IT-01 | Full expand flow | LODManager + Distance + Budget + Animation | Camera moves close to cluster | Cluster expands, children visible | Critical |
-| TC-IT-02 | Budget auto-collapse | LODManager + Budget + Animation | Expand 3rd cluster exceeding budget | Farthest cluster auto-collapses | Critical |
-| TC-IT-03 | Rapid zoom in/out | LODManager + Animation | Quick zoom in then out | No crash, consistent state | High |
-| TC-IT-04 | Full collapse flow | LODManager + Distance + Animation | Camera moves away | Cluster collapses smoothly | Critical |
-| TC-IT-05 | Initialize pipeline | LODManager + Clustering + SuperNodeFactory | Load 500-node graph | Clusters created, super nodes in scene | High |
+### IT-01: LODManager Initializes with Graph
+
+| Field | Value |
+|-------|-------|
+| Components | LODManager + LODClustering + ForceGraph3D mock |
+| Setup | Create ForceGraph3D mock, 200 nodes |
+| Action | `new LODManager(mockGraph).initialize(nodes, edges)` |
+| Expected | Clusters computed, super nodes in graphData |
+
+### IT-02: Expand Updates GraphData
+
+| Field | Value |
+|-------|-------|
+| Components | LODManager + LODAnimation + ForceGraph3D mock |
+| Setup | Initialized manager with collapsed clusters |
+| Action | expandCluster('c1'), wait 500ms |
+| Expected | graphData.nodes includes children, super node removed |
+
+### IT-03: Collapse Restores Super Nodes
+
+| Field | Value |
+|-------|-------|
+| Components | LODManager + LODAnimation + ForceGraph3D mock |
+| Setup | 1 expanded cluster |
+| Action | collapseCluster('c1'), wait 500ms |
+| Expected | Children removed, super node restored in graphData |
+
+### IT-04: Budget Across Multiple Expands
+
+| Field | Value |
+|-------|-------|
+| Components | LODManager + LODClustering |
+| Setup | 10 clusters, budget=100 |
+| Action | Expand clusters sequentially |
+| Expected | Stops expanding when budget reached |
+
+### IT-05: basePath URL Compliance
+
+| Field | Value |
+|-------|-------|
+| Components | graph.js + LOD init |
+| Setup | Set window.__MCP_BASE = '/sub/path' |
+| Action | Intercept fetch calls during initGraph |
+| Expected | All fetches start with '/sub/path/api/' |
 
 ---
 
 ## 4. E2E-API Tests
 
-| ID | Test Case | API Method | Scenario | Expected | Priority |
-|----|-----------|-----------|----------|----------|----------|
-| TC-API-01 | Initialize with valid data | initialize() | 100 nodes, 200 edges | Returns ClusterHierarchy | Critical |
-| TC-API-02 | Initialize with empty data | initialize() | 0 nodes | Returns empty hierarchy | High |
-| TC-API-03 | Get visible count | getVisibleNodeCount() | After init | Returns cluster count | High |
-| TC-API-04 | Manual expand | expandCluster(id) | Valid cluster ID | Cluster state = EXPANDED | High |
-| TC-API-05 | Manual collapse | collapseCluster(id) | Expanded cluster | Cluster state = COLLAPSED | High |
-| TC-API-06 | Config update | setConfig() | Change thresholds | New thresholds applied | Medium |
-| TC-API-07 | Event emission | on('cluster-expanded') | Expand cluster | Event fired with cluster ID | High |
-| TC-API-08 | Dispose cleanup | dispose() | After init | No memory leaks, scene cleared | High |
+### E2E-API-01: LOD Param Returns Counts
+
+| Field | Value |
+|-------|-------|
+| Endpoint | GET /api/memory/graph/data?lod=true |
+| Server | NodeJS (repeat for Python, Kotlin) |
+| Expected | Response has totalNodes (number), totalEdges (number) |
+| Assertion | `typeof response.totalNodes === 'number'` |
+
+### E2E-API-02: Limit Respected with LOD
+
+| Field | Value |
+|-------|-------|
+| Endpoint | GET /api/memory/graph/data?lod=true&limit=100 |
+| Expected | response.nodes.length <= 100, totalNodes may be higher |
+
+### E2E-API-03: No LOD Param = No Counts
+
+| Field | Value |
+|-------|-------|
+| Endpoint | GET /api/memory/graph/data |
+| Expected | No totalNodes field in response |
+
+### E2E-API-04: Invalid LOD Param
+
+| Field | Value |
+|-------|-------|
+| Endpoint | GET /api/memory/graph/data?lod=abc |
+| Expected | Treated as false, no totalNodes |
+
+### E2E-API-05: Works Under Sub-Path
+
+| Field | Value |
+|-------|-------|
+| Endpoint | GET /mcp/api/memory/graph/data?lod=true |
+| Setup | Server configured with basePath=/mcp |
+| Expected | Same response as E2E-API-01 |
 
 ---
 
-## 5. E2E-UI Tests (Gherkin)
+## 5. E2E-UI Tests (Playwright)
 
-### TC-E2E-UI-01: View Clustered Graph
+### E2E-UI-01: Clusters Appear on Load
 
 ```gherkin
-Feature: LOD Graph Visualization
-  Scenario: View large graph with clustering
-    Given a graph with 500 nodes and 2000 edges is loaded
-    When the graph renders in the webview
-    Then I should see fewer than 100 super nodes
-    And each super node should display a child count badge
-    And the frame rate should be above 30 FPS
+Feature: LOD Clustering
+  Scenario: Graph with 200+ nodes shows clusters
+    Given the KB has 200 entries with edges
+    When I navigate to the graph page
+    Then I should see fewer than 100 visible elements
+    And I should see super nodes with count badges
 ```
 
-### TC-E2E-UI-02: Zoom to Expand Cluster
+### E2E-UI-02: Expand on Zoom
 
 ```gherkin
-  Scenario: Expand cluster by zooming in
-    Given a clustered graph is displayed
-    When I zoom toward a super node until camera distance is less than 50 units
-    Then the super node should disappear with fade animation
-    And child nodes should appear with expand animation
-    And intra-cluster edges should become visible
+Feature: LOD Expand
+  Scenario: Zoom into cluster expands it
+    Given the graph is loaded with LOD clusters
+    When I zoom the camera toward a super node
+    And the distance is less than 50 world units
+    Then the super node should expand into child nodes
     And the animation should complete within 500ms
 ```
 
-### TC-E2E-UI-03: View Child Count Badge
+### E2E-UI-03: Collapse on Zoom Out
 
 ```gherkin
-  Scenario: Super node shows child count
-    Given a clustered graph is displayed
-    When I look at any super node
-    Then it should display a numeric badge
-    And the badge number should match the actual child count
-```
-
-### TC-E2E-UI-04: Zoom Out to Collapse
-
-```gherkin
-  Scenario: Collapse cluster by zooming out
+Feature: LOD Collapse
+  Scenario: Zoom away from expanded cluster collapses it
     Given a cluster is expanded showing child nodes
-    When I zoom away until camera distance exceeds 70 units
-    Then child nodes should collapse with animation
-    And the super node should reappear
-    And the animation should be smooth (no jank)
+    When I zoom the camera away beyond 70 world units
+    Then the children should collapse back into a super node
+    And the animation should complete within 500ms
 ```
 
-### TC-E2E-UI-05: Budget Enforcement
+### E2E-UI-04: LOD Toggle
 
 ```gherkin
-  Scenario: Auto-collapse when budget exceeded
-    Given two clusters are expanded (total 80 visible nodes)
-    When I zoom into a third cluster with 30 children
-    Then the farthest expanded cluster should auto-collapse
-    And the new cluster should expand
-    And total visible nodes should remain under 100
+Feature: LOD Toggle
+  Scenario: Disable LOD shows all nodes
+    Given the graph is loaded with LOD active
+    When I uncheck the LOD toggle
+    Then all nodes should be visible (no clustering)
+    And the node count should exceed 100
 ```
 
 ---
 
-## 6. Performance Tests
+## 6. SIT (Manual)
 
-| ID | Test Case | Metric | Target | Dataset | Priority |
-|----|-----------|--------|--------|---------|----------|
-| TC-PERF-01 | Clustering time | Duration | < 2000ms | 10k nodes, 50k edges | Critical |
-| TC-PERF-02 | Frame rate | FPS | >= 30 | 100 visible nodes | Critical |
-| TC-PERF-03 | Distance check | Duration | < 2ms | 100 clusters | High |
-| TC-PERF-04 | Memory usage | Peak MB | < 500 | 10k nodes | High |
-| TC-PERF-05 | Animation smoothness | Frame drops | 0 dropped frames | Expand/collapse | Medium |
+### SIT-01: Super Node Visual Quality
+
+| Step | Action | Expected |
+|------|--------|----------|
+| 1 | Load graph with 500+ nodes | Clusters visible |
+| 2 | Observe super node appearance | Sphere, larger, count badge visible |
+| 3 | Check color matches dominant type | Color correct |
+
+### SIT-02: Animation Smoothness
+
+| Step | Action | Expected |
+|------|--------|----------|
+| 1 | Open Chrome DevTools Performance tab | Ready |
+| 2 | Zoom into a cluster | Expand animation plays |
+| 3 | Check frame rate | Consistent 60fps, no jank |
+
+### SIT-03: Orbital Layout
+
+| Step | Action | Expected |
+|------|--------|----------|
+| 1 | Expand a cluster with 15 nodes | Children appear |
+| 2 | Observe layout | Ring pattern, 3D depth variation |
+| 3 | Expand cluster with 25 nodes | Two rings visible |
 
 ---
 
-## 7. SIT (System Integration Tests) — Manual
+## 7. Test Data Files
 
-| ID | Test Case | Steps | Expected | Priority |
-|----|-----------|-------|----------|----------|
-| SIT-01 | Real graph visualization | 1. Open extension 2. Load real KB graph 3. Observe clustering | Graph clusters correctly, super nodes visible | Critical |
-| SIT-02 | Interactive zoom | 1. Zoom into cluster 2. Interact with children 3. Zoom out | Smooth transitions, no crashes | Critical |
-| SIT-03 | Large graph performance | 1. Load 5000+ node graph 2. Navigate freely for 2 min | No lag, no memory growth | High |
-| SIT-04 | Edge display correctness | 1. Expand cluster 2. Check intra-cluster edges 3. Check inter-cluster edges | All edges connect correctly | High |
+| File | Content | Used By |
+|------|---------|---------|
+| testdata/small-graph.csv | 50 nodes, 80 edges | UT, IT |
+| testdata/medium-graph.csv | 200 nodes, 500 edges | IT, E2E |
+| testdata/large-graph.csv | 5000 nodes, 12000 edges | PBT, Performance |
+| testdata/disconnected.csv | 100 nodes, 30 edges, 20 isolated | PBT-03 |
+| testdata/two-communities.csv | 100 nodes, 2 groups | UT-04 |
 
 ---
-
-## 8. Test Summary
-
-| Level | Total Cases | Automated | Manual | Critical | High | Medium |
-|-------|-------------|-----------|--------|----------|------|--------|
-| PBT | 3 | 3 | 0 | 2 | 1 | 0 |
-| UT | 22 | 22 | 0 | 6 | 11 | 5 |
-| IT | 5 | 5 | 0 | 3 | 2 | 0 |
-| E2E-API | 8 | 8 | 0 | 1 | 5 | 2 |
-| E2E-UI | 5 | 4 | 1 | 0 | 3 | 2 |
-| Performance | 5 | 5 | 0 | 2 | 2 | 1 |
-| SIT | 4 | 0 | 4 | 2 | 2 | 0 |
-| **Total** | **52** | **47** | **5** | **16** | **26** | **10** |
-
-**Automation Rate:** 90% (47/52)

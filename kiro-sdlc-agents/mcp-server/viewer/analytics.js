@@ -19,8 +19,8 @@ function renderPopular(queries) {
   }
   el.innerHTML = queries.slice(0, 15).map(q =>
     `<tr><td>${esc(q.query || q.term || '')}</td>`
-    + `<td><span class="badge badge-info">${q.count || q.hit_count || 0}</span></td>`
-    + `<td>${q.avg_results || q.avgResults || q.avg_result || '-'}</td></tr>`
+    + `<td><span class="badge badge-info">${q.count || 0}</span></td>`
+    + `<td>${q.avg_results || q.avgResults || '-'}</td></tr>`
   ).join('');
 }
 
@@ -32,7 +32,7 @@ function renderGaps(gaps) {
   }
   el.innerHTML = gaps.slice(0, 15).map(g =>
     `<tr><td>${esc(g.query || g.term || '')}</td>`
-    + `<td><span class="badge badge-warn">${g.count || g.hit_count || 0}</span></td>`
+    + `<td><span class="badge badge-warn">${g.count || 0}</span></td>`
     + `<td>Gap</td></tr>`
   ).join('');
 }
