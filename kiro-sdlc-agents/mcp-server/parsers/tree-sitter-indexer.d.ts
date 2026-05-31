@@ -23,5 +23,7 @@ export declare class TreeSitterIndexer {
     /** Store regex-extracted symbols in the database. */
     private storeRegexResults;
     private extToLanguage;
+    /** Extract and store function body text for embedding-based similarity (KSA-169). */
+    private extractAndStoreBodies;
 }
 //# sourceMappingURL=tree-sitter-indexer.d.ts.map

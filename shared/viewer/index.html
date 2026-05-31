@@ -12,9 +12,9 @@
 #graph-toolbar button,#graph-toolbar select{padding:4px 8px;border-radius:4px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:.68rem}
 #graph-toolbar button:hover{background:#334155}
 #graph-detail{width:300px;min-width:300px;overflow-y:auto;padding:8px;background:rgba(30,41,59,.95);border-left:1px solid #334155;z-index:5}
-#minimap{position:absolute;bottom:8px;left:8px;width:140px;height:110px;background:rgba(15,23,42,.9);border:1px solid #475569;border-radius:4px;z-index:200;transform:translateZ(0)}
-#minimap canvas{width:100%;height:100%}
-#legend{position:absolute!important;bottom:8px!important;top:auto!important;left:160px;background:rgba(30,41,59,.9);padding:6px;border-radius:4px;font-size:.6rem;z-index:200;transform:translateZ(0)}
+#minimap{position:absolute;bottom:8px;left:8px;width:200px;height:160px;background:rgba(15,23,42,.9);border:1px solid #475569;border-radius:4px;z-index:200;transform:translateZ(0);overflow:hidden}
+#minimap-graph{width:100%;height:100%}
+#legend{position:absolute!important;bottom:8px!important;top:auto!important;left:220px;background:rgba(30,41,59,.9);padding:6px;border-radius:4px;font-size:.6rem;z-index:200;transform:translateZ(0)}
 #legend div{display:flex;align-items:center;gap:4px;margin-bottom:2px}
 #legend span{display:inline-block;width:9px;height:9px;border-radius:50%}
 /* Sessions */
@@ -60,7 +60,7 @@
       <button onclick="graphReset()" title="Reset">↺</button>
       <select id="cs" onchange="graphJumpCluster(this.value)"><option value="">Jump to...</option></select>
     </div>
-    <div id="minimap"><canvas id="mc" width="180" height="140"></canvas></div>
+    <div id="minimap"><div id="minimap-graph"></div></div>
     <div id="legend">
       <div><span style="background:#34d399"></span>REQUIREMENT</div>
       <div><span style="background:#a78bfa"></span>ARCHITECTURE</div>

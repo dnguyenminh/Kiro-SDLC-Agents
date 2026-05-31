@@ -110,11 +110,24 @@ function handleGraphData(
   const limit = Math.min(parseInt(url.searchParams.get('limit') ?? String(defaultLimit), 10), 10000);
   const edges = engine.graphRepo.findAll(limit);
   const nodeIds = [...new Set(edges.flatMap(e => [e.source_id, e.target_id]))];
-  const nodes = nodeIds
-    .map(id => engine.knowledge.findById(id))
-    .filter((e): e is KnowledgeEntry => e !== undefined)
-    .map(e => toGraphNode(e));
-  const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+  const nodeMap = new Map<number, KnowledgeEntry>();
+  for (const id of nodeIds) {
+    const entry = engine.knowledge.findById(id);
+    if (entry) nodeMap.set(id, entry);
+  }
+  // Only include edges where both source and target entries exist
+  const validEdges = edges.filter(e => nodeMap.has(e.source_id) && nodeMap.has(e.target_id));
+  const nodes = [...nodeMap.values()].map(e => toGraphNode(e));
+  const edgeList = validEdges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+  // Fallback: if all edges are stale, show recent WORKING entries as unconnected nodes
+  if (nodes.length === 0) {
+    const entries = engine.knowledge.findByTier('WORKING', 50);
+    const fallbackNodes = entries.map(e => toGraphNode(e));
+    const result: Record<string, unknown> = { nodes: fallbackNodes, edges: [] };
+    if (lod) { result.totalNodes = stats.totalEntries ?? fallbackNodes.length; result.totalEdges = 0; }
+    sendJson(res, result);
+    return;
+  }
   const result: Record<string, unknown> = { nodes, edges: edgeList };
   if (lod) { result.totalNodes = stats.totalEntries ?? nodes.length; result.totalEdges = stats.totalEdges ?? edgeList.length; }
   sendJson(res, result);

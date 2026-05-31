@@ -40,6 +40,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OnnxEmbeddingProvider = void 0;
 const fs = __importStar(require("fs"));
 const tokenizer_js_1 = require("./tokenizer.js");
+const onnx_bootstrap_js_1 = require("./onnx-bootstrap.js");
 const MAX_SEQ_LENGTH = 128;
 class OnnxEmbeddingProvider {
     modelPath;
@@ -90,14 +91,10 @@ class OnnxEmbeddingProvider {
             let onnxPath = process.env.ONNX_RUNTIME_PATH;
             // If not set, try self-download via bootstrap
             if (!onnxPath) {
-                try {
-                    const { ensureOnnxRuntime } = require('./onnx-bootstrap.js');
-                    const bootstrapPath = await ensureOnnxRuntime();
-                    if (bootstrapPath) {
-                        onnxPath = bootstrapPath;
-                    }
+                const bootstrapPath = await (0, onnx_bootstrap_js_1.ensureOnnxRuntime)();
+                if (bootstrapPath) {
+                    onnxPath = bootstrapPath;
                 }
-                catch { /* bootstrap not available */ }
             }
             if (onnxPath) {
                 ort = require(onnxPath);

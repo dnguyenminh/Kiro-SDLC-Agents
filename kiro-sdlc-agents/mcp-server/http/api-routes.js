@@ -115,21 +115,50 @@ function handleGraphData(url, res, engine, graph) {
         return;
     }
     const stats = engine.getStats();
+    const lod = url.searchParams.get('lod') === 'true'; // KSA-143: LOD support
     if (stats.totalEdges === 0) {
         const entries = engine.knowledge.findByTier('WORKING', 50);
         const nodes = entries.map(e => toGraphNode(e));
-        sendJson(res, { nodes, edges: [] });
+        const result = { nodes, edges: [] };
+        if (lod) {
+            result.totalNodes = stats.totalEntries ?? nodes.length;
+            result.totalEdges = 0;
+        }
+        sendJson(res, result);
         return;
     }
-    const limit = parseInt(url.searchParams.get('limit') ?? '100', 10);
+    const defaultLimit = lod ? 5000 : 100; // KSA-143: higher limit for LOD
+    const limit = Math.min(parseInt(url.searchParams.get('limit') ?? String(defaultLimit), 10), 10000);
     const edges = engine.graphRepo.findAll(limit);
     const nodeIds = [...new Set(edges.flatMap(e => [e.source_id, e.target_id]))];
-    const nodes = nodeIds
-        .map(id => engine.knowledge.findById(id))
-        .filter((e) => e !== undefined)
-        .map(e => toGraphNode(e));
-    const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
-    sendJson(res, { nodes, edges: edgeList });
+    const nodeMap = new Map();
+    for (const id of nodeIds) {
+        const entry = engine.knowledge.findById(id);
+        if (entry)
+            nodeMap.set(id, entry);
+    }
+    // Only include edges where both source and target entries exist
+    const validEdges = edges.filter(e => nodeMap.has(e.source_id) && nodeMap.has(e.target_id));
+    const nodes = [...nodeMap.values()].map(e => toGraphNode(e));
+    const edgeList = validEdges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+    // Fallback: if all edges are stale, show recent WORKING entries as unconnected nodes
+    if (nodes.length === 0) {
+        const entries = engine.knowledge.findByTier('WORKING', 50);
+        const fallbackNodes = entries.map(e => toGraphNode(e));
+        const result = { nodes: fallbackNodes, edges: [] };
+        if (lod) {
+            result.totalNodes = stats.totalEntries ?? fallbackNodes.length;
+            result.totalEdges = 0;
+        }
+        sendJson(res, result);
+        return;
+    }
+    const result = { nodes, edges: edgeList };
+    if (lod) {
+        result.totalNodes = stats.totalEntries ?? nodes.length;
+        result.totalEdges = stats.totalEdges ?? edgeList.length;
+    }
+    sendJson(res, result);
 }
 function handleSessions(url, res, engine) {
     if (!engine) {

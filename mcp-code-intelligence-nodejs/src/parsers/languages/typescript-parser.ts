@@ -40,7 +40,7 @@ export default class TypeScriptParser implements ILanguageParser {
 
     // Collect parse errors
     const errors: ParseError[] = [];
-    if (rootNode.hasError()) {
+    if (rootNode.hasError) {
       const errorNodes = findNodes(rootNode, 'ERROR');
       for (const node of errorNodes.slice(0, 10)) {
         errors.push({

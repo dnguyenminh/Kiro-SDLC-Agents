@@ -141,6 +141,11 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
 
     const configPath = this.getConfigPath();
 
+    // Build NODE_PATH so onnxruntime-node can resolve onnxruntime-common (sibling dir)
+    const nodePath = onnxRuntimePath
+      ? [path.dirname(onnxRuntimePath), process.env.NODE_PATH].filter(Boolean).join(path.delimiter)
+      : process.env.NODE_PATH;
+
     // Spawn child process (with native binding path if available)
     const child = spawn("node", [entryPath, "--port", String(configuredPort), "--config", configPath], {
       cwd: this.workspaceFolder,
@@ -150,6 +155,7 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
         CODE_INTEL_VIEWER_PORT: "-1",
         ...(nativeBindingPath ? { BETTER_SQLITE3_BINDING: nativeBindingPath } : {}),
         ...(onnxRuntimePath ? { ONNX_RUNTIME_PATH: onnxRuntimePath } : {}),
+        ...(nodePath ? { NODE_PATH: nodePath } : {}),
       },
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,

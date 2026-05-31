@@ -3,6 +3,8 @@ package com.codeintel.memory.ingest
 
 import com.codeintel.log
 import com.codeintel.memory.embedding.EmbeddingService
+import com.codeintel.memory.ingest.autolink.AutoLinkResult
+import com.codeintel.memory.ingest.autolink.AutoLinker
 import com.codeintel.memory.models.KnowledgeEntry
 import com.codeintel.memory.models.KnowledgeType
 import com.codeintel.memory.models.MemoryTier
@@ -18,7 +20,8 @@ data class IngestResult(
     val source: String,
     val entryIds: List<Long> = emptyList(),
     val skipped: Boolean = false,
-    val skipReason: String? = null
+    val skipReason: String? = null,
+    val autoLinkResult: AutoLinkResult? = null
 )
 
 /** Error thrown when quality gate rejects content. */
@@ -31,9 +34,13 @@ class IngestPipeline(
     private val chunker: ChunkingStrategy = SemanticChunker()
 ) {
     private var qualityGate: QualityGate? = null
+    private var autoLinker: AutoLinker? = null
 
     /** Inject QualityGate for ingest validation. */
     fun setQualityGate(gate: QualityGate) { this.qualityGate = gate }
+
+    /** Inject AutoLinker for post-ingest linking (KSA-190). */
+    fun setAutoLinker(linker: AutoLinker) { this.autoLinker = linker }
 
     /** Ingest a markdown document. */
     fun ingestMarkdown(text: String, source: String, type: String = KnowledgeType.CONTEXT.name): IngestResult {
@@ -49,7 +56,6 @@ class IngestPipeline(
 
     /** Ingest a single knowledge entry directly. Quality gate applied if set. */
     fun ingestEntry(content: String, summary: String, type: String, source: String? = null, tags: String = ""): Long {
-        // Quality gate check
         qualityGate?.let { gate ->
             val quality = gate.validate(content, IngestMeta(tags, type, source))
             if (quality.decision == "reject") throw QualityRejectionException(quality)
@@ -66,6 +72,7 @@ class IngestPipeline(
         val id = knowledgeRepo.insert(entry)
         embeddingService?.embedAndStore(id, summary)
         trySetQualityScore(id, content, tags, type, source)
+        tryAutoLink(id)
         return id
     }
 
@@ -74,7 +81,17 @@ class IngestPipeline(
         knowledgeRepo.updateAgentName(id, agentName)
     }
 
-    /** Set quality score on entry after ingest. */
+    /** Fire-and-forget auto-linking after ingest (KSA-190). */
+    private fun tryAutoLink(entryId: Long): AutoLinkResult? {
+        val linker = autoLinker ?: return null
+        return try {
+            linker.link(entryId)
+        } catch (e: Exception) {
+            log("[ingest] Auto-link failed for entry $entryId: $e")
+            null
+        }
+    }
+
     private fun trySetQualityScore(id: Long, content: String, tags: String, type: String, source: String?) {
         val gate = qualityGate ?: return
         try {
@@ -97,8 +114,10 @@ class IngestPipeline(
                 if (generateEmbedding(id, chunk.content)) embeddingsGenerated++
             }
         }
+        // Auto-link last entry in batch (representative)
+        val linkResult = if (allIds.isNotEmpty()) tryAutoLink(allIds.last()) else null
         log("Ingested $source: ${allIds.size} entries, $embeddingsGenerated embeddings")
-        return IngestResult(allIds.size, embeddingsGenerated, source, allIds)
+        return IngestResult(allIds.size, embeddingsGenerated, source, allIds, autoLinkResult = linkResult)
     }
 
     private fun storeChunk(chunk: TextChunk, heading: String, type: String, source: String): Long {
@@ -115,7 +134,6 @@ class IngestPipeline(
         return knowledgeRepo.insert(entry)
     }
 
-    /** Assign tier based on knowledge type. */
     private fun tierForType(type: String): String = when (type) {
         "REQUIREMENT", "ARCHITECTURE", "PROCEDURE", "API_DESIGN" -> MemoryTier.SEMANTIC.name
         "DECISION", "LESSON_LEARNED" -> MemoryTier.EPISODIC.name

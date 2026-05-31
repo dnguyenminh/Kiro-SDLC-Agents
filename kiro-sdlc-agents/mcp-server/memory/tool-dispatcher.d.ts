@@ -1,5 +1,6 @@
 /**
  * MemoryToolDispatcher — routes mem_* tool calls to handlers.
+ * KSA-190: Added auto_link action to graph handler, wired AutoLinker into pipeline.
  */
 import { MemoryEngine } from './memory-engine.js';
 import { EmbeddingService } from './embedding/index.js';
@@ -34,6 +35,9 @@ export declare class MemoryToolDispatcher {
     private graphAddEdge;
     private graphPath;
     private graphEgo;
+    private graphData;
+    /** KSA-190: Auto-link action — link a specific entry or backfill orphans. */
+    private graphAutoLink;
     private handleStatus;
     private handleConsolidate;
     private handleAudit;

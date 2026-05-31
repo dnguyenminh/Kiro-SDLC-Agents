@@ -1,6 +1,7 @@
 /**
  * MemoryEngine — facade for the SDLC Memory system.
  * Single entry point for all memory operations.
+ * KSA-190: Added AutoLinker wiring.
  */
 
 import Database from 'better-sqlite3';
@@ -16,6 +17,11 @@ import { KnowledgeGraph } from './knowledge-graph.js';
 import { CoreMemoryManager } from './core-memory.js';
 import { EntityRepository } from './entity-repo.js';
 import { ConversationRepository } from './conversation-repo.js';
+import { AutoLinker } from './auto-linker.js';
+import { SemanticStrategy } from './linking-strategies/semantic-strategy.js';
+import { EntityStrategy } from './linking-strategies/entity-strategy.js';
+import { TagStrategy } from './linking-strategies/tag-strategy.js';
+import { FtsStrategy } from './linking-strategies/fts-strategy.js';
 import { TierStats } from './models.js';
 
 export interface MemoryStats {
@@ -37,6 +43,7 @@ export class MemoryEngine {
   readonly coreMemory: CoreMemoryManager;
   readonly entities: EntityRepository;
   readonly conversations: ConversationRepository;
+  readonly autoLinker: AutoLinker;
 
   private readonly _db: Database.Database;
   private currentSessionId: string | null = null;
@@ -61,6 +68,15 @@ export class MemoryEngine {
     this.coreMemory = new CoreMemoryManager(db);
     this.entities = new EntityRepository(db);
     this.conversations = new ConversationRepository(db);
+
+    // KSA-190: Wire AutoLinker with all strategies
+    const strategies = [
+      new SemanticStrategy(this.vectors),
+      new EntityStrategy(this.entities),
+      new TagStrategy(db),
+      new FtsStrategy(db),
+    ];
+    this.autoLinker = new AutoLinker(this.graphRepo, strategies);
   }
 
   /** Start a new session. */

@@ -1,18 +1,57 @@
 # MCP Code Intelligence — Python
 
-Standalone MCP server providing code search, symbols, and context via stdio transport.
-Uses Python's built-in `sqlite3` module with FTS5 for full-text search.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.6.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge" alt="Python">
+  <img src="https://img.shields.io/badge/deps-zero_external-green?style=for-the-badge" alt="Dependencies">
+  <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="Tools">
+</p>
+
+Standalone MCP server providing code search, symbols, context, call graph analysis, and 30+ memory/KB tools via stdio transport. Uses Python's built-in `sqlite3` module with FTS5 — **zero external dependencies**.
+
+---
+
+## Architecture
+
+```
+src/mcp_code_intel/
++-- __main__.py       - Entry point
++-- server.py         - MCP server (stdio JSON-RPC)
++-- config.py         - Configuration loading
++-- db.py             - SQLite lifecycle + schema
++-- scanner.py        - File scanner + language detection
++-- extractor.py      - Signature extraction (regex)
++-- indexer.py        - Full/incremental indexing
++-- query.py          - FTS5 search + symbol lookup
++-- tools.py          - Core MCP tool handlers
++-- stream_write.py   - stream_write_file handler
++-- ollama.py         - Optional Ollama client
++-- graph/            - Call graph, dependency, impact, traversal (KSA-171)
++-- context/          - AI context, edit context, curated context (KSA-171)
++-- analyzers/        - Similarity + Security analysis
++-- parsers/          - Tree-sitter AST utilities + language parsers
++-- memory/           - Knowledge base engine (30+ tools, auto-linker)
++-- orchestration/    - Child MCP server orchestration + meta-tools
++-- drawio/           - Draw.io auto-layout tool
++-- git/              - Git history mining + semantic search
++-- http/             - HTTP viewer server + API routes
++-- viewer/           - Web dashboard (HTML/JS/CSS)
+```
+
+---
 
 ## Requirements
 
-- Python 3.11+ (stdlib only — zero external dependencies)
+- Python 3.11+ (stdlib only - zero external dependencies)
 - Optional: `watchdog` for file watching
 
 ## SQLite Note
 
-This variant uses Python's **stdlib `sqlite3`** module. No native binary compilation needed — no `better-sqlite3`, no `node-gyp`, no C++ toolchain.
+This variant uses Python's **stdlib `sqlite3`** module. No native binary compilation needed - no `better-sqlite3`, no `node-gyp`, no C++ toolchain.
 
-The database schema is **cross-compatible** with the Node.js and Kotlin variants. All three can share the same `.code-intel/index.db` file. You can index with one variant and query with another.
+The database schema is **cross-compatible** with the Node.js and Kotlin variants. All three can share the same `.code-intel/index.db` file.
+
+---
 
 ## Installation
 
@@ -26,9 +65,6 @@ python -m mcp_code_intel
 
 ## Usage
 
-Workspace is resolved from the MCP `initialize` request's `roots[0].uri` field.
-No `--workspace` CLI argument needed.
-
 ```bash
 # Basic usage (workspace comes from MCP client)
 python -m mcp_code_intel
@@ -39,6 +75,8 @@ CODE_INTEL_WORKSPACE=/path/to/project python -m mcp_code_intel
 # With Ollama embeddings
 OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 ```
+
+---
 
 ## MCP Tools
 
@@ -85,7 +123,7 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 
 | Tool | Description |
 |------|-------------|
-| `find_tools` | Search for available tools by description |
+| `find_tools` | Search for available tools by description (semantic + tokenized + cached) |
 | `execute_dynamic_tool` | Execute a tool on an upstream MCP server |
 | `toggle_tool` | Enable/disable a tool or server |
 | `orchestration_status` | Show orchestration status |
@@ -95,13 +133,17 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 
 Full KB management: `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_pin`, `mem_map`, `mem_crud`, `mem_graph`, `mem_consolidate`, `mem_lifecycle`, `mem_templates`, `mem_attachments`, `mem_discover`, `mem_tags`, `mem_citations`, `mem_conversation`, `mem_scoring`, `mem_admin`.
 
+**New in v1.14.0:** KB Auto-Linker - automatic relationship discovery between entries using entity extraction and semantic similarity.
+
+---
+
 ## Embedding Models (KSA-102)
 
 `find_tools` supports semantic search via ONNX embedding models. On first use, the default English model is auto-downloaded in the background.
 
 ### Download Models
 
-**Easiest way:** `Ctrl+Shift+P` → "Kiro SDLC: Download Embedding Model" (works without MCP server running)
+**Easiest way:** `Ctrl+Shift+P` -> "Kiro SDLC: Download Embedding Model" (works without MCP server running)
 
 **Via MCP tool** (when server is running):
 ```bash
@@ -116,30 +158,16 @@ mem_model_manager(action="switch", model_name="paraphrase-multilingual-MiniLM-L1
 | `all-MiniLM-L6-v2` | 90MB | English | Default, fast, good for English tool names |
 | `paraphrase-multilingual-MiniLM-L12-v2` | 470MB | 50+ (en, vi, zh, ja, ko...) | Multilingual queries |
 
-### Model Management
-
-```bash
-# List available models
-mem_model_manager(action="list")
-
-# Check current model status
-mem_model_manager(action="status")
-
-# Download multilingual model (for Vietnamese/Chinese/etc.)
-mem_model_manager(action="download", model_name="paraphrase-multilingual-MiniLM-L12-v2")
-
-# Switch to multilingual model
-mem_model_manager(action="switch", model_name="paraphrase-multilingual-MiniLM-L12-v2")
-```
-
 ### How It Works
 
 1. `find_tools(query)` first tries tokenized search (instant)
-2. If no match → checks learned cache (instant, self-improving)
-3. If cache miss → embedding similarity search (< 100ms)
-4. If embedding finds match → caches it for next time (self-learning)
+2. If no match -> checks learned cache (instant, self-improving)
+3. If cache miss -> embedding similarity search (< 100ms)
+4. If embedding finds match -> caches it for next time (self-learning)
 5. Models stored globally at `~/.code-intel/models/`
 6. Cache stored per-workspace at `.code-intel/token-cache.json`
+
+---
 
 ## Kiro MCP Configuration
 
@@ -173,16 +201,16 @@ Or with `uv`:
 }
 ```
 
+---
+
 ## Configuration
 
 Configuration is loaded from (priority: env > initialize roots > file > defaults):
 
-1. Environment: `CODE_INTEL_WORKSPACE` (overrides initialize roots), `CODE_INTEL_WATCH`, `OLLAMA_URL`, `OLLAMA_MODEL`
+1. Environment: `CODE_INTEL_WORKSPACE`, `CODE_INTEL_WATCH`, `OLLAMA_URL`, `OLLAMA_MODEL`
 2. MCP initialize: `params.roots[0].uri`
 3. Config file: `{workspace}/.code-intel/config.json`
 4. Fallback: `cwd()`
-
-### Config file example
 
 ```json
 {
@@ -196,10 +224,11 @@ Configuration is loaded from (priority: env > initialize roots > file > defaults
 }
 ```
 
+---
+
 ## Database
 
-SQLite database stored at `{workspace}/.code-intel/index.db`.
-Schema is cross-compatible with the Node.js and Kotlin variants — all three can share the same database file.
+SQLite database stored at `{workspace}/.code-intel/index.db`. Schema is cross-compatible with the Node.js and Kotlin variants - all three can share the same database file.
 
 ## Running Tests
 
@@ -207,29 +236,8 @@ Schema is cross-compatible with the Node.js and Kotlin variants — all three ca
 python tests/test_extractor.py
 ```
 
-## Architecture
+---
 
-```
-src/mcp_code_intel/
-├── __main__.py       — Entry point
-├── server.py         — MCP server (stdio JSON-RPC)
-├── config.py         — Configuration loading
-├── db.py             — SQLite lifecycle + schema
-├── scanner.py        — File scanner + language detection
-├── extractor.py      — Signature extraction (regex)
-├── indexer.py        — Full/incremental indexing
-├── query.py          — FTS5 search + symbol lookup
-├── tools.py          — Core MCP tool handlers
-├── stream_write.py   — stream_write_file handler
-├── ollama.py         — Optional Ollama client
-├── graph/            — Call graph, dependency, impact, traversal (KSA-171)
-├── context/          — AI context, edit context, curated context (KSA-171)
-├── analyzers/        — Similarity + Security analysis
-├── parsers/          — Tree-sitter AST utilities + language parsers
-├── memory/           — Knowledge base engine (30+ tools)
-├── orchestration/    — Child MCP server orchestration + meta-tools
-├── drawio/           — Draw.io auto-layout tool
-├── git/              — Git history mining + semantic search
-├── http/             — HTTP viewer server + API routes
-└── viewer/           — Web dashboard (HTML/JS/CSS)
-```
+## License
+
+MIT

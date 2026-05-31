@@ -4,6 +4,7 @@
  * KSA-66: Nested delegation — delegates to child orchestrators for lazy discovery.
  * KSA-102: Adaptive Token Cache (Tier 2) + Embedding Search (Tier 3).
  * KSA-139: KB-backed 2-Level Agent Tool Cache (Tier 0 — checked first).
+ * KSA-141: Sync Tier 0 KB cache in executeFindTools for behavioral parity.
  * Behavioral parity with Python find_tools.py.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -15,6 +16,10 @@ function executeFindTools(engine, args) {
     const query = args.query;
     if (!query)
         return JSON.stringify({ error: "Missing 'query'" });
+    // Tier 0: KB-backed 2-Level Cache — sync best-effort (KSA-141)
+    const kbCacheResult = searchKbCacheSync(engine, query);
+    if (kbCacheResult)
+        return kbCacheResult;
     let registryResults = engine.getRegistry().search(query);
     // If no results from registry, try recovering FAILED servers (lazy retry)
     if (registryResults.length === 0) {
@@ -240,6 +245,36 @@ function searchKb(engine, query) {
     }
     catch {
         return [];
+    }
+}
+/** Tier 0: KB-backed 2-Level Cache — sync best-effort (KSA-141).
+ *  Uses synchronous in-memory L1 cache if available, returns null otherwise. */
+function searchKbCacheSync(engine, query) {
+    try {
+        const lookup = engine.getKbCacheLookup();
+        if (!lookup)
+            return null;
+        const result = lookup.findSync(query, 'default');
+        if (!result)
+            return null;
+        const { entry, source } = result;
+        // Try to resolve from registry for full definition
+        const tool = engine.getRegistry().find(entry.toolName);
+        if (tool) {
+            return JSON.stringify([tool.definition]);
+        }
+        // If not in registry, build definition from cache entry
+        return JSON.stringify([{
+                name: entry.toolName,
+                description: entry.description,
+                inputSchema: entry.inputSchema,
+                _source: source,
+                _server: entry.serverName,
+            }]);
+    }
+    catch {
+        // Non-blocking — sync cache miss is fine, fall through to other tiers
+        return null;
     }
 }
 /** Tier 0: KB-backed 2-Level Agent Tool Cache (KSA-139). */

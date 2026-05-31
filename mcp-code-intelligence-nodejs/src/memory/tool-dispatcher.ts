@@ -1,5 +1,6 @@
 /**
  * MemoryToolDispatcher — routes mem_* tool calls to handlers.
+ * KSA-190: Added auto_link action to graph handler, wired AutoLinker into pipeline.
  */
 
 import * as fs from 'fs';
@@ -30,6 +31,8 @@ export class MemoryToolDispatcher {
     this.workspace = workspace;
     this.pipeline = new IngestPipeline(engine.knowledge, embeddingService);
     this.pipeline.setEntityRepo(engine.entities);
+    // KSA-190: Wire AutoLinker into ingest pipeline
+    this.pipeline.setAutoLinker(engine.autoLinker);
     this.hybridSearch = new HybridSearch(engine.search, engine.graph);
     this.hybridSearch.setCoreMemory(engine.coreMemory);
     this.consolidator = new TierConsolidator(engine.knowledge, engine.consolidation);
@@ -144,10 +147,11 @@ export class MemoryToolDispatcher {
     if (!content) return 'Error: content required';
     const type = (args.type as string) ?? 'CONTEXT';
     const source = args.source as string | undefined;
-    const tags = (args.tags as string) ?? '';
+    const tags = Array.isArray(args.tags) ? (args.tags as string[]).join(',') : ((args.tags as string) ?? '');
     const summary = (args.summary as string) ?? content.slice(0, 120);
     const agentName = args.agent_name as string | undefined;
-    const id = this.pipeline.ingestEntry(content, summary, type, source, tags);
+    const result = this.pipeline.ingestEntryWithQuality(content, summary, type, source, tags);
+    const id = result.id!;
     if (agentName) {
       try {
         this.engine.db.prepare(
@@ -158,7 +162,30 @@ export class MemoryToolDispatcher {
     this.engine.audit.log('INGEST', id, this.engine.getSessionId() ?? undefined);
     this.autoOwnEntry(id, source);
     this.autoScoreEntry(id, content, tags);
-    return `Knowledge entry created: id=${id}, type=${type}, tier=WORKING`;
+
+    // KSA-190: Include auto-link info in response
+    let response = `Knowledge entry created: id=${id}, type=${type}, tier=WORKING`;
+    if (result.autoLink) {
+      const al = result.autoLink;
+      if (al.edgesCreated === 0 && !this.engine.autoLinker['config'].enabled) {
+        response += `\nAuto-linked: 0 (disabled)`;
+      } else {
+        response += `\nAuto-linked: ${al.edgesCreated} edges`;
+        const { semantic, entity, tag } = al.breakdown;
+        if (al.edgesCreated > 0) {
+          response += ` (${semantic} semantic, ${entity} entity, ${tag} tag)`;
+        }
+      }
+    } else {
+      // AutoLinker not wired or returned null
+      const enabled = this.engine.autoLinker?.['config']?.enabled ?? true;
+      if (!enabled) {
+        response += `\nAuto-linked: 0 (disabled)`;
+      } else {
+        response += `\nAuto-linked: 0 edges`;
+      }
+    }
+    return response;
   }
 
   /** Auto-set owner based on source field. */
@@ -277,6 +304,7 @@ export class MemoryToolDispatcher {
       case 'path': return this.graphPath(args);
       case 'ego': return this.graphEgo(args);
       case 'graph_data': return this.graphData(args);
+      case 'auto_link': return this.graphAutoLink(args);
       default: return `Unknown action: ${action}`;
     }
   }
@@ -324,19 +352,50 @@ export class MemoryToolDispatcher {
     const limit = Math.min((args.limit as number) ?? 15000, 15000);
     // Get all edges
     const edges = this.engine.graphRepo.findAll(limit);
-    const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
-    // Get ALL entries — LOD handles rendering budget
+    // Get nodes referenced by edges
+    const nodeIds = [...new Set(edges.flatMap(e => [e.source_id, e.target_id]))];
+    let nodes: Array<{ id: number; summary: string; type: string; tier: string; source: string }> = [];
+    if (nodeIds.length > 0) {
+      const placeholders = nodeIds.map(() => '?').join(',');
+      const entries = this.engine.db.prepare(
+        `SELECT id, summary, type, tier, source FROM knowledge_entries WHERE id IN (${placeholders})`
+      ).all(...nodeIds) as Array<{ id: number; summary: string; type: string; tier: string; source: string }>;
+      nodes = entries.map(e => ({
+        id: e.id,
+        summary: (e.summary ?? '').substring(0, 60),
+        type: e.type,
+        tier: e.tier,
+        source: e.source ?? ''
+      }));
+      // Filter edges to only include those where both nodes exist
+      const existingIds = new Set(nodes.map(n => n.id));
+      const validEdges = edges.filter(e => existingIds.has(e.source_id) && existingIds.has(e.target_id));
+      const edgeList = validEdges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+      return JSON.stringify({ nodes, edges: edgeList, totalNodes: nodes.length, totalEdges: edgeList.length });
+    }
+    // Fallback: no edges, show recent entries
     const allEntries = this.engine.db.prepare(
-      'SELECT id, summary, type, tier, source FROM knowledge_entries ORDER BY id DESC LIMIT ?'
-    ).all(limit) as Array<{ id: number; summary: string; type: string; tier: string; source: string }>;
-    const nodes = allEntries.map(e => ({
+      'SELECT id, summary, type, tier, source FROM knowledge_entries WHERE tier = ? ORDER BY id DESC LIMIT 50'
+    ).all('WORKING') as Array<{ id: number; summary: string; type: string; tier: string; source: string }>;
+    nodes = allEntries.map(e => ({
       id: e.id,
       summary: (e.summary ?? '').substring(0, 60),
       type: e.type,
       tier: e.tier,
       source: e.source ?? ''
     }));
-    return JSON.stringify({ nodes, edges: edgeList, totalNodes: nodes.length, totalEdges: edgeList.length });
+    return JSON.stringify({ nodes, edges: [], totalNodes: nodes.length, totalEdges: 0 });
+  }
+
+  /** KSA-190: Auto-link action — link a specific entry or backfill orphans. */
+  private graphAutoLink(args: Record<string, unknown>): string {
+    const entryId = args.node_id as number | undefined;
+    const limit = (args.limit as number) ?? 50;
+    try {
+      return this.engine.autoLinker.backfill(entryId, limit);
+    } catch (err) {
+      return `Auto-link failed: ${err}`;
+    }
   }
 
   private handleStatus(): string {

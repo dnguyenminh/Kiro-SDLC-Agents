@@ -90,11 +90,11 @@ export const MEMORY_TOOL_DEFINITIONS_V1 = [
   },
   {
     name: 'mem_graph',
-    description: 'Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego.',
+    description: 'Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego, auto_link.',
     inputSchema: {
       type: 'object',
       properties: {
-        action: { type: 'string', description: 'Action: neighbors, add_edge, path, ego' },
+        action: { type: 'string', description: 'Action: neighbors, add_edge, path, ego, auto_link' },
         node_id: { type: 'number', description: 'Node ID for neighbors/ego' },
         source_id: { type: 'number', description: 'Source node for add_edge' },
         target_id: { type: 'number', description: 'Target node for add_edge' },

@@ -46,6 +46,9 @@ class MemoryToolDispatcher(
         hybridSearch.setScopeFilter(scopeFilter)
         hybridSearch.setTokenBudget(tokenBudget)
         hybridSearch.setWorkingExpiry(workingExpiry)
+
+        // Wire AutoLinker into pipeline (KSA-190)
+        engine.autoLinker?.let { pipeline.setAutoLinker(it) }
     }
 
     /** Dispatch a memory tool call. Returns null if not a memory tool. */
@@ -58,7 +61,7 @@ class MemoryToolDispatcher(
             "mem_get" -> executeGet(args)
             "mem_delete" -> executeDelete(args)
             "mem_list" -> KbListTool(engine.knowledge).execute(args)
-            "mem_graph" -> KbGraphTool(graph, engine.knowledge).execute(args)
+            "mem_graph" -> KbGraphTool(graph, engine.knowledge, engine.autoLinker).execute(args)
             "mem_status" -> KbStatusTool(engine).execute(args)
             "mem_consolidate" -> executeConsolidate(args)
             "mem_audit" -> KbAuditTool(audit).execute(args)

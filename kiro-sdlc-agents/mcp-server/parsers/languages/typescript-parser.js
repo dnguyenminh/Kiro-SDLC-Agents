@@ -35,7 +35,7 @@ class TypeScriptParser {
         const rootNode = tree.rootNode;
         // Collect parse errors
         const errors = [];
-        if (rootNode.hasError()) {
+        if (rootNode.hasError) {
             const errorNodes = (0, ast_utils_js_1.findNodes)(rootNode, 'ERROR');
             for (const node of errorNodes.slice(0, 10)) {
                 errors.push({

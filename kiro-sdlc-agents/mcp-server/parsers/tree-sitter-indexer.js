@@ -83,7 +83,9 @@ class TreeSitterIndexer {
             return this.regexFallback(filePath, relativePath, startTime);
         }
         // Atomic database update
-        this.storeResults(relativePath, result);
+        const symbolIds = this.storeResults(relativePath, result);
+        // Extract and store function bodies for embedding-based similarity (KSA-169)
+        this.extractAndStoreBodies(relativePath, source, result, symbolIds);
         return {
             filePath: relativePath,
             symbolCount: result.symbols.length,
@@ -104,6 +106,7 @@ class TreeSitterIndexer {
     }
     /** Store parse results in the database atomically. */
     storeResults(filePath, result) {
+        const symbolIds = new Map();
         const transaction = this.db.transaction(() => {
             // Get file_id
             const fileRow = this.db.prepare('SELECT id FROM files WHERE relative_path = ?').get(filePath);
@@ -120,7 +123,6 @@ class TreeSitterIndexer {
                 // relationships table may not exist yet (pre-migration)
             }
             // Insert new symbols
-            const symbolIds = new Map();
             const insertSym = this.db.prepare(`
         INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line,
           parent_symbol, visibility, doc_comment)
@@ -149,6 +151,7 @@ class TreeSitterIndexer {
             }
         });
         transaction();
+        return symbolIds;
     }
     regexFallback(filePath, relativePath, startTime) {
         try {
@@ -209,6 +212,36 @@ class TreeSitterIndexer {
             '.java': 'java', '.go': 'go', '.rs': 'rust',
         };
         return map[ext] ?? 'generic';
+    }
+    /** Extract and store function body text for embedding-based similarity (KSA-169). */
+    extractAndStoreBodies(filePath, source, result, symbolIds) {
+        try {
+            const lines = source.split('\n');
+            const functionKinds = new Set(['function', 'method', 'arrow_function', 'generator', 'function_declaration']);
+            const minBodyLines = 3;
+            const insertBody = this.db.prepare(`
+        INSERT OR REPLACE INTO body_embeddings (symbol_id, chunk_index, embedding, token_count)
+        VALUES (?, ?, ?, ?)
+      `);
+            for (const sym of result.symbols) {
+                if (!functionKinds.has(sym.kind))
+                    continue;
+                const symbolId = symbolIds.get(sym.name);
+                if (!symbolId)
+                    continue;
+                const bodyLines = lines.slice(sym.startLine - 1, sym.endLine);
+                if (bodyLines.length < minBodyLines)
+                    continue;
+                const bodyText = bodyLines.join('\n');
+                const tokenCount = bodyText.split(/\s+/).filter(Boolean).length;
+                // Store body text as raw bytes (embedding generated later by embedding service)
+                const textBuffer = Buffer.from(bodyText, 'utf-8');
+                insertBody.run(symbolId, 0, textBuffer, tokenCount);
+            }
+        }
+        catch {
+            // Body extraction is optional — don't fail indexing
+        }
     }
 }
 exports.TreeSitterIndexer = TreeSitterIndexer;

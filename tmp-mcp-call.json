@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mem_ingest","arguments":{"content":"Fixed ONNX embed error: added NODE_PATH=parent(ONNX_RUNTIME_PATH) so onnxruntime-node resolves onnxruntime-common sibling. Rebuilt and reinstalled extension.","type":"CONTEXT","source":"chat-response","tags":"chat,stream,agent"}}}

@@ -22,7 +22,7 @@ class PythonParser {
         const symbols = [];
         const relationships = [];
         const errors = [];
-        if (tree.rootNode.hasError()) {
+        if (tree.rootNode.hasError) {
             const errorNodes = (0, ast_utils_js_1.findNodes)(tree.rootNode, 'ERROR');
             for (const node of errorNodes.slice(0, 10)) {
                 errors.push({

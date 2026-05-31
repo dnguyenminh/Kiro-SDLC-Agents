@@ -16,6 +16,11 @@ export declare class KbCacheLookup {
     updateConfig(config: KbCacheConfig): void;
     /** Lookup cascade: L2 (agent scope) → L1 (global scope). */
     find(query: string, agentName: string): Promise<KbLookupResult | null>;
+    /** Synchronous lookup — best-effort using in-memory search (KSA-141).
+     *  Returns result if KB search is synchronous, null otherwise. */
+    findSync(query: string, agentName: string): KbLookupResult | null;
+    /** Synchronous scope search — returns null if search is async-only. */
+    private searchScopeSync;
     /** Search KB with specific scope tags. Returns best match or null. */
     private searchScope;
     /** Search KB with timeout guard. */

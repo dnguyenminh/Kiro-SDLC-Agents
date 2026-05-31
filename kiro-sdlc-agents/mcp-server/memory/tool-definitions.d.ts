@@ -349,12 +349,15 @@ export declare const MEMORY_TOOL_DEFINITIONS: ({
                 type: string;
                 description: string;
             };
+            limit: {
+                type: string;
+                description: string;
+            };
             entry_id?: undefined;
             order?: undefined;
             entity?: undefined;
             topic?: undefined;
             map?: undefined;
-            limit?: undefined;
             id?: undefined;
             tier?: undefined;
             type?: undefined;

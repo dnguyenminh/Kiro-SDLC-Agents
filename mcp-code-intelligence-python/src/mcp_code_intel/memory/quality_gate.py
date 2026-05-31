@@ -24,7 +24,7 @@ class QualityResult:
 class IngestMeta:
     """Metadata provided during ingest for quality scoring."""
 
-    tags: str | None = None
+    tags: str | list | None = None
     type: str | None = None
     source: str | None = None
 
@@ -75,7 +75,8 @@ class QualityGate:
     def _calculate_score(self, content: str, meta: IngestMeta) -> int:
         score = 0
         score += min(40, (len(content) * 40) // 500)
-        if meta.tags and meta.tags.strip():
+        tags_str = ",".join(meta.tags) if isinstance(meta.tags, list) else (meta.tags or "")
+        if tags_str.strip():
             score += 20
         if meta.type and meta.type.strip():
             score += 10

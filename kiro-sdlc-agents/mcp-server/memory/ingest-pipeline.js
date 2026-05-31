@@ -2,6 +2,7 @@
 /**
  * IngestPipeline — parse, chunk, and store knowledge entries.
  * Enhanced with quality gate validation before storage.
+ * KSA-190: Added auto-linking after structured map extraction.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QualityRejectionError = exports.IngestPipeline = void 0;
@@ -15,6 +16,7 @@ class IngestPipeline {
     chunker = new chunking_strategy_js_1.SemanticChunker(1024);
     entityRepo = null;
     qualityGate = null;
+    autoLinker = null;
     constructor(repo, embeddingService = null) {
         this.repo = repo;
         this.embedding = embeddingService;
@@ -26,6 +28,10 @@ class IngestPipeline {
     /** Inject QualityGate for ingest validation. */
     setQualityGate(gate) {
         this.qualityGate = gate;
+    }
+    /** Inject AutoLinker for automatic graph edge creation. KSA-190. */
+    setAutoLinker(linker) {
+        this.autoLinker = linker;
     }
     /** Ingest a single knowledge entry with quality gate. Returns entry ID or rejection. */
     ingestEntry(content, summary, type, source, tags = '') {
@@ -39,6 +45,7 @@ class IngestPipeline {
         const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
         this.tryEmbed(id, summary);
         this.tryExtractMap(id, content);
+        this.tryAutoLink(id);
         this.trySetQualityScore(id, content, { tags, type, source });
         return id;
     }
@@ -52,13 +59,15 @@ class IngestPipeline {
             const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
             this.tryEmbed(id, summary);
             this.tryExtractMap(id, content);
+            const autoLink = this.tryAutoLink(id);
             this.trySetQualityScore(id, content, { tags, type, source });
-            return { id, quality, success: true };
+            return { id, quality, success: true, autoLink };
         }
         const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
         this.tryEmbed(id, summary);
         this.tryExtractMap(id, content);
-        return { id, quality: null, success: true };
+        const autoLink = this.tryAutoLink(id);
+        return { id, quality: null, success: true, autoLink };
     }
     /** Ingest a markdown document — splits by sections. */
     ingestMarkdown(text, source, type = 'CONTEXT') {
@@ -73,6 +82,7 @@ class IngestPipeline {
                 const id = this.repo.insert({ content: chunk.content, summary, type, tier: tierForType(type), source, tags: section.heading });
                 this.tryEmbed(id, summary);
                 this.tryExtractMap(id, chunk.content);
+                this.tryAutoLink(id);
                 entriesCreated++;
             }
         }
@@ -87,6 +97,7 @@ class IngestPipeline {
             const id = this.repo.insert({ content: chunk.content, summary, type, tier: tierForType(type), source, tags: '' });
             this.tryEmbed(id, summary);
             this.tryExtractMap(id, chunk.content);
+            this.tryAutoLink(id);
             entriesCreated++;
         }
         return { entriesCreated, source };
@@ -114,6 +125,18 @@ class IngestPipeline {
             }
         }
         catch { /* extraction must not break ingest */ }
+    }
+    /** Auto-link entry to related entries (fire-and-forget). KSA-190. */
+    tryAutoLink(entryId) {
+        if (!this.autoLinker)
+            return null;
+        try {
+            return this.autoLinker.link(entryId);
+        }
+        catch (err) {
+            process.stderr.write(`[ingest] Auto-link failed for entry ${entryId}: ${err}\n`);
+            return null;
+        }
     }
     /** Set quality score on entry after ingest. */
     trySetQualityScore(entryId, content, meta) {

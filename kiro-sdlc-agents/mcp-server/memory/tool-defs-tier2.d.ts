@@ -241,12 +241,15 @@ export declare const TIER2_TOOLS: ({
                 type: string;
                 description: string;
             };
+            limit: {
+                type: string;
+                description: string;
+            };
             entry_id?: undefined;
             order?: undefined;
             entity?: undefined;
             topic?: undefined;
             map?: undefined;
-            limit?: undefined;
             id?: undefined;
             tier?: undefined;
             type?: undefined;

@@ -16,5 +16,9 @@ export declare class GraphRepository {
     removeEdge(id: number): void;
     /** Count total edges. */
     countEdges(): number;
+    /** Check if edge exists (direction-agnostic). KSA-190. */
+    edgeExists(sourceId: number, targetId: number, relation: string): boolean;
+    /** Find entries with 0 edges (orphans). KSA-190. */
+    findOrphans(limit?: number): number[];
 }
 //# sourceMappingURL=graph-repo.d.ts.map

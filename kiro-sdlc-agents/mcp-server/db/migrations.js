@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCurrentVersion = getCurrentVersion;
 exports.runMigrations = runMigrations;
 const schema_js_1 = require("./schema.js");
+const migrator_js_1 = require("../database/migrator.js");
 /** Pattern metadata columns added in V2. */
 const MIGRATION_V2_COLUMNS = [
     'di_style',
@@ -44,6 +45,15 @@ function runMigrations(db) {
     // Always run V2 column migration (idempotent)
     if (current < 2) {
         applyMigrationV2(db);
+    }
+    // Run V3 graph migrations (KSA-145/153/169) — idempotent
+    if (current < 3) {
+        try {
+            (0, migrator_js_1.runGraphMigrations)(db);
+        }
+        catch (err) {
+            console.error('[migrations] V3 graph migration error (graceful):', err);
+        }
     }
 }
 function applyMigration(db, migration) {

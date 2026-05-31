@@ -49,18 +49,19 @@ exports.TIER2_TOOLS = [
     },
     {
         name: 'mem_graph',
-        description: 'Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego.',
+        description: 'Query knowledge graph relationships. Actions: neighbors, add_edge, path, ego, auto_link.',
         inputSchema: {
             type: 'object',
             properties: {
-                action: { type: 'string', description: 'Action: neighbors, add_edge, path, ego' },
-                node_id: { type: 'number', description: 'Node ID for neighbors/ego' },
+                action: { type: 'string', description: 'Action: neighbors, add_edge, path, ego, auto_link' },
+                node_id: { type: 'number', description: 'Node ID for neighbors/ego/auto_link' },
                 source_id: { type: 'number', description: 'Source node for add_edge' },
                 target_id: { type: 'number', description: 'Target node for add_edge' },
                 relation: { type: 'string', description: 'Edge relation type' },
                 from_id: { type: 'number', description: 'Start node for path' },
                 to_id: { type: 'number', description: 'End node for path' },
                 radius: { type: 'number', description: 'Radius for ego graph (default 2)' },
+                limit: { type: 'number', description: 'Max orphans to process for auto_link backfill (default 50)' },
             },
         },
     },

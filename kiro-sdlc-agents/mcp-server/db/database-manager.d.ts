@@ -6,7 +6,13 @@ import Database from 'better-sqlite3';
 export declare class DatabaseManager {
     private db;
     private readonly dbPath;
+    private static resolvedBinding;
     constructor(dbPath: string);
+    /**
+     * Pre-resolve native binding (async). Call once at server startup before initialize().
+     * Downloads prebuilt binary if needed (standalone mode).
+     */
+    static preResolveBinding(): Promise<void>;
     /** Open database, enable WAL, run migrations. */
     initialize(): void;
     /** Get the underlying database instance. */

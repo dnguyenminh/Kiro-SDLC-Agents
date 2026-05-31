@@ -1,0 +1,1 @@
+{"version":3,"file":"TestFileDetector.d.ts","sourceRoot":"","sources":["../../../../src/analyzers/graph-analysis/utils/TestFileDetector.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,qBAAa,gBAAgB;IAC3B,OAAO,CAAC,YAAY,CAOlB;IACF,OAAO,CAAC,QAAQ,CAA0C;IAE1D,2CAA2C;IAC3C,UAAU,CAAC,QAAQ,EAAE,MAAM,GAAG,OAAO;IAQrC,yDAAyD;IACzD,cAAc,CAAC,UAAU,EAAE,MAAM,GAAG,OAAO;CAS5C"}

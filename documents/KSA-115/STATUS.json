@@ -1,0 +1,16 @@
+{
+  "ticket": "KSA-115",
+  "currentPhase": "requirements",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-05-31T16:20:00Z" },
+    "specification": { "status": "not_started" },
+    "design": { "status": "not_started" },
+    "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "not_started" },
+    "implementation": { "status": "not_started" },
+    "testing": { "status": "not_started" },
+    "deployment": { "status": "not_started" }
+  },
+  "lastUpdated": "2026-05-31T16:20:00Z",
+  "note": "KSA-115 reused as temporary ticket for auto-linking feature planning. Original ticket was a Done subtask for schema migration."
+}

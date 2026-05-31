@@ -101,7 +101,12 @@ export class GrammarRegistry {
 
       // Dynamically import the language parser module
       const modulePath = langConfig.parserModule;
-      const { default: LangParserClass } = await import(modulePath);
+      const imported = await import(modulePath);
+      // Handle both ESM default export and CJS module.exports.default
+      const LangParserClass = imported.default?.default ?? imported.default ?? imported;
+      if (typeof LangParserClass !== 'function') {
+        throw new TypeError(`LangParserClass is not a constructor (got ${typeof LangParserClass})`);
+      }
       const langParser: ILanguageParser = new LangParserClass(parser, langId);
       this.languageParsers.set(langId, langParser);
 

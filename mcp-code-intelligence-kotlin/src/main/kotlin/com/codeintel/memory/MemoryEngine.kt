@@ -4,6 +4,9 @@ package com.codeintel.memory
 import com.codeintel.db.DatabaseManager
 import com.codeintel.log
 import com.codeintel.memory.db.MemoryDatabaseManager
+import com.codeintel.memory.graph.KnowledgeGraph
+import com.codeintel.memory.ingest.autolink.*
+import com.codeintel.memory.map.EntityRepository
 import com.codeintel.memory.repository.*
 
 class MemoryEngine(db: DatabaseManager) {
@@ -18,6 +21,10 @@ class MemoryEngine(db: DatabaseManager) {
     val sessions = SessionRepository(memoryDb)
     val audit = AuditRepository(memoryDb)
 
+    /** AutoLinker instance, available after initialize(). */
+    var autoLinker: AutoLinker? = null
+        private set
+
     /** Current active session ID (set after initialize). */
     var currentSessionId: String? = null
         private set
@@ -25,7 +32,8 @@ class MemoryEngine(db: DatabaseManager) {
     /** Initialize memory schema and subsystems. */
     fun initialize() {
         memoryDb.initialize()
-        log("Memory engine ready")
+        autoLinker = createAutoLinker()
+        log("Memory engine ready (auto-linker enabled)")
     }
 
     /** Start a new session and set it as current. */
@@ -55,6 +63,19 @@ class MemoryEngine(db: DatabaseManager) {
             totalVectors = vectors.count(),
             tierBreakdown = tierStats.associate { it.tier to it.entryCount }
         )
+    }
+
+    /** Create AutoLinker with all strategies wired. */
+    private fun createAutoLinker(): AutoLinker {
+        val knowledgeGraph = KnowledgeGraph(graph).also { it.loadFromDb() }
+        val entityRepo = EntityRepository(connection)
+        val strategies = listOf<LinkingStrategy>(
+            SemanticStrategy(vectors),
+            EntityStrategy(entityRepo),
+            TagStrategy(connection),
+            FtsStrategy(connection)
+        )
+        return AutoLinker(knowledgeGraph, graph, connection, strategies)
     }
 }
 

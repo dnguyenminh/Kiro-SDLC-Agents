@@ -64,7 +64,4 @@ Object.defineProperty(exports, "SemanticChunker", { enumerable: true, get: funct
 var document_parser_js_1 = require("./document-parser.js");
 Object.defineProperty(exports, "parseMarkdown", { enumerable: true, get: function () { return document_parser_js_1.parseMarkdown; } });
 Object.defineProperty(exports, "parsePlainText", { enumerable: true, get: function () { return document_parser_js_1.parsePlainText; } });
-
-var tool_dispatcher_consolidated_js_1 = require("./tool-dispatcher-consolidated.js");
-Object.defineProperty(exports, "MemoryToolDispatcherConsolidated", { enumerable: true, get: function () { return tool_dispatcher_consolidated_js_1.MemoryToolDispatcherConsolidated; } });
 //# sourceMappingURL=index.js.map

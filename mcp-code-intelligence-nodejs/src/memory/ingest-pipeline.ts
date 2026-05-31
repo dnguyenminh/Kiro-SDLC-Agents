@@ -1,6 +1,7 @@
 /**
  * IngestPipeline — parse, chunk, and store knowledge entries.
  * Enhanced with quality gate validation before storage.
+ * KSA-190: Added auto-linking after structured map extraction.
  */
 
 import { KnowledgeRepository } from './knowledge-repo.js';
@@ -11,6 +12,8 @@ import { extractStructuredMap } from './structured-map-extractor.js';
 import { EntityRepository } from './entity-repo.js';
 import { classifyEntity } from './entity-classifier.js';
 import type { QualityGate, QualityResult } from './v2/quality-gate.js';
+import type { AutoLinker } from './auto-linker.js';
+import type { AutoLinkResult } from './linking-strategies/types.js';
 
 /** Result of ingesting a document. */
 export interface IngestResult {
@@ -23,6 +26,7 @@ export interface IngestEntryResult {
   id: number | null;
   quality: QualityResult | null;
   success: boolean;
+  autoLink?: AutoLinkResult | null;
 }
 
 export class IngestPipeline {
@@ -31,6 +35,7 @@ export class IngestPipeline {
   private readonly chunker = new SemanticChunker(1024);
   private entityRepo: EntityRepository | null = null;
   private qualityGate: QualityGate | null = null;
+  private autoLinker: AutoLinker | null = null;
 
   constructor(repo: KnowledgeRepository, embeddingService: EmbeddingService | null = null) {
     this.repo = repo;
@@ -47,6 +52,11 @@ export class IngestPipeline {
     this.qualityGate = gate;
   }
 
+  /** Inject AutoLinker for automatic graph edge creation. KSA-190. */
+  setAutoLinker(linker: AutoLinker): void {
+    this.autoLinker = linker;
+  }
+
   /** Ingest a single knowledge entry with quality gate. Returns entry ID or rejection. */
   ingestEntry(content: string, summary: string, type: string, source?: string, tags = ''): number {
     // Quality gate check (if enabled)
@@ -60,6 +70,7 @@ export class IngestPipeline {
     const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
     this.tryEmbed(id, summary);
     this.tryExtractMap(id, content);
+    this.tryAutoLink(id);
     this.trySetQualityScore(id, content, { tags, type, source });
     return id;
   }
@@ -76,13 +87,15 @@ export class IngestPipeline {
       const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
       this.tryEmbed(id, summary);
       this.tryExtractMap(id, content);
+      const autoLink = this.tryAutoLink(id);
       this.trySetQualityScore(id, content, { tags, type, source });
-      return { id, quality, success: true };
+      return { id, quality, success: true, autoLink };
     }
     const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
     this.tryEmbed(id, summary);
     this.tryExtractMap(id, content);
-    return { id, quality: null, success: true };
+    const autoLink = this.tryAutoLink(id);
+    return { id, quality: null, success: true, autoLink };
   }
 
   /** Ingest a markdown document — splits by sections. */
@@ -97,6 +110,7 @@ export class IngestPipeline {
         const id = this.repo.insert({ content: chunk.content, summary, type, tier: tierForType(type), source, tags: section.heading });
         this.tryEmbed(id, summary);
         this.tryExtractMap(id, chunk.content);
+        this.tryAutoLink(id);
         entriesCreated++;
       }
     }
@@ -112,6 +126,7 @@ export class IngestPipeline {
       const id = this.repo.insert({ content: chunk.content, summary, type, tier: tierForType(type), source, tags: '' });
       this.tryEmbed(id, summary);
       this.tryExtractMap(id, chunk.content);
+      this.tryAutoLink(id);
       entriesCreated++;
     }
     return { entriesCreated, source };
@@ -139,6 +154,17 @@ export class IngestPipeline {
         this.entityRepo.indexEntities(entryId, entities);
       }
     } catch { /* extraction must not break ingest */ }
+  }
+
+  /** Auto-link entry to related entries (fire-and-forget). KSA-190. */
+  private tryAutoLink(entryId: number): AutoLinkResult | null {
+    if (!this.autoLinker) return null;
+    try {
+      return this.autoLinker.link(entryId);
+    } catch (err) {
+      process.stderr.write(`[ingest] Auto-link failed for entry ${entryId}: ${err}\n`);
+      return null;
+    }
   }
 
   /** Set quality score on entry after ingest. */

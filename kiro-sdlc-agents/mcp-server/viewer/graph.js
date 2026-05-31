@@ -19,7 +19,7 @@ async function initGraph() {
   const el = document.getElementById('graph3d');
   if (!el) return;
   try {
-    const r = await fetch(API + '/graph/data?limit=500');
+    const r = await fetch(API + '/graph/data?limit=5000');
     const d = await r.json();
     allNodes = d.nodes.map(n => ({
       id: n.id, name: n.summary, type: n.type, tier: n.tier, source: n.source || ''
@@ -40,8 +40,8 @@ async function initGraph() {
       if (graph3d) graph3d.width(wrap.clientWidth).height(wrap.clientHeight);
     }).observe(wrap);
     populateClusters();
-    // Start smooth minimap updates
-    setTimeout(() => { drawMinimapNodes(); startMinimapLoop(); }, 3000);
+    // Start minimap (second 3D graph instance)
+    setTimeout(() => { startMinimapLoop(); }, 3000);
   } catch (e) { console.error('[graph]', e); }
 }
 
@@ -88,54 +88,144 @@ function focusEntry(id) {
   else loadNodeDetail(id);
 }
 
-let mmBounds = { x0: 0, x1: 1, z0: 0, z1: 1, sx: 1, sz: 1 };
-let mmNodeImage = null;
-
-function drawMinimapNodes() {
-  if (!graph3d) return;
-  const ns = graph3d.graphData().nodes;
-  if (!ns.length) return;
-  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  ns.forEach(n => { if (n.x < x0) x0 = n.x; if (n.x > x1) x1 = n.x; if (n.z < z0) z0 = n.z; if (n.z > z1) z1 = n.z; });
-  x0 -= 50; x1 += 50; z0 -= 50; z1 += 50;
-  const sx = 180 / (x1 - x0 || 1), sz = 140 / (z1 - z0 || 1);
-  mmBounds = { x0, x1, z0, z1, sx, sz };
-  const off = document.createElement('canvas');
-  off.width = 180; off.height = 140;
-  const ctx = off.getContext('2d');
-  ns.forEach(n => { ctx.fillStyle = nodeColor(n.type); ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc((n.x - x0) * sx, (n.z - z0) * sz, 2, 0, 6.28); ctx.fill(); });
-  mmNodeImage = off;
-}
+/* --- Minimap: Second 3D graph instance fully synced with main graph --- */
+let minimapGraph = null;
 
 function startMinimapLoop() {
-  const c = document.getElementById('mc');
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  setInterval(drawMinimapNodes, 5000);
-  function frame() {
-    if (!graph3d || !mmNodeImage) { requestAnimationFrame(frame); return; }
-    ctx.clearRect(0, 0, 180, 140);
-    ctx.drawImage(mmNodeImage, 0, 0);
-    // Camera position indicator (crosshair)
-    const cam = graph3d.cameraPosition();
-    const { x0, z0, sx, sz } = mmBounds;
-    const cx = (cam.x - x0) * sx;
-    const cz = (cam.z - z0) * sz;
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, cz); ctx.lineTo(cx + 8, cz);
-    ctx.moveTo(cx, cz - 8); ctx.lineTo(cx, cz + 8);
-    ctx.stroke();
-    requestAnimationFrame(frame);
+  const el = document.getElementById('minimap-graph');
+  if (!el || !graph3d) return;
+
+  const data = graph3d.graphData();
+
+  // Create second 3D force-graph instance as minimap
+  minimapGraph = ForceGraph3D()(el)
+    .graphData({
+      nodes: data.nodes.map(n => ({ ...n, fx: n.x, fy: n.y, fz: n.z })),
+      links: data.links.map(l => ({
+        source: typeof l.source === 'object' ? l.source.id : l.source,
+        target: typeof l.target === 'object' ? l.target.id : l.target
+      }))
+    })
+    .nodeColor(n => nodeColor(n.type))
+    .nodeVal(n => nodeSize(n) * 0.5)
+    .nodeOpacity(0.85)
+    .nodeLabel(() => '')
+    .linkColor(() => 'rgba(100,150,200,0.2)')
+    .linkWidth(0.4)
+    .linkDirectionalParticles(0)
+    .backgroundColor('#0f172a')
+    .width(200).height(160)
+    .showNavInfo(false)
+    .enableNodeDrag(false)
+    .enableNavigationControls(true);
+
+  // Disable physics in minimap — positions come from main graph
+  minimapGraph.d3Force('charge', null);
+  minimapGraph.d3Force('link', null);
+  minimapGraph.d3Force('center', null);
+  minimapGraph.cooldownTicks(0);
+  minimapGraph.cooldownTime(0);
+  minimapGraph.warmupTicks(0);
+
+  // Bidirectional camera sync between main graph and minimap
+  let syncSource = 'main'; // tracks which graph is being interacted with
+  const mainContainer = document.getElementById('graph3d');
+
+  // Detect user interaction on minimap
+  el.addEventListener('mousedown', () => { syncSource = 'minimap'; });
+  el.addEventListener('wheel', () => { syncSource = 'minimap'; });
+  el.addEventListener('mouseup', () => { setTimeout(() => { syncSource = 'main'; }, 100); });
+  el.addEventListener('mouseleave', () => { setTimeout(() => { syncSource = 'main'; }, 100); });
+
+  // Detect user interaction on main graph
+  if (mainContainer) {
+    mainContainer.addEventListener('mousedown', () => { syncSource = 'main'; });
+    mainContainer.addEventListener('wheel', () => { syncSource = 'main'; });
   }
-  requestAnimationFrame(frame);
-  c.onclick = function(ev) {
-    const br = c.getBoundingClientRect();
-    const mx = (ev.clientX - br.left) / 180 * (mmBounds.x1 - mmBounds.x0) + mmBounds.x0;
-    const mz = (ev.clientY - br.top) / 140 * (mmBounds.z1 - mmBounds.z0) + mmBounds.z0;
-    graph3d.cameraPosition({ x: mx, y: 80, z: mz }, { x: mx, y: 0, z: mz }, 800);
-  };
+
+  // Continuous bidirectional camera sync using Three.js camera matrix
+  function syncCamera() {
+    if (!graph3d || !minimapGraph) { requestAnimationFrame(syncCamera); return; }
+    try {
+      if (syncSource === 'main') {
+        // Main → Minimap: copy Three.js camera matrix directly
+        const srcCam = graph3d.camera();
+        const dstCam = minimapGraph.camera();
+        if (srcCam && dstCam) {
+          dstCam.position.copy(srcCam.position);
+          dstCam.quaternion.copy(srcCam.quaternion);
+          dstCam.up.copy(srcCam.up);
+          // Also sync orbit controls target
+          const srcCtrl = graph3d.controls();
+          const dstCtrl = minimapGraph.controls();
+          if (srcCtrl && dstCtrl && srcCtrl.target && dstCtrl.target) {
+            dstCtrl.target.copy(srcCtrl.target);
+            dstCtrl.update();
+          }
+        }
+      } else {
+        // Minimap → Main: copy Three.js camera matrix directly
+        const srcCam = minimapGraph.camera();
+        const dstCam = graph3d.camera();
+        if (srcCam && dstCam) {
+          dstCam.position.copy(srcCam.position);
+          dstCam.quaternion.copy(srcCam.quaternion);
+          dstCam.up.copy(srcCam.up);
+          const srcCtrl = minimapGraph.controls();
+          const dstCtrl = graph3d.controls();
+          if (srcCtrl && dstCtrl && srcCtrl.target && dstCtrl.target) {
+            dstCtrl.target.copy(srcCtrl.target);
+            dstCtrl.update();
+          }
+        }
+      }
+    } catch (e) { /* ignore */ }
+    requestAnimationFrame(syncCamera);
+  }
+  requestAnimationFrame(syncCamera);
+
+  // Sync node positions from main graph -> minimap every 2s
+  setInterval(() => {
+    if (!graph3d || !minimapGraph) return;
+    const mainNodes = graph3d.graphData().nodes;
+    const mmData = minimapGraph.graphData();
+    const posMap = {};
+    mainNodes.forEach(n => { posMap[n.id] = { x: n.x, y: n.y, z: n.z }; });
+    let changed = false;
+    mmData.nodes.forEach(n => {
+      const p = posMap[n.id];
+      if (p && (n.x !== p.x || n.y !== p.y || n.z !== p.z)) {
+        n.x = p.x; n.y = p.y; n.z = p.z;
+        n.fx = p.x; n.fy = p.y; n.fz = p.z;
+        changed = true;
+      }
+    });
+    if (changed) minimapGraph.graphData(mmData);
+  }, 2000);
+
+  // Detect data changes (new nodes added/removed)
+  setInterval(() => {
+    if (!graph3d || !minimapGraph) return;
+    const mainNodes = graph3d.graphData().nodes;
+    const mmNodes = minimapGraph.graphData().nodes;
+    if (mainNodes.length !== mmNodes.length) {
+      const mainData = graph3d.graphData();
+      minimapGraph.graphData({
+        nodes: mainData.nodes.map(n => ({ ...n, fx: n.x, fy: n.y, fz: n.z })),
+        links: mainData.links.map(l => ({
+          source: typeof l.source === 'object' ? l.source.id : l.source,
+          target: typeof l.target === 'object' ? l.target.id : l.target
+        }))
+      });
+    }
+  }, 5000);
+
+  // Click on minimap node -> navigate main graph to that node
+  minimapGraph.onNodeClick(n => {
+    if (!graph3d) return;
+    const mainNode = graph3d.graphData().nodes.find(x => x.id === n.id);
+    if (mainNode) selectGraphNode(mainNode);
+  });
 }
 
 function populateClusters() {

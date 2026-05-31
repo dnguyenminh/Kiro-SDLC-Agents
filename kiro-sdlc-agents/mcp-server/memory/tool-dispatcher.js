@@ -1,6 +1,7 @@
 "use strict";
 /**
  * MemoryToolDispatcher — routes mem_* tool calls to handlers.
+ * KSA-190: Added auto_link action to graph handler, wired AutoLinker into pipeline.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -60,6 +61,8 @@ class MemoryToolDispatcher {
         this.workspace = workspace;
         this.pipeline = new ingest_pipeline_js_1.IngestPipeline(engine.knowledge, embeddingService);
         this.pipeline.setEntityRepo(engine.entities);
+        // KSA-190: Wire AutoLinker into ingest pipeline
+        this.pipeline.setAutoLinker(engine.autoLinker);
         this.hybridSearch = new hybrid_search_js_1.HybridSearch(engine.search, engine.graph);
         this.hybridSearch.setCoreMemory(engine.coreMemory);
         this.consolidator = new tier_consolidator_js_1.TierConsolidator(engine.knowledge, engine.consolidation);
@@ -167,10 +170,11 @@ class MemoryToolDispatcher {
             return 'Error: content required';
         const type = args.type ?? 'CONTEXT';
         const source = args.source;
-        const tags = args.tags ?? '';
+        const tags = Array.isArray(args.tags) ? args.tags.join(',') : (args.tags ?? '');
         const summary = args.summary ?? content.slice(0, 120);
         const agentName = args.agent_name;
-        const id = this.pipeline.ingestEntry(content, summary, type, source, tags);
+        const result = this.pipeline.ingestEntryWithQuality(content, summary, type, source, tags);
+        const id = result.id;
         if (agentName) {
             try {
                 this.engine.db.prepare('UPDATE knowledge_entries SET agent_name = ? WHERE id = ?').run(agentName, id);
@@ -180,7 +184,32 @@ class MemoryToolDispatcher {
         this.engine.audit.log('INGEST', id, this.engine.getSessionId() ?? undefined);
         this.autoOwnEntry(id, source);
         this.autoScoreEntry(id, content, tags);
-        return `Knowledge entry created: id=${id}, type=${type}, tier=WORKING`;
+        // KSA-190: Include auto-link info in response
+        let response = `Knowledge entry created: id=${id}, type=${type}, tier=WORKING`;
+        if (result.autoLink) {
+            const al = result.autoLink;
+            if (al.edgesCreated === 0 && !this.engine.autoLinker['config'].enabled) {
+                response += `\nAuto-linked: 0 (disabled)`;
+            }
+            else {
+                response += `\nAuto-linked: ${al.edgesCreated} edges`;
+                const { semantic, entity, tag } = al.breakdown;
+                if (al.edgesCreated > 0) {
+                    response += ` (${semantic} semantic, ${entity} entity, ${tag} tag)`;
+                }
+            }
+        }
+        else {
+            // AutoLinker not wired or returned null
+            const enabled = this.engine.autoLinker?.['config']?.enabled ?? true;
+            if (!enabled) {
+                response += `\nAuto-linked: 0 (disabled)`;
+            }
+            else {
+                response += `\nAuto-linked: 0 edges`;
+            }
+        }
+        return response;
     }
     /** Auto-set owner based on source field. */
     autoOwnEntry(id, source) {
@@ -307,8 +336,8 @@ class MemoryToolDispatcher {
             case 'add_edge': return this.graphAddEdge(args);
             case 'path': return this.graphPath(args);
             case 'ego': return this.graphEgo(args);
-            case 'all_edges': return this.graphAllEdges(args);
             case 'graph_data': return this.graphData(args);
+            case 'auto_link': return this.graphAutoLink(args);
             default: return `Unknown action: ${action}`;
         }
     }
@@ -353,42 +382,50 @@ class MemoryToolDispatcher {
         const nodes = this.engine.graph.egoGraph(nodeId, radius);
         return `Ego graph for ${nodeId} (radius=${radius}): ${nodes.size} nodes\n${[...nodes].join(', ')}`;
     }
-    graphAllEdges(args) {
-        const limit = args.limit ?? 5000;
-        const edges = this.engine.graphRepo.findAll(limit);
-        return JSON.stringify(edges.map(e => ({ source_id: e.source_id, target_id: e.target_id, relation: e.relation })));
-    }
     graphData(args) {
-        const limit = args.limit ?? 15000;
+        const limit = Math.min(args.limit ?? 15000, 15000);
+        // Get all edges
         const edges = this.engine.graphRepo.findAll(limit);
-        // Collect node IDs from edges
-        const nodeIds = new Set();
-        edges.forEach(e => { nodeIds.add(e.source_id); nodeIds.add(e.target_id); });
-        // Also include ALL entries (isolated nodes too) up to limit
-        const allEntries = this.engine.db.prepare(
-            'SELECT id, summary, type, tier, source FROM knowledge_entries ORDER BY updated_at DESC LIMIT ?'
-        ).all(limit);
-        // Build nodes: start with all entries, edge-connected ones already included
-        const nodes = [];
-        const seenIds = new Set();
-        for (const entry of allEntries) {
-            if (!seenIds.has(entry.id)) {
-                seenIds.add(entry.id);
-                nodes.push({ id: entry.id, summary: (entry.summary || '').substring(0, 80), type: entry.type || 'CONTEXT', tier: entry.tier || 'WORKING', source: entry.source || '' });
-            }
+        // Get nodes referenced by edges
+        const nodeIds = [...new Set(edges.flatMap(e => [e.source_id, e.target_id]))];
+        let nodes = [];
+        if (nodeIds.length > 0) {
+            const placeholders = nodeIds.map(() => '?').join(',');
+            const entries = this.engine.db.prepare(`SELECT id, summary, type, tier, source FROM knowledge_entries WHERE id IN (${placeholders})`).all(...nodeIds);
+            nodes = entries.map(e => ({
+                id: e.id,
+                summary: (e.summary ?? '').substring(0, 60),
+                type: e.type,
+                tier: e.tier,
+                source: e.source ?? ''
+            }));
+            // Filter edges to only include those where both nodes exist
+            const existingIds = new Set(nodes.map(n => n.id));
+            const validEdges = edges.filter(e => existingIds.has(e.source_id) && existingIds.has(e.target_id));
+            const edgeList = validEdges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
+            return JSON.stringify({ nodes, edges: edgeList, totalNodes: nodes.length, totalEdges: edgeList.length });
         }
-        // Add any edge-connected nodes not yet in the list
-        for (const nid of nodeIds) {
-            if (!seenIds.has(nid)) {
-                const entry = this.engine.knowledge.findById(nid);
-                if (entry) {
-                    seenIds.add(nid);
-                    nodes.push({ id: entry.id, summary: (entry.summary || '').substring(0, 80), type: entry.type || 'CONTEXT', tier: entry.tier || 'WORKING', source: entry.source || '' });
-                }
-            }
+        // Fallback: no edges, show recent entries
+        const allEntries = this.engine.db.prepare('SELECT id, summary, type, tier, source FROM knowledge_entries WHERE tier = ? ORDER BY id DESC LIMIT 50').all('WORKING');
+        nodes = allEntries.map(e => ({
+            id: e.id,
+            summary: (e.summary ?? '').substring(0, 60),
+            type: e.type,
+            tier: e.tier,
+            source: e.source ?? ''
+        }));
+        return JSON.stringify({ nodes, edges: [], totalNodes: nodes.length, totalEdges: 0 });
+    }
+    /** KSA-190: Auto-link action — link a specific entry or backfill orphans. */
+    graphAutoLink(args) {
+        const entryId = args.node_id;
+        const limit = args.limit ?? 50;
+        try {
+            return this.engine.autoLinker.backfill(entryId, limit);
         }
-        const edgeList = edges.map(e => ({ source: e.source_id, target: e.target_id, relation: e.relation }));
-        return JSON.stringify({ nodes, edges: edgeList });
+        catch (err) {
+            return `Auto-link failed: ${err}`;
+        }
     }
     handleStatus() {
         const stats = this.engine.getStats();

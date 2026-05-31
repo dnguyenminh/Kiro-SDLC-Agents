@@ -25,6 +25,17 @@ class VectorRepository {
     findAll() {
         return this.db.prepare('SELECT * FROM knowledge_vectors').all();
     }
+    /** Get vector for a specific entry (as float32 array). KSA-190. */
+    getVector(entryId) {
+        const row = this.db.prepare('SELECT vector, dimensions FROM knowledge_vectors WHERE entry_id = ?').get(entryId);
+        if (!row)
+            return null;
+        const floats = [];
+        for (let i = 0; i < row.vector.length; i += 4) {
+            floats.push(row.vector.readFloatLE(i));
+        }
+        return floats;
+    }
     /** Count total vectors stored. */
     count() {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM knowledge_vectors').get();

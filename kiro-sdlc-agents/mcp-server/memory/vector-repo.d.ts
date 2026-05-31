@@ -17,6 +17,8 @@ export declare class VectorRepository {
     upsert(entryId: number, vector: Buffer, model: string, dimensions: number): void;
     /** Get all vectors (for brute-force similarity). */
     findAll(): VectorRecord[];
+    /** Get vector for a specific entry (as float32 array). KSA-190. */
+    getVector(entryId: number): number[] | null;
     /** Count total vectors stored. */
     count(): number;
 }

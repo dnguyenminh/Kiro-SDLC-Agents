@@ -1,0 +1,81 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="lane1" value="Salesforce Developer" style="swimlane;horizontal=0;startSize=130;fillColor=#f5f5f5;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="0" width="1500" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="n1" value="Open SFDX&#10;Project in Kiro" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="lane1">
+      <mxGeometry x="140" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n2" value="Run &quot;Index&#10;Salesforce Project&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="lane1">
+      <mxGeometry x="320" y="45" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n8" value="View Indexing&#10;Results" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="lane1">
+      <mxGeometry x="1300" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane2" value="Kiro Extension" style="swimlane;horizontal=0;startSize=130;fillColor=#e8f4f8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="150" width="1500" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="n3" value="Detect SFDX&#10;Project Root" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="lane2">
+      <mxGeometry x="320" y="45" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n4" value="Invoke sf-kb-indexer&#10;sf_index_project" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="lane2">
+      <mxGeometry x="510" y="45" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n7" value="Show Progress&#10;Notification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="lane2">
+      <mxGeometry x="1120" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane3" value="MCP Servers (sf-parser / sf-graph / sf-kb-indexer)" style="swimlane;horizontal=0;startSize=130;fillColor=#fff0e6;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="300" width="1500" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="n5" value="Parse SFDX Metadata&#10;(salesforce-ast)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="lane3">
+      <mxGeometry x="510" y="45" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n5b" value="Build Dependency&#10;Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="lane3">
+      <mxGeometry x="710" y="45" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="n6" value="Ingest into KB&#10;(mem_ingest)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="lane3">
+      <mxGeometry x="910" y="45" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane4" value="AI Agent" style="swimlane;horizontal=0;startSize=130;fillColor=#fce4ec;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="450" width="1500" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="n9" value="Query SF Context&#10;(sf_kb_search /&#10;sf_dependencies)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;" vertex="1" parent="lane4">
+      <mxGeometry x="910" y="40" width="170" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="n10" value="Provide Context-Aware&#10;Assistance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#c62828;" vertex="1" parent="lane4">
+      <mxGeometry x="1120" y="40" width="170" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="n1" target="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="n2" target="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" edge="1" parent="1" source="n3" target="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="n4" target="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="n5" target="n5b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5b" edge="1" parent="1" source="n5b" target="n6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="n6" target="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="n7" target="n8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" edge="1" parent="1" source="n6" target="n9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;strokeColor=#999999;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" edge="1" parent="1" source="n9" target="n10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

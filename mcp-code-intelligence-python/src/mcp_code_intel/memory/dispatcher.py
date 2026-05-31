@@ -6,6 +6,9 @@ from typing import Any, TYPE_CHECKING
 from .engine import MemoryEngine
 from .ingest import IngestPipeline
 from .ingest_graph_linker import IngestGraphLinker
+from .auto_linker import AutoLinker
+from .auto_link_config import AutoLinkConfig
+from .structured_map_extractor import EntityRepository
 from .hybrid_search import HybridSearch
 from .consolidation import TierConsolidator
 from .sync_code import MemSyncCode
@@ -41,6 +44,17 @@ class MemoryToolDispatcher:
         graph_linker = IngestGraphLinker(engine.graph, conn)
         self._pipeline.set_graph_linker(graph_linker)
         self._graph_linker = graph_linker
+
+        # Wire auto-linker for semantic/entity/FTS edge creation (KSA-190)
+        entity_repo = EntityRepository(conn)
+        auto_linker = AutoLinker(
+            graph_repo=engine.graph_repo,
+            conn=conn,
+            vector_repo=engine.vectors,
+            entity_repo=entity_repo,
+        )
+        self._pipeline.set_auto_linker(auto_linker)
+        self._auto_linker = auto_linker
 
         # Wire V2 classes (KSA-110 F4: Anti-Pattern Protection)
         quality_gate = QualityGate(conn)
@@ -175,7 +189,8 @@ class MemoryToolDispatcher:
             return "Error: content required"
         type_ = args.get("type", "CONTEXT")
         source = args.get("source")
-        tags = args.get("tags", "")
+        tags_raw = args.get("tags", "")
+        tags = ",".join(tags_raw) if isinstance(tags_raw, list) else (tags_raw or "")
         summary = args.get("summary") or content[:120]
         agent_name = args.get("agent_name")
 
@@ -192,7 +207,15 @@ class MemoryToolDispatcher:
         self._engine.audit.log("INGEST", entry_id=entry_id, session_id=self._engine.session_id)
         self._auto_own_entry(entry_id, source)
         self._auto_score_entry(entry_id, content, tags)
-        return f"Knowledge entry created: id={entry_id}, type={type_}, tier=WORKING"
+        # Count edges created by auto-linker for this entry
+        try:
+            edge_count = self._engine._conn.execute(
+                "SELECT COUNT(*) FROM knowledge_graph_edges WHERE source_id = ? OR target_id = ?",
+                (entry_id, entry_id),
+            ).fetchone()[0]
+        except Exception:
+            edge_count = 0
+        return f"Knowledge entry created: id={entry_id}, type={type_}, tier=WORKING, links={edge_count}"
 
     def _auto_own_entry(self, entry_id: int, source: str | None) -> None:
         """Auto-set owner based on source field."""
@@ -341,6 +364,8 @@ class MemoryToolDispatcher:
             return self._graph_ego(args)
         if action == "rebuild":
             return self._graph_rebuild(args)
+        if action == "auto_link":
+            return self._graph_auto_link(args)
         return f"Unknown action: {action}"
 
     def _graph_neighbors(self, args: dict[str, Any]) -> str:
@@ -421,6 +446,14 @@ class MemoryToolDispatcher:
             f"created {total_edges} edges.\n"
             f"Total edges now: {self._engine.graph_repo.count_edges()}"
         )
+
+    def _graph_auto_link(self, args: dict[str, Any]) -> str:
+        """Backfill auto-link edges for orphan entries or a specific entry."""
+        entry_id = args.get("entry_id") or args.get("node_id")
+        limit = int(args.get("limit", 50))
+        entry_id_int = int(entry_id) if entry_id else None
+        result = self._auto_linker.backfill(entry_id_int, limit)
+        return result
 
     def _handle_status(self, args: dict[str, Any]) -> str:
         stats = self._engine.get_stats()

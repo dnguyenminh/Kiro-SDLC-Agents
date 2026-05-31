@@ -9,6 +9,7 @@ from .chunking_strategy import SemanticChunker, TextChunk
 from .ingest_graph_linker import IngestGraphLinker
 
 if TYPE_CHECKING:
+    from .auto_linker import AutoLinker, AutoLinkResult
     from .embedding import EmbeddingService
     from .knowledge_graph import KnowledgeGraph
     from .quality_gate import QualityGate, QualityResult, IngestMeta
@@ -32,6 +33,7 @@ class IngestPipeline:
         self._chunker = SemanticChunker(max_chunk_size=1024)
         self._quality_gate: "QualityGate | None" = None
         self._graph_linker: IngestGraphLinker | None = None
+        self._auto_linker: "AutoLinker | None" = None
 
     def set_quality_gate(self, gate: "QualityGate") -> None:
         """Inject QualityGate for ingest validation."""
@@ -40,6 +42,10 @@ class IngestPipeline:
     def set_graph_linker(self, linker: IngestGraphLinker) -> None:
         """Inject graph linker for automatic edge creation on ingest."""
         self._graph_linker = linker
+
+    def set_auto_linker(self, linker: "AutoLinker") -> None:
+        """Inject auto-linker for semantic/entity/FTS edge creation on ingest (KSA-190)."""
+        self._auto_linker = linker
 
     def ingest_entry(self, content: str, summary: str, type_: str,
                      source: str | None = None, tags: str = "") -> int:
@@ -55,6 +61,7 @@ class IngestPipeline:
         self._try_set_quality_score(entry_id, content, tags, type_, source)
         self._extract_structured_map(entry_id, content)
         self._link_graph(entry_id, source, tags, content)
+        self._try_auto_link(entry_id)
         return entry_id
 
     def _try_set_quality_score(self, entry_id: int, content: str,
@@ -142,6 +149,15 @@ class IngestPipeline:
                 _log(f"Graph linked entry {entry_id}: {edges} edges created")
         except Exception as e:
             _log(f"Graph linking failed for entry {entry_id}: {e}")
+
+    def _try_auto_link(self, entry_id: int) -> None:
+        """Run auto-linker strategies (semantic, entity, FTS). Fire-and-forget."""
+        if self._auto_linker is None:
+            return
+        try:
+            self._auto_linker.link(entry_id)
+        except Exception as e:
+            _log(f"Auto-link failed for entry {entry_id}: {e}")
 
     def _extract_structured_map(self, entry_id: int, content: str) -> None:
         """Extract structured map and index entities (KSA-142 F3)."""

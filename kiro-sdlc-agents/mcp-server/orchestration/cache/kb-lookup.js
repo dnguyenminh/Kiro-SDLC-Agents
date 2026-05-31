@@ -36,6 +36,62 @@ class KbCacheLookup {
         console.error(`[kb-cache] Miss: query="${query}" for ${agentName}`);
         return null;
     }
+    /** Synchronous lookup — best-effort using in-memory search (KSA-141).
+     *  Returns result if KB search is synchronous, null otherwise. */
+    findSync(query, agentName) {
+        if (!this.config.enabled || !this.memoryEngine)
+            return null;
+        try {
+            const search = this.memoryEngine?.search;
+            if (!search)
+                return null;
+            // Try L2 (agent scope) first
+            const l2Result = this.searchScopeSync(query, `agent:${agentName}`);
+            if (l2Result) {
+                console.error(`[kb-cache] L2 sync hit: ${l2Result.toolName} for ${agentName}`);
+                return { entry: l2Result, source: kb_models_js_1.CacheSource.L2_CACHE };
+            }
+            // Try L1 (global scope)
+            const l1Result = this.searchScopeSync(query, 'global');
+            if (l1Result) {
+                console.error(`[kb-cache] L1 sync hit: ${l1Result.toolName} for ${agentName}`);
+                return { entry: l1Result, source: kb_models_js_1.CacheSource.L1_CACHE };
+            }
+            return null;
+        }
+        catch {
+            return null;
+        }
+    }
+    /** Synchronous scope search — returns null if search is async-only. */
+    searchScopeSync(query, scope) {
+        try {
+            const search = this.memoryEngine?.search;
+            if (!search)
+                return null;
+            const tagFilter = scope === 'global'
+                ? 'tool-cache, scope:global'
+                : `tool-cache, ${scope}`;
+            const results = search.search(`tool-cache ${query}`, { limit: 5, tags: tagFilter });
+            // If search returns a Promise, we can't use it synchronously
+            if (results && typeof results.then === 'function')
+                return null;
+            if (!results || !Array.isArray(results) || results.length === 0)
+                return null;
+            for (const result of results) {
+                const content = this.extractContent(result);
+                if (!content)
+                    continue;
+                const entry = (0, kb_models_js_1.entryFromKbContent)(content, scope);
+                if (entry)
+                    return entry;
+            }
+            return null;
+        }
+        catch {
+            return null;
+        }
+    }
     /** Search KB with specific scope tags. Returns best match or null. */
     async searchScope(query, scope) {
         try {

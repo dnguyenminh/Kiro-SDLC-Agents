@@ -51,4 +51,30 @@ export class GraphRepository {
     ).get() as { cnt: number };
     return row.cnt;
   }
+
+  /** Check if edge exists (direction-agnostic). KSA-190. */
+  edgeExists(sourceId: number, targetId: number, relation: string): boolean {
+    const row = this.db.prepare(`
+      SELECT 1 FROM knowledge_graph_edges
+      WHERE ((source_id = ? AND target_id = ?) OR (source_id = ? AND target_id = ?))
+      AND relation = ?
+      LIMIT 1
+    `).get(sourceId, targetId, targetId, sourceId, relation);
+    return row !== undefined;
+  }
+
+  /** Find entries with 0 edges (orphans). KSA-190. */
+  findOrphans(limit = 50): number[] {
+    const rows = this.db.prepare(`
+      SELECT ke.id FROM knowledge_entries ke
+      WHERE ke.archived = 0
+      AND ke.id NOT IN (
+        SELECT source_id FROM knowledge_graph_edges
+        UNION
+        SELECT target_id FROM knowledge_graph_edges
+      )
+      LIMIT ?
+    `).all(limit) as Array<{ id: number }>;
+    return rows.map(r => r.id);
+  }
 }

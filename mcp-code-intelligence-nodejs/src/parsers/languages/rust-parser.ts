@@ -43,7 +43,7 @@ export default class RustParser implements ILanguageParser {
     const errors: ParseError[] = [];
 
     // Collect parse errors
-    if (tree.rootNode.hasError()) {
+    if (tree.rootNode.hasError) {
       const errorNodes = findNodes(tree.rootNode, 'ERROR');
       for (const node of errorNodes.slice(0, 10)) {
         errors.push({

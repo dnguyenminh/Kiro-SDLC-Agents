@@ -1,0 +1,269 @@
+"use strict";
+/**
+ * KSA-159: Edit Context Service — source + callers + tests + git for editing.
+ * Gathers everything needed before modifying a symbol.
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EditContextService = void 0;
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const token_budget_manager_js_1 = require("./token-budget-manager.js");
+const git_service_js_1 = require("./git-service.js");
+class EditContextService {
+    db;
+    resolver;
+    callGraph;
+    testDetector;
+    gitService;
+    budgetManager;
+    workspace;
+    constructor(db, resolver, callGraph, testDetector, workspace) {
+        this.db = db;
+        this.resolver = resolver;
+        this.callGraph = callGraph;
+        this.testDetector = testDetector;
+        this.gitService = new git_service_js_1.GitService(workspace);
+        this.budgetManager = new token_budget_manager_js_1.TokenBudgetManager(4000);
+        this.workspace = workspace;
+    }
+    /** Get full edit context for a symbol. */
+    async getContext(params) {
+        const startTime = Date.now();
+        const { symbol: symbolInput, include_callers = true, include_tests = true, include_memories = false, include_git = true, token_budget = 4000, caller_depth = 1 } = params;
+        // 1. Resolve symbol
+        const symbol = this.resolveSymbolInput(symbolInput);
+        if (!symbol) {
+            return this.symbolNotFoundResponse(symbolInput, token_budget, startTime);
+        }
+        // 2. Read source (always included)
+        const source = this.readSymbolSource(symbol);
+        const signature = this.getSignature(symbol);
+        // 3. Gather sections in parallel
+        const [callers, tests, gitHistory, siblings] = await Promise.all([
+            include_callers ? this.getCallerContext(symbol, caller_depth) : Promise.resolve(null),
+            include_tests ? this.getTestContext(symbol) : Promise.resolve(null),
+            include_git ? this.getGitContext(symbol) : Promise.resolve(null),
+            this.getSiblingContext(symbol)
+        ]);
+        // 4. Assemble within token budget
+        const sections = {
+            source: { content: source, priority: 1 },
+        };
+        if (callers && callers.length > 0)
+            sections.callers = { content: callers, priority: 2 };
+        if (tests && tests.length > 0)
+            sections.tests = { content: tests, priority: 3 };
+        if (gitHistory && gitHistory.length > 0)
+            sections.git_history = { content: gitHistory, priority: 5 };
+        if (siblings && siblings.length > 0)
+            sections.siblings = { content: siblings, priority: 6 };
+        const assembled = this.budgetManager.assemble(sections, token_budget);
+        const result = {
+            symbol: symbol.name,
+            file: symbol.filePath,
+            line: symbol.line,
+            kind: symbol.kind,
+            source: assembled.result.source || source,
+            signature,
+            metadata: {
+                tokenCount: assembled.tokenCount,
+                tokenBudget: token_budget,
+                sectionsIncluded: assembled.included,
+                sectionsExcluded: assembled.excluded,
+                queryTimeMs: Date.now() - startTime
+            }
+        };
+        if (assembled.result.callers)
+            result.callers = assembled.result.callers;
+        if (assembled.result.tests)
+            result.tests = assembled.result.tests;
+        if (assembled.result.git_history)
+            result.git_history = assembled.result.git_history;
+        if (assembled.result.siblings)
+            result.siblings = assembled.result.siblings;
+        return result;
+    }
+    resolveSymbolInput(input) {
+        // Try file:line format
+        if (input.includes(':') && /:\d+$/.test(input)) {
+            const colonIdx = input.lastIndexOf(':');
+            const file = input.substring(0, colonIdx);
+            const line = parseInt(input.substring(colonIdx + 1));
+            return this.findSymbolAtLine(file, line);
+        }
+        // Standard resolution
+        const resolved = this.resolver.resolve(input);
+        if (resolved.length === 0)
+            return null;
+        // Enrich with end_line and signature
+        const sym = resolved[0];
+        const extra = this.db.prepare(`
+      SELECT end_line as endLine, signature FROM symbols WHERE id = ?
+    `).get(sym.id);
+        return {
+            ...sym,
+            endLine: extra?.endLine,
+            signature: extra?.signature || undefined
+        };
+    }
+    findSymbolAtLine(file, line) {
+        const row = this.db.prepare(`
+      SELECT s.id, s.name, s.kind, f.relative_path as filePath, s.start_line as line,
+             s.end_line as endLine, s.signature, s.parent_symbol_id as parentSymbolId
+      FROM symbols s
+      JOIN files f ON s.file_id = f.id
+      WHERE f.relative_path LIKE ? AND s.start_line <= ? AND s.end_line >= ?
+      ORDER BY (s.end_line - s.start_line) ASC
+      LIMIT 1
+    `).get(`%${file}`, line, line);
+        return row || null;
+    }
+    readSymbolSource(symbol) {
+        try {
+            const fullPath = path.resolve(this.workspace, symbol.filePath);
+            const content = fs.readFileSync(fullPath, 'utf-8');
+            const lines = content.split('\n');
+            const start = symbol.line - 1;
+            const end = symbol.endLine || start + 50;
+            return lines.slice(start, end).join('\n');
+        }
+        catch {
+            return '';
+        }
+    }
+    getSignature(symbol) {
+        if (symbol.signature)
+            return symbol.signature;
+        const row = this.db.prepare(`SELECT signature FROM symbols WHERE id = ?`).get(symbol.id);
+        return row?.signature || null;
+    }
+    async getCallerContext(symbol, depth) {
+        const result = this.callGraph.findCallers(symbol.name, depth, 10);
+        return result.results.map(caller => {
+            const context = this.getLineContext(caller.filePath, caller.callSiteLine, 2);
+            return {
+                symbol: caller.qualifiedName || caller.symbol,
+                file: caller.filePath,
+                line: caller.callSiteLine,
+                context
+            };
+        });
+    }
+    getLineContext(file, line, surroundingLines) {
+        try {
+            const fullPath = path.resolve(this.workspace, file);
+            const content = fs.readFileSync(fullPath, 'utf-8');
+            const lines = content.split('\n');
+            const start = Math.max(0, line - 1 - surroundingLines);
+            const end = Math.min(lines.length, line + surroundingLines);
+            return lines.slice(start, end).join('\n');
+        }
+        catch {
+            return '';
+        }
+    }
+    async getTestContext(symbol) {
+        const testFiles = this.testDetector.findRelatedTests([symbol], []);
+        const results = [];
+        for (const tf of testFiles.slice(0, 3)) {
+            try {
+                const fullPath = path.resolve(this.workspace, tf.file);
+                const content = fs.readFileSync(fullPath, 'utf-8');
+                const testBlocks = this.extractTestBlocks(content, symbol.name);
+                for (const block of testBlocks.slice(0, 2)) {
+                    results.push({
+                        file: tf.file,
+                        testName: block.name,
+                        source: block.source
+                    });
+                }
+            }
+            catch { /* skip unreadable files */ }
+        }
+        return results;
+    }
+    extractTestBlocks(content, symbolName) {
+        const blocks = [];
+        const lines = content.split('\n');
+        const testPattern = /(?:it|test|describe)\s*\(\s*['"`]([^'"`]*?)['"`]/;
+        for (let i = 0; i < lines.length; i++) {
+            const match = lines[i].match(testPattern);
+            if (match && (lines[i].includes(symbolName) || (i + 10 < lines.length && lines.slice(i, i + 10).join('\n').includes(symbolName)))) {
+                const name = match[1];
+                const end = Math.min(i + 15, lines.length);
+                const source = lines.slice(i, end).join('\n');
+                blocks.push({ name, source });
+            }
+        }
+        return blocks;
+    }
+    async getGitContext(symbol) {
+        return this.gitService.getFileHistory(symbol.filePath, 5);
+    }
+    async getSiblingContext(symbol) {
+        const query = symbol.parentSymbolId
+            ? `SELECT name, kind, signature, start_line as line FROM symbols WHERE parent_symbol_id = ? AND id != ? ORDER BY start_line`
+            : `SELECT s.name, s.kind, s.signature, s.start_line as line FROM symbols s JOIN files f ON s.file_id = f.id WHERE f.relative_path = ? AND s.parent_symbol_id IS NULL AND s.id != ? ORDER BY s.start_line`;
+        const params = symbol.parentSymbolId
+            ? [symbol.parentSymbolId, symbol.id]
+            : [symbol.filePath, symbol.id];
+        return this.db.prepare(query).all(...params).map(r => ({
+            name: r.name,
+            kind: r.kind,
+            signature: r.signature,
+            line: r.line
+        }));
+    }
+    symbolNotFoundResponse(symbol, budget, startTime) {
+        return {
+            symbol,
+            file: '',
+            line: 0,
+            kind: 'unknown',
+            source: '',
+            signature: null,
+            metadata: {
+                tokenCount: 0,
+                tokenBudget: budget,
+                sectionsIncluded: [],
+                sectionsExcluded: ['error: symbol not found'],
+                queryTimeMs: Date.now() - startTime
+            }
+        };
+    }
+}
+exports.EditContextService = EditContextService;
+//# sourceMappingURL=edit-context-service.js.map

@@ -38,6 +38,19 @@ export class VectorRepository {
     return this.db.prepare('SELECT * FROM knowledge_vectors').all() as VectorRecord[];
   }
 
+  /** Get vector for a specific entry (as float32 array). KSA-190. */
+  getVector(entryId: number): number[] | null {
+    const row = this.db.prepare(
+      'SELECT vector, dimensions FROM knowledge_vectors WHERE entry_id = ?'
+    ).get(entryId) as { vector: Buffer; dimensions: number } | undefined;
+    if (!row) return null;
+    const floats: number[] = [];
+    for (let i = 0; i < row.vector.length; i += 4) {
+      floats.push(row.vector.readFloatLE(i));
+    }
+    return floats;
+  }
+
   /** Count total vectors stored. */
   count(): number {
     const row = this.db.prepare(

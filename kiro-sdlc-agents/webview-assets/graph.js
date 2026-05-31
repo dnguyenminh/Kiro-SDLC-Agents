@@ -399,15 +399,54 @@ function setGraphLayout(mode) {
 })();
 
 
-// --- Minimap ---
+// --- Minimap with real viewport sync ---
 var minimapCanvas = null;
 var minimapCtx = null;
+var minimapBounds = { minX: 0, maxX: 1, minY: 0, maxY: 1, scale: 1, offX: 0, offY: 0 };
+var minimapDragging = false;
+var minimapRAF = null;
 
 function initMinimap() {
   minimapCanvas = document.getElementById('minimap');
   if (!minimapCanvas) return;
   minimapCtx = minimapCanvas.getContext('2d');
-  setInterval(renderMinimap, 500);
+
+  // Drag-to-navigate on minimap
+  minimapCanvas.addEventListener('mousedown', function(e) {
+    minimapDragging = true;
+    minimapNavigateTo(e);
+  });
+  minimapCanvas.addEventListener('mousemove', function(e) {
+    if (minimapDragging) minimapNavigateTo(e);
+  });
+  minimapCanvas.addEventListener('mouseup', function() { minimapDragging = false; });
+  minimapCanvas.addEventListener('mouseleave', function() { minimapDragging = false; });
+
+  // Start rAF loop instead of setInterval
+  requestAnimationFrame(renderMinimapFrame);
+}
+
+function minimapNavigateTo(e) {
+  if (!graph) return;
+  var rect = minimapCanvas.getBoundingClientRect();
+  var clickX = e.clientX - rect.left;
+  var clickY = e.clientY - rect.top;
+  var b = minimapBounds;
+  if (b.scale === 0) return;
+
+  // Convert minimap coords back to graph coords
+  var graphX = (clickX - b.offX) / b.scale + b.minX;
+  var graphY = (clickY - b.offY) / b.scale + b.minY;
+
+  // Navigate camera to that position
+  var dist = 500;
+  try { dist = graph.cameraPosition().z || 500; } catch(ex) {}
+  graph.cameraPosition({ x: graphX, y: graphY, z: dist }, { x: graphX, y: graphY, z: 0 }, 600);
+}
+
+function renderMinimapFrame() {
+  renderMinimap();
+  minimapRAF = requestAnimationFrame(renderMinimapFrame);
 }
 
 function renderMinimap() {
@@ -435,6 +474,9 @@ function renderMinimap() {
   var offX = (w - rangeX * scale) / 2;
   var offY = (h - rangeY * scale) / 2;
 
+  // Store bounds for click/drag navigation
+  minimapBounds = { minX: minX, maxX: maxX, minY: minY, maxY: maxY, scale: scale, offX: offX, offY: offY };
+
   // Edges
   minimapCtx.strokeStyle = 'rgba(255,255,255,0.08)';
   minimapCtx.lineWidth = 0.5;
@@ -458,10 +500,56 @@ function renderMinimap() {
     minimapCtx.fill();
   });
 
-  // Viewport rect
-  minimapCtx.strokeStyle = 'rgba(255,255,255,0.5)';
+  // --- Real viewport rect from camera ---
+  var container = document.getElementById('graph-container');
+  if (!container) return;
+
+  var cam;
+  try { cam = graph.cameraPosition(); } catch(ex) { return; }
+  if (!cam || cam.z === undefined) return;
+
+  // Approximate visible world-space extent based on camera distance (perspective FOV ~75deg)
+  var fovRad = 75 * Math.PI / 180;
+  var halfFov = fovRad / 2;
+  var camDist = Math.abs(cam.z) || 500;
+  var aspect = container.clientWidth / (container.clientHeight || 1);
+
+  // Visible half-extents in world space
+  var visHalfH = Math.tan(halfFov) * camDist;
+  var visHalfW = visHalfH * aspect;
+
+  // Camera look-at center in world space
+  var lookX = cam.x || 0;
+  var lookY = cam.y || 0;
+
+  // Convert viewport world bounds to minimap coords
+  var vpLeft = (lookX - visHalfW - minX) * scale + offX;
+  var vpTop = (lookY - visHalfH - minY) * scale + offY;
+  var vpWidth = visHalfW * 2 * scale;
+  var vpHeight = visHalfH * 2 * scale;
+
+  // Clamp to minimap bounds
+  vpLeft = Math.max(0, Math.min(w - 4, vpLeft));
+  vpTop = Math.max(0, Math.min(h - 4, vpTop));
+  vpWidth = Math.max(8, Math.min(w - vpLeft, vpWidth));
+  vpHeight = Math.max(6, Math.min(h - vpTop, vpHeight));
+
+  // Draw viewport rect with semi-transparent fill + border
+  minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+  minimapCtx.fillRect(vpLeft, vpTop, vpWidth, vpHeight);
+  minimapCtx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+  minimapCtx.lineWidth = 1.5;
+  minimapCtx.strokeRect(vpLeft, vpTop, vpWidth, vpHeight);
+
+  // Draw center crosshair
+  var cx = vpLeft + vpWidth / 2;
+  var cy = vpTop + vpHeight / 2;
+  minimapCtx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
   minimapCtx.lineWidth = 1;
-  minimapCtx.strokeRect(w / 2 - 25, h / 2 - 18, 50, 36);
+  minimapCtx.beginPath();
+  minimapCtx.moveTo(cx - 4, cy); minimapCtx.lineTo(cx + 4, cy);
+  minimapCtx.moveTo(cx, cy - 4); minimapCtx.lineTo(cx, cy + 4);
+  minimapCtx.stroke();
 }
 
 setTimeout(initMinimap, 1000);
@@ -545,41 +633,4 @@ function jumpToCluster(type) {
   if (nodeCountEl) nodeCountEl.textContent = matching.length + ' ' + type + ' entries highlighted';
 }
 
-// --- Minimap click to navigate ---
-setTimeout(function() {
-  var mc = document.getElementById('minimap');
-  if (!mc) return;
-  mc.addEventListener('click', function(e) {
-    if (!graph || !allNodes || allNodes.length === 0) return;
-    var graphData = graph.graphData();
-    var nodes = graphData.nodes;
-    if (!nodes || nodes.length === 0) return;
-
-    var rect = mc.getBoundingClientRect();
-    var clickX = e.clientX - rect.left;
-    var clickY = e.clientY - rect.top;
-    var w = mc.width;
-    var h = mc.height;
-
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    nodes.forEach(function(n) {
-      if (n.x !== undefined) { if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x; }
-      if (n.y !== undefined) { if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y; }
-    });
-    if (minX === Infinity) return;
-
-    var rangeX = maxX - minX || 1;
-    var rangeY = maxY - minY || 1;
-    var pad = 10;
-    var scale = Math.min((w - pad * 2) / rangeX, (h - pad * 2) / rangeY);
-    var offX = (w - rangeX * scale) / 2;
-    var offY = (h - rangeY * scale) / 2;
-
-    var graphX = (clickX - offX) / scale + minX;
-    var graphY = (clickY - offY) / scale + minY;
-
-    var dist = 500;
-    try { dist = graph.cameraPosition().z || 500; } catch(ex) {}
-    graph.cameraPosition({ x: graphX, y: graphY, z: dist }, { x: graphX, y: graphY, z: 0 }, 800);
-  });
-}, 1200);
+// --- Minimap navigation handled by initMinimap drag-to-navigate ---

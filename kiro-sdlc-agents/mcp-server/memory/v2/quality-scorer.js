@@ -70,11 +70,7 @@ class QualityScorer {
         const total = this.db.prepare('SELECT COUNT(*) as cnt FROM quality_scores').get();
         const avg = this.db.prepare('SELECT AVG(total_score) as avg FROM quality_scores').get();
         const low = this.db.prepare('SELECT COUNT(*) as cnt FROM quality_scores WHERE total_score < 40').get();
-        const high = this.db.prepare('SELECT COUNT(*) as cnt FROM quality_scores WHERE total_score >= 70').get();
-        const distRows = this.db.prepare('SELECT CAST(total_score / 10 AS INTEGER) * 10 as bucket, COUNT(*) as cnt FROM quality_scores GROUP BY bucket ORDER BY bucket').all();
-        const distribution = {};
-        distRows.forEach(r => { distribution[String(r.bucket)] = r.cnt; });
-        return { total_scored: total.cnt, avg_score: Math.round((avg.avg ?? 0) * 10) / 10, low_quality_count: low.cnt, high_count: high.cnt, distribution };
+        return { total_scored: total.cnt, avg_score: Math.round((avg.avg ?? 0) * 10) / 10, low_quality_count: low.cnt };
     }
     computeDimensions(entry) {
         return {

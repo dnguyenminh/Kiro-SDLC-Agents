@@ -3,6 +3,7 @@
  * ExecuteDynamicTool — execute tool with mapping check + fallback chain support.
  * KSA-66: Routes via bridge's execute_dynamic_tool for nested tools (mapping check first).
  * KSA-139: Post-execution hooks for KB cache population/invalidation.
+ * KSA-141: Error scoring (-10 penalty) on all execution paths.
  * Behavioral parity with Python execute_dynamic.py.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -30,11 +31,16 @@ async function executeViaBridge(engine, toolName, mapping, args) {
     try {
         const result = await engine.callChild(serverName, 'execute_dynamic_tool', bridgeArgs);
         engine.getRegistry().recordHit(toolName, 1);
-        if (!isErrorResult(result))
+        if (!isErrorResult(result)) {
             engine.getRegistry().recordHit(toolName, 3);
+        }
+        else {
+            engine.getRegistry().recordHit(toolName, -10);
+        }
         return result;
     }
     catch (e) {
+        engine.getRegistry().recordHit(toolName, -10);
         return JSON.stringify({ error: `Nested execute failed on ${serverName}: ${e.message}` });
     }
 }
@@ -46,14 +52,20 @@ async function executeChain(engine, chain, args) {
         try {
             const result = await engine.callChild(entry.serverName, actualName, args);
             engine.getRegistry().recordHit(chain.toolName, 1);
-            if (!isErrorResult(result))
+            if (!isErrorResult(result)) {
                 engine.getRegistry().recordHit(chain.toolName, 3);
+            }
+            else {
+                engine.getRegistry().recordHit(chain.toolName, -10);
+            }
             return result;
         }
         catch (e) {
             errors.push(`${entry.serverName}: ${e.message}`);
         }
     }
+    // All servers in chain failed — penalize
+    engine.getRegistry().recordHit(chain.toolName, -10);
     return JSON.stringify({ error: `Tool '${chain.toolName}' failed on all ${chain.entries.length} servers: [${errors.join(', ')}]` });
 }
 /** Execute on single server via normal routing. */
@@ -61,11 +73,16 @@ async function executeSingle(engine, toolName, args) {
     try {
         const result = await engine.route(toolName, args);
         engine.getRegistry().recordHit(toolName, 1);
-        if (!isErrorResult(result))
+        if (!isErrorResult(result)) {
             engine.getRegistry().recordHit(toolName, 3);
+        }
+        else {
+            engine.getRegistry().recordHit(toolName, -10);
+        }
         return result;
     }
     catch (e) {
+        engine.getRegistry().recordHit(toolName, -10);
         return JSON.stringify({ error: e.message });
     }
 }
@@ -124,7 +141,7 @@ function fireCacheWrite(engine, toolName, serverName, agentName) {
         // Non-blocking — never fail execution due to cache
     }
 }
-/** Fire-and-forget: invalidate KB cache on failure (KSA-139). */
+/** Fire-and-forget: invalidate KB cache on failure + penalize score (KSA-139, KSA-141). */
 function fireCacheInvalidate(engine, toolName, agentName, errorResult) {
     try {
         const invalidator = engine.getKbCacheInvalidator();
@@ -134,5 +151,7 @@ function fireCacheInvalidate(engine, toolName, agentName, errorResult) {
     catch {
         // Non-blocking
     }
+    // KSA-141: Error scoring penalty in WithCache paths
+    engine.getRegistry().recordHit(toolName, -10);
 }
 //# sourceMappingURL=execute-dynamic.js.map

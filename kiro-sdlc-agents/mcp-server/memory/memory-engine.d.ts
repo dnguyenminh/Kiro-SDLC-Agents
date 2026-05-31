@@ -1,6 +1,7 @@
 /**
  * MemoryEngine — facade for the SDLC Memory system.
  * Single entry point for all memory operations.
+ * KSA-190: Added AutoLinker wiring.
  */
 import Database from 'better-sqlite3';
 import { KnowledgeRepository } from './knowledge-repo.js';
@@ -14,6 +15,7 @@ import { KnowledgeGraph } from './knowledge-graph.js';
 import { CoreMemoryManager } from './core-memory.js';
 import { EntityRepository } from './entity-repo.js';
 import { ConversationRepository } from './conversation-repo.js';
+import { AutoLinker } from './auto-linker.js';
 import { TierStats } from './models.js';
 export interface MemoryStats {
     totalEntries: number;
@@ -33,6 +35,7 @@ export declare class MemoryEngine {
     readonly coreMemory: CoreMemoryManager;
     readonly entities: EntityRepository;
     readonly conversations: ConversationRepository;
+    readonly autoLinker: AutoLinker;
     private readonly _db;
     private currentSessionId;
     /** Expose raw DB for direct queries (used by UX routes). */

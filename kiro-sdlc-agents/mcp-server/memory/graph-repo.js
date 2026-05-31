@@ -34,6 +34,30 @@ class GraphRepository {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM knowledge_graph_edges').get();
         return row.cnt;
     }
+    /** Check if edge exists (direction-agnostic). KSA-190. */
+    edgeExists(sourceId, targetId, relation) {
+        const row = this.db.prepare(`
+      SELECT 1 FROM knowledge_graph_edges
+      WHERE ((source_id = ? AND target_id = ?) OR (source_id = ? AND target_id = ?))
+      AND relation = ?
+      LIMIT 1
+    `).get(sourceId, targetId, targetId, sourceId, relation);
+        return row !== undefined;
+    }
+    /** Find entries with 0 edges (orphans). KSA-190. */
+    findOrphans(limit = 50) {
+        const rows = this.db.prepare(`
+      SELECT ke.id FROM knowledge_entries ke
+      WHERE ke.archived = 0
+      AND ke.id NOT IN (
+        SELECT source_id FROM knowledge_graph_edges
+        UNION
+        SELECT target_id FROM knowledge_graph_edges
+      )
+      LIMIT ?
+    `).all(limit);
+        return rows.map(r => r.id);
+    }
 }
 exports.GraphRepository = GraphRepository;
 //# sourceMappingURL=graph-repo.js.map

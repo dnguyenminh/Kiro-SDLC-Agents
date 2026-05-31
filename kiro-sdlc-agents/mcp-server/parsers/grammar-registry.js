@@ -111,10 +111,12 @@ class GrammarRegistry {
             this.parsers.set(langId, parser);
             // Dynamically import the language parser module
             const modulePath = langConfig.parserModule;
-            const resolvedModule = path.resolve(this.config.grammarDir, modulePath);
-            const moduleUrl = require('url').pathToFileURL(resolvedModule).href;
-            const imported = await import(moduleUrl);
-            const LangParserClass = imported.default?.default || imported.default;
+            const imported = await import(modulePath);
+            // Handle both ESM default export and CJS module.exports.default
+            const LangParserClass = imported.default?.default ?? imported.default ?? imported;
+            if (typeof LangParserClass !== 'function') {
+                throw new TypeError(`LangParserClass is not a constructor (got ${typeof LangParserClass})`);
+            }
             const langParser = new LangParserClass(parser, langId);
             this.languageParsers.set(langId, langParser);
             console.error(`[grammar-registry] Loaded grammar: ${langId}`);

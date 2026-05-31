@@ -54,9 +54,16 @@ const stream_write_file_js_1 = require("./stream-write-file.js");
 const code_kb_export_js_1 = require("./code-kb-export.js");
 const drawio_tool_js_1 = require("./drawio-tool.js");
 const drawio_export_png_js_1 = require("./drawio-export-png.js");
+const call_graph_tools_js_1 = require("./call-graph-tools.js");
+const dependency_tools_js_1 = require("./dependency-tools.js");
+const impact_tools_js_1 = require("./impact-tools.js");
+const code_traverse_js_1 = require("./code-traverse.js");
 const index_js_1 = require("../memory/index.js");
-const tool_dispatcher_consolidated_js_1 = require("../memory/tool-dispatcher-consolidated.js");
-const tool_dispatcher_v2_js_1 = require("../memory/tool-dispatcher-v2.js");
+const ComplexityTool_js_1 = require("../analyzers/complexity/ComplexityTool.js");
+const EntryPointTool_js_1 = require("../analyzers/entry-points/EntryPointTool.js");
+const GraphAnalysisTools_js_1 = require("../analyzers/graph-analysis/GraphAnalysisTools.js");
+const ai_context_tools_js_1 = require("./ai-context-tools.js");
+const SimilarityTools_js_1 = require("../analyzers/similarity/SimilarityTools.js");
 /** Register all 7 MCP tools on the server instance (SDK mode). */
 function registerTools(server, dbManager, indexer, workspace) {
     const queryLayer = new query_layer_js_1.QueryLayer(dbManager);
@@ -67,16 +74,17 @@ function registerTools(server, dbManager, indexer, workspace) {
     (0, code_index_status_js_1.registerCodeIndexStatus)(server, queryLayer, indexer);
     (0, stream_write_file_js_1.registerStreamWriteFile)(server, workspace);
     (0, code_kb_export_js_1.registerCodeKbExport)(server, queryLayer, workspace);
-    console.error('[tools] Registered 7 MCP tools');
+    console.error('[tools] Registered 12 MCP tools (7 core + 5 graph)');
 }
 /** Get tool definitions for tools/list response (raw mode). */
 function getToolDefinitions() {
     const defs = [...TOOL_DEFINITIONS, ...index_js_1.MEMORY_TOOL_DEFINITIONS];
-    if ((0, drawio_export_png_js_1.isExportPngAvailable)(orchestrationEngine)) {
-        defs.push(drawio_export_png_js_1.DRAWIO_EXPORT_PNG_DEFINITION);
-    }
     if (orchestrationEngine) {
         defs.push(...orchestrationEngine.metaToolDispatcher.getDefinitions());
+    }
+    // Conditionally include drawio_export_png only if a renderer is available
+    if ((0, drawio_export_png_js_1.isExportPngAvailable)(orchestrationEngine)) {
+        defs.push(drawio_export_png_js_1.DRAWIO_EXPORT_PNG_DEFINITION);
     }
     return defs;
 }
@@ -106,7 +114,7 @@ async function dispatchTool(name, args, dbManager, indexer, workspace) {
     if (memResult !== null)
         return memResult;
     const queryLayer = new query_layer_js_1.QueryLayer(dbManager);
-    return dispatchByName(name, args, queryLayer, indexer, workspace);
+    return dispatchByName(name, args, queryLayer, indexer, workspace, dbManager);
 }
 let orchestrationEngine = null;
 /** Wire orchestration engine into tool dispatch. */
@@ -118,8 +126,19 @@ let memoryDispatcher = null;
 function initMemoryDispatcher(engine, workspace, embeddingService) {
     const v1 = new index_js_1.MemoryToolDispatcher(engine, workspace, embeddingService);
     const db = engine.db || engine.getDb?.() || null;
-    const v2 = db ? new tool_dispatcher_v2_js_1.MemoryToolDispatcherV2(db) : null;
-    const consolidated = new tool_dispatcher_consolidated_js_1.MemoryToolDispatcherConsolidated(v1, v2);
+    const { MemoryToolDispatcherV2 } = require('../memory/tool-dispatcher-v2.js');
+    const { MemoryToolDispatcherConsolidated } = require('../memory/tool-dispatcher-consolidated.js');
+    const v2 = db ? new MemoryToolDispatcherV2(db) : null;
+    const consolidated = new MemoryToolDispatcherConsolidated(v1, v2);
+    // Inject ConversationRepository + Summarizer deps
+    if (db) {
+        const convRepo = new index_js_1.ConversationRepository(db);
+        const knowledgeRepo = engine.knowledge || null;
+        const summarizer = knowledgeRepo
+            ? new index_js_1.ConversationSummarizer(convRepo, knowledgeRepo)
+            : null;
+        consolidated.setConversationDeps(convRepo, summarizer);
+    }
     memoryDispatcher = consolidated;
 }
 /** Get the initialized memory dispatcher (for tool-call ingest hook). */
@@ -130,14 +149,11 @@ function getMemoryDispatcher(dbManager, workspace) {
     if (!memoryDispatcher) {
         const engine = new index_js_1.MemoryEngine(dbManager.getDb());
         engine.startSession('mcp-client');
-        const v1 = new index_js_1.MemoryToolDispatcher(engine, workspace, null);
-        const db = dbManager.getDb();
-        const v2 = db ? new tool_dispatcher_v2_js_1.MemoryToolDispatcherV2(db) : null;
-        memoryDispatcher = new tool_dispatcher_consolidated_js_1.MemoryToolDispatcherConsolidated(v1, v2);
+        memoryDispatcher = new index_js_1.MemoryToolDispatcher(engine, workspace, null);
     }
     return memoryDispatcher;
 }
-async function dispatchByName(name, args, queryLayer, indexer, workspace) {
+async function dispatchByName(name, args, queryLayer, indexer, workspace, dbManager) {
     switch (name) {
         case 'code_search': {
             const result = handleCodeSearch(args, queryLayer);
@@ -160,6 +176,41 @@ async function dispatchByName(name, args, queryLayer, indexer, workspace) {
             return (0, drawio_tool_js_1.handleDrawioLayout)(args, workspace);
         case 'drawio_export_png':
             return (0, drawio_export_png_js_1.handleDrawioExportPng)(args, workspace, orchestrationEngine);
+        case 'code_callers':
+            return (0, call_graph_tools_js_1.handleCodeCallers)(args, dbManager.getDb());
+        case 'code_callees':
+            return (0, call_graph_tools_js_1.handleCodeCallees)(args, dbManager.getDb());
+        case 'code_dependencies':
+            return (0, dependency_tools_js_1.handleCodeDependencies)(args, dbManager.getDb(), workspace);
+        case 'code_impact':
+            return (0, impact_tools_js_1.handleCodeImpact)(args, dbManager.getDb(), workspace);
+        case 'code_traverse':
+            return (0, code_traverse_js_1.handleCodeTraverse)(args, dbManager.getDb(), workspace);
+        case 'complexity_analysis':
+            return (0, ComplexityTool_js_1.handleComplexityTool)(args, dbManager.getDb());
+        case 'find_entry_points':
+            return (0, EntryPointTool_js_1.handleEntryPointTool)(args, dbManager.getDb());
+        case 'find_circular_deps':
+        case 'find_related_tests':
+        case 'find_hot_paths':
+        case 'find_dead_imports':
+        case 'module_summary': {
+            const result = (0, GraphAnalysisTools_js_1.handleGraphAnalysisTool)(name, args, dbManager.getDb());
+            return result ?? `Unknown tool: ${name}`;
+        }
+        case 'get_ai_context':
+            return (0, ai_context_tools_js_1.handleGetAIContext)(args, dbManager.getDb(), workspace);
+        case 'get_edit_context':
+            return (0, ai_context_tools_js_1.handleGetEditContext)(args, dbManager.getDb(), workspace);
+        case 'get_curated_context':
+            return (0, ai_context_tools_js_1.handleGetCuratedContext)(args, dbManager.getDb(), workspace, dbManager);
+        case 'find_duplicates':
+        case 'find_dead_code':
+        case 'git_search':
+        case 'git_index': {
+            const simResult = (0, SimilarityTools_js_1.handleSimilarityTool)(name, args, dbManager.getDb(), workspace);
+            return simResult ?? `Unknown tool: ${name}`;
+        }
         default:
             return `Unknown tool: ${name}`;
     }
@@ -272,9 +323,11 @@ async function handleCodeIndexStatus(args, ql, indexer) {
     if (args.reindex)
         await indexer.runFullIndex();
     const status = ql.getIndexStatus();
+    const tsStats = indexer.getTreeSitterStats();
     const lines = [
         'Code Intelligence Index Status\n',
         `State: ${indexer.isRunning() ? 'Indexing...' : 'Idle'}`,
+        `Parser: ${tsStats.ready ? `tree-sitter (${tsStats.languages.join(', ')})` : 'regex fallback'}`,
         `Files: ${status.totalFiles}`,
         `Symbols: ${status.totalSymbols}`,
         `Modules: ${status.totalModules}`,
@@ -404,5 +457,14 @@ const TOOL_DEFINITIONS = [
         inputSchema: { type: 'object', properties: { module: { type: 'string', description: 'Filter by module name' }, format: { type: 'string', description: 'Output format: json or text' } } },
     },
     drawio_tool_js_1.DRAWIO_TOOL_DEFINITION,
+    ...call_graph_tools_js_1.CALL_GRAPH_TOOL_DEFINITIONS,
+    ...dependency_tools_js_1.DEPENDENCY_TOOL_DEFINITIONS,
+    ...impact_tools_js_1.IMPACT_TOOL_DEFINITIONS,
+    ...code_traverse_js_1.TRAVERSE_TOOL_DEFINITIONS,
+    ComplexityTool_js_1.COMPLEXITY_TOOL_DEFINITION,
+    EntryPointTool_js_1.ENTRY_POINT_TOOL_DEFINITION,
+    ...GraphAnalysisTools_js_1.GRAPH_ANALYSIS_TOOL_DEFINITIONS,
+    ...ai_context_tools_js_1.AI_CONTEXT_TOOL_DEFINITIONS,
+    ...SimilarityTools_js_1.SIMILARITY_TOOL_DEFINITIONS,
 ];
 //# sourceMappingURL=register-tools.js.map

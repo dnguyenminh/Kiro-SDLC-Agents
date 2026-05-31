@@ -21,7 +21,7 @@ import { CALL_GRAPH_TOOL_DEFINITIONS, handleCodeCallers, handleCodeCallees } fro
 import { DEPENDENCY_TOOL_DEFINITIONS, handleCodeDependencies } from './dependency-tools.js';
 import { IMPACT_TOOL_DEFINITIONS, handleCodeImpact } from './impact-tools.js';
 import { TRAVERSE_TOOL_DEFINITIONS, handleCodeTraverse } from './code-traverse.js';
-import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS } from '../memory/index.js';
+import { MemoryEngine, MemoryToolDispatcher, MEMORY_TOOL_DEFINITIONS, ConversationRepository, ConversationSummarizer } from '../memory/index.js';
 import { EmbeddingService } from '../memory/embedding/index.js';
 import { OrchestrationEngine } from '../orchestration/engine.js';
 import { COMPLEXITY_TOOL_DEFINITION, handleComplexityTool } from '../analyzers/complexity/ComplexityTool.js';
@@ -108,7 +108,22 @@ let memoryDispatcher: MemoryToolDispatcher | null = null;
 export function initMemoryDispatcher(
   engine: MemoryEngine, workspace: string, embeddingService: EmbeddingService | null
 ): void {
-  memoryDispatcher = new MemoryToolDispatcher(engine, workspace, embeddingService);
+  const v1 = new MemoryToolDispatcher(engine, workspace, embeddingService);
+  const db = (engine as any).db || (engine as any).getDb?.() || null;
+  const { MemoryToolDispatcherV2 } = require('../memory/tool-dispatcher-v2.js');
+  const { MemoryToolDispatcherConsolidated } = require('../memory/tool-dispatcher-consolidated.js');
+  const v2 = db ? new MemoryToolDispatcherV2(db) : null;
+  const consolidated = new MemoryToolDispatcherConsolidated(v1, v2);
+  // Inject ConversationRepository + Summarizer deps
+  if (db) {
+    const convRepo = new ConversationRepository(db);
+    const knowledgeRepo = (engine as any).knowledge || null;
+    const summarizer = knowledgeRepo
+      ? new ConversationSummarizer(convRepo, knowledgeRepo)
+      : null;
+    consolidated.setConversationDeps(convRepo, summarizer);
+  }
+  memoryDispatcher = consolidated;
 }
 
 /** Get the initialized memory dispatcher (for tool-call ingest hook). */

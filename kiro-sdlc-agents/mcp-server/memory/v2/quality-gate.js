@@ -54,7 +54,8 @@ class QualityGate {
         const trimmed = content.trim();
         score += Math.min(40, Math.floor((trimmed.length / 500) * 40));
         // Has tags: +20
-        if (meta.tags && meta.tags.trim().length > 0)
+        const tagsStr = Array.isArray(meta.tags) ? meta.tags.join(',') : meta.tags;
+        if (tagsStr && tagsStr.trim().length > 0)
             score += 20;
         // Has type specified: +10
         if (meta.type && meta.type.trim().length > 0)

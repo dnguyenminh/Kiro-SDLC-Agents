@@ -1,0 +1,87 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="Auto-Link State Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="250" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;fillColor=#000000;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="410" y="50" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="idle" value="IDLE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="110" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="semantic" value="SEMANTIC&#xa;SEARCH" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="370" y="190" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="entity" value="ENTITY&#xa;SEARCH" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="370" y="270" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="tag" value="TAG&#xa;SEARCH" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="370" y="350" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="fts" value="FTS&#xa;FALLBACK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="370" y="430" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="dedup" value="DEDUP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="510" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="commit" value="COMMIT&#xa;EDGES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="590" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="done" value="DONE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="670" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="error" value="ERROR&#xa;(logged)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="400" width="110" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="es" edge="1" parent="1" source="start" target="idle" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="idle" target="semantic" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1l" value="ingest triggers" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e1">
+      <mxGeometry x="-0.2" relative="1" as="geometry">
+        <mxPoint as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="semantic" target="entity" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" edge="1" parent="1" source="entity" target="tag" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="tag" target="fts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4l" value="if &lt; 2 edges" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e4">
+      <mxGeometry x="-0.2" relative="1" as="geometry">
+        <mxPoint as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="fts" target="dedup" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="dedup" target="commit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="commit" target="done" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="eerr1" edge="1" parent="1" source="semantic" target="error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="eerr2" edge="1" parent="1" source="entity" target="error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="eerr3" edge="1" parent="1" source="error" target="done" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="eerr3l" value="graceful&#xa;recovery" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="eerr3">
+      <mxGeometry x="-0.2" relative="1" as="geometry">
+        <mxPoint as="offset"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

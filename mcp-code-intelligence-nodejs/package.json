@@ -12,6 +12,7 @@
     "build": "tsc && npm run copy-viewer && npm run copy-parsers",
     "copy-fixtures": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'src/parsers/languages/__tests__/fixtures'),p.resolve(__dirname,'dist/parsers/languages/__tests__/fixtures'))\"",
     "test": "tsc && npm run copy-fixtures && node --test dist/parsers/languages/__tests__/java-parser.test.js",
+    "test:vitest": "vitest run",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "clean": "rimraf dist",
@@ -49,8 +50,10 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.14.0",
+    "fast-check": "^4.8.0",
     "rimraf": "^5.0.0",
     "tree-sitter-java": "^0.23.4",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.7"
   }
 }

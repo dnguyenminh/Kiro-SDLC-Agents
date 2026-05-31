@@ -61,6 +61,8 @@ async function main() {
     let indexer = null;
     let memEngine = null;
     let initialized = false;
+    // Pre-resolve native binding (downloads prebuilt binary in standalone mode)
+    await database_manager_js_1.DatabaseManager.preResolveBinding();
     console.error('[code-intel] Server starting (workspace deferred until initialize)');
     const rl = readline.createInterface({ input: process.stdin, terminal: false });
     for await (const line of rl) {
@@ -87,62 +89,71 @@ async function main() {
             config = (0, config_js_1.setWorkspace)(config, extractRootUri(params));
             console.error(`[code-intel] Workspace: ${config.workspace}`);
             console.error(`[code-intel] DB path: ${config.dbPath}`);
-            db = new database_manager_js_1.DatabaseManager(config.dbPath);
-            db.initialize();
-            indexer = new indexing_engine_js_1.IndexingEngine(db, config);
+            // Respond IMMEDIATELY — heavy loading runs in background
             initialized = true;
-            // Initialize memory engine
-            const memoryEngine = new memory_engine_js_1.MemoryEngine(db.getDb());
-            memoryEngine.startSession('mcp-client');
-            memEngine = memoryEngine;
-            _memEngine = memoryEngine;
-            // Initialize embedding (optional: Ollama → ONNX → null)
-            const embeddingService = index_js_1.EmbeddingFactory.create(config, memoryEngine.vectors);
-            if (embeddingService) {
-                console.error('[code-intel] EmbeddingService initialized — vectors enabled');
-            }
-            else {
-                console.error('[code-intel] EmbeddingService not available — using BM25 only');
-            }
-            // Wire memory dispatcher with embedding
-            (0, register_tools_js_1.initMemoryDispatcher)(memoryEngine, config.workspace, embeddingService);
-            const memDispatcher = (0, register_tools_js_1.getMemoryDispatcherInstance)();
-            if (memDispatcher)
-                (0, tool_call_ingest_js_1.setIngestDispatcher)(memDispatcher);
-            // Start viewer server (skip if port < 0)
-            if (config.viewerPort >= 0) {
-                const viewerServer = new viewer_server_js_1.ViewerServer(config.viewerPort, config.workspace);
-                viewerServer.memoryEngine = memoryEngine;
-                viewerServer.knowledgeGraph = memoryEngine.graph;
-                viewerServer.start();
-                _viewerServer = viewerServer;
-            }
-            // Initialize orchestration engine (nullable — skipped if no config)
-            const orchConfigPath = (0, config_js_1.resolveOrchestrationConfigPath)();
-            const orchConfig = orchConfigPath
-                ? (0, config_js_2.loadOrchestrationConfigFromPath)(orchConfigPath)
-                : (0, config_js_2.loadOrchestrationConfig)(config.workspace);
-            if (orchConfig) {
-                const orchEngine = new engine_js_1.OrchestrationEngine(orchConfig, memoryEngine, config);
-                await orchEngine.start();
-                _orchEngine = orchEngine;
-                (0, register_tools_js_1.initOrchestration)(orchEngine);
-                if (_viewerServer)
-                    _viewerServer.modelManager = orchEngine.getModelManager();
-                console.error('[code-intel] OrchestrationEngine started');
-            }
-            else {
-                console.error('[code-intel] No orchestration.json — orchestration disabled');
-            }
             send({ jsonrpc: '2.0', id: reqId, result: buildInitializeResult() });
-            // Start background indexing after responding
-            indexer.startBackgroundIndexing().catch((err) => {
-                console.error('[code-intel] Indexing error:', err);
-            });
+            // Background initialization (parallel where possible)
+            (async () => {
+                try {
+                    // Phase 1: DB + Memory (sequential — memory depends on DB)
+                    db = new database_manager_js_1.DatabaseManager(config.dbPath);
+                    db.initialize();
+                    indexer = new indexing_engine_js_1.IndexingEngine(db, config);
+                    const memoryEngine = new memory_engine_js_1.MemoryEngine(db.getDb());
+                    memoryEngine.startSession('mcp-client');
+                    memEngine = memoryEngine;
+                    _memEngine = memoryEngine;
+                    // Phase 2: Parallel — embedding, viewer, orchestration
+                    const embeddingPromise = Promise.resolve().then(() => {
+                        const svc = index_js_1.EmbeddingFactory.create(config, memoryEngine.vectors);
+                        console.error(svc ? '[code-intel] EmbeddingService initialized — vectors enabled' : '[code-intel] EmbeddingService not available — using BM25 only');
+                        return svc;
+                    });
+                    const viewerPromise = Promise.resolve().then(() => {
+                        if (process.env['DISABLE_VIEWER'] !== '1') {
+                            const vs = new viewer_server_js_1.ViewerServer(config.viewerPort, config.workspace);
+                            vs.memoryEngine = memoryEngine;
+                            vs.knowledgeGraph = memoryEngine.graph;
+                            vs.start();
+                            _viewerServer = vs;
+                        }
+                    });
+                    const orchPromise = (async () => {
+                        const ocp = (0, config_js_1.resolveOrchestrationConfigPath)();
+                        const oc = ocp ? (0, config_js_2.loadOrchestrationConfigFromPath)(ocp) : (0, config_js_2.loadOrchestrationConfig)(config.workspace);
+                        if (oc) {
+                            const oe = new engine_js_1.OrchestrationEngine(oc, memoryEngine, config);
+                            await oe.start();
+                            _orchEngine = oe;
+                            (0, register_tools_js_1.initOrchestration)(oe);
+                            if (_viewerServer)
+                                _viewerServer.modelManager = oe.getModelManager();
+                            console.error('[code-intel] OrchestrationEngine started');
+                        }
+                        else {
+                            console.error('[code-intel] No orchestration.json — orchestration disabled');
+                        }
+                    })();
+                    // Wait for embedding (needed for memory dispatcher)
+                    const embeddingService = await embeddingPromise;
+                    (0, register_tools_js_1.initMemoryDispatcher)(memoryEngine, config.workspace, embeddingService);
+                    const memDispatcher = (0, register_tools_js_1.getMemoryDispatcherInstance)();
+                    if (memDispatcher)
+                        (0, tool_call_ingest_js_1.setIngestDispatcher)(memDispatcher);
+                    // Wait for viewer + orchestration
+                    await Promise.all([viewerPromise, orchPromise]);
+                    // Background indexing
+                    indexer.startBackgroundIndexing().catch((e) => console.error('[code-intel] Indexing error:', e));
+                    console.error('[code-intel] Background initialization complete');
+                }
+                catch (err) {
+                    console.error('[code-intel] Background init error:', err);
+                }
+            })();
             continue;
         }
         if (!initialized || !db || !indexer) {
-            send({ jsonrpc: '2.0', id: reqId, error: { code: -32002, message: 'Server not initialized' } });
+            send({ jsonrpc: '2.0', id: reqId, error: { code: -32002, message: 'Server initializing — please retry in a moment' } });
             continue;
         }
         const response = await handleRequest(method, reqId, params, db, indexer, config);

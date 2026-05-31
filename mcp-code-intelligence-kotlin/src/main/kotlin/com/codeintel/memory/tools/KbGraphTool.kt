@@ -2,17 +2,18 @@
 package com.codeintel.memory.tools
 
 import com.codeintel.memory.graph.KnowledgeGraph
+import com.codeintel.memory.ingest.autolink.AutoLinker
 import com.codeintel.memory.models.GraphEdge
 import com.codeintel.memory.repository.KnowledgeRepository
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.long
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 
 class KbGraphTool(
     private val graph: KnowledgeGraph,
-    private val knowledgeRepo: KnowledgeRepository
+    private val knowledgeRepo: KnowledgeRepository,
+    private val autoLinker: AutoLinker? = null
 ) {
+    private val json = Json { encodeDefaults = true; prettyPrint = true }
 
     /** Execute kb_graph with given arguments. */
     fun execute(args: JsonObject): String {
@@ -22,6 +23,7 @@ class KbGraphTool(
             "add_edge" -> handleAddEdge(args)
             "path" -> handlePath(args)
             "ego" -> handleEgo(args)
+            "auto_link" -> handleAutoLink(args)
             else -> "Unknown action: $action"
         }
     }
@@ -33,7 +35,7 @@ class KbGraphTool(
         val lines = mutableListOf("Node $nodeId connections (${neighbors.size}):\n")
         for (nId in neighbors.take(20)) {
             val entry = knowledgeRepo.findById(nId)
-            lines.add("  → [$nId] ${entry?.summary ?: "unknown"}")
+            lines.add("  -> [$nId] ${entry?.summary ?: "unknown"}")
         }
         return lines.joinToString("\n")
     }
@@ -51,7 +53,7 @@ class KbGraphTool(
         val fromId = args["from_id"]?.jsonPrimitive?.long ?: return "Error: from_id required"
         val toId = args["to_id"]?.jsonPrimitive?.long ?: return "Error: to_id required"
         val path = graph.shortestPath(fromId, toId) ?: return "No path found between $fromId and $toId"
-        return "Path: ${path.joinToString(" → ")}"
+        return "Path: ${path.joinToString(" -> ")}"
     }
 
     private fun handleEgo(args: JsonObject): String {
@@ -59,5 +61,19 @@ class KbGraphTool(
         val radius = args["radius"]?.jsonPrimitive?.int ?: 2
         val nodes = graph.egoGraph(nodeId, radius)
         return "Ego graph for $nodeId (radius=$radius): ${nodes.size} nodes\n${nodes.joinToString(", ")}"
+    }
+
+    /** Auto-link action: link a specific entry or backfill orphans (KSA-190). */
+    private fun handleAutoLink(args: JsonObject): String {
+        val linker = autoLinker ?: return "Error: AutoLinker not configured"
+        val nodeId = args["node_id"]?.jsonPrimitive?.long
+        val limit = args["limit"]?.jsonPrimitive?.int ?: 50
+
+        return if (nodeId != null) {
+            val result = linker.link(nodeId)
+            json.encodeToString(result)
+        } else {
+            linker.backfill(limit = limit)
+        }
     }
 }

@@ -1,0 +1,179 @@
+<mxfile host="65bd71144e">
+    <diagram id="use-case-191" name="Use Case">
+        <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Use Case Diagram — Salesforce Intelligence MCP Integration&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="10" width="500" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys" value="mcp-salesforce-intelligence" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="50" width="700" height="740" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc1" value="Index SFDX Project&#10;(sf_index_project)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="90" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc2" value="Parse Apex File&#10;(sf_parse_apex)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="190" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc3" value="Parse Flow Metadata&#10;(sf_parse_flow)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="290" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc4" value="Parse Object/Field&#10;(sf_parse_object)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="390" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc5" value="Parse LWC Component&#10;(sf_parse_lwc)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="490" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc6" value="Query Dependencies&#10;(sf_dependencies)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="140" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc7" value="Impact Analysis&#10;(sf_impact_analysis)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="240" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc8" value="Export Graph&#10;(sf_graph_export)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="340" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc9" value="Search KB&#10;(sf_kb_search)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="440" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc10" value="Check Sync Status&#10;(sf_kb_sync)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="540" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc11" value="Scan Project Structure&#10;(sf_scan_project)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="590" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc12" value="Index Single File&#10;(sf_index_file)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="640" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_dev" value="Salesforce&#10;Developer" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="300" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_agent" value="AI Agent" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="1020" y="300" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_kb" value="Knowledge&#10;Base" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="1020" y="500" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ea1" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="125"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea2" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc2">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="225"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea3" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ea4" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc4">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="425"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea5" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc5">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="525"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea6" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc6">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="175"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea7" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc7">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="275"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea8" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc11">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="625"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_agent1" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_agent" target="uc6">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="175"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_agent2" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_agent" target="uc7">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="275"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_agent3" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_agent" target="uc9">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="475"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_agent4" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_agent" target="uc2">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="225"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_kb1" style="html=1;endArrow=none;dashed=1;" edge="1" parent="1" source="actor_kb" target="uc1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="980" y="125"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ea_kb2" style="html=1;endArrow=none;dashed=1;" edge="1" parent="1" source="actor_kb" target="uc9">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ea_kb3" style="html=1;endArrow=none;dashed=1;" edge="1" parent="1" source="actor_kb" target="uc12">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="675"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="700" width="60" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="730" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg1_t" value="sf-parser tools" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="725" width="90" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="730" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg2_t" value="sf-graph tools" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="725" width="90" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="520" y="730" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg3_t" value="sf-kb-indexer tools" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="540" y="725" width="110" height="22" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

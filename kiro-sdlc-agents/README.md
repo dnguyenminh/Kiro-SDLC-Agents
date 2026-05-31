@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.9.6-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.14.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
-  <img src="https://img.shields.io/badge/Code_Intel-5-teal?style=for-the-badge" alt="Code Intel">
+  <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="MCP Tools">
 </p>
 
 <p align="center">
@@ -27,6 +27,18 @@
   <a href="#-native-binary-management">Native Binaries</a> •
   <a href="#-troubleshooting">Troubleshooting</a>
 </p>
+
+---
+
+## 🆕 What's New in v1.14.0
+
+- **KB Auto-Linker** — Automatic relationship discovery between KB entries (entity extraction, semantic similarity, configurable strategies)
+- **KB Graph LOD** — Level of Detail clustering for large graphs (879+ nodes render smoothly with animation)
+- **Incremental Prebuilt Binaries** — CI/CD only builds missing native binaries (skip existing, force rebuild option)
+- **Node.js 25 Support** — Precompiled `better-sqlite3` + `onnxruntime-node` for Node 20/22/24/25
+- **better-sqlite3 v12.10.0** — Latest bindings with verified SHA-256 checksums
+- **Similarity Pipeline** — `find_duplicates` + `find_dead_code` + ignore parser + body extraction wired into indexing
+- **Scheduled Prebuild Scan** — Weekly cron detects missing platform binaries and auto-triggers builds
 
 ---
 

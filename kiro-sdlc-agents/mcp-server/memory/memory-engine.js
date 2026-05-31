@@ -2,6 +2,7 @@
 /**
  * MemoryEngine — facade for the SDLC Memory system.
  * Single entry point for all memory operations.
+ * KSA-190: Added AutoLinker wiring.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MemoryEngine = void 0;
@@ -17,6 +18,11 @@ const knowledge_graph_js_1 = require("./knowledge-graph.js");
 const core_memory_js_1 = require("./core-memory.js");
 const entity_repo_js_1 = require("./entity-repo.js");
 const conversation_repo_js_1 = require("./conversation-repo.js");
+const auto_linker_js_1 = require("./auto-linker.js");
+const semantic_strategy_js_1 = require("./linking-strategies/semantic-strategy.js");
+const entity_strategy_js_1 = require("./linking-strategies/entity-strategy.js");
+const tag_strategy_js_1 = require("./linking-strategies/tag-strategy.js");
+const fts_strategy_js_1 = require("./linking-strategies/fts-strategy.js");
 class MemoryEngine {
     knowledge;
     search;
@@ -29,6 +35,7 @@ class MemoryEngine {
     coreMemory;
     entities;
     conversations;
+    autoLinker;
     _db;
     currentSessionId = null;
     /** Expose raw DB for direct queries (used by UX routes). */
@@ -49,6 +56,14 @@ class MemoryEngine {
         this.coreMemory = new core_memory_js_1.CoreMemoryManager(db);
         this.entities = new entity_repo_js_1.EntityRepository(db);
         this.conversations = new conversation_repo_js_1.ConversationRepository(db);
+        // KSA-190: Wire AutoLinker with all strategies
+        const strategies = [
+            new semantic_strategy_js_1.SemanticStrategy(this.vectors),
+            new entity_strategy_js_1.EntityStrategy(this.entities),
+            new tag_strategy_js_1.TagStrategy(db),
+            new fts_strategy_js_1.FtsStrategy(db),
+        ];
+        this.autoLinker = new auto_linker_js_1.AutoLinker(this.graphRepo, strategies);
     }
     /** Start a new session. */
     startSession(agentName) {

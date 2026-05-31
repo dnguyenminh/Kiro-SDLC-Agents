@@ -43,6 +43,7 @@ exports.detectLanguage = detectLanguage;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const crypto = __importStar(require("crypto"));
+const index_js_1 = require("../parsers/ignore/index.js");
 const EXTENSION_LANGUAGE_MAP = {
     '.ts': 'typescript', '.tsx': 'typescript',
     '.js': 'javascript', '.jsx': 'javascript',
@@ -68,8 +69,8 @@ const EXTENSION_LANGUAGE_MAP = {
 /** Scan workspace and return list of indexable files. */
 function scanWorkspace(config) {
     const results = [];
-    const gitignorePatterns = loadGitignore(config.workspace);
-    traverseDirectory(config.workspace, config, gitignorePatterns, results);
+    const ignoreParser = (0, index_js_1.createIgnoreParser)(config.workspace);
+    traverseDirectory(config.workspace, config, ignoreParser, results);
     return results;
 }
 /** Scan a single file and return metadata. */
@@ -106,15 +107,15 @@ function getExtension(filePath) {
 function hashContent(content) {
     return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
 }
-function traverseDirectory(dir, config, gitignore, results) {
+function traverseDirectory(dir, config, ignoreParser, results) {
     const entries = safeReadDir(dir);
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         const relPath = path.relative(config.workspace, fullPath).replace(/\\/g, '/');
-        if (shouldExclude(relPath, entry.name, config.excludePatterns, gitignore))
+        if (shouldExclude(relPath, entry.name, config.excludePatterns, ignoreParser))
             continue;
         if (entry.isDirectory()) {
-            traverseDirectory(fullPath, config, gitignore, results);
+            traverseDirectory(fullPath, config, ignoreParser, results);
         }
         else if (entry.isFile()) {
             const file = processFile(fullPath, relPath, config);
@@ -150,39 +151,19 @@ function processFile(fullPath, relPath, config) {
         return null;
     }
 }
-function shouldExclude(relPath, name, excludes, gitignore) {
+function shouldExclude(relPath, name, excludes, ignoreParser) {
     if (name.startsWith('.') && name !== '.')
         return true;
     for (const pattern of excludes) {
         if (relPath.includes(pattern) || name === pattern)
             return true;
     }
-    for (const pattern of gitignore) {
-        if (relPath.startsWith(pattern) || relPath.includes('/' + pattern))
-            return true;
-    }
-    return false;
+    return ignoreParser.shouldIgnore(relPath);
 }
 function isBinary(content) {
     const sample = content.slice(0, 1024);
     const nullCount = (sample.match(/\0/g) || []).length;
     return nullCount > 2;
-}
-function loadGitignore(workspace) {
-    const gitignorePath = path.join(workspace, '.gitignore');
-    try {
-        if (!fs.existsSync(gitignorePath))
-            return [];
-        const content = fs.readFileSync(gitignorePath, 'utf-8');
-        return content
-            .split('\n')
-            .map(l => l.trim())
-            .filter(l => l && !l.startsWith('#'))
-            .map(l => l.replace(/\/$/, ''));
-    }
-    catch {
-        return [];
-    }
 }
 function safeReadDir(dir) {
     try {

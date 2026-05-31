@@ -1,6 +1,7 @@
 /**
  * Indexing Engine — Full scan and incremental indexing.
  * Coordinates file scanning, symbol extraction, and database updates.
+ * KSA-145: Uses TreeSitterIndexer for AST-based parsing with regex fallback.
  */
 import { DatabaseManager } from '../db/database-manager.js';
 import { AppConfig } from '../config.js';
@@ -10,21 +11,33 @@ export declare class IndexingEngine {
     private watcher;
     private running;
     private indexing;
+    private treeSitterIndexer;
+    private grammarRegistry;
+    private graphRepo;
+    private treeSitterReady;
     constructor(dbManager: DatabaseManager, config: AppConfig);
+    /** Initialize tree-sitter infrastructure (grammar registry + indexer). */
+    private initTreeSitter;
     /** Start background indexing: full scan then watch. */
     startBackgroundIndexing(): Promise<void>;
     /** Run a full workspace index. */
     runFullIndex(): Promise<void>;
     /** Index a single file (for incremental updates). */
-    indexSingleFile(filePath: string): void;
+    indexSingleFile(filePath: string): Promise<void>;
     /** Remove a file from the index. */
     removeFile(filePath: string): void;
     /** Check if indexer is currently running. */
     isRunning(): boolean;
     /** Stop the indexer and file watcher. */
     stop(): void;
+    /** Get tree-sitter indexer stats. */
+    getTreeSitterStats(): {
+        ready: boolean;
+        languages: string[];
+    };
     private indexFiles;
-    private indexFileSymbols;
+    /** Legacy regex-based symbol extraction (used when tree-sitter unavailable). */
+    private indexFileSymbolsRegex;
     private isFileUnchanged;
     private upsertFile;
     private updateModules;
