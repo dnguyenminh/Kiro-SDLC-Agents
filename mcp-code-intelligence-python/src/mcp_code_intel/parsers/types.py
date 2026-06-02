@@ -22,6 +22,7 @@ SymbolKind = Literal[
 RelationshipKind = Literal[
     "calls", "imports", "inherits",
     "implements", "uses", "decorates",
+    "dml", "soql", "trigger-on", "wire", "apex-import",
 ]
 
 

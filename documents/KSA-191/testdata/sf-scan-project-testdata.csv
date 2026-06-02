@@ -1,0 +1,6 @@
+test_case_id,tool_name,project_path,expected_error,description
+TC-006,sf_scan_project,tests/fixtures/sfdx-project/,,Valid SFDX project scan
+TC-106,sf_scan_project,tests/fixtures/sfdx-multi-package/,,Multi-package directory scan
+TC-208,sf_scan_project,tests/fixtures/non-sfdx/,"SF-003: No SFDX project found",Non-SFDX directory
+TC-304,sf_scan_project,tests/fixtures/force-app-only/,,BR-18: force-app/ without sfdx-project.json
+TC-406,sf_scan_project,tests/fixtures/sfdx-empty/,,Empty SFDX project (no metadata)

@@ -103,7 +103,7 @@ describe("McpServerManager", () => {
       await manager.spawn();
 
       assert.ok(spawnStub.calledOnce);
-      assert.strictEqual(spawnStub.firstCall.args[0], "node");
+      assert.strictEqual(spawnStub.firstCall.args[0], process.execPath);
       assert.ok((spawnStub.firstCall.args[1] as string[])[0].includes("http-entry.js"));
       assert.strictEqual(manager.status, "running");
       assert.strictEqual(manager.pid, 12345);

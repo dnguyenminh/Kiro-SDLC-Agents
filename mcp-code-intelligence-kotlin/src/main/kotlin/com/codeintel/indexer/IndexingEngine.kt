@@ -197,6 +197,21 @@ class IndexingEngine(private val db: DatabaseManager, private val config: Config
 
 private fun detectModule(relativePath: String): String {
     val parts = relativePath.split("/")
+    // SFDX project structure: force-app/main/default/{type}/{name}
+    if (parts.size >= 4 && parts[0] == "force-app") {
+        val sfType = parts.getOrNull(3) ?: return "force-app"
+        return "sf:$sfType"
+    }
+    // Alternative SFDX: src/{type}/{name}
+    if (parts.size >= 3 && parts[0] == "src" &&
+        parts[1] in SFDX_METADATA_TYPES) {
+        return "sf:${parts[1]}"
+    }
     if (parts.size >= 2 && parts[0] == "src") return parts[1]
     return parts.firstOrNull() ?: "root"
 }
+
+private val SFDX_METADATA_TYPES = setOf(
+    "classes", "triggers", "lwc", "aura", "flows",
+    "objects", "pages", "components", "staticresources",
+)

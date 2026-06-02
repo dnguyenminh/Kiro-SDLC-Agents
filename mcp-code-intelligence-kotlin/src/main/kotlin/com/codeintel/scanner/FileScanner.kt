@@ -35,8 +35,13 @@ fun scanSingleFile(filePath: String, workspace: String): FileInfo? {
     return buildFileInfo(filePath, rel, lang, content)
 }
 
-/** Detect language from file extension. */
+/** Detect language from file extension (compound extensions checked first). */
 fun detectLanguage(filePath: String): String? {
+    val lowerPath = filePath.lowercase().replace("\\", "/")
+    // Compound extensions first (longest match wins)
+    for ((suffix, lang) in COMPOUND_EXTENSION_MAP) {
+        if (lowerPath.endsWith(suffix)) return lang
+    }
     val ext = getExtension(filePath)
     return EXTENSION_LANGUAGE_MAP[ext]
 }
@@ -57,7 +62,9 @@ private fun traverse(
 private fun processFile(entry: Path, relPath: String, config: Config): FileInfo? {
     val lang = detectLanguage(entry.toString()) ?: return null
     val ext = getExtension(entry.toString())
-    if (ext !in config.includeExtensions && ext != ".kts") return null
+    // Allow through if simple extension matches, or compound extension detected
+    val isCompound = lang in setOf("salesforce-meta")
+    if (!isCompound && ext !in config.includeExtensions && ext != ".kts") return null
     val size = entry.fileSize()
     if (size > config.maxFileSize) return null
     val content = try { entry.readText(Charsets.UTF_8) } catch (_: Exception) { return null }
@@ -103,6 +110,15 @@ private fun loadGitignore(workspace: Path): List<String> {
     } catch (_: Exception) { emptyList() }
 }
 
+/** Compound extensions — checked before simple extensions (longest match first). */
+val COMPOUND_EXTENSION_MAP = listOf(
+    ".flow-meta.xml" to "salesforce-meta",
+    ".object-meta.xml" to "salesforce-meta",
+    ".field-meta.xml" to "salesforce-meta",
+    ".js-meta.xml" to "salesforce-meta",
+    ".component-meta.xml" to "salesforce-meta",
+)
+
 val EXTENSION_LANGUAGE_MAP = mapOf(
     ".ts" to "typescript", ".tsx" to "typescript",
     ".js" to "javascript", ".jsx" to "javascript",
@@ -116,5 +132,6 @@ val EXTENSION_LANGUAGE_MAP = mapOf(
     ".scala" to "scala", ".sql" to "sql",
     ".sh" to "bash", ".ps1" to "powershell",
     ".yaml" to "yaml", ".yml" to "yaml",
-    ".json" to "json", ".toml" to "toml"
+    ".json" to "json", ".toml" to "toml",
+    ".cls" to "apex", ".trigger" to "apex",
 )

@@ -97,6 +97,7 @@ private fun getPatterns(language: String): List<PatternDef> = when (language) {
     "java" -> JAVA_PATTERNS
     "go" -> GO_PATTERNS
     "rust" -> RUST_PATTERNS
+    "apex" -> APEX_PATTERNS
     else -> GENERIC_PATTERNS
 }
 
@@ -141,6 +142,14 @@ private val RUST_PATTERNS = listOf(
     PatternDef(Regex("^\\s*(?:pub\\s+)?trait\\s+(\\w+)", RegexOption.MULTILINE), "trait", 1),
     PatternDef(Regex("^\\s*(?:pub\\s+)?enum\\s+(\\w+)", RegexOption.MULTILINE), "enum", 1),
     PatternDef(Regex("^\\s*(?:pub\\s+)?mod\\s+(\\w+)", RegexOption.MULTILINE), "module", 1),
+)
+
+private val APEX_PATTERNS = listOf(
+    PatternDef(Regex("^\\s*(?:(?:public|private|protected|global)\\s+)?(?:(?:virtual|abstract|static|override)\\s+)*(?:\\w+\\s+)(\\w+)\\s*\\(", RegexOption.MULTILINE), "function", 1),
+    PatternDef(Regex("^\\s*(?:(?:public|private|protected|global)\\s+)?(?:(?:virtual|abstract|with\\s+sharing|without\\s+sharing)\\s+)?class\\s+(\\w+)", RegexOption.MULTILINE), "class", 1),
+    PatternDef(Regex("^\\s*(?:(?:public|global)\\s+)?interface\\s+(\\w+)", RegexOption.MULTILINE), "interface", 1),
+    PatternDef(Regex("^\\s*(?:(?:public|global)\\s+)?enum\\s+(\\w+)", RegexOption.MULTILINE), "enum", 1),
+    PatternDef(Regex("^\\s*trigger\\s+(\\w+)\\s+on", RegexOption.MULTILINE), "class", 1),
 )
 
 private val GENERIC_PATTERNS = listOf(

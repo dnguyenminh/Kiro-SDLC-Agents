@@ -1,0 +1,14 @@
+test_case_id,tool_name,file_path,include_body,expected_type,expected_name,expected_error,description
+TC-001,sf_parse_apex,force-app/main/default/classes/AccountService.cls,false,class,AccountService,,Valid Apex class parse - happy path
+TC-002,sf_parse_apex,force-app/main/default/triggers/AccountTrigger.trigger,false,trigger,AccountTrigger,,Valid Apex trigger parse
+TC-100,sf_parse_apex,force-app/main/default/classes/IAccountService.cls,false,interface,IAccountService,,Interface file parse
+TC-101,sf_parse_apex,force-app/main/default/classes/AccountStatus.cls,false,enum,AccountStatus,,Enum file parse
+TC-102,sf_parse_apex,force-app/main/default/classes/AccountService.cls,true,class,AccountService,,Parse with include_body=true
+TC-200,sf_parse_apex,force-app/main/default/classes/NonExistent.cls,false,,,"SF-001: File not found",File not found error
+TC-201,sf_parse_apex,src/Main.java,false,,,"SF-002: Unsupported file type",Wrong extension error
+TC-202,sf_parse_apex,tests/fixtures/malformed/BrokenClass.cls,false,class,BrokenClass,,Malformed file - partial result with errors[]
+TC-300,sf_parse_apex,force-app/main/default/classes/AccountService.cls,false,class,AccountService,,BR-1: Relative path resolved
+TC-301,sf_parse_apex,src/Main.java,false,,,"SF-002",BR-2: Only .cls/.trigger accepted
+TC-303,sf_parse_apex,force-app/main/default/classes/AccountService.cls,,class,AccountService,,BR-5: Body excluded by default
+TC-400,sf_parse_apex,,false,,,"Validation error",Empty file_path
+TC-402,sf_parse_apex,a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z.cls,false,,,"SF-001",Very long path

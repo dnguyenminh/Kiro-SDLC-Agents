@@ -10,15 +10,25 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.14.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.15.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/MCP_Servers-3-teal?style=for-the-badge" alt="MCP Servers">
+  <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
 </p>
 
 ---
 
-## What's New in v1.14.0
+## What's New in v1.15.0
+
+- **🎉 Salesforce Intelligence** — Full SFDX project support: Apex, Flow, Custom Objects, LWC parsing and analysis (KSA-191)
+- **SF Dependency Graph** — Trigger→Object, Flow→Apex, LWC→Apex relationship tracking
+- **SF Impact Analysis** — Blast radius analysis across Salesforce metadata types
+- **Index Salesforce Project** — New command to index entire SFDX projects into Code Intelligence
+- **Shared Library** — `mcp-salesforce-intelligence` v2.1.0 provides reusable SF parsers and types
+
+<details>
+<summary>Previous: v1.14.0</summary>
 
 - **KB Auto-Linker** — Automatic relationship discovery between KB entries using configurable linking strategies
 - **KB Graph LOD** (Level of Detail) — Clustering + animation for large knowledge graphs (879+ nodes)
@@ -27,6 +37,7 @@
 - **better-sqlite3 v12.10.0** — Latest SQLite bindings with verified SHA-256 checksums
 - **Similarity Tools** — `find_duplicates` + `find_dead_code` wired into indexing pipeline
 - **Body Extraction** — Full function body extraction for deeper code analysis
+</details>
 
 ---
 
@@ -53,10 +64,11 @@ FEC_CR_Builder/
 
 | Module | Description | Tech | Version |
 |--------|-------------|------|---------|
-| [`kiro-sdlc-agents`](kiro-sdlc-agents/) | VS Code extension — 9 agents, KB UI panels, native binary management | TypeScript | 1.14.0 |
-| [`mcp-code-intelligence-kotlin`](mcp-code-intelligence-kotlin/) | MCP server — FTS5, coroutines, NIO watcher, call graph | Kotlin, JDK 21+ | 0.6.0 |
-| [`mcp-code-intelligence-nodejs`](mcp-code-intelligence-nodejs/) | MCP server — FTS5, ONNX embeddings, Tree-sitter AST | Node.js 20+ | 0.6.0 |
-| [`mcp-code-intelligence-python`](mcp-code-intelligence-python/) | MCP server — FTS5, zero external deps, stdlib sqlite3 | Python 3.11+ | 0.6.0 |
+| [`kiro-sdlc-agents`](kiro-sdlc-agents/) | VS Code extension — 9 agents, KB UI panels, native binary management | TypeScript | 1.15.0 |
+| [`mcp-code-intelligence-kotlin`](mcp-code-intelligence-kotlin/) | MCP server — FTS5, coroutines, NIO watcher, call graph | Kotlin, JDK 21+ | 0.7.0 |
+| [`mcp-code-intelligence-nodejs`](mcp-code-intelligence-nodejs/) | MCP server — FTS5, ONNX embeddings, Tree-sitter AST, Salesforce Intelligence | Node.js 20+ | 0.7.0 |
+| [`mcp-code-intelligence-python`](mcp-code-intelligence-python/) | MCP server — FTS5, zero external deps, stdlib sqlite3 | Python 3.11+ | 0.7.0 |
+| [`mcp-salesforce-intelligence`](mcp-salesforce-intelligence/) | Shared Salesforce library — SFDX detection, Apex/Flow/Object parsers, SF types | Node.js 20+ | 2.1.0 |
 | [`sdlc-memory`](sdlc-memory/) | Knowledge base engine — hybrid search, graph, embeddings | Kotlin, Ktor | 0.1.0 |
 
 ---
@@ -178,6 +190,67 @@ All three server variants share the same tool set:
 
 ---
 
+## Salesforce Intelligence (KSA-191)
+
+<p align="center">
+  <img src="documents/KSA-191/diagrams/architecture.png" alt="SF Intelligence Architecture" width="800">
+</p>
+
+Full Salesforce Development Experience (SFDX) support — parse, index, and analyze Apex classes, Triggers, Flows, Custom Objects, and LWC components directly within the Code Intelligence pipeline.
+
+### How It Works
+
+<p align="center">
+  <img src="documents/KSA-191/diagrams/component.png" alt="SF Component Diagram" width="800">
+</p>
+
+1. **Detect SFDX Project** — Auto-detects `sfdx-project.json` in workspace
+2. **Parse Metadata** — Apex (Tree-sitter AST), Flow XML, Object XML, LWC HTML/JS
+3. **Build Graph** — SF-specific relationships: Trigger→Object, Flow→Apex, LWC→Apex
+4. **Index & Search** — All SF symbols searchable via `code_search`, `code_symbols`
+5. **Impact Analysis** — `code_impact` covers SF dependency chains
+
+### Supported Metadata Types
+
+| Type | File Pattern | What's Extracted |
+|------|-------------|-----------------|
+| Apex Class | `*.cls` | Classes, methods, properties, annotations |
+| Apex Trigger | `*.trigger` | Trigger name, object, events (before/after) |
+| Flow | `*.flow-meta.xml` | Flow name, type, variables, decisions, actions |
+| Custom Object | `*.object-meta.xml` | Object name, fields, record types, validation rules |
+| LWC | `*.js` + `*.html` | Component name, public properties, wire methods |
+
+### Usage
+
+```bash
+# Via extension command
+Ctrl+Shift+P → "Kiro SDLC: Index Salesforce Project"
+
+# The indexer automatically detects SFDX projects during workspace indexing
+# SF stats appear in code_index_status output
+```
+
+### Indexing Flow
+
+<p align="center">
+  <img src="documents/KSA-191/diagrams/sequence-index-project.png" alt="SF Indexing Sequence" width="800">
+</p>
+
+### Enhanced Existing Tools
+
+These existing tools now understand Salesforce metadata:
+
+| Tool | SF Enhancement |
+|------|---------------|
+| `code_index_status` | Shows SFDX indexing stats (Apex classes, triggers, flows, objects) |
+| `code_search` | Searches across Apex/Flow/Object symbols |
+| `code_symbols` | Extracts Apex class/method/trigger symbols |
+| `code_dependencies` | Includes SF metadata dependencies |
+| `code_impact` | SF-aware blast radius (trigger→object→flow chains) |
+| `code_callers` / `code_callees` | SF call graph (Apex method calls, trigger invocations) |
+
+---
+
 ## Development
 
 ### Build MCP Server (Kotlin)
@@ -231,7 +304,7 @@ cd mcp-code-intelligence-python && python tests/test_extractor.py
 
 ```bash
 # Bump versions → commit → tag → push
-git tag v1.14.0 -m "Release v1.14.0"
+git tag v1.15.0 -m "Release v1.15.0"
 git push origin main --tags
 ```
 

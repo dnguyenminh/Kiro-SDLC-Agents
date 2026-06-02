@@ -56,7 +56,14 @@ export class IndexingEngine {
           this.grammarRegistry, this.db, this.config.maxFileSize
         );
         this.treeSitterReady = true;
-        console.error('[indexer] Tree-sitter indexer initialized (6 languages configured)');
+
+        // SFDX detection
+        const sfdxDetected = this.detectSfdxProject();
+        const langCount = grammarConfig.languages.length;
+        console.error(
+          `[indexer] Tree-sitter indexer initialized (` + langCount + ` languages configured)` +
+          (sfdxDetected ? ' [SFDX project detected]' : '')
+        );
       } else {
         console.error(`[indexer] Grammar config not found at ${configPath}, using regex fallback`);
       }
@@ -94,10 +101,102 @@ export class IndexingEngine {
         }
       }
 
+      // KSA-191: Log SFDX stats if project detected
+      this.logSfdxStats();
+
       console.error('[indexer] Full index complete');
     } finally {
       this.indexing = false;
     }
+  }
+
+  /** KSA-191: Get SFDX project stats from database. */
+  getSfdxStats(): {
+    detected: boolean;
+    projectRoot: string | null;
+    packageDirectories: string[];
+    stats: { apex_classes: number; apex_triggers: number; flows: number; objects: number; lwc_components: number };
+    lastIndexed: string | null;
+    relationships: Record<string, number>;
+  } | null {
+    if (!this.detectSfdxProject()) return null;
+
+    const workspace = this.config.workspace;
+    let packageDirectories: string[] = ['force-app'];
+
+    // Read packageDirectories from sfdx-project.json
+    const sfdxConfigPath = path.join(workspace, 'sfdx-project.json');
+    if (fs.existsSync(sfdxConfigPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(sfdxConfigPath, 'utf-8'));
+        if (Array.isArray(config.packageDirectories)) {
+          packageDirectories = config.packageDirectories
+            .map((pd: any) => pd.path ?? pd)
+            .filter(Boolean);
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
+    // Count SF files by module
+    const moduleCounts = this.db.prepare(`
+      SELECT module, COUNT(*) as count FROM files
+      WHERE module IN ('apex-classes', 'apex-triggers', 'sf-flows', 'sf-objects', 'lwc-components')
+      GROUP BY module
+    `).all() as { module: string; count: number }[];
+
+    const stats = { apex_classes: 0, apex_triggers: 0, flows: 0, objects: 0, lwc_components: 0 };
+    for (const row of moduleCounts) {
+      switch (row.module) {
+        case 'apex-classes': stats.apex_classes = row.count; break;
+        case 'apex-triggers': stats.apex_triggers = row.count; break;
+        case 'sf-flows': stats.flows = row.count; break;
+        case 'sf-objects': stats.objects = row.count; break;
+        case 'lwc-components': stats.lwc_components = row.count; break;
+      }
+    }
+
+    // Count SF relationships by kind
+    const sfKinds = ['trigger-on', 'soql', 'dml', 'wire', 'flow-action', 'flow-object', 'apex-import', 'inherits', 'implements'];
+    const relCounts = this.db.prepare(`
+      SELECT kind, COUNT(*) as count FROM relationships
+      WHERE kind IN (${sfKinds.map(() => '?').join(',')})
+      GROUP BY kind
+    `).all(...sfKinds) as { kind: string; count: number }[];
+
+    const relationships: Record<string, number> = {};
+    for (const row of relCounts) {
+      relationships[row.kind] = row.count;
+    }
+
+    // Get last indexed time for SF files
+    const lastRow = this.db.prepare(
+      `SELECT MAX(last_indexed) as t FROM files WHERE language IN ('apex', 'salesforce-meta')`
+    ).get() as { t: string | null };
+
+    return {
+      detected: true,
+      projectRoot: workspace,
+      packageDirectories,
+      stats,
+      lastIndexed: lastRow?.t ?? null,
+      relationships,
+    };
+  }
+
+  /** KSA-191: Log SFDX-specific stats after indexing. */
+  private logSfdxStats(): void {
+    const sfdxStats = this.getSfdxStats();
+    if (!sfdxStats) return;
+
+    const { stats, relationships } = sfdxStats;
+    const totalSf = stats.apex_classes + stats.apex_triggers + stats.flows + stats.objects + stats.lwc_components;
+    if (totalSf === 0) return;
+
+    const relCount = Object.values(relationships).reduce((a, b) => a + b, 0);
+    console.error(
+      `[indexer] SF stats: ${stats.apex_classes} apex classes, ${stats.apex_triggers} triggers, ` +
+      `${stats.flows} flows, ${stats.objects} objects, ${stats.lwc_components} LWC — ${relCount} relationships`
+    );
   }
 
   /** Index a single file (for incremental updates). */
@@ -322,6 +421,13 @@ export class IndexingEngine {
     console.error(`[indexer] Pattern detection: ${Date.now() - startMs}ms`);
   }
 
+  /** Detect SFDX project structure. */
+  private detectSfdxProject(): boolean {
+    const workspace = this.config.workspace;
+    return fs.existsSync(path.join(workspace, 'sfdx-project.json'))
+      || fs.existsSync(path.join(workspace, 'force-app'));
+  }
+
   private startWatcher(): void {
     if (!this.config.watchEnabled || !this.running) return;
     this.watcher = new FileWatcher(this.config, (filePath, event) => {
@@ -338,8 +444,21 @@ export class IndexingEngine {
 }
 
 function detectModule(relativePath: string): string {
+  // SFDX module mapping (check first - more specific)
+  if (relativePath.includes('force-app/')) {
+    if (relativePath.includes('/classes/')) return 'apex-classes';
+    if (relativePath.includes('/triggers/')) return 'apex-triggers';
+    if (relativePath.includes('/flows/')) return 'sf-flows';
+    if (relativePath.includes('/objects/')) return 'sf-objects';
+    if (relativePath.includes('/lwc/')) return 'lwc-components';
+    if (relativePath.includes('/aura/')) return 'aura-components';
+    return 'salesforce';
+  }
+
+  // Standard module detection (existing behavior)
   const parts = relativePath.split('/');
   if (parts.length >= 2 && parts[0] === 'src') return parts[1];
   if (parts.length >= 1) return parts[0];
   return 'root';
 }
+

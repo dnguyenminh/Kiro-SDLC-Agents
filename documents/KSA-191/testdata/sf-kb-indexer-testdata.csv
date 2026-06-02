@@ -1,0 +1,16 @@
+test_case_id,tool_name,project_path,file_path,query,metadata_type,force,expected_status,expected_error,description
+TC-011,sf_index_project,tests/fixtures/sfdx-project/,,,,,success,,Full project indexing - happy path
+TC-110,sf_index_project,tests/fixtures/sfdx-project/,,,,false,success,,Incremental re-index (2 files changed)
+TC-111,sf_index_project,tests/fixtures/sfdx-project/,,,,true,success,,Force re-index (all files)
+TC-211,sf_index_project,tests/fixtures/non-sfdx/,,,,,,SF-003: No SFDX project found,Non-SFDX directory
+TC-212,sf_index_project,tests/fixtures/sfdx-project/,,,,,,SF-006: KB not accessible,KB server not running
+TC-213,sf_index_project,tests/fixtures/sfdx-mixed/,,,,false,partial,,Partial parse errors (2 malformed files)
+TC-115,sf_index_file,,force-app/main/default/classes/AccountService.cls,,,,,,Single file indexing
+TC-012,sf_kb_search,,,AccountService,,,,,"KB search by component name
+TC-112,sf_kb_search,,,Account,Flow,,,,"KB search with metadata_type filter
+TC-013,sf_kb_sync,tests/fixtures/sfdx-project/,,,,,,,"Sync status - all in sync
+TC-113,sf_kb_sync,tests/fixtures/sfdx-project/,,,,,,,"Sync status - 3 files modified
+TC-308,sf_index_project,tests/fixtures/sfdx-project/,,,,false,success,,BR-28: Hash-based incremental
+TC-309,sf_index_project,tests/fixtures/sfdx-project/,,,,false,success,,BR-30: KB entries tagged correctly
+TC-310,sf_index_project,tests/fixtures/sfdx-mixed/,,,,false,partial,,BR-32: Errors don't abort indexing
+TC-311,sf_index_project,tests/fixtures/sfdx-project/,,,,false,,"SF-009",BR-36: Singleton lock (concurrent call)

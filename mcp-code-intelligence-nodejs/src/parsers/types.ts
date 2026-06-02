@@ -15,7 +15,8 @@ export type SymbolKind =
 
 export type RelationshipKind =
   | 'calls' | 'imports' | 'inherits'
-  | 'implements' | 'uses' | 'decorates';
+  | 'implements' | 'uses' | 'decorates'
+  | 'dml' | 'soql' | 'trigger-on' | 'wire' | 'apex-import';
 
 export interface ExtractedSymbol {
   name: string;

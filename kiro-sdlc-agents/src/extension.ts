@@ -21,6 +21,7 @@ import { ConfigWatcher } from "./config-watcher";
 import { registerSymbolSearch } from "./symbol-search";
 import { registerDiagnosticsProvider } from "./diagnostics-provider";
 import { registerAIContextCommands } from "./ai-context-commands";
+import { handleIndexSalesforceProject } from "./sf-indexer";
 import { SecurityPanel } from "./panels/security-panel";
 import { showImpactAnalysis } from "./panels/impact-panel";
 import { NativeAddonManager } from "./native-addon-manager";
@@ -110,6 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context)),
         vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace()),
         vscode.commands.registerCommand("kiroSdlc.downloadModel", () => handleDownloadModel()),
+        vscode.commands.registerCommand("kiroSdlc.indexSalesforceProject", () => handleIndexSalesforceProject()),
     );
 
     // Register KB panel commands

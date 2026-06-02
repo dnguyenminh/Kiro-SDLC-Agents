@@ -43,7 +43,8 @@ export class DependencyGraphService {
     direction: 'incoming' | 'outgoing' | 'both' = 'outgoing',
     depth: number = 1,
     includeExternal: boolean = false,
-    limit: number = 50
+    limit: number = 50,
+    kindFilter?: string | string[]
   ): DependencyResult {
     const startTime = Date.now();
     const clampedDepth = Math.min(Math.max(depth, 1), 5);
@@ -53,16 +54,21 @@ export class DependencyGraphService {
       return this.fileNotFoundResponse(file);
     }
 
+    // Determine which relationship kinds to traverse
+    const kinds = kindFilter
+      ? (Array.isArray(kindFilter) ? kindFilter : [kindFilter])
+      : undefined; // undefined = use default per direction
+
     let results: DependencyNode[];
     let cycles: string[][];
 
     if (direction === 'both') {
-      const outgoing = this.bfsTraversal(resolved, 'outgoing', clampedDepth, includeExternal, limit);
-      const incoming = this.bfsTraversal(resolved, 'incoming', clampedDepth, includeExternal, limit);
+      const outgoing = this.bfsTraversal(resolved, 'outgoing', clampedDepth, includeExternal, limit, kinds);
+      const incoming = this.bfsTraversal(resolved, 'incoming', clampedDepth, includeExternal, limit, kinds);
       results = this.mergeResults(outgoing.results, incoming.results);
       cycles = [...outgoing.cycles, ...incoming.cycles];
     } else {
-      const traversal = this.bfsTraversal(resolved, direction, clampedDepth, includeExternal, limit);
+      const traversal = this.bfsTraversal(resolved, direction, clampedDepth, includeExternal, limit, kinds);
       results = traversal.results;
       cycles = traversal.cycles;
     }
@@ -87,7 +93,8 @@ export class DependencyGraphService {
     direction: 'incoming' | 'outgoing',
     maxDepth: number,
     includeExternal: boolean,
-    limit: number
+    limit: number,
+    kinds?: string[]
   ): { results: DependencyNode[]; cycles: string[][] } {
     const visited = new Set<string>([root]);
     const results: DependencyNode[] = [];
@@ -101,8 +108,8 @@ export class DependencyGraphService {
       if (currentDepth >= maxDepth) continue;
 
       const deps = direction === 'outgoing'
-        ? this.getOutgoingDeps(current)
-        : this.getIncomingDeps(current);
+        ? this.getOutgoingDeps(current, kinds)
+        : this.getIncomingDeps(current, kinds);
 
       for (const dep of deps) {
         const isExternal = this.fileResolver.isExternal(dep.target);
@@ -144,15 +151,18 @@ export class DependencyGraphService {
     return { results, cycles };
   }
 
-  private getOutgoingDeps(filePath: string): Array<{ target: string; symbols: string[] }> {
+  private getOutgoingDeps(filePath: string, kinds?: string[]): Array<{ target: string; symbols: string[] }> {
+    // KSA-191: Support querying multiple relationship kinds (default: imports + SF kinds)
+    const queryKinds = kinds ?? ['imports', 'trigger-on', 'soql', 'dml', 'wire', 'flow-action', 'flow-object', 'apex-import', 'calls', 'inherits', 'implements'];
+    const placeholders = queryKinds.map(() => '?').join(',');
     const rows = this.db.prepare(`
-      SELECT target_symbol, metadata
+      SELECT target_symbol, metadata, kind
       FROM relationships
-      WHERE file_path = ? AND kind = 'imports'
+      WHERE file_path = ? AND kind IN (${placeholders})
       ORDER BY line
-    `).all(filePath) as { target_symbol: string; metadata: string | null }[];
+    `).all(filePath, ...queryKinds) as { target_symbol: string; metadata: string | null; kind: string }[];
 
-    // Group by module
+    // Group by module/target
     const grouped = new Map<string, string[]>();
     for (const row of rows) {
       const module = this.extractModule(row.target_symbol);
@@ -164,14 +174,17 @@ export class DependencyGraphService {
     return Array.from(grouped.entries()).map(([target, symbols]) => ({ target, symbols }));
   }
 
-  private getIncomingDeps(filePath: string): Array<{ target: string; symbols: string[] }> {
+  private getIncomingDeps(filePath: string, kinds?: string[]): Array<{ target: string; symbols: string[] }> {
     const basename = path.basename(filePath, path.extname(filePath));
+    // KSA-191: Support multiple relationship kinds for incoming deps
+    const queryKinds = kinds ?? ['imports', 'trigger-on', 'soql', 'dml', 'wire', 'flow-action', 'flow-object', 'apex-import', 'calls', 'inherits', 'implements'];
+    const placeholders = queryKinds.map(() => '?').join(',');
     const rows = this.db.prepare(`
       SELECT DISTINCT file_path, target_symbol
       FROM relationships
-      WHERE kind = 'imports'
+      WHERE kind IN (${placeholders})
         AND (target_symbol LIKE ? OR target_symbol LIKE ? OR target_symbol LIKE ?)
-    `).all(`%/${basename}`, `%${basename}%`, filePath) as { file_path: string; target_symbol: string }[];
+    `).all(...queryKinds, `%/${basename}`, `%${basename}%`, filePath) as { file_path: string; target_symbol: string }[];
 
     const grouped = new Map<string, string[]>();
     for (const row of rows) {

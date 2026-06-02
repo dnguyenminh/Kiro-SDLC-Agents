@@ -45,7 +45,7 @@ export class CallGraphService {
     depth: number = 1,
     limit: number = 20,
     fileFilter?: string,
-    kindFilter: string = 'calls'
+    kindFilter: string | string[] = 'calls'
   ): CallGraphResponse {
     const startTime = Date.now();
     const clampedDepth = Math.min(Math.max(depth, 1), 5);
@@ -54,6 +54,9 @@ export class CallGraphService {
     if (resolved.length === 0) {
       return this.symbolNotFoundResponse(symbolName);
     }
+
+    // KSA-191: Support multiple kind filters (SF call types: flow-action, wire, apex-import)
+    const kinds = Array.isArray(kindFilter) ? kindFilter : [kindFilter];
 
     const results: CallGraphItem[] = [];
     const visited = new Set<number>();
@@ -67,30 +70,33 @@ export class CallGraphService {
       const { symbolName: current, depth: currentDepth } = queue.shift()!;
       if (currentDepth >= clampedDepth) continue;
 
-      const callers = this.graphRepo.findCallers(current, kindFilter, limit - results.length);
+      // Query for each kind
+      for (const kind of kinds) {
+        const callers = this.graphRepo.findCallers(current, kind, limit - results.length);
 
-      for (const caller of callers) {
-        if (visited.has(caller.id)) continue;
-        visited.add(caller.id);
+        for (const caller of callers) {
+          if (visited.has(caller.id)) continue;
+          visited.add(caller.id);
 
-        const item: CallGraphItem = {
-          symbol: caller.name,
-          qualifiedName: caller.parameters ? `${caller.parameters}.${caller.name}` : caller.name,
-          kind: caller.kind,
-          filePath: caller.file_path,
-          definitionLine: caller.def_line,
-          callSiteLine: caller.call_line,
-          depthLevel: currentDepth + 1,
-          parameters: caller.parameters,
-          isAsync: caller.is_async === 1,
-        };
+          const item: CallGraphItem = {
+            symbol: caller.name,
+            qualifiedName: caller.parameters ? `${caller.parameters}.${caller.name}` : caller.name,
+            kind: caller.kind,
+            filePath: caller.file_path,
+            definitionLine: caller.def_line,
+            callSiteLine: caller.call_line,
+            depthLevel: currentDepth + 1,
+            parameters: caller.parameters,
+            isAsync: caller.is_async === 1,
+          };
 
-        if (fileFilter && !this.matchFilter(item.filePath, fileFilter)) continue;
+          if (fileFilter && !this.matchFilter(item.filePath, fileFilter)) continue;
 
-        results.push(item);
+          results.push(item);
 
-        if (currentDepth + 1 < clampedDepth) {
-          queue.push({ symbolName: caller.name, depth: currentDepth + 1 });
+          if (currentDepth + 1 < clampedDepth) {
+            queue.push({ symbolName: caller.name, depth: currentDepth + 1 });
+          }
         }
       }
     }
@@ -114,7 +120,8 @@ export class CallGraphService {
     depth: number = 1,
     limit: number = 20,
     fileFilter?: string,
-    includeExternal: boolean = true
+    includeExternal: boolean = true,
+    kindFilter: string | string[] = 'calls'
   ): CallGraphResponse {
     const startTime = Date.now();
     const clampedDepth = Math.min(Math.max(depth, 1), 5);
@@ -123,6 +130,9 @@ export class CallGraphService {
     if (resolved.length === 0) {
       return this.symbolNotFoundResponse(symbolName);
     }
+
+    // KSA-191: Support multiple kind filters (SF: dml, soql, trigger-on)
+    const kinds = Array.isArray(kindFilter) ? kindFilter : [kindFilter];
 
     const results: CallGraphItem[] = [];
     const visited = new Set<string>();
@@ -136,35 +146,37 @@ export class CallGraphService {
       const { symbolId, depth: currentDepth } = queue.shift()!;
       if (currentDepth >= clampedDepth) continue;
 
-      const callees = this.graphRepo.findCallees(symbolId, 'calls', limit - results.length);
+      for (const kind of kinds) {
+        const callees = this.graphRepo.findCallees(symbolId, kind, limit - results.length);
 
-      for (const callee of callees) {
-        const key = `${callee.name}:${callee.call_line}`;
-        if (visited.has(key)) continue;
-        visited.add(key);
+        for (const callee of callees) {
+          const key = `${callee.name}:${callee.call_line}`;
+          if (visited.has(key)) continue;
+          visited.add(key);
 
-        if (!includeExternal && !callee.file_path) continue;
+          if (!includeExternal && !callee.file_path) continue;
 
-        const item: CallGraphItem = {
-          symbol: callee.name,
-          qualifiedName: callee.name,
-          kind: callee.kind || 'unknown',
-          filePath: callee.file_path || '(external)',
-          definitionLine: callee.def_line || 0,
-          callSiteLine: callee.call_line,
-          depthLevel: currentDepth + 1,
-        };
+          const item: CallGraphItem = {
+            symbol: callee.name,
+            qualifiedName: callee.name,
+            kind: callee.kind || 'unknown',
+            filePath: callee.file_path || '(external)',
+            definitionLine: callee.def_line || 0,
+            callSiteLine: callee.call_line,
+            depthLevel: currentDepth + 1,
+          };
 
-        if (fileFilter && item.filePath !== '(external)' && !this.matchFilter(item.filePath, fileFilter)) continue;
+          if (fileFilter && item.filePath !== '(external)' && !this.matchFilter(item.filePath, fileFilter)) continue;
 
-        results.push(item);
+          results.push(item);
 
-        if (callee.file_path && currentDepth + 1 < clampedDepth) {
-          const calleeResolved = this.symbolResolver.resolve(callee.name);
-          for (const cr of calleeResolved) {
-            if (cr.filePath === callee.file_path) {
-              queue.push({ symbolId: cr.id, depth: currentDepth + 1 });
-              break;
+          if (callee.file_path && currentDepth + 1 < clampedDepth) {
+            const calleeResolved = this.symbolResolver.resolve(callee.name);
+            for (const cr of calleeResolved) {
+              if (cr.filePath === callee.file_path) {
+                queue.push({ symbolId: cr.id, depth: currentDepth + 1 });
+                break;
+              }
             }
           }
         }

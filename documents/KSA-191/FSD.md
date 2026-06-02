@@ -1,6 +1,6 @@
 # Functional Specification Document (FSD)
 
-## FEC_CR_Builder — KSA-191: Tích hợp salesforce-ast vào FEC_CR_Builder — 3 MCP Servers + Kiro Extension
+## mcp-code-intelligence-nodejs — KSA-191: Salesforce Language Support (v2 — Plugin Integration)
 
 ---
 
@@ -9,12 +9,22 @@
 | Field | Value |
 |-------|-------|
 | Jira Ticket | KSA-191 |
-| Title | Tích hợp salesforce-ast (apex-ast) vào FEC_CR_Builder — 3 MCP Servers + Kiro Extension |
+| Title | Salesforce Language Support — Extend mcp-code-intelligence-nodejs |
 | Author | BA Agent |
-| Version | 1.0 |
-| Date | 2025-07-27 |
+| Version | 2.0 |
+| Date | 2026-06-01 |
 | Status | Draft |
-| Related BRD | documents/KSA-191/BRD.md |
+| Related BRD | BRD-v2-KSA-191.docx |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | BA Agent – Business Analyst | Create FSD draft (business sections) |
+| Technical Reviewer | TA Agent – Technical Analyst | Enrich with API contracts, pseudocode |
+| Peer Reviewer | SA Agent – Solution Architect | Review architectural consistency |
 
 ---
 
@@ -22,7 +32,8 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-07-27 | BA Agent | Initiate document — auto-generated from BRD and technical context |
+| 1.0 | 2025-07-27 | BA Agent | Initial FSD — 3 MCP servers approach (SUPERSEDED) |
+| 2.0 | 2026-06-01 | BA Agent + TA Agent | Complete rewrite for v2 plugin integration |
 
 ---
 
@@ -30,40 +41,49 @@
 
 ### 1.1 Purpose
 
-This FSD specifies the functional behavior of the Salesforce Intelligence module — a set of 3 MCP servers (sf-parser, sf-graph, sf-kb-indexer) exposing 13 tools that integrate the `salesforce-ast` npm package into the FEC_CR_Builder ecosystem. It defines use cases, data flows, API contracts, processing logic, and integration specifications for developers to implement.
+This FSD specifies the functional behavior of Salesforce code intelligence
+capabilities integrated into the existing `mcp-code-intelligence-nodejs` server.
+All SF features are delivered by extending existing tools — no new MCP servers.
 
 ### 1.2 Scope
 
-- **sf-parser** (5 tools): Parse Apex, Flow, Object, LWC metadata from SFDX projects
-- **sf-graph** (4 tools): Build and query dependency graphs with impact analysis
-- **sf-kb-indexer** (4 tools): Index Salesforce metadata into Knowledge Base via `mem_ingest`
-- **Kiro Extension command**: "Kiro SDLC: Index Salesforce Project" for one-click indexing
-- Implementation as new module `mcp-salesforce-intelligence/` following existing `mcp-code-intelligence-nodejs` patterns (stdio JSON-RPC 2.0)
+- Apex language parsing via tree-sitter grammar
+- Salesforce metadata XML parsing (Flow, Object, Field, LWC)
+- SFDX project detection and indexing
+- SF-specific relationship types in the existing graph
+- Enhanced existing tools with SF results
+- Extension command for manual SF indexing
 
-### 1.3 Definitions & Acronyms
+### 1.3 Out of Scope
+
+- Creating new MCP servers (EXPLICITLY OUT OF SCOPE)
+- Salesforce org authentication or live metadata retrieval
+- Real-time file watching for SFDX projects (future)
+- Changes to kotlin/python code-intelligence servers (future)
+- Salesforce deployment/CI/CD automation
+
+### 1.4 Definitions & Acronyms
 
 | Term | Definition |
 |------|------------|
-| SFDX | Salesforce DX — developer experience platform with standardized project structure |
-| Apex | Salesforce proprietary language (Java-like, runs on Force.com platform) |
-| LWC | Lightning Web Components — Salesforce modern frontend framework |
-| Flow | Salesforce declarative automation tool (visual process builder) |
-| MCP | Model Context Protocol — standard for AI tool integration via JSON-RPC 2.0 |
-| Tree-Sitter | Incremental parsing library used by salesforce-ast for Apex AST generation |
-| KB | Knowledge Base — local SQLite-based storage in mcp-code-intelligence |
-| AST | Abstract Syntax Tree — structured representation of source code |
-| JSON-RPC 2.0 | Remote procedure call protocol encoded in JSON |
-| stdio | Standard input/output — transport layer for MCP servers |
+| SFDX | Salesforce DX — developer experience platform and CLI |
+| Apex | Salesforce proprietary programming language (Java-like) |
+| LWC | Lightning Web Components — Salesforce frontend framework |
+| Flow | Salesforce declarative automation tool |
+| SObject | Salesforce Object — database table equivalent |
+| DML | Data Manipulation Language (insert/update/delete/upsert in Apex) |
+| SOQL | Salesforce Object Query Language |
+| MCP | Model Context Protocol — AI tool integration standard |
 
-### 1.4 References
+### 1.5 References
 
 | Document | Location |
 |----------|----------|
-| BRD | documents/KSA-191/BRD.md |
-| salesforce-ast API | https://github.com/dnguyenminh/apex-ast |
-| Existing MCP Server Pattern | mcp-code-intelligence-nodejs/src/tools/register-tools.ts |
-| MCP SDK | @modelcontextprotocol/sdk (npm) |
-| FSD Template | documents/templates/FSD-TEMPLATE.md |
+| BRD | BRD-v2-KSA-191.docx |
+| Existing apex-parser.ts | mcp-code-intelligence-nodejs/src/parsers/languages/apex-parser.ts |
+| Existing salesforce-meta-parser.ts | mcp-code-intelligence-nodejs/src/parsers/languages/salesforce-meta-parser.ts |
+| Grammar Config | mcp-code-intelligence-nodejs/src/parsers/grammar-config.json |
+| salesforce-ast GitHub | https://github.com/dnguyenminh/apex-ast |
 
 ---
 
@@ -72,1886 +92,723 @@ This FSD specifies the functional behavior of the Salesforce Intelligence module
 ### 2.1 System Context Diagram
 
 ![System Context](diagrams/system-context.png)
-*[Edit in draw.io](diagrams/system-context.drawio)*
 
-The Salesforce Intelligence module operates as 3 independent MCP servers communicating via stdio JSON-RPC 2.0. External actors and systems:
+The system extends the existing `mcp-code-intelligence-nodejs` MCP server:
+- **Developer** — uses Kiro IDE to trigger indexing and query SF intelligence
+- **AI Agents** — invoke MCP tools via MCP protocol
+- **Kiro Extension** — provides UI commands calling the MCP server
+- **SFDX Project** — source files on disk (Apex, Flow, Object, LWC)
 
-- **Developer (Human)**: Triggers indexing via Kiro IDE command palette
-- **AI Agent (Kiro)**: Calls MCP tools directly during conversations for code understanding
-- **salesforce-ast npm package**: Core parsing engine (Tree-Sitter based) — consumed as library dependency
-- **SFDX Project (Filesystem)**: Source metadata files (Apex, Flow, Object, LWC)
-- **Knowledge Base (mcp-code-intelligence)**: Stores indexed metadata for cross-session persistence via `mem_ingest`
-- **Kiro Extension (kiro-sdlc-agents)**: VS Code extension hosting the command
+### 2.2 System Architecture (v2 — Plugin Integration)
 
-```mermaid
-graph TB
-    subgraph Actors
-        DEV[Developer]
-        AI[AI Agent / Kiro]
-    end
+The v2 approach integrates Salesforce capabilities as a **plugin** into existing architecture:
 
-    subgraph "Kiro Extension (kiro-sdlc-agents)"
-        CMD["Kiro SDLC: Index Salesforce Project"]
-    end
+| Layer | Status | SF Enhancement |
+|-------|--------|----------------|
+| Tools | EXISTING | Enhanced responses include SF results |
+| Graph | EXISTING | New relationship types (trigger-on, soql, dml, wire) |
+| Indexer | EXISTING | SFDX project detection + SF file scanning |
+| Parsers | EXISTING + NEW | apex-parser.ts + salesforce-meta-parser.ts added |
+| Database | EXISTING | Additive schema — new relationship kinds only |
 
-    subgraph "mcp-salesforce-intelligence"
-        SFP[sf-parser<br/>5 tools]
-        SFG[sf-graph<br/>4 tools]
-        SFKB[sf-kb-indexer<br/>4 tools]
-    end
+**Key Principle:** Zero new servers, zero new tools, zero new protocols.
 
-    subgraph "External Systems"
-        AST[salesforce-ast<br/>npm package]
-        KB[Knowledge Base<br/>mcp-code-intelligence]
-        FS[SFDX Project<br/>Filesystem]
-    end
+### 2.3 Component Change Summary
 
-    DEV -->|Command Palette| CMD
-    CMD -->|JSON-RPC 2.0| SFKB
-    AI -->|MCP tool calls| SFP
-    AI -->|MCP tool calls| SFG
-    AI -->|MCP tool calls| SFKB
-    SFP -->|parseApexFile, parseFlowFile, etc.| AST
-    SFG -->|buildDependencyGraph| AST
-    SFKB -->|toKBPayload, parseProject| AST
-    SFKB -->|mem_ingest| KB
-    SFP -->|read files| FS
-    SFG -->|read graph data| FS
-    SFKB -->|scan project| FS
-```
+| Component | Change Type | Description |
+|-----------|-------------|-------------|
+| `src/parsers/languages/apex-parser.ts` | **EXISTS** | Apex language parser (ILanguageParser) |
+| `src/parsers/languages/salesforce-meta-parser.ts` | **EXISTS** | Flow/Object/LWC metadata parser |
+| `src/parsers/grammars/tree-sitter-apex.wasm` | **NEW FILE** | Tree-sitter Apex grammar binary |
+| `src/parsers/grammar-config.json` | **ALREADY MODIFIED** | Apex + salesforce-meta entries added |
+| `src/indexer/indexing-engine.ts` | **MODIFIED** | detectSfdxProject() + SF file scanning |
+| `src/graph/*` | **ENHANCED** | New relationship types traversal |
+| `src/tools/*` | **ENHANCED** | SF results in existing tool responses |
+| `mcp-salesforce-intelligence/` | **NEW LIBRARY** | Shared SF parsing logic (npm package) |
+| `kiro-sdlc-agents/src/commands/index-salesforce.ts` | **NEW** | Extension command |
 
-### 2.2 System Architecture
-
-The module follows the existing `mcp-code-intelligence-nodejs` pattern:
-
-1. **Transport**: stdio (stdin/stdout) with JSON-RPC 2.0 message framing
-2. **Server Framework**: `@modelcontextprotocol/sdk` McpServer class
-3. **Tool Registration**: Each server registers tools via `server.tool()` with Zod schemas
-4. **Shared Layer**: Common types, SFDX detection, and KB client utilities
-5. **Dependency**: `salesforce-ast` consumed as npm dependency for all parsing operations
-
-**Component Interaction:**
-
-```mermaid
-sequenceDiagram
-    participant Client as MCP Client (Kiro)
-    participant Server as MCP Server (sf-parser)
-    participant AST as salesforce-ast
-    participant FS as Filesystem
-
-    Client->>Server: JSON-RPC request (tools/call)
-    Server->>Server: Validate input (Zod schema)
-    Server->>FS: Read file(s) from SFDX project
-    Server->>AST: Call parse function
-    AST->>AST: Tree-Sitter parse → AST
-    AST-->>Server: ParseResult
-    Server-->>Client: JSON-RPC response (content)
-```
 
 ---
 
 ## 3. Functional Requirements
 
-### 3.1 Feature: Parse Apex Files (sf-parser)
+### 3.1 Feature: SFDX Project Auto-Detection
 
-**Source:** BRD Story 2
+**Source:** BRD Story 1
 
 #### 3.1.1 Description
 
-Parse individual Apex class, interface, enum, or trigger files to extract structured metadata including class signatures, method declarations, properties, dependencies, and relationships. Uses `salesforce-ast.parseApexFile()` internally.
+The existing indexer (`IndexingEngine`) detects SFDX project structure by presence of `sfdx-project.json` in the workspace root. When detected, it includes Salesforce metadata paths in the indexing scan.
 
-#### 3.1.2 Use Case: UC-1 — Parse Single Apex File
+#### 3.1.2 Use Case
 
-**Use Case ID:** UC-1
-**Actor:** AI Agent
-**Preconditions:** SFDX project exists on filesystem, target .cls/.trigger file is valid
-**Postconditions:** Structured parse result returned with class metadata and dependencies
+**Use Case ID:** UC-01
+**Actor:** Developer / AI Agent
+**Preconditions:** Workspace contains an SFDX project with `sfdx-project.json`
+**Postconditions:** All SF metadata files are indexed with symbols and relationships stored
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_parse_apex(file_path)` | | Agent sends file path to parse |
-| 2 | | Validate input | Check file_path is non-empty, ends with .cls or .trigger |
-| 3 | | Resolve path | Resolve relative path against workspace root |
-| 4 | | Check file exists | Verify file is readable on filesystem |
-| 5 | | Call `parseApexFile(path)` | Invoke salesforce-ast parser |
-| 6 | | Transform result | Map ParseResult to tool output schema |
-| 7 | | Return response | JSON-RPC success with structured metadata |
+| 1 | Developer | | Triggers indexing (manual or auto) |
+| 2 | | IndexingEngine | Calls `detectSfdxProject()` — checks for `sfdx-project.json` |
+| 3 | | IndexingEngine | Reads `packageDirectories` from `sfdx-project.json` |
+| 4 | | IndexingEngine | Scans SF paths for `.cls`, `.trigger`, `.flow-meta.xml`, `.object-meta.xml`, `.js-meta.xml` |
+| 5 | | apex-parser | Parses Apex files → extracts symbols + relationships |
+| 6 | | salesforce-meta-parser | Parses metadata XML → extracts symbols + relationships |
+| 7 | | Database | Stores symbols and relationships in SQLite |
+| 8 | | IndexingEngine | Reports SF-specific stats (apex count, trigger count, etc.) |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | File is an interface | Parse succeeds, `type` field = "interface", no method bodies |
-| AF-2 | File is an enum | Parse succeeds, `type` field = "enum", includes enum values |
-| AF-3 | File is a trigger | Parse succeeds, `type` field = "trigger", includes object and events |
-| AF-4 | `include_body=true` | Include method body source code in output |
+| AF-01 | No `sfdx-project.json` found | Skip SF-specific processing; standard indexing only |
+| AF-02 | Custom `packageDirectories` in config | Use configured paths instead of default `force-app/` |
+| AF-03 | Incremental re-index (files unchanged) | Skip unchanged files (hash comparison) |
 
 **Exception Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| EF-1 | File not found | Return error: "File not found: {path}" |
-| EF-2 | File is not Apex | Return error: "Unsupported file type. Expected .cls or .trigger" |
-| EF-3 | Parse error (malformed Apex) | Return partial result with `errors[]` array containing line/column/message |
-| EF-4 | Tree-Sitter not initialized | Call `initParser()`, retry once, fail if still errors |
+| EF-01 | Malformed `sfdx-project.json` | Log warning, skip SF detection, continue standard indexing |
+| EF-02 | Apex parse error (syntax error in .cls) | Log error for file, continue with other files, report partial results |
+| EF-03 | Missing grammar .wasm file | Log error, disable Apex tree-sitter parsing, fall back to regex |
 
 #### 3.1.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-1 | File path must be relative to workspace root or absolute | BRD Story 2 |
-| BR-2 | Supported extensions: .cls, .trigger | BRD Story 2 |
-| BR-3 | Partial results returned for malformed files (never crash) | BRD NFR |
-| BR-4 | Tree-Sitter must be initialized before first parse (call `initParser()` once) | salesforce-ast API |
-| BR-5 | Method bodies excluded by default (include_body=false) to reduce payload size | Performance |
+| BR-01 | SFDX detection MUST NOT affect non-SF project indexing performance | BRD NFR |
+| BR-02 | Incremental indexing MUST use file hash comparison (same as existing) | BRD Story 1 AC3 |
+| BR-03 | All `packageDirectories` paths from sfdx-project.json MUST be scanned | BRD Story 1 AC2 |
+| BR-04 | SF indexing MUST be additive — never remove existing non-SF index data | BRD Approach v2 |
+
 
 #### 3.1.4 Data Specifications
 
-**Input Data:**
+**Input Data (sfdx-project.json):**
 
 | Field | Type | Required | Validation | Description |
 |-------|------|----------|------------|-------------|
-| file_path | string | Yes | Non-empty, ends with .cls or .trigger | Path to Apex file |
-| include_body | boolean | No | Default: false | Whether to include method body source |
+| packageDirectories | array | Yes | Non-empty array | List of package directory configs |
+| packageDirectories[].path | string | Yes | Valid relative path | Directory containing SF metadata |
+| packageDirectories[].default | boolean | No | — | Whether this is the default package |
+| namespace | string | No | — | Org namespace prefix |
 
-**Output Data (JSON Schema):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "type": { "type": "string", "enum": ["class", "interface", "enum", "trigger"] },
-    "name": { "type": "string" },
-    "modifiers": { "type": "array", "items": { "type": "string" } },
-    "parent_class": { "type": "string", "nullable": true },
-    "interfaces": { "type": "array", "items": { "type": "string" } },
-    "methods": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "modifiers": { "type": "array", "items": { "type": "string" } },
-          "return_type": { "type": "string" },
-          "parameters": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": { "type": "string" },
-                "type": { "type": "string" }
-              }
-            }
-          },
-          "body": { "type": "string", "nullable": true }
-        }
-      }
-    },
-    "properties": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "modifiers": { "type": "array", "items": { "type": "string" } }
-        }
-      }
-    },
-    "inner_classes": { "type": "array", "items": { "$ref": "#" } },
-    "dependencies": {
-      "type": "object",
-      "properties": {
-        "referenced_classes": { "type": "array", "items": { "type": "string" } },
-        "dml_operations": { "type": "array", "items": { "type": "string" } },
-        "soql_queries": { "type": "array", "items": { "type": "string" } },
-        "method_calls": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "trigger_info": {
-      "type": "object",
-      "nullable": true,
-      "properties": {
-        "object": { "type": "string" },
-        "events": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "errors": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "line": { "type": "number" },
-          "column": { "type": "number" },
-          "message": { "type": "string" }
-        }
-      }
-    }
-  }
-}
-```
-
-#### 3.1.5 API Contract (Functional View)
-
-**Tool:** `sf_parse_apex`
-**Server:** sf-parser
-**Purpose:** Parse a single Apex file and return structured metadata
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| file_path | string | Yes | BR-1, BR-2 | Path to .cls or .trigger file |
-| include_body | boolean | No | BR-5 | Include method bodies (default: false) |
-
-**Output Data:**
+**Output Data (IndexResult — enhanced):**
 
 | Field | Type | Description |
 |-------|------|-------------|
-| file_path | string | Resolved absolute path |
-| type | string | "class" / "interface" / "enum" / "trigger" |
-| name | string | Class/interface/trigger name |
-| modifiers | string[] | Access modifiers (public, private, global, virtual, abstract) |
-| parent_class | string? | Extended class name (null if none) |
-| interfaces | string[] | Implemented interface names |
-| methods | Method[] | Method declarations with signatures |
-| properties | Property[] | Class properties/fields |
-| inner_classes | ParseResult[] | Nested class definitions |
-| dependencies | Dependencies | Referenced classes, DML, SOQL, method calls |
-| trigger_info | TriggerInfo? | Object and events (triggers only) |
-| errors | ParseError[] | Parse errors (empty if successful) |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| File not found | "File not found: {path}" | Path doesn't exist on filesystem |
-| Invalid file type | "Unsupported file type. Expected .cls or .trigger" | Extension not .cls/.trigger |
-| Parse failure | Partial result with errors[] populated | Malformed Apex syntax |
-| Parser not initialized | "Parser initialization failed: {error}" | Tree-Sitter WASM load failure |
+| totalFiles | number | Total files indexed |
+| sfStats.apexClasses | number | Count of .cls files indexed |
+| sfStats.triggers | number | Count of .trigger files indexed |
+| sfStats.flows | number | Count of .flow-meta.xml files indexed |
+| sfStats.objects | number | Count of .object-meta.xml files indexed |
+| sfStats.lwcComponents | number | Count of .js-meta.xml files indexed |
+| sfStats.relationships | number | Total SF relationships extracted |
+| errors | ParseError[] | Files that failed to parse |
 
 ---
 
-### 3.2 Feature: Parse Flow Metadata (sf-parser)
+### 3.2 Feature: Apex Symbols in `code_symbols`
 
-**Source:** BRD Story 4
+**Source:** BRD Story 2
 
 #### 3.2.1 Description
 
-Parse Salesforce Flow XML metadata files (`.flow-meta.xml`) to extract automation logic structure including elements, connectors, variables, decisions, and referenced objects/fields.
+The existing `code_symbols` tool returns Apex class, interface, enum, trigger, method, constructor, and property symbols when querying indexed Apex files.
 
-#### 3.2.2 Use Case: UC-2 — Parse Flow File
+#### 3.2.2 Use Case
 
-**Use Case ID:** UC-2
+**Use Case ID:** UC-02
 **Actor:** AI Agent
-**Preconditions:** Flow metadata file exists in SFDX project
-**Postconditions:** Structured flow definition returned with elements and dependencies
+**Preconditions:** SFDX project indexed; Apex files parsed
+**Postconditions:** Apex symbols returned with correct signatures and metadata
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_parse_flow(file_path)` | | Agent sends flow file path |
-| 2 | | Validate input | Check file ends with .flow-meta.xml |
-| 3 | | Read XML file | Load flow metadata from filesystem |
-| 4 | | Call `parseFlowFile(path)` | Invoke salesforce-ast flow parser |
-| 5 | | Extract structure | Map flow elements, connectors, variables |
-| 6 | | Identify dependencies | Extract referenced objects, fields, Apex actions, subflows |
-| 7 | | Return response | JSON-RPC success with flow structure |
+| 1 | AI Agent | | Calls `code_symbols(file_path="AccountService.cls")` |
+| 2 | | SymbolResolver | Resolves file path in index |
+| 3 | | Database | Queries symbols for resolved file |
+| 4 | | Tool | Returns symbols with Apex-specific metadata |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | Screen Flow | Include screen elements with field references |
-| AF-2 | Record-Triggered Flow | Include trigger conditions (object, when, criteria) |
-| AF-3 | Scheduled Flow | Include schedule configuration |
-| AF-4 | Autolaunched Flow | Include entry conditions |
+| AF-01 | Query by annotation (e.g., `@AuraEnabled`) | Filter symbols by decorator field |
+| AF-02 | Query by symbol name pattern | Fuzzy match across all indexed Apex symbols |
 
 **Exception Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| EF-1 | File not found | Return error: "File not found: {path}" |
-| EF-2 | Invalid XML | Return error: "Invalid Flow XML: {parse_error}" |
-| EF-3 | Unsupported flow version | Return partial result with warning |
+| EF-01 | File not indexed | Return "File not found in index" message |
+| EF-02 | File indexed but no symbols extracted | Return empty array (valid for empty files) |
+
 
 #### 3.2.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-6 | File must end with .flow-meta.xml | BRD Story 4 |
-| BR-7 | All flow element types must be captured (decisions, assignments, loops, screens, actions, subflows) | BRD Story 4 |
-| BR-8 | Connector relationships must preserve flow execution order | BRD Story 4 |
-| BR-9 | Referenced objects/fields extracted for dependency tracking | BRD Story 4 |
+| BR-05 | Apex symbols MUST include modifiers: global, virtual, with sharing, without sharing, webservice | BRD Story 2 |
+| BR-06 | Apex symbols MUST include annotations: @IsTest, @AuraEnabled, @InvocableMethod, @Future, etc. | BRD Story 2 |
+| BR-07 | Symbol signatures MUST follow Apex conventions (not Java) | BRD Story 2 |
+| BR-08 | Trigger symbols MUST include trigger events and SObject reference | BRD Story 2 AC2 |
 
 #### 3.2.4 Data Specifications
 
-**Input Data:**
+**Apex Symbol Output (ExtractedSymbol — existing interface):**
 
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| file_path | string | Yes | Ends with .flow-meta.xml | Path to Flow metadata file |
-
-**Output Data (JSON Schema):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "name": { "type": "string" },
-    "type": { "type": "string", "enum": ["Screen", "RecordTriggered", "Scheduled", "Autolaunched", "PlatformEvent"] },
-    "api_version": { "type": "string" },
-    "status": { "type": "string", "enum": ["Active", "Draft", "Obsolete"] },
-    "trigger_config": {
-      "type": "object",
-      "nullable": true,
-      "properties": {
-        "object": { "type": "string" },
-        "trigger_type": { "type": "string" },
-        "record_condition": { "type": "string" }
-      }
-    },
-    "elements": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "label": { "type": "string" },
-          "connector": { "type": "string", "nullable": true }
-        }
-      }
-    },
-    "variables": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "data_type": { "type": "string" },
-          "is_input": { "type": "boolean" },
-          "is_output": { "type": "boolean" }
-        }
-      }
-    },
-    "dependencies": {
-      "type": "object",
-      "properties": {
-        "objects": { "type": "array", "items": { "type": "string" } },
-        "fields": { "type": "array", "items": { "type": "string" } },
-        "apex_actions": { "type": "array", "items": { "type": "string" } },
-        "subflows": { "type": "array", "items": { "type": "string" } }
-      }
-    }
-  }
-}
-```
-
-#### 3.2.5 API Contract (Functional View)
-
-**Tool:** `sf_parse_flow`
-**Server:** sf-parser
-**Purpose:** Parse Flow metadata XML and return structured automation logic
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| file_path | string | Yes | BR-6 | Path to .flow-meta.xml file |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| File not found | "File not found: {path}" | Path doesn't exist |
-| Invalid XML | "Invalid Flow XML: {error}" | XML parse failure |
-| Unsupported version | "Warning: Flow API version {v} may have unsupported elements" | Very old/new API version |
+| Field | Type | Description | Apex Example |
+|-------|------|-------------|--------------|
+| name | string | Symbol name | `AccountService` |
+| kind | SymbolKind | class/method/interface/enum/property | `class` |
+| filePath | string | Source file path | `force-app/.../AccountService.cls` |
+| startLine | number | Start line | `1` |
+| endLine | number | End line | `150` |
+| signature | string | Full signature | `public with sharing class AccountService` |
+| modifiers | string[] | Apex modifiers | `["public", "with sharing"]` |
+| decorators | string[] | Annotations | `["@AuraEnabled"]` |
+| parentName | string/null | Parent class (for methods) | `AccountService` |
+| returnType | string/null | Return type (for methods) | `List<Account>` |
+| parameters | string/null | Parameter list | `(String name, Integer limit)` |
 
 ---
 
-### 3.3 Feature: Parse Object/Field Metadata (sf-parser)
+### 3.3 Feature: SF Symbols in `code_search`
 
-**Source:** BRD Story 5
+**Source:** BRD Story 3
 
 #### 3.3.1 Description
 
-Parse Salesforce Custom Object and Custom Field metadata to extract data model definitions including field types, relationships, validation rules, and record types.
+The existing `code_search` tool includes Apex, Flow, Object, and LWC symbols in search results. Supports filtering by SF metadata type.
 
-#### 3.3.2 Use Case: UC-3 — Parse Object Metadata
+#### 3.3.2 Use Case
 
-**Use Case ID:** UC-3
+**Use Case ID:** UC-03
 **Actor:** AI Agent
-**Preconditions:** Object metadata directory exists in SFDX project
-**Postconditions:** Complete object definition returned with fields, relationships, validations
+**Preconditions:** SFDX project indexed
+**Postconditions:** Search results include SF symbols alongside standard language symbols
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_parse_object(file_path)` | | Agent sends object metadata path |
-| 2 | | Validate input | Check path ends with .object-meta.xml or is a directory |
-| 3 | | Read metadata | Load object XML and associated field files |
-| 4 | | Call `parseObjectFile(path)` | Invoke salesforce-ast object parser |
-| 5 | | Extract fields | Map all custom fields with types and relationships |
-| 6 | | Extract validations | Parse validation rule formulas |
-| 7 | | Return response | JSON-RPC success with object structure |
+| 1 | AI Agent | | Calls `code_search(query="AccountService")` |
+| 2 | | SearchEngine | Searches across ALL indexed symbols (including SF) |
+| 3 | | Database | Returns matching symbols from all languages |
+| 4 | | Tool | Formats results with file path, line, signature |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | Path is directory | Parse all .field-meta.xml files within the object directory |
-| AF-2 | Standard object | Parse custom fields only (standard fields implied) |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | File/directory not found | Return error: "Object metadata not found: {path}" |
-| EF-2 | Invalid XML structure | Return partial result with errors |
+| AF-01 | Type filter: `code_search(query="Account", type="object")` | Filter by metadata type |
+| AF-02 | Cross-type search: `code_search(query="handleSave")` | Return both Apex methods and LWC handlers |
 
 #### 3.3.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-10 | Support both .object-meta.xml files and object directories | BRD Story 5 |
-| BR-11 | Relationship fields must identify related object and relationship type | BRD Story 5 |
-| BR-12 | Validation rules must include formula expression and error message | BRD Story 5 |
+| BR-09 | Search MUST include Apex classes, methods, triggers in results | BRD Story 3 |
+| BR-10 | Search MUST include Flow names, Object names, LWC component names | BRD Story 3 |
+| BR-11 | Search MUST support type filtering (apex, flow, object, lwc) | BRD Story 3 |
+| BR-12 | Search results MUST include same metadata as other languages | BRD Story 3 |
 
-#### 3.3.4 Data Specifications
-
-**Input Data:**
-
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| file_path | string | Yes | .object-meta.xml or directory path | Path to object metadata |
-
-**Output Data (JSON Schema):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "name": { "type": "string" },
-    "label": { "type": "string" },
-    "type": { "type": "string", "enum": ["CustomObject", "StandardObject"] },
-    "fields": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "label": { "type": "string" },
-          "type": { "type": "string" },
-          "required": { "type": "boolean" },
-          "relationship": {
-            "type": "object",
-            "nullable": true,
-            "properties": {
-              "related_object": { "type": "string" },
-              "relationship_type": { "type": "string", "enum": ["Lookup", "MasterDetail", "ExternalLookup"] },
-              "relationship_name": { "type": "string" }
-            }
-          }
-        }
-      }
-    },
-    "validation_rules": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "active": { "type": "boolean" },
-          "formula": { "type": "string" },
-          "error_message": { "type": "string" }
-        }
-      }
-    },
-    "record_types": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "label": { "type": "string" },
-          "active": { "type": "boolean" }
-        }
-      }
-    }
-  }
-}
-```
-
-#### 3.3.5 API Contract (Functional View)
-
-**Tool:** `sf_parse_object`
-**Server:** sf-parser
-**Purpose:** Parse Object/Field metadata and return data model structure
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| file_path | string | Yes | BR-10 | Path to .object-meta.xml or object directory |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| Not found | "Object metadata not found: {path}" | Path doesn't exist |
-| Invalid XML | "Invalid object metadata: {error}" | XML parse failure |
 
 ---
 
-### 3.4 Feature: Parse LWC Components (sf-parser)
+### 3.4 Feature: SF Dependencies in `code_dependencies`
 
-**Source:** BRD Story 6
+**Source:** BRD Story 4
 
 #### 3.4.1 Description
 
-Parse Lightning Web Component bundles (HTML template, JS controller, CSS, metadata) to extract component structure, public API, wire adapters, Apex imports, and child component dependencies.
+The existing `code_dependencies` tool shows SF-specific dependency relationships: trigger-on, flow-action, flow-object, lwc-wire, class-class, SOQL, and DML relationships.
 
-#### 3.4.2 Use Case: UC-4 — Parse LWC Component
+#### 3.4.2 Use Case
 
-**Use Case ID:** UC-4
+**Use Case ID:** UC-04
 **Actor:** AI Agent
-**Preconditions:** LWC component directory exists with at least one of: .html, .js, .css
-**Postconditions:** Component structure returned with properties, methods, and dependencies
+**Preconditions:** SFDX project indexed with relationships extracted
+**Postconditions:** SF dependencies returned with relationship types
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_parse_lwc(file_path)` | | Agent sends LWC component path |
-| 2 | | Validate input | Check path is a directory or .js/.html/.css file |
-| 3 | | Detect bundle files | Find .html, .js, .css, .js-meta.xml in component dir |
-| 4 | | Parse JS controller | Call `parseLWCJsFile()` — extract properties, methods, imports |
-| 5 | | Parse HTML template | Call `parseLWCHtmlFile()` — extract component references, iterations |
-| 6 | | Parse CSS | Call `parseLWCCssFile()` — extract custom properties, tokens |
-| 7 | | Merge results | Combine all bundle file results into unified component view |
-| 8 | | Return response | JSON-RPC success with component structure |
+| 1 | AI Agent | | Calls `code_dependencies(file="AccountService.cls", direction="both")` |
+| 2 | | FileResolver | Resolves file path |
+| 3 | | DependencyGraphService | Traverses graph including SF relationship types |
+| 4 | | Tool | Returns dependencies grouped by type |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | Path is a single .js file | Parse only JS, skip HTML/CSS |
-| AF-2 | Path is a single .html file | Parse only template, skip JS/CSS |
-| AF-3 | No CSS file in bundle | Skip CSS parsing, return without styles |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | Directory not found | Return error: "LWC component not found: {path}" |
-| EF-2 | No parseable files | Return error: "No LWC files found in: {path}" |
-| EF-3 | JS parse error | Return partial result with JS errors, continue with HTML/CSS |
+| AF-01 | Query by SObject name | Show all triggers, flows, classes referencing that object |
+| AF-02 | Filter by relationship type | `include_types=["trigger-on", "soql"]` |
+| AF-03 | Deep traversal (depth > 1) | Follow transitive SF dependencies |
 
 #### 3.4.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-13 | If path is directory, parse all bundle files (.js, .html, .css) | BRD Story 6 |
-| BR-14 | @api decorated properties are public API | BRD Story 6 |
-| BR-15 | @wire decorated properties identify data dependencies | BRD Story 6 |
-| BR-16 | Import statements from @salesforce/* identify platform dependencies | BRD Story 6 |
-| BR-17 | Template references to `c-*` or `lightning-*` identify child components | BRD Story 6 |
+| BR-13 | MUST show trigger-on relationships (trigger → SObject) | BRD Story 4 |
+| BR-14 | MUST show flow-action relationships (flow → Apex class) | BRD Story 4 |
+| BR-15 | MUST show SOQL relationships (Apex method → SObject) | BRD Story 4 |
+| BR-16 | MUST show DML relationships (Apex method → SObject) | BRD Story 4 |
+| BR-17 | MUST show wire relationships (LWC → Apex class) | BRD Story 4 |
+| BR-18 | MUST show class inheritance (Apex class → Apex class) | BRD Story 4 |
+| BR-19 | Dependency query response time < 200ms | BRD NFR |
 
-#### 3.4.4 Data Specifications
+#### 3.4.4 New Relationship Types
 
-**Input Data:**
-
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| file_path | string | Yes | Directory or .js/.html/.css file | Path to LWC component |
-
-**Output Data (JSON Schema):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "name": { "type": "string" },
-    "bundle_files": { "type": "array", "items": { "type": "string" } },
-    "public_properties": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "decorator": { "type": "string", "enum": ["api", "track", "wire"] }
-        }
-      }
-    },
-    "methods": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "is_public": { "type": "boolean" },
-          "parameters": { "type": "array", "items": { "type": "string" } }
-        }
-      }
-    },
-    "wire_adapters": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "adapter": { "type": "string" },
-          "target_property": { "type": "string" },
-          "params": { "type": "object" }
-        }
-      }
-    },
-    "apex_imports": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "class_name": { "type": "string" },
-          "method_name": { "type": "string" }
-        }
-      }
-    },
-    "child_components": { "type": "array", "items": { "type": "string" } },
-    "event_handlers": { "type": "array", "items": { "type": "string" } },
-    "css_custom_properties": { "type": "array", "items": { "type": "string" } }
-  }
-}
-```
-
-#### 3.4.5 API Contract (Functional View)
-
-**Tool:** `sf_parse_lwc`
-**Server:** sf-parser
-**Purpose:** Parse LWC component bundle and return frontend structure
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| file_path | string | Yes | BR-13 | Path to LWC component directory or file |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| Not found | "LWC component not found: {path}" | Path doesn't exist |
-| No files | "No LWC files found in: {path}" | Directory has no .js/.html/.css |
-| JS parse error | Partial result with errors[] | Invalid JavaScript syntax |
+| Relationship Kind | Source Type | Target Type | Example |
+|-------------------|-------------|-------------|---------|
+| `trigger-on` | Trigger | SObject | AccountTrigger → Account |
+| `soql` | Apex method | SObject | AccountService.getAccounts → Account |
+| `dml` | Apex method | SObject | AccountService.save → Account |
+| `wire` | LWC component | Apex class | accountList → AccountController |
+| `flow-action` | Flow | Apex class | Auto_Create_Contact → ContactService |
+| `flow-object` | Flow | SObject | Auto_Create_Contact → Contact |
+| `inherits` | Apex class | Apex class | AccountService → BaseService |
+| `implements` | Apex class | Interface | AccountService → IAccountService |
+| `decorates` | Annotation | Apex method | @AuraEnabled → AccountService.getAccounts |
+| `apex-import` | Apex class | Apex class | AccountService → AccountHelper |
 
 ---
 
-### 3.5 Feature: Scan SFDX Project (sf-parser)
+### 3.5 Feature: SF Impact Analysis in `code_impact`
 
-**Source:** BRD Story 1 (discovery phase)
+**Source:** BRD Story 5
 
 #### 3.5.1 Description
 
-Scan an entire SFDX project directory to discover all metadata components without deep parsing. Returns a manifest of all files organized by metadata type. This is the lightweight discovery step before full indexing.
+The existing `code_impact` tool traverses SF relationship types when analyzing blast radius. Impact of changing an Object includes triggers, flows, Apex classes with SOQL/DML, and LWC components.
 
-#### 3.5.2 Use Case: UC-5 — Scan Project Structure
+#### 3.5.2 Use Case
 
-**Use Case ID:** UC-5
-**Actor:** AI Agent / Extension Command
-**Preconditions:** Directory contains sfdx-project.json or force-app/ structure
-**Postconditions:** Project manifest returned with all discovered metadata files
+**Use Case ID:** UC-05
+**Actor:** AI Agent
+**Preconditions:** SFDX project indexed with full relationship graph
+**Postconditions:** Impact analysis includes cross-metadata-type traversal
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_scan_project(project_path)` | | Agent sends project root path |
-| 2 | | Validate SFDX project | Check for sfdx-project.json or force-app/ |
-| 3 | | Call `scanProject(path)` | Invoke salesforce-ast project scanner |
-| 4 | | Categorize files | Group by metadata type (Apex, Flow, Object, LWC, etc.) |
-| 5 | | Compute stats | Count files per type, total size |
-| 6 | | Return manifest | JSON-RPC success with project structure |
+| 1 | AI Agent | | Calls `code_impact(symbol="Account", action="modify")` |
+| 2 | | SymbolResolver | Resolves "Account" to SObject symbol |
+| 3 | | ImpactAnalysisService | Traverses ALL relationship types (including SF) |
+| 4 | | Tool | Returns grouped impact: triggers, flows, classes, LWC |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | Multiple package directories | Scan all directories listed in sfdx-project.json |
-| AF-2 | Nested SFDX project | Use nearest sfdx-project.json as root |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | Not an SFDX project | Return error: "No SFDX project found at: {path}" |
-| EF-2 | Permission denied | Return error: "Cannot read directory: {path}" |
+| AF-01 | Impact on Apex class | Include callers (Apex + Flow + LWC) with transitive impact |
+| AF-02 | Impact on Flow | Include subflows, referenced Apex classes |
+| AF-03 | Severity filtering | Filter by severity_threshold parameter |
 
 #### 3.5.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-18 | SFDX detection: sfdx-project.json OR force-app/ directory | BRD Story 1 |
-| BR-19 | Scan is non-destructive, read-only operation | BRD Story 1 |
-| BR-20 | All standard SFDX metadata types must be recognized | BRD Story 1 |
+| BR-20 | Object impact MUST include: triggers, flows, classes with SOQL/DML, LWC | BRD Story 5 |
+| BR-21 | Apex class impact MUST include: calling classes, flows, LWC imports | BRD Story 5 |
+| BR-22 | Impact results MUST include severity hints (direct=high, transitive=medium/low) | BRD Story 5 AC3 |
+| BR-23 | Impact results MUST be grouped by metadata type | BRD Story 5 |
 
-#### 3.5.4 Data Specifications
-
-**Input Data:**
-
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| project_path | string | Yes | Must contain SFDX markers | Path to SFDX project root |
-
-**Output Data (JSON Schema):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "project_path": { "type": "string" },
-    "sfdx_config": { "type": "object" },
-    "package_directories": { "type": "array", "items": { "type": "string" } },
-    "metadata_types": {
-      "type": "object",
-      "properties": {
-        "apex_classes": { "type": "array", "items": { "type": "string" } },
-        "apex_triggers": { "type": "array", "items": { "type": "string" } },
-        "flows": { "type": "array", "items": { "type": "string" } },
-        "objects": { "type": "array", "items": { "type": "string" } },
-        "lwc_components": { "type": "array", "items": { "type": "string" } },
-        "permissions": { "type": "array", "items": { "type": "string" } },
-        "labels": { "type": "array", "items": { "type": "string" } },
-        "layouts": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "stats": {
-      "type": "object",
-      "properties": {
-        "total_files": { "type": "number" },
-        "by_type": { "type": "object" }
-      }
-    }
-  }
-}
-```
-
-#### 3.5.5 API Contract (Functional View)
-
-**Tool:** `sf_scan_project`
-**Server:** sf-parser
-**Purpose:** Discover all metadata files in SFDX project (lightweight scan, no deep parse)
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| project_path | string | Yes | BR-18 | Path to SFDX project root |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| Not SFDX | "No SFDX project found at: {path}" | No sfdx-project.json or force-app/ |
-| Permission denied | "Cannot read directory: {path}" | Filesystem permission error |
 
 ---
 
-### 3.6 Feature: Query Dependencies (sf-graph)
+### 3.6 Feature: SF Call Graph in `code_callers`/`code_callees`
 
-**Source:** BRD Story 3
+**Source:** BRD Story 6
 
 #### 3.6.1 Description
 
-Query forward dependencies of a Salesforce component — what other components does it reference or depend on. Uses the dependency graph built from parsed metadata.
+The existing `code_callers` and `code_callees` tools include SF call relationships: Apex method calls, Flow action invocations, LWC Apex imports, trigger handler calls.
 
-#### 3.6.2 Use Case: UC-6 — Get Forward Dependencies
+#### 3.6.2 Use Case
 
-**Use Case ID:** UC-6
+**Use Case ID:** UC-06
 **Actor:** AI Agent
-**Preconditions:** Project has been indexed (dependency graph exists in memory/cache)
-**Postconditions:** List of dependencies returned with relationship types
+**Preconditions:** SFDX project indexed with call graph built
+**Postconditions:** Call graph includes cross-metadata-type relationships
 
-**Main Flow:**
+**Main Flow (code_callers):**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_dependencies(node_name, depth, include_types)` | | Agent queries dependencies |
-| 2 | | Validate node exists | Check node_name in graph |
-| 3 | | Traverse graph forward | Follow outgoing edges up to depth |
-| 4 | | Filter by types | Apply include_types filter if specified |
-| 5 | | Return dependency tree | JSON-RPC success with dependency list |
+| 1 | AI Agent | | Calls `code_callers(symbol="AccountService.createAccount")` |
+| 2 | | SymbolResolver | Resolves symbol to definition(s) |
+| 3 | | CallGraphService | Finds all callers including SF types |
+| 4 | | Tool | Returns callers with call type annotation |
 
-**Alternative Flows:**
+**Main Flow (code_callees):**
 
-| ID | Condition | Steps |
-|----|-----------|-------|
-| AF-1 | depth not specified | Use default depth=3 |
-| AF-2 | include_types specified | Filter results to only matching metadata types |
-| AF-3 | Node has no dependencies | Return empty array with success |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | Node not found in graph | Return error: "Component not found: {node_name}. Run sf_index_project first." |
-| EF-2 | Graph not built | Return error: "No dependency graph available. Run sf_index_project first." |
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | AI Agent | | Calls `code_callees(symbol="AccountTrigger")` |
+| 2 | | SymbolResolver | Resolves trigger symbol |
+| 3 | | CallGraphService | Finds all methods/classes invoked by trigger |
+| 4 | | Tool | Returns callees with relationship kind |
 
 #### 3.6.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-21 | Default traversal depth is 3 | BRD Story 3 |
-| BR-22 | Graph must be built before queries (via sf_index_project or sf_graph_export) | BRD Story 3 |
-| BR-23 | Circular dependencies must be detected and reported (not infinite loop) | BRD Story 3 |
-
-#### 3.6.4 API Contract (Functional View)
-
-**Tool:** `sf_dependencies`
-**Server:** sf-graph
-**Purpose:** Get forward dependencies of a component (what does X depend on?)
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| node_name | string | Yes | BR-22 | Fully qualified component name |
-| depth | number | No | BR-21 (default: 3) | Max traversal depth |
-| include_types | string[] | No | | Filter by metadata types |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "node": { "type": "string" },
-    "node_type": { "type": "string" },
-    "dependencies": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "relationship": { "type": "string", "enum": ["extends", "implements", "references", "dml", "soql", "calls", "imports", "triggers"] },
-          "depth": { "type": "number" }
-        }
-      }
-    },
-    "circular_refs": { "type": "array", "items": { "type": "string" } },
-    "total_count": { "type": "number" }
-  }
-}
-```
+| BR-24 | code_callers MUST include: Apex calls, Flow actions, LWC imports, trigger handlers | BRD Story 6 |
+| BR-25 | code_callees MUST include: method calls, SOQL targets, DML targets | BRD Story 6 |
+| BR-26 | Call graph MUST support cross-metadata-type traversal | BRD Story 6 |
+| BR-27 | Results MUST distinguish call types: method_call, apex_action, wire_adapter, dml, soql | BRD Story 6 AC3 |
 
 ---
 
-### 3.7 Feature: Query Dependents (sf-graph)
+### 3.7 Feature: SF File Support in `mem_ingest_file`
 
-**Source:** BRD Story 3
+**Source:** BRD Story 7
 
 #### 3.7.1 Description
 
-Query reverse dependencies — what components depend on a given component. Essential for understanding the impact of changes.
+The existing `mem_ingest_file` tool accepts Apex and SF metadata files, parses them using the appropriate parser, and stores structured metadata in the knowledge base.
 
-#### 3.7.2 Use Case: UC-7 — Get Reverse Dependents
+#### 3.7.2 Use Case
 
-**Use Case ID:** UC-7
+**Use Case ID:** UC-07
 **Actor:** AI Agent
-**Preconditions:** Project has been indexed
-**Postconditions:** List of dependent components returned
+**Preconditions:** File exists on disk
+**Postconditions:** File content parsed and stored in KB with structured metadata
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_dependents(node_name, depth, include_types)` | | Agent queries dependents |
-| 2 | | Validate node exists | Check node_name in graph |
-| 3 | | Traverse graph backward | Follow incoming edges up to depth |
-| 4 | | Filter by types | Apply include_types filter if specified |
-| 5 | | Return dependents tree | JSON-RPC success with dependent list |
+| 1 | AI Agent | | Calls `mem_ingest_file(path="force-app/.../AccountService.cls")` |
+| 2 | | Tool | Detects file extension → selects parser |
+| 3 | | apex-parser | Parses file → extracts symbols + relationships |
+| 4 | | KB | Stores structured metadata with tags |
 
-**Alternative Flows:**
+#### 3.7.3 Business Rules
 
-| ID | Condition | Steps |
-|----|-----------|-------|
-| AF-1 | No dependents found | Return empty array (leaf node) |
-| AF-2 | include_types filter applied | Only return matching types |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | Node not found | Return error: "Component not found: {node_name}" |
-| EF-2 | Graph not available | Return error: "No dependency graph. Run sf_index_project first." |
-
-#### 3.7.3 API Contract (Functional View)
-
-**Tool:** `sf_dependents`
-**Server:** sf-graph
-**Purpose:** Get reverse dependencies (what depends on X?)
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| node_name | string | Yes | | Fully qualified component name |
-| depth | number | No | Default: 3 | Max traversal depth |
-| include_types | string[] | No | | Filter by metadata types |
-
-**Output Data:** Same structure as `sf_dependencies` but with incoming relationships.
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-28 | MUST accept .cls, .trigger files and parse with apex-parser | BRD Story 7 |
+| BR-29 | MUST accept .flow-meta.xml, .object-meta.xml and parse with salesforce-meta-parser | BRD Story 7 |
+| BR-30 | Ingested content MUST include: symbol names, relationships, annotations, modifiers | BRD Story 7 |
+| BR-31 | KB entries MUST be tagged with: salesforce, {metadata-type}, {component-name} | BRD Story 7 |
 
 ---
 
-### 3.8 Feature: Impact Analysis (sf-graph)
+### 3.8 Feature: Extension Command "Index Salesforce Project"
 
-**Source:** BRD Story 3
+**Source:** BRD Story 8
 
 #### 3.8.1 Description
 
-Perform transitive impact analysis — compute the full closure of reverse dependencies to determine all components that could be affected by a change to a given component.
+A new command "Kiro SDLC: Index Salesforce Project" registered in the Kiro extension command palette. It auto-detects the SFDX project root and triggers the existing indexer with SF-specific options.
 
-#### 3.8.2 Use Case: UC-8 — Perform Impact Analysis
+#### 3.8.2 Use Case
 
-**Use Case ID:** UC-8
-**Actor:** AI Agent
-**Preconditions:** Project indexed, dependency graph available
-**Postconditions:** Complete impact tree returned with severity classification
+**Use Case ID:** UC-08
+**Actor:** Developer
+**Preconditions:** Kiro IDE open with workspace containing SFDX project
+**Postconditions:** SF project fully indexed, results shown in notification
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_impact_analysis(node_name, depth)` | | Agent requests impact analysis |
-| 2 | | Validate node | Check node exists in graph |
-| 3 | | Compute transitive closure | BFS/DFS traversal of reverse edges |
-| 4 | | Classify impact | Direct (depth=1) vs Indirect (depth>1) |
-| 5 | | Group by type | Organize impacted components by metadata type |
-| 6 | | Return impact report | JSON-RPC success with impact tree |
+| 1 | Developer | | Opens command palette, selects "Kiro SDLC: Index Salesforce Project" |
+| 2 | | Extension | Searches workspace for `sfdx-project.json` |
+| 3 | | Extension | Shows progress notification "Indexing Salesforce project..." |
+| 4 | | Extension | Calls existing indexer MCP tool with SF options |
+| 5 | | IndexingEngine | Performs full SF indexing |
+| 6 | | Extension | Shows result notification with stats |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | depth=1 | Only direct dependents (no transitive) |
-| AF-2 | Circular dependency detected | Mark cycle, don't traverse further |
+| AF-01 | No SFDX project found | Show error: "No SFDX project found (missing sfdx-project.json)" |
+| AF-02 | Indexing already in progress | Show info: "Indexing already in progress" |
 
 **Exception Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| EF-1 | Node not found | Return error with suggestion to run indexing |
-| EF-2 | Depth exceeds 10 | Cap at 10, return warning |
+| EF-01 | Indexer connection failed | Show error: "Cannot connect to code intelligence server" |
+| EF-02 | Partial indexing failure | Show warning with partial results + error count |
 
 #### 3.8.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-24 | Impact analysis uses BFS for level-ordered results | BRD Story 3 |
-| BR-25 | Maximum depth capped at 10 to prevent performance issues | Performance |
-| BR-26 | Circular dependencies detected and reported, not traversed infinitely | BRD Story 3 |
-| BR-27 | Results classified as Direct (depth=1) or Indirect (depth>1) | BRD Story 3 |
+| BR-32 | Command MUST follow existing "Index Workspace" pattern | BRD Story 8 |
+| BR-33 | MUST show progress notification during indexing | BRD Story 8 |
+| BR-34 | MUST report results: files parsed, symbols found, relationships built, errors | BRD Story 8 |
+| BR-35 | MUST NOT create a new MCP server connection — use existing | BRD Approach v2 |
 
-#### 3.8.4 API Contract (Functional View)
-
-**Tool:** `sf_impact_analysis`
-**Server:** sf-graph
-**Purpose:** Transitive impact analysis — all components affected by a change
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| node_name | string | Yes | | Component to analyze |
-| depth | number | No | BR-25 (default: 3, max: 10) | Max traversal depth |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "node": { "type": "string" },
-    "total_impacted": { "type": "number" },
-    "direct_impact": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "relationship": { "type": "string" }
-        }
-      }
-    },
-    "indirect_impact": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "type": { "type": "string" },
-          "depth": { "type": "number" },
-          "path": { "type": "array", "items": { "type": "string" } }
-        }
-      }
-    },
-    "by_type": {
-      "type": "object",
-      "additionalProperties": { "type": "number" }
-    },
-    "circular_refs": { "type": "array", "items": { "type": "string" } }
-  }
-}
-```
 
 ---
 
-### 3.9 Feature: Export Dependency Graph (sf-graph)
+### 3.9 Feature: SFDX Stats in `code_index_status`
 
-**Source:** BRD Story 3
+**Source:** BRD Story 9
 
 #### 3.9.1 Description
 
-Export the complete dependency graph in standard formats (JSON adjacency list or DOT/Graphviz) for visualization or external tool consumption.
+The existing `code_index_status` tool includes an SFDX-specific section when an SFDX project is detected, showing SF metadata counts and relationship statistics.
 
-#### 3.9.2 Use Case: UC-9 — Export Graph
+#### 3.9.2 Use Case
 
-**Use Case ID:** UC-9
+**Use Case ID:** UC-09
 **Actor:** AI Agent
-**Preconditions:** Project indexed, graph available
-**Postconditions:** Graph exported in requested format
+**Preconditions:** SFDX project detected and indexed
+**Postconditions:** Index status includes SF-specific stats section
 
 **Main Flow:**
 
 | Step | Actor | System | Description |
 |------|-------|--------|-------------|
-| 1 | Calls `sf_graph_export(format, include_types)` | | Agent requests export |
-| 2 | | Validate format | Check format is "json" or "dot" |
-| 3 | | Filter graph | Apply include_types filter if specified |
-| 4 | | Serialize | Convert graph to requested format |
-| 5 | | Return export | JSON-RPC success with serialized graph |
-
-#### 3.9.3 API Contract (Functional View)
-
-**Tool:** `sf_graph_export`
-**Server:** sf-graph
-**Purpose:** Export full dependency graph in JSON or DOT format
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| format | string | No | Default: "json" | Output format: "json" or "dot" |
-| include_types | string[] | No | | Filter nodes by metadata type |
-
-**Output Data (format=json):**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "nodes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "type": { "type": "string" },
-          "label": { "type": "string" }
-        }
-      }
-    },
-    "edges": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "source": { "type": "string" },
-          "target": { "type": "string" },
-          "relationship": { "type": "string" }
-        }
-      }
-    },
-    "stats": {
-      "type": "object",
-      "properties": {
-        "node_count": { "type": "number" },
-        "edge_count": { "type": "number" }
-      }
-    }
-  }
-}
-```
-
----
-
-### 3.10 Feature: Index Full Project (sf-kb-indexer)
-
-**Source:** BRD Story 1, Story 8
-
-#### 3.10.1 Description
-
-Full project indexing — parse all metadata in an SFDX project and store structured results in the Knowledge Base via `mem_ingest`. This is the primary entry point triggered by the Kiro extension command.
-
-#### 3.10.2 Use Case: UC-10 — Index SFDX Project
-
-**Use Case ID:** UC-10
-**Actor:** Developer (via Extension) / AI Agent
-**Preconditions:** SFDX project exists, KB (mcp-code-intelligence) is accessible
-**Postconditions:** All metadata indexed in KB, dependency graph built
-
-**Main Flow:**
-
-| Step | Actor | System | Description |
-|------|-------|--------|-------------|
-| 1 | Calls `sf_index_project(project_path)` | | Trigger full indexing |
-| 2 | | Detect SFDX project | Validate sfdx-project.json exists |
-| 3 | | Scan project | Call `scanProject(path)` to discover all files |
-| 4 | | Check incremental | Compare file hashes with previous index |
-| 5 | | Parse all files | Call `parseProject(path)` for full AST parsing |
-| 6 | | Build dependency graph | Call `buildDependencyGraph(data)` |
-| 7 | | Convert to KB payloads | Call `toKBPayload(index)` |
-| 8 | | Ingest into KB | Call `mem_ingest` for each payload entry |
-| 9 | | Return summary | Report: files parsed, errors, time elapsed |
-
-![Sequence - Index Project](diagrams/sequence-index-project.png)
-*[Edit in draw.io](diagrams/sequence-index-project.drawio)*
+| 1 | AI Agent | | Calls `code_index_status` |
+| 2 | | Tool | Queries database for standard stats |
+| 3 | | Tool | Detects SFDX project → queries SF-specific stats |
+| 4 | | Tool | Returns combined response with SF section |
 
 **Alternative Flows:**
 
 | ID | Condition | Steps |
 |----|-----------|-------|
-| AF-1 | Incremental re-index | Only parse files with changed hashes (skip unchanged) |
-| AF-2 | force=true parameter | Skip hash check, re-index everything |
-| AF-3 | Large project (>1000 files) | Process in batches of 100, report progress per batch |
+| AF-01 | No SFDX project | Omit SF section entirely (backward compatible) |
 
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | Not SFDX project | Return error: "No SFDX project found at: {path}" |
-| EF-2 | KB unavailable | Return error: "Knowledge Base not accessible. Ensure mcp-code-intelligence is running." |
-| EF-3 | Parse errors on some files | Continue indexing, collect errors, report in summary |
-| EF-4 | Memory limit exceeded | Abort with partial results, suggest reducing scope |
-
-#### 3.10.3 Business Rules
+#### 3.9.3 Business Rules
 
 | Rule ID | Rule | Source |
 |---------|------|--------|
-| BR-28 | Incremental indexing by default (hash-based change detection) | BRD Story 1 AC-2 |
-| BR-29 | Summary report must include: total files, parsed OK, errors, time elapsed | BRD Story 1 AC-3 |
-| BR-30 | KB entries tagged with: salesforce, {metadata-type}, {component-name} | BRD Story 8 |
-| BR-31 | Dependency graph stored alongside KB entries for query tools | BRD Story 3 |
-| BR-32 | Parse errors don't abort indexing — continue with remaining files | BRD NFR |
-
-#### 3.10.4 Data Specifications
-
-**Input Data:**
-
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| project_path | string | Yes | Must be SFDX project | Path to project root |
-| force | boolean | No | Default: false | Force full re-index (skip hash check) |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "project_path": { "type": "string" },
-    "status": { "type": "string", "enum": ["success", "partial", "failed"] },
-    "summary": {
-      "type": "object",
-      "properties": {
-        "total_files": { "type": "number" },
-        "parsed_ok": { "type": "number" },
-        "errors": { "type": "number" },
-        "skipped_unchanged": { "type": "number" },
-        "time_ms": { "type": "number" },
-        "kb_entries_created": { "type": "number" },
-        "graph_nodes": { "type": "number" },
-        "graph_edges": { "type": "number" }
-      }
-    },
-    "by_type": {
-      "type": "object",
-      "properties": {
-        "apex_classes": { "type": "number" },
-        "apex_triggers": { "type": "number" },
-        "flows": { "type": "number" },
-        "objects": { "type": "number" },
-        "lwc_components": { "type": "number" },
-        "other": { "type": "number" }
-      }
-    },
-    "errors": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "file": { "type": "string" },
-          "error": { "type": "string" }
-        }
-      }
-    }
-  }
-}
-```
-
-#### 3.10.5 API Contract (Functional View)
-
-**Tool:** `sf_index_project`
-**Server:** sf-kb-indexer
-**Purpose:** Full SFDX project indexing into Knowledge Base
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| project_path | string | Yes | BR-28 | Path to SFDX project root |
-| force | boolean | No | BR-28 | Force full re-index |
-
-**Business Error Scenarios:**
-
-| Scenario | User Message | Trigger Condition |
-|----------|-------------|-------------------|
-| Not SFDX | "No SFDX project found at: {path}" | Missing sfdx-project.json |
-| KB unavailable | "Knowledge Base not accessible" | mem_ingest call fails |
-| Partial failure | Status "partial" with error list | Some files failed to parse |
-| Memory exceeded | "Project too large. Try indexing specific directories." | OOM during parsing |
-
----
-
-### 3.11 Feature: Index Single File (sf-kb-indexer)
-
-**Source:** BRD Story 8
-
-#### 3.11.1 Description
-
-Index a single metadata file into the Knowledge Base. Useful for incremental updates when a developer modifies one file.
-
-#### 3.11.2 Use Case: UC-11 — Index Single File
-
-**Use Case ID:** UC-11
-**Actor:** AI Agent
-**Preconditions:** File exists, KB accessible
-**Postconditions:** File metadata stored/updated in KB
-
-**Main Flow:**
-
-| Step | Actor | System | Description |
-|------|-------|--------|-------------|
-| 1 | Calls `sf_index_file(file_path)` | | Agent sends file to index |
-| 2 | | Detect file type | Determine metadata type from extension |
-| 3 | | Parse file | Call appropriate parse function |
-| 4 | | Convert to KB payload | Call `toKBPayload()` for single entry |
-| 5 | | Upsert in KB | Call `mem_ingest` (replace if exists) |
-| 6 | | Update graph | Add/update node and edges in dependency graph |
-| 7 | | Return result | Confirmation with entry details |
-
-#### 3.11.3 API Contract (Functional View)
-
-**Tool:** `sf_index_file`
-**Server:** sf-kb-indexer
-**Purpose:** Index a single metadata file into KB
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| file_path | string | Yes | | Path to metadata file |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "component_name": { "type": "string" },
-    "metadata_type": { "type": "string" },
-    "kb_entry_id": { "type": "number" },
-    "dependencies_updated": { "type": "boolean" }
-  }
-}
-```
-
----
-
-### 3.12 Feature: Search KB with SF Filters (sf-kb-indexer)
-
-**Source:** BRD Story 8
-
-#### 3.12.1 Description
-
-Search the Knowledge Base with Salesforce-specific filters. Wraps the standard `mem_search` with pre-applied tags and type filters for Salesforce metadata.
-
-#### 3.12.2 Use Case: UC-12 — Search Salesforce KB
-
-**Use Case ID:** UC-12
-**Actor:** AI Agent
-**Preconditions:** Project has been indexed into KB
-**Postconditions:** Matching KB entries returned
-
-**Main Flow:**
-
-| Step | Actor | System | Description |
-|------|-------|--------|-------------|
-| 1 | Calls `sf_kb_search(query, metadata_type)` | | Agent searches SF metadata |
-| 2 | | Build search query | Combine user query with SF tags |
-| 3 | | Call `mem_search` | Execute KB search with filters |
-| 4 | | Enrich results | Add metadata type and relationship info |
-| 5 | | Return results | Ranked list of matching entries |
-
-#### 3.12.3 API Contract (Functional View)
-
-**Tool:** `sf_kb_search`
-**Server:** sf-kb-indexer
-**Purpose:** Search KB with Salesforce-specific filters
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| query | string | Yes | | Search query (component name, keyword) |
-| metadata_type | string | No | | Filter: "ApexClass", "ApexTrigger", "Flow", "CustomObject", "LWC" |
-| limit | number | No | Default: 10, max: 50 | Max results to return |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "results": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "metadata_type": { "type": "string" },
-          "summary": { "type": "string" },
-          "kb_entry_id": { "type": "number" },
-          "relevance_score": { "type": "number" },
-          "last_indexed": { "type": "string" }
-        }
-      }
-    },
-    "total_count": { "type": "number" }
-  }
-}
-```
-
----
-
-### 3.13 Feature: Check Sync Status (sf-kb-indexer)
-
-**Source:** BRD Story 8
-
-#### 3.13.1 Description
-
-Compare the current state of files on disk with what's indexed in the KB. Reports which files are out of sync (modified, added, or deleted since last indexing).
-
-#### 3.13.2 Use Case: UC-13 — Check Sync Status
-
-**Use Case ID:** UC-13
-**Actor:** AI Agent
-**Preconditions:** Project was previously indexed
-**Postconditions:** Sync status report returned
-
-**Main Flow:**
-
-| Step | Actor | System | Description |
-|------|-------|--------|-------------|
-| 1 | Calls `sf_kb_sync(project_path)` | | Agent checks sync status |
-| 2 | | Scan current files | Get current file list and hashes |
-| 3 | | Load index state | Read stored hashes from last indexing |
-| 4 | | Compare | Identify added, modified, deleted files |
-| 5 | | Return report | List of out-of-sync files with status |
-
-#### 3.13.3 API Contract (Functional View)
-
-**Tool:** `sf_kb_sync`
-**Server:** sf-kb-indexer
-**Purpose:** Check sync status between disk and KB index
-
-**Input Parameters:**
-
-| Parameter | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| project_path | string | Yes | | Path to SFDX project root |
-
-**Output Data:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "in_sync": { "type": "boolean" },
-    "last_indexed": { "type": "string" },
-    "changes": {
-      "type": "object",
-      "properties": {
-        "added": { "type": "array", "items": { "type": "string" } },
-        "modified": { "type": "array", "items": { "type": "string" } },
-        "deleted": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "stats": {
-      "type": "object",
-      "properties": {
-        "total_indexed": { "type": "number" },
-        "total_on_disk": { "type": "number" },
-        "out_of_sync": { "type": "number" }
-      }
-    }
-  }
-}
-```
-
----
-
-### 3.14 Feature: Kiro Extension Command
-
-**Source:** BRD Story 7
-
-#### 3.14.1 Description
-
-A VS Code/Kiro extension command "Kiro SDLC: Index Salesforce Project" that provides one-click indexing from the command palette. Follows the existing "Index Workspace" command pattern in `kiro-sdlc-agents`.
-
-#### 3.14.2 Use Case: UC-14 — One-Click Indexing
-
-**Use Case ID:** UC-14
-**Actor:** Developer (Human)
-**Preconditions:** Kiro IDE open with SFDX project in workspace
-**Postconditions:** Project indexed, notification shown with results
-
-**Main Flow:**
-
-| Step | Actor | System | Description |
-|------|-------|--------|-------------|
-| 1 | Opens Command Palette (Ctrl+Shift+P) | | Developer initiates |
-| 2 | Types "Index Salesforce" | | Filter commands |
-| 3 | Selects "Kiro SDLC: Index Salesforce Project" | | Trigger command |
-| 4 | | Detect SFDX project root | Look for sfdx-project.json in workspace folders |
-| 5 | | Show progress notification | "Indexing Salesforce project..." with spinner |
-| 6 | | Call sf_index_project via MCP | Invoke sf-kb-indexer server |
-| 7 | | Show result notification | "{N} files indexed, {M} components discovered" |
-
-**Alternative Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| AF-1 | Multiple workspace folders | Show picker to select which folder to index |
-| AF-2 | Indexing already in progress | Show info: "Indexing already in progress" |
-
-**Exception Flows:**
-
-| ID | Condition | Steps |
-|----|-----------|-------|
-| EF-1 | No SFDX project found | Show error notification: "No SFDX project found in workspace" |
-| EF-2 | MCP server not running | Show error: "sf-kb-indexer server not available. Check MCP configuration." |
-| EF-3 | Indexing fails | Show error notification with summary of failures |
-
-#### 3.14.3 Business Rules
-
-| Rule ID | Rule | Source |
-|---------|------|--------|
-| BR-33 | Command registered as "kiro-sdlc.indexSalesforceProject" | BRD Story 7 |
-| BR-34 | Auto-detect SFDX root (nearest sfdx-project.json) | BRD Story 7 |
-| BR-35 | Progress shown via VS Code notification API (withProgress) | BRD Story 7 |
-| BR-36 | Only one indexing operation at a time (singleton lock) | BRD Story 7 AC-3 |
-| BR-37 | Follow existing "Index Workspace" pattern in kiro-sdlc-agents | BRD Story 7 |
+| BR-36 | MUST include SF section only when SFDX project detected | BRD Story 9 AC3 |
+| BR-37 | Stats MUST include: apex classes, triggers, flows, objects, LWC counts | BRD Story 9 |
+| BR-38 | Stats MUST include: last indexed timestamp, files pending re-index | BRD Story 9 |
+| BR-39 | Stats MUST include: SF relationship counts by type | BRD Story 9 |
+
+#### 3.9.4 Data Specifications
+
+**Enhanced code_index_status Response (SF section):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| salesforce.detected | boolean | Whether SFDX project was detected |
+| salesforce.projectRoot | string | Path to sfdx-project.json |
+| salesforce.stats.apexClasses | number | Indexed Apex class count |
+| salesforce.stats.triggers | number | Indexed trigger count |
+| salesforce.stats.flows | number | Indexed flow count |
+| salesforce.stats.objects | number | Indexed object count |
+| salesforce.stats.lwcComponents | number | Indexed LWC count |
+| salesforce.stats.fields | number | Indexed field count |
+| salesforce.relationships | object | Counts by relationship type |
+| salesforce.relationships.triggerOn | number | trigger-on relationship count |
+| salesforce.relationships.soql | number | SOQL relationship count |
+| salesforce.relationships.dml | number | DML relationship count |
+| salesforce.relationships.wire | number | Wire relationship count |
+| salesforce.relationships.flowAction | number | Flow-action relationship count |
+| salesforce.lastIndexed | string | ISO timestamp of last SF indexing |
+| salesforce.pendingFiles | number | Files changed since last index |
 
 ---
 
 ## 4. Data Model
 
-### 4.1 Entity Relationship Diagram
+### 4.1 Existing Schema (Extended)
 
-The data model is primarily in-memory (graph) and KB-stored (JSON entries). No traditional RDBMS tables.
+The existing SQLite database schema is extended with **additive changes only**:
 
-```mermaid
-erDiagram
-    PROJECT ||--o{ METADATA_FILE : contains
-    METADATA_FILE ||--|| KB_ENTRY : "indexed as"
-    METADATA_FILE }o--o{ METADATA_FILE : "depends on"
-    KB_ENTRY ||--o{ TAG : "tagged with"
-    GRAPH_NODE ||--o{ GRAPH_EDGE : "source"
-    GRAPH_NODE ||--o{ GRAPH_EDGE : "target"
-    METADATA_FILE ||--|| GRAPH_NODE : "represented as"
-    INDEX_STATE ||--o{ FILE_HASH : tracks
+#### symbols table (EXISTING — no schema change)
 
-    PROJECT {
-        string path
-        string sfdx_config
-        string[] package_dirs
-    }
-    METADATA_FILE {
-        string path
-        string type
-        string name
-        string hash
-        datetime last_modified
-    }
-    KB_ENTRY {
-        number id
-        string content
-        string summary
-        string[] tags
-        datetime created_at
-    }
-    GRAPH_NODE {
-        string id
-        string type
-        string label
-    }
-    GRAPH_EDGE {
-        string source_id
-        string target_id
-        string relationship
-    }
-    INDEX_STATE {
-        string project_path
-        datetime last_indexed
-        number total_files
-    }
-    FILE_HASH {
-        string file_path
-        string hash_sha256
-        datetime indexed_at
-    }
-```
+Apex symbols stored using existing columns:
+- `kind` = class/method/interface/enum/property/constructor
+- `modifiers` = JSON array of Apex modifiers
+- `decorators` = JSON array of annotations
+- `language` = "apex" or "salesforce-meta"
 
-### 4.2 Logical Entities
+#### relationships table (EXISTING — new `kind` values)
 
-#### Entity: ProjectIndex
+New relationship kinds added to existing `kind` column:
+- `trigger-on`, `soql`, `dml`, `wire`, `apex-import`, `flow-action`, `flow-object`
 
-| Attribute | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| project_path | string | Yes | BR-18 | Root path of SFDX project |
-| sfdx_config | object | Yes | | Parsed sfdx-project.json content |
-| package_directories | string[] | Yes | | Source directories from config |
-| metadata_files | MetadataFile[] | Yes | | All discovered metadata files |
-| last_indexed | ISO8601 | Yes | | Timestamp of last full index |
+These are additive — existing relationship kinds (`calls`, `imports`, `inherits`, `implements`, `uses`, `decorates`) remain unchanged.
 
-#### Entity: MetadataFile
+#### files table (EXISTING — no schema change)
 
-| Attribute | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| path | string | Yes | | Relative path from project root |
-| type | MetadataType | Yes | BR-20 | ApexClass, ApexTrigger, Flow, CustomObject, LWC, etc. |
-| name | string | Yes | | Component name (e.g., "AccountService") |
-| hash | string | Yes | BR-28 | SHA-256 hash for change detection |
-| parse_result | ParseResult | No | | Cached parse output |
+SF files stored with existing columns:
+- `language` = "apex" or "salesforce-meta"
+- `module` = detected from SFDX package directory
 
-#### Entity: DependencyGraph
+### 4.2 Logical Entities (SF-specific)
 
-| Attribute | Type | Required | Business Rule | Description |
-|-----------|------|----------|---------------|-------------|
-| nodes | Map<string, GraphNode> | Yes | | All components as graph nodes |
-| edges | GraphEdge[] | Yes | | All dependency relationships |
-| built_at | ISO8601 | Yes | | When graph was last computed |
-
-#### Entity: GraphNode
+#### Entity: ApexClass
 
 | Attribute | Type | Required | Description |
 |-----------|------|----------|-------------|
-| id | string | Yes | Fully qualified component name |
-| type | MetadataType | Yes | Component type |
-| label | string | Yes | Display name |
-| file_path | string | Yes | Source file path |
+| name | string | Yes | Class name (e.g., AccountService) |
+| kind | enum | Yes | class/interface/enum |
+| modifiers | string[] | Yes | global, public, virtual, abstract, with sharing, without sharing |
+| annotations | string[] | No | @IsTest, @AuraEnabled, @InvocableMethod, etc. |
+| parentClass | string | No | Superclass name (if extends) |
+| interfaces | string[] | No | Implemented interfaces |
+| methods | Method[] | Yes | Class methods |
+| properties | Property[] | No | Class properties |
 
-#### Entity: GraphEdge
+#### Entity: ApexTrigger
 
 | Attribute | Type | Required | Description |
 |-----------|------|----------|-------------|
-| source | string | Yes | Source node ID |
-| target | string | Yes | Target node ID |
-| relationship | RelationType | Yes | extends, implements, references, dml, soql, calls, imports, triggers |
+| name | string | Yes | Trigger name |
+| sObject | string | Yes | Target SObject (e.g., Account) |
+| events | string[] | Yes | before insert, after update, etc. |
+| handlerCalls | string[] | No | Methods called by trigger body |
 
-**Relationships:**
+#### Entity: SalesforceFlow
 
-| From Entity | To Entity | Cardinality | Description |
-|-------------|-----------|-------------|-------------|
-| ProjectIndex | MetadataFile | 1:N | Project contains many metadata files |
-| MetadataFile | KB_Entry | 1:1 | Each file indexed as one KB entry |
-| MetadataFile | GraphNode | 1:1 | Each file represented as one graph node |
-| GraphNode | GraphEdge | 1:N | Node can have many outgoing edges |
-| GraphEdge | GraphNode | N:1 | Many edges can point to same target |
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | string | Yes | Flow API name |
+| type | enum | Yes | AutoLaunchedFlow, ScreenFlow, RecordTriggeredFlow |
+| triggerObject | string | No | Object that triggers the flow |
+| apexActions | string[] | No | Apex classes invoked as actions |
+| referencedObjects | string[] | No | Objects referenced in flow |
+| subflows | string[] | No | Subflows called |
+
+#### Entity: SalesforceObject
+
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | string | Yes | Object API name (e.g., Account, Custom__c) |
+| label | string | No | Display label |
+| fields | Field[] | No | Custom fields |
+| isCustom | boolean | Yes | Whether custom object |
+
+#### Entity: LWCComponent
+
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | string | Yes | Component name |
+| apexImports | string[] | No | Apex classes imported via @wire |
+| targets | string[] | No | Lightning page targets |
 
 ---
 
 ## 5. Integration Specifications
 
-### 5.1 External System: salesforce-ast (npm package)
+### 5.1 Internal Integration: mcp-salesforce-intelligence (Shared Library)
 
 | Attribute | Value |
 |-----------|-------|
-| Purpose | Core parsing engine for all Salesforce metadata types |
-| Direction | Outbound (call library functions) |
-| Data Format | TypeScript function calls → structured objects |
-| Frequency | On-demand (per tool call or indexing operation) |
+| Purpose | Reusable SF parsing logic consumed by mcp-code-intelligence-nodejs |
+| Direction | Inbound (library consumed by server) |
+| Data Format | TypeScript module exports |
+| Frequency | Build-time dependency (npm workspace link) |
 
-**API Surface Used:**
+**Public API Exports:**
 
-| Our Call | salesforce-ast Function | Direction | Business Rule |
-|----------|----------------------|-----------|---------------|
-| Parse project | `parseProject(path, options?)` → ProjectIndex | Call → Return | BR-28: incremental support |
-| KB payload | `toKBPayload(index)` → KBPayload[] | Call → Return | BR-30: tagged entries |
-| Scan project | `scanProject(path)` → manifest | Call → Return | BR-18: SFDX detection |
-| Build graph | `buildDependencyGraph(data)` → graph | Call → Return | BR-31: graph storage |
-| Parse Apex | `parseApexFile(path)` → ParseResult | Call → Return | BR-4: Tree-Sitter init |
-| Parse Flow | `parseFlowFile(path)` → ParseResult | Call → Return | BR-6: .flow-meta.xml |
-| Parse Object | `parseObjectFile(path)` → ParseResult | Call → Return | BR-10: object metadata |
-| Parse LWC JS | `parseLWCJsFile(path)` → ParseResult | Call → Return | BR-13: bundle parsing |
-| Parse LWC HTML | `parseLWCHtmlFile(path)` → ParseResult | Call → Return | BR-17: template refs |
-| Parse LWC CSS | `parseLWCCssFile(path)` → ParseResult | Call → Return | CSS custom properties |
-| Init parser | `initParser()` → void | Call | BR-4: one-time init |
+| Export | Type | Description |
+|--------|------|-------------|
+| `detectSfdxProject(rootPath)` | function | Returns SFDX config or null |
+| `getSfFilePaths(sfdxConfig)` | function | Returns all SF metadata file paths |
+| `SF_RELATIONSHIP_TYPES` | constant | Enum of SF relationship type strings |
+| `ApexGrammarLoader` | class | Loads tree-sitter-apex.wasm |
 
-**Integration Pattern:**
-
-```typescript
-import { parseProject, toKBPayload, scanProject, buildDependencyGraph,
-         parseApexFile, parseFlowFile, parseObjectFile,
-         parseLWCJsFile, parseLWCHtmlFile, parseLWCCssFile,
-         initParser } from 'salesforce-ast';
-
-// Initialize once at server startup
-await initParser();
-```
-
-### 5.2 Internal System: Knowledge Base (mcp-code-intelligence)
+### 5.2 Internal Integration: kiro-sdlc-agents Extension
 
 | Attribute | Value |
 |-----------|-------|
-| Purpose | Persistent storage of indexed Salesforce metadata for cross-session access |
-| Direction | Outbound (write entries via mem_ingest) |
-| Data Format | JSON (structured KB entries with tags) |
-| Frequency | Batch (during indexing) + On-demand (single file index) |
-
-**Data Exchange:**
-
-| Our Data | KB Operation | Direction | Business Rule |
-|----------|-------------|-----------|---------------|
-| KBPayload[] from toKBPayload() | `mem_ingest(content, type, tags)` | Send | BR-30: tagged with salesforce, type, name |
-| Search query + filters | `mem_search(query, tags)` | Send/Receive | sf_kb_search wraps this |
-| File hash state | Internal storage (JSON file) | Local | BR-28: incremental detection |
-
-**KB Entry Format (per component):**
-
-```json
-{
-  "content": "## AccountService (ApexClass)\n\nMethods: ...\nDependencies: ...",
-  "type": "CONTEXT",
-  "tags": "salesforce, ApexClass, AccountService, KSA-191",
-  "summary": "Apex class AccountService with 5 methods, depends on Account, Contact objects"
-}
-```
-
-### 5.3 Internal System: Kiro Extension (kiro-sdlc-agents)
-
-| Attribute | Value |
-|-----------|-------|
-| Purpose | VS Code extension hosting the "Index Salesforce Project" command |
+| Purpose | Provide "Index Salesforce Project" command in IDE |
 | Direction | Outbound (extension calls MCP server) |
-| Data Format | JSON-RPC 2.0 over stdio |
+| Data Format | MCP tool call (JSON-RPC) |
 | Frequency | On-demand (user-triggered) |
 
-**Integration Pattern:**
+**Command Registration:**
 
-```typescript
-// In kiro-sdlc-agents extension
-import { McpClient } from '@modelcontextprotocol/sdk/client/mcp.js';
+| Field | Value |
+|-------|-------|
+| Command ID | `kiro-sdlc.indexSalesforceProject` |
+| Title | Kiro SDLC: Index Salesforce Project |
+| Category | Kiro SDLC |
+| When | `workspaceFolderCount > 0` |
 
-// Register command
-vscode.commands.registerCommand('kiro-sdlc.indexSalesforceProject', async () => {
-  const sfdxRoot = await detectSfdxProject(vscode.workspace.workspaceFolders);
-  if (!sfdxRoot) {
-    vscode.window.showErrorMessage('No SFDX project found in workspace');
-    return;
-  }
-  
-  await vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    title: 'Indexing Salesforce project...',
-    cancellable: false
-  }, async (progress) => {
-    const result = await mcpClient.callTool('sf_index_project', { project_path: sfdxRoot });
-    vscode.window.showInformationMessage(
-      `${result.summary.parsed_ok} files indexed, ${result.summary.graph_nodes} components discovered`
-    );
-  });
-});
-```
+### 5.3 External Integration: salesforce-ast npm package
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Provides Tree-Sitter Apex grammar (.wasm) and SFDX utilities |
+| Direction | Inbound (npm dependency) |
+| Data Format | npm package with .wasm binary |
+| Frequency | Build-time dependency |
 
 ---
 
 ## 6. Processing Logic
 
-### 6.1 Full Project Indexing Process
+### 6.1 SFDX Detection Process
 
-**Trigger:** `sf_index_project` tool call or Extension command
-**Schedule:** On-demand (user-triggered)
-**Input:** SFDX project path, force flag
-**Output:** Indexing summary with stats
-
-**Processing Steps:**
-
-| Step | Description | Error Handling |
-|------|-------------|----------------|
-| 1 | Validate SFDX project (check sfdx-project.json) | Return error if not SFDX |
-| 2 | Call `scanProject(path)` to discover all metadata files | Return error if scan fails |
-| 3 | Load previous index state (file hashes) | If no state, treat as first-time index |
-| 4 | Compare current file hashes with stored hashes | |
-| 5 | Filter to changed/new files (skip unchanged unless force=true) | |
-| 6 | Call `initParser()` if not already initialized | Retry once on failure |
-| 7 | Call `parseProject(path, { files: changedFiles })` | Collect errors, continue |
-| 8 | Call `buildDependencyGraph(parseResult)` | Log warning if graph build fails |
-| 9 | Call `toKBPayload(parseResult)` to generate KB entries | |
-| 10 | For each payload: call `mem_ingest(entry)` | Log failed entries, continue |
-| 11 | Save updated file hashes to index state | |
-| 12 | Return summary report | Include all collected errors |
-
-**State Diagram — Indexing Lifecycle:**
-
-![Indexing State](diagrams/state-indexing.png)
-*[Edit in draw.io](diagrams/state-indexing.drawio)*
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Detecting: sf_index_project called
-    Detecting --> Scanning: SFDX project found
-    Detecting --> Error: Not SFDX project
-    Scanning --> Comparing: Files discovered
-    Comparing --> Parsing: Changed files identified
-    Comparing --> UpToDate: No changes (incremental)
-    Parsing --> BuildingGraph: All files parsed
-    Parsing --> PartialParse: Some files failed
-    PartialParse --> BuildingGraph: Continue with successful parses
-    BuildingGraph --> Ingesting: Graph built
-    Ingesting --> Complete: All entries ingested
-    Ingesting --> PartialIngest: Some ingests failed
-    PartialIngest --> Complete: Report partial success
-    Complete --> Idle: Return summary
-    UpToDate --> Idle: Return "already up to date"
-    Error --> Idle: Return error
-```
-
-### 6.2 Dependency Graph Building Process
-
-**Trigger:** After successful project parsing (Step 8 of indexing)
-**Input:** ParseResult from `parseProject()`
-**Output:** DependencyGraph with nodes and edges
+**Trigger:** IndexingEngine.startBackgroundIndexing() or runFullIndex()
+**Input:** Workspace root path
+**Output:** Boolean (SFDX detected) + SFDX config
 
 **Processing Steps:**
 
 | Step | Description | Error Handling |
 |------|-------------|----------------|
-| 1 | Extract all component names from parse results | Skip files with no valid name |
-| 2 | Create graph nodes for each component | |
-| 3 | For each Apex class: extract referenced classes → create edges | Skip unresolvable refs |
-| 4 | For each Apex class: extract DML operations → create edges to objects | |
-| 5 | For each Apex class: extract SOQL queries → create edges to objects/fields | |
-| 6 | For each trigger: create edge to trigger object | |
-| 7 | For each Flow: extract referenced objects/fields/Apex → create edges | |
-| 8 | For each LWC: extract Apex imports → create edges | |
-| 9 | For each LWC: extract child component refs → create edges | |
-| 10 | Detect circular dependencies (Tarjan's algorithm) | Mark cycles, don't fail |
-| 11 | Store graph in memory for query tools | |
+| 1 | Check `{workspace}/sfdx-project.json` exists | If not exists → return false, skip SF processing |
+| 2 | Read and parse JSON | If malformed → log warning, return false |
+| 3 | Extract `packageDirectories` array | If missing/empty → log warning, use default `force-app/` |
+| 4 | Validate each path exists on disk | If path missing → log warning, skip that path |
+| 5 | Store SFDX config for later use | — |
 
-**Pseudocode:**
+### 6.2 Apex File Indexing Process
 
-```typescript
-async function buildGraph(parseResult: ProjectIndex): Promise<DependencyGraph> {
-  const graph = new DependencyGraph();
-  
-  // Create nodes
-  for (const file of parseResult.files) {
-    graph.addNode({
-      id: file.name,
-      type: file.type,
-      label: file.name,
-      file_path: file.path
-    });
-  }
-  
-  // Create edges from Apex dependencies
-  for (const apex of parseResult.apexClasses) {
-    for (const ref of apex.dependencies.referenced_classes) {
-      graph.addEdge(apex.name, ref, 'references');
-    }
-    for (const dml of apex.dependencies.dml_operations) {
-      graph.addEdge(apex.name, dml, 'dml');
-    }
-    if (apex.parent_class) {
-      graph.addEdge(apex.name, apex.parent_class, 'extends');
-    }
-    for (const iface of apex.interfaces) {
-      graph.addEdge(apex.name, iface, 'implements');
-    }
-  }
-  
-  // Create edges from triggers
-  for (const trigger of parseResult.triggers) {
-    graph.addEdge(trigger.name, trigger.object, 'triggers');
-  }
-  
-  // Create edges from Flows
-  for (const flow of parseResult.flows) {
-    for (const obj of flow.dependencies.objects) {
-      graph.addEdge(flow.name, obj, 'references');
-    }
-    for (const apex of flow.dependencies.apex_actions) {
-      graph.addEdge(flow.name, apex, 'calls');
-    }
-  }
-  
-  // Create edges from LWC
-  for (const lwc of parseResult.lwcComponents) {
-    for (const imp of lwc.apex_imports) {
-      graph.addEdge(lwc.name, imp.class_name, 'imports');
-    }
-    for (const child of lwc.child_components) {
-      graph.addEdge(lwc.name, child, 'references');
-    }
-  }
-  
-  // Detect cycles
-  graph.detectCycles(); // Tarjan's SCC algorithm
-  
-  return graph;
-}
-```
-
-### 6.3 Incremental Change Detection Process
-
-**Trigger:** `sf_index_project` called (without force=true)
-**Input:** Current files on disk, stored index state
-**Output:** List of changed files to re-parse
+**Trigger:** File with `.cls` or `.trigger` extension encountered during scan
+**Input:** File path + file content
+**Output:** ParseResult (symbols + relationships)
 
 **Processing Steps:**
 
 | Step | Description | Error Handling |
 |------|-------------|----------------|
-| 1 | Load stored index state (`.sf-index-state.json`) | If missing, return all files |
-| 2 | Scan current files and compute SHA-256 hashes | |
-| 3 | Compare: new files (in current, not in stored) → mark as ADDED | |
-| 4 | Compare: missing files (in stored, not in current) → mark as DELETED | |
-| 5 | Compare: hash mismatch → mark as MODIFIED | |
-| 6 | Return changed file list | |
-| 7 | After successful indexing: update stored state with new hashes | |
+| 1 | Load tree-sitter-apex.wasm grammar (cached) | If grammar missing → fall back to regex |
+| 2 | Parse source with tree-sitter → AST | If parse error → log, attempt partial extraction |
+| 3 | Extract class/interface/enum declarations | — |
+| 4 | Extract methods, constructors, properties | — |
+| 5 | Extract trigger declarations + events | — |
+| 6 | Extract DML operations → dml relationships | — |
+| 7 | Extract SOQL queries → soql relationships | — |
+| 8 | Extract method calls → calls relationships | — |
+| 9 | Extract inheritance → inherits/implements relationships | — |
+| 10 | Return ParseResult | — |
+
+### 6.3 Metadata XML Parsing Process
+
+**Trigger:** File with `.flow-meta.xml`, `.object-meta.xml`, `.field-meta.xml`, `.js-meta.xml` extension
+**Input:** File path + XML content
+**Output:** ParseResult (symbols + relationships)
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Detect metadata type from file extension | If unknown type → skip |
+| 2 | Parse XML content (regex-based extraction) | If malformed XML → log warning, partial results |
+| 3 | Extract component name from file path | — |
+| 4 | Extract type-specific data (flow actions, object fields, etc.) | — |
+| 5 | Build relationships (flow-action, flow-object, wire, etc.) | — |
+| 6 | Return ParseResult | — |
+
 
 ---
 
@@ -1961,29 +818,24 @@ async function buildGraph(parseResult: ProjectIndex): Promise<DependencyGraph> {
 
 | Role | Permissions | Features |
 |------|-------------|----------|
-| Any MCP client | Full access to all 13 tools | All sf-parser, sf-graph, sf-kb-indexer tools |
-| Developer (Extension) | Trigger indexing command | "Kiro SDLC: Index Salesforce Project" |
+| Developer | Read/Write | Trigger indexing, query tools, ingest files |
+| AI Agent | Read | Query tools (code_search, code_symbols, etc.) |
+| Extension | Execute | Invoke indexing commands |
 
-No authentication required — all tools run locally on the developer's machine. MCP servers communicate via stdio (no network exposure).
+**Note:** Security model is inherited from existing MCP server — no additional auth required for SF features.
 
 ### 7.2 Data Sensitivity Classification
 
 | Data Type | Classification | Business Requirement |
 |-----------|---------------|---------------------|
-| Apex source code | Internal | Parsed locally, never transmitted externally |
-| Flow metadata | Internal | Parsed locally, stored in local KB only |
-| Object/Field definitions | Internal | May contain business logic in validation rules |
-| Dependency graph | Internal | Structural information about codebase |
-| KB entries | Internal | Stored in local SQLite, workspace-scoped |
-| File hashes (index state) | Public | SHA-256 hashes, no sensitive content |
+| Apex source code | Internal | Stored locally in SQLite, never transmitted externally |
+| SF metadata XML | Internal | Parsed locally, symbols stored in index |
+| SFDX project config | Internal | Read-only, used for path detection |
+| Index database | Internal | Local file, no network exposure |
 
 ### 7.3 Audit Trail
 
-| Event | Logged Fields | Retention | Business Reason |
-|-------|--------------|-----------|-----------------|
-| Project indexed | project_path, timestamp, file_count, duration | Session | Debugging indexing issues |
-| Parse error | file_path, error_message, timestamp | Session | Developer troubleshooting |
-| KB ingest | entry_id, component_name, type | Persistent (KB) | Cross-session retrieval |
+No additional audit requirements beyond existing MCP server logging.
 
 ---
 
@@ -1991,20 +843,18 @@ No authentication required — all tools run locally on the developer's machine.
 
 | Category | Business Requirement | Acceptance Criteria |
 |----------|---------------------|---------------------|
-| Performance | Full project indexing < 30 seconds | 500 Apex files + 100 flows + 200 objects indexed in < 30s |
-| Performance | Individual file parse < 500ms | Single Apex class parse response time |
-| Performance | Dependency query < 200ms | Graph traversal for impact analysis (depth=3) |
-| Performance | KB search < 100ms | sf_kb_search response time |
-| Scalability | Support up to 5000 metadata components | Without degradation in query performance |
-| Scalability | Dependency graph up to 10,000 edges | Graph operations remain < 200ms |
-| Reliability | Never crash MCP server | Partial results for malformed files, graceful error handling |
-| Reliability | Survive corrupted index state | Reset state and re-index from scratch |
-| Compatibility | Node.js 20+ | Same runtime as mcp-code-intelligence-nodejs |
-| Compatibility | Cross-platform | Windows, macOS, Linux |
+| Performance | Full SFDX indexing completes quickly | < 30 seconds for 500 Apex files + 100 flows + 200 objects |
+| Performance | Individual Apex file parse is fast | < 500ms per file via tree-sitter |
+| Performance | Existing tool response time unchanged | SF additions must not degrade non-SF queries |
+| Performance | Dependency/impact query responsive | < 200ms including SF relationship traversal |
+| Backward Compat | Non-SF projects unaffected | Zero regression for current users |
+| Backward Compat | Tool response schema additive-only | New fields added, no fields removed or renamed |
+| Scalability | Large SFDX projects supported | Up to 5000 metadata components without degradation |
+| Reliability | Graceful error handling | Malformed Apex/XML → partial results, never crash |
+| Compatibility | Cross-platform | Windows, macOS, Linux (same as existing) |
 | Maintainability | TypeScript strict mode | Consistent with existing codebase |
-| Maintainability | Vitest for testing | Consistent with mcp-code-intelligence-nodejs |
-| Startup | MCP server startup < 2 seconds | Lazy-load graph, don't parse on startup |
-| Memory | Max 512MB for graph + cache | For projects with 5000 components |
+| Maintainability | Vitest for testing | Consistent with existing test framework |
+| Testability | Shared library independently testable | mcp-salesforce-intelligence/ has own test suite |
 
 ---
 
@@ -2014,40 +864,23 @@ No authentication required — all tools run locally on the developer's machine.
 
 | Scenario | Severity | User Message | Expected Behavior |
 |----------|----------|-------------|-------------------|
-| File not found | Warning | "File not found: {path}" | Return error response, server continues |
-| Not SFDX project | Warning | "No SFDX project found at: {path}" | Return error, suggest checking path |
-| Parse error (malformed file) | Info | Partial result with errors[] | Return what was parseable, list errors |
-| Tree-Sitter init failure | Critical | "Parser initialization failed: {error}" | Retry once, then return error |
-| KB unavailable | Warning | "Knowledge Base not accessible" | Return error, suggest checking mcp-code-intelligence |
-| Graph not built | Info | "No dependency graph. Run sf_index_project first." | Guide user to index first |
-| Memory limit exceeded | Critical | "Project too large for available memory" | Abort gracefully, suggest reducing scope |
-| Invalid input | Warning | "Invalid parameter: {details}" | Return validation error with expected format |
-| Indexing already in progress | Info | "Indexing already in progress" | Reject duplicate request |
-| Network error (if any) | Warning | N/A (all operations are local) | No network calls in normal operation |
+| Apex grammar .wasm not found | Warning | "Apex tree-sitter grammar not available, using regex fallback" | Degraded parsing, still functional |
+| Malformed Apex file (syntax error) | Info | None (logged internally) | Skip file, continue indexing others |
+| Malformed metadata XML | Info | None (logged internally) | Partial extraction, continue |
+| No SFDX project detected | Info | "No SFDX project found" (extension command only) | No SF processing, standard behavior |
+| Indexing timeout (very large project) | Warning | "Indexing taking longer than expected" | Continue in background |
+| Database write failure | Critical | "Failed to store index data" | Retry once, then report error |
 
-### 9.2 Error Code Table
+### 9.2 Error Codes
 
-| Code | Category | Severity | Message Template | Recovery Action |
-|------|----------|----------|-----------------|-----------------|
-| SF-001 | Input | Warning | "File not found: {path}" | Check file path |
-| SF-002 | Input | Warning | "Unsupported file type: {ext}" | Use supported extension |
-| SF-003 | Input | Warning | "No SFDX project found at: {path}" | Check project structure |
-| SF-004 | Parse | Info | "Parse error in {file}: {error}" | Fix source file syntax |
-| SF-005 | System | Critical | "Parser initialization failed" | Reinstall salesforce-ast |
-| SF-006 | Integration | Warning | "KB not accessible" | Start mcp-code-intelligence |
-| SF-007 | State | Info | "No dependency graph available" | Run sf_index_project |
-| SF-008 | Resource | Critical | "Memory limit exceeded" | Reduce project scope |
-| SF-009 | Concurrency | Info | "Indexing already in progress" | Wait for current operation |
-| SF-010 | State | Info | "Index state corrupted, resetting" | Automatic recovery |
-
-### 9.3 Notification Requirements
-
-| Event | Who is Notified | Channel | Timing |
-|-------|----------------|---------|--------|
-| Indexing complete | Developer | VS Code notification | Immediate |
-| Indexing failed | Developer | VS Code error notification | Immediate |
-| Parse errors during indexing | Developer | Included in summary notification | End of indexing |
-| No SFDX project found | Developer | VS Code error notification | Immediate |
+| Code | Category | Description | Recovery |
+|------|----------|-------------|----------|
+| SF-001 | Grammar | Apex .wasm grammar load failed | Use regex fallback parser |
+| SF-002 | Parse | Apex file parse error | Skip file, log error, continue |
+| SF-003 | Parse | Metadata XML parse error | Partial extraction, continue |
+| SF-004 | Detection | sfdx-project.json malformed | Skip SF detection, standard indexing |
+| SF-005 | Index | Database write failure | Retry once, report if persistent |
+| SF-006 | Extension | MCP server connection failed | Show error notification |
 
 ---
 
@@ -2057,72 +890,154 @@ No authentication required — all tools run locally on the developer's machine.
 
 | ID | Scenario | Input | Expected Output | Priority |
 |----|----------|-------|-----------------|----------|
-| TC-1 | Parse valid Apex class | AccountService.cls | Full class metadata with methods, properties, dependencies | High |
-| TC-2 | Parse Apex trigger | AccountTrigger.trigger | Trigger metadata with object, events, referenced classes | High |
-| TC-3 | Parse malformed Apex | File with syntax errors | Partial result with errors[] populated | High |
-| TC-4 | Parse Flow (Record-Triggered) | Account_Update.flow-meta.xml | Flow structure with trigger config, elements, dependencies | High |
-| TC-5 | Parse Flow (Screen) | Create_Case.flow-meta.xml | Flow with screen elements and field references | Medium |
-| TC-6 | Parse Custom Object | Account.object-meta.xml | Object with fields, relationships, validation rules | High |
-| TC-7 | Parse LWC component | accountList/ directory | Component with properties, methods, Apex imports, child refs | High |
-| TC-8 | Parse LWC single JS file | accountList.js | JS-only parse with properties and methods | Medium |
-| TC-9 | Scan SFDX project | Valid SFDX project root | Manifest with all metadata types categorized | High |
-| TC-10 | Scan non-SFDX directory | Regular directory | Error: "No SFDX project found" | High |
-| TC-11 | Full project indexing | SFDX project with 50 files | All files indexed, graph built, KB entries created | High |
-| TC-12 | Incremental re-indexing | Project with 2 changed files | Only 2 files re-parsed, rest skipped | High |
-| TC-13 | Force re-indexing | force=true | All files re-parsed regardless of hash | Medium |
-| TC-14 | Get forward dependencies | "AccountService" | List of classes/objects it references | High |
-| TC-15 | Get reverse dependents | "Account" (object) | All triggers, classes, flows referencing Account | High |
-| TC-16 | Impact analysis depth=1 | "AccountService" | Direct dependents only | High |
-| TC-17 | Impact analysis depth=3 | "AccountService" | Transitive impact tree up to 3 levels | High |
-| TC-18 | Impact analysis with circular ref | Class A → B → A | Cycle detected, reported, no infinite loop | High |
-| TC-19 | Export graph as JSON | format="json" | Valid JSON with nodes and edges arrays | Medium |
-| TC-20 | Export graph as DOT | format="dot" | Valid Graphviz DOT format | Low |
-| TC-21 | KB search by component name | query="AccountService" | Matching KB entries returned | High |
-| TC-22 | KB search by metadata type | metadata_type="Flow" | Only Flow entries returned | Medium |
-| TC-23 | Sync status (all in sync) | Previously indexed project, no changes | in_sync=true | Medium |
-| TC-24 | Sync status (files changed) | Modified 3 files since last index | changes.modified has 3 entries | Medium |
-| TC-25 | Extension command (happy path) | SFDX project open in Kiro | Indexing completes, notification shown | High |
-| TC-26 | Extension command (no SFDX) | Non-SFDX workspace | Error notification shown | High |
-| TC-27 | Large project performance | 500 Apex + 100 Flows + 200 Objects | Indexing < 30 seconds | Medium |
-| TC-28 | Memory usage | 5000 components in graph | Memory < 512MB | Medium |
+| TC-01 | SFDX project detection (positive) | Workspace with sfdx-project.json | detectSfdxProject() returns true | High |
+| TC-02 | SFDX project detection (negative) | Workspace without sfdx-project.json | detectSfdxProject() returns false | High |
+| TC-03 | Apex class parsing | Valid AccountService.cls | Symbols: class + methods + properties | High |
+| TC-04 | Apex trigger parsing | Valid AccountTrigger.trigger | Trigger symbol + events + trigger-on relationship | High |
+| TC-05 | Flow metadata parsing | Valid .flow-meta.xml | Flow symbol + flow-action relationships | High |
+| TC-06 | Object metadata parsing | Valid .object-meta.xml | Object symbol + fields | Medium |
+| TC-07 | LWC metadata parsing | Valid .js-meta.xml | LWC symbol + wire relationships | Medium |
+| TC-08 | code_symbols with Apex file | Indexed .cls file path | Apex symbols with modifiers/annotations | High |
+| TC-09 | code_search with SF symbols | Query matching Apex class name | SF symbols in results | High |
+| TC-10 | code_dependencies with SF relationships | File with trigger-on, soql, dml | SF relationships in dependency tree | High |
+| TC-11 | code_impact cross-metadata | SObject name | Impact includes triggers, flows, classes | High |
+| TC-12 | code_callers with SF call types | Apex method name | Callers include Flow actions, LWC imports | High |
+| TC-13 | code_index_status SF section | Indexed SFDX project | SF stats section present | Medium |
+| TC-14 | Extension command (positive) | SFDX project in workspace | Indexing triggered, results shown | High |
+| TC-15 | Extension command (negative) | No SFDX project | Error notification shown | Medium |
+| TC-16 | Incremental re-indexing | Modified .cls file | Only changed file re-parsed | Medium |
+| TC-17 | Malformed Apex file | Syntax error in .cls | Error logged, other files still indexed | Medium |
+| TC-18 | Large project performance | 500 Apex files | Indexing < 30 seconds | High |
+| TC-19 | Non-SF project regression | Standard TS/JS project | No behavior change, no SF section | High |
+| TC-20 | mem_ingest_file with .cls | Valid Apex file path | Structured metadata in KB | Medium |
+
 
 ---
 
 ## 11. Appendix
 
-### Diagrams
+### 11.1 Sequence Diagram: Index Salesforce Project
+
+![Sequence - Index Project](diagrams/sequence-index-project.png)
+
+### 11.2 State Diagram: Indexing Lifecycle
+
+![State - Indexing](diagrams/state-indexing.png)
+
+### 11.3 Existing Parser Interface (ILanguageParser)
+
+```typescript
+interface ILanguageParser {
+  readonly languageId: string;
+  parse(source: string, filePath: string): ParseResult;
+  getSupportedExtensions(): string[];
+}
+
+interface ParseResult {
+  symbols: ExtractedSymbol[];
+  relationships: ExtractedRelationship[];
+  errors: ParseError[];
+}
+```
+
+### 11.4 Existing Tool Interfaces (Enhanced)
+
+**code_dependencies (existing input schema — no change):**
+```json
+{
+  "file": "string (required)",
+  "direction": "incoming | outgoing | both",
+  "depth": "number (1-5, default 1)",
+  "include_external": "boolean (default false)",
+  "format": "tree | flat | graph",
+  "limit": "number (default 50)"
+}
+```
+
+**code_impact (existing input schema — no change):**
+```json
+{
+  "symbol": "string (required)",
+  "action": "modify | delete | rename",
+  "depth": "number (1-5, default 3)",
+  "include_tests": "boolean (default true)",
+  "severity_threshold": "critical | high | medium | low"
+}
+```
+
+**code_callers / code_callees (existing input schema — no change):**
+```json
+{
+  "symbol": "string (required)",
+  "depth": "number (1-5, default 1)",
+  "limit": "number (default 20)",
+  "file_filter": "string (glob pattern)",
+  "kind_filter": "string (relationship kind)"
+}
+```
+
+**Note:** The `kind_filter` parameter in `code_callers` now accepts SF relationship kinds: `trigger-on`, `soql`, `dml`, `wire`, `apex-import`, `flow-action`.
+
+### 11.5 Grammar Config (Already Modified)
+
+```json
+{
+  "id": "apex",
+  "extensions": [".cls", ".trigger"],
+  "wasmPath": "grammars/tree-sitter-apex.wasm",
+  "parserModule": "./languages/apex-parser.js"
+},
+{
+  "id": "salesforce-meta",
+  "extensions": [".flow-meta.xml", ".object-meta.xml", ".field-meta.xml", ".js-meta.xml", ".component-meta.xml"],
+  "wasmPath": null,
+  "parserModule": "./languages/salesforce-meta-parser.js"
+}
+```
+
+### 11.6 Module Structure (v2)
+
+```
+mcp-code-intelligence-nodejs/          <-- EXISTING SERVER (extended)
++-- src/
+|   +-- parsers/
+|   |   +-- grammars/
+|   |   |   +-- tree-sitter-apex.wasm  <-- NEW grammar file
+|   |   +-- languages/
+|   |   |   +-- apex-parser.ts         <-- EXISTS (ILanguageParser)
+|   |   |   +-- salesforce-meta-parser.ts <-- EXISTS (ILanguageParser)
+|   |   +-- grammar-config.json        <-- ALREADY MODIFIED
+|   +-- indexer/
+|   |   +-- indexing-engine.ts         <-- MODIFIED (detectSfdxProject)
+|   +-- graph/
+|   |   +-- (enhanced for new relationship types)
+|   +-- tools/
+|       +-- (existing tools enhanced with SF results)
+
+mcp-salesforce-intelligence/           <-- NEW shared library (NOT a server)
++-- package.json
++-- src/
+|   +-- sfdx-detector.ts
+|   +-- apex-grammar-loader.ts
+|   +-- sf-relationship-types.ts
+|   +-- index.ts
++-- tests/
+
+kiro-sdlc-agents/                      <-- EXISTING extension (extended)
++-- src/
+|   +-- commands/
+|       +-- index-salesforce.ts        <-- NEW command
++-- package.json                       <-- MODIFIED (add command)
+```
+
+### Diagram Index
 
 | # | Diagram | Image | Source (editable) |
 |---|---------|-------|-------------------|
 | 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
-| 2 | Sequence: Index Project | [sequence-index-project.png](diagrams/sequence-index-project.png) | [sequence-index-project.drawio](diagrams/sequence-index-project.drawio) |
-| 3 | State: Indexing Lifecycle | [state-indexing.png](diagrams/state-indexing.png) | [state-indexing.drawio](diagrams/state-indexing.drawio) |
+| 2 | Sequence - Index Project | [sequence-index-project.png](diagrams/sequence-index-project.png) | [sequence-index-project.drawio](diagrams/sequence-index-project.drawio) |
+| 3 | State - Indexing | [state-indexing.png](diagrams/state-indexing.png) | [state-indexing.drawio](diagrams/state-indexing.drawio) |
 
-### MCP Server Tool Summary
+---
 
-| # | Server | Tool | Use Case | Priority |
-|---|--------|------|----------|----------|
-| 1 | sf-parser | sf_parse_apex | UC-1 | MUST HAVE |
-| 2 | sf-parser | sf_parse_flow | UC-2 | SHOULD HAVE |
-| 3 | sf-parser | sf_parse_object | UC-3 | SHOULD HAVE |
-| 4 | sf-parser | sf_parse_lwc | UC-4 | SHOULD HAVE |
-| 5 | sf-parser | sf_scan_project | UC-5 | MUST HAVE |
-| 6 | sf-graph | sf_dependencies | UC-6 | MUST HAVE |
-| 7 | sf-graph | sf_dependents | UC-7 | MUST HAVE |
-| 8 | sf-graph | sf_impact_analysis | UC-8 | MUST HAVE |
-| 9 | sf-graph | sf_graph_export | UC-9 | SHOULD HAVE |
-| 10 | sf-kb-indexer | sf_index_project | UC-10 | MUST HAVE |
-| 11 | sf-kb-indexer | sf_index_file | UC-11 | SHOULD HAVE |
-| 12 | sf-kb-indexer | sf_kb_search | UC-12 | MUST HAVE |
-| 13 | sf-kb-indexer | sf_kb_sync | UC-13 | SHOULD HAVE |
-
-### Change Log from BRD
-
-- Added detailed JSON schemas for all 13 tool inputs/outputs
-- Specified incremental indexing algorithm (SHA-256 hash comparison)
-- Added dependency graph building pseudocode with Tarjan's cycle detection
-- Specified extension command integration pattern (VS Code API)
-- Added error code table (SF-001 through SF-010)
-- Clarified KB entry format and tagging strategy
-- Added state diagram for indexing lifecycle
-- Specified memory limits (512MB) and performance targets per operation
+*End of Document*

@@ -1,0 +1,15 @@
+test_case_id,tool_name,node_name,depth,include_types,expected_error,description
+TC-007,sf_dependencies,AccountService,3,,"",Forward dependencies - happy path
+TC-107,sf_dependencies,AccountService,3,"[""ApexClass""]","",Dependencies with type filter
+TC-108,sf_dependents,LeafComponent,3,,"",Leaf node - no dependents (empty array)
+TC-008,sf_dependents,Account,3,,"",Reverse dependents of Account object
+TC-009,sf_impact_analysis,AccountService,3,,"",Impact analysis depth=3
+TC-109,sf_impact_analysis,AccountService,1,,"",Impact analysis depth=1 (direct only)
+TC-214,sf_impact_analysis,AccountService,15,,"",Depth exceeds max - capped at 10
+TC-010,sf_graph_export,,,,,"",Export graph as JSON (default)
+TC-114,sf_graph_export,,,"dot",,"",Export graph as DOT format
+TC-209,sf_dependencies,NonExistentClass,3,,"SF-007: Component not found",Node not found in graph
+TC-210,sf_dependencies,AccountService,3,,"SF-007: No dependency graph",Graph not built (fresh server)
+TC-305,sf_dependencies,ChainStart,,,"",BR-21: Default depth=3 (verify max depth in results)
+TC-306,sf_dependencies,CyclicClassA,5,,"",BR-23: Circular dependency detected
+TC-307,sf_impact_analysis,AccountService,20,,"",BR-25: Depth capped at 10

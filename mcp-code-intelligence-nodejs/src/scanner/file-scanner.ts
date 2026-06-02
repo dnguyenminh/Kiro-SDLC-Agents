@@ -1,6 +1,7 @@
 /**
  * File Scanner — Traverses workspace, respects .gitignore, detects language.
  * Produces a list of scannable files with metadata.
+ * KSA-191: Added Salesforce extensions + compound extension detection.
  */
 
 import * as fs from 'fs';
@@ -39,6 +40,8 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   '.yaml': 'yaml', '.yml': 'yaml',
   '.json': 'json',
   '.toml': 'toml',
+  '.cls': 'apex',
+  '.trigger': 'apex',
 };
 
 /** Scan workspace and return list of indexable files. */
@@ -70,8 +73,18 @@ export function scanSingleFile(filePath: string, workspace: string): ScannedFile
   }
 }
 
-/** Detect language from file extension. */
+/** Detect language from file extension — supports compound extensions. */
 export function detectLanguage(filePath: string): string | null {
+  // Check compound extensions first (Salesforce metadata)
+  const lowerPath = filePath.toLowerCase().replace(/\\/g, '/');
+  if (lowerPath.endsWith('.flow-meta.xml') ||
+      lowerPath.endsWith('.object-meta.xml') ||
+      lowerPath.endsWith('.field-meta.xml') ||
+      lowerPath.endsWith('.js-meta.xml') ||
+      lowerPath.endsWith('.component-meta.xml')) {
+    return 'salesforce-meta';
+  }
+
   const ext = getExtension(filePath);
   return EXTENSION_LANGUAGE_MAP[ext] ?? null;
 }
@@ -112,7 +125,8 @@ function processFile(fullPath: string, relPath: string, config: AppConfig): Scan
   if (!language) return null;
 
   const ext = getExtension(fullPath);
-  if (!config.includeExtensions.includes(ext) && ext !== '.kts') return null;
+  // Allow through if simple extension matches OR if compound extension detected (salesforce-meta)
+  if (!config.includeExtensions.includes(ext) && ext !== '.kts' && language !== 'salesforce-meta') return null;
 
   try {
     const stat = fs.statSync(fullPath);

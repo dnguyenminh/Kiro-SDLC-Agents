@@ -146,8 +146,11 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
       ? [path.dirname(onnxRuntimePath), process.env.NODE_PATH].filter(Boolean).join(path.delimiter)
       : process.env.NODE_PATH;
 
-    // Spawn child process (with native binding path if available)
-    const child = spawn("node", [entryPath, "--port", String(configuredPort), "--config", configPath], {
+    // Spawn child process using the same Node binary as the extension host (Kiro's bundled node).
+    // Using process.execPath ensures we don't accidentally use a different system node version.
+    const nodeExe = process.execPath;
+    this.outputChannel.appendLine(`[MCP] Using Node runtime: ${nodeExe} (v${process.versions.node})`);
+    const child = spawn(nodeExe, [entryPath, "--port", String(configuredPort), "--config", configPath], {
       cwd: this.workspaceFolder,
       env: {
         ...process.env,

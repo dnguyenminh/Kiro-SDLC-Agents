@@ -1,6 +1,6 @@
 {
   "name": "mcp-code-intelligence",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Local Code Intelligence MCP Server — SQLite FTS5 + Semantic Search for codebase indexing and querying",
   "main": "dist/index.js",
   "bin": {
@@ -9,14 +9,15 @@
   "scripts": {
     "copy-viewer": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'../shared/viewer'),p.resolve(__dirname,'dist/viewer'))\"",
     "copy-parsers": "node -e \"const fs=require('fs');const p=require('path');const src=p.resolve(__dirname,'src/parsers');const dst=p.resolve(__dirname,'dist/parsers');['grammar-config.json'].forEach(f=>{if(fs.existsSync(p.join(src,f)))fs.copyFileSync(p.join(src,f),p.join(dst,f))});const gs=p.join(src,'grammars'),gd=p.join(dst,'grammars');if(fs.existsSync(gs)){fs.mkdirSync(gd,{recursive:true});fs.readdirSync(gs).forEach(f=>fs.copyFileSync(p.join(gs,f),p.join(gd,f)))}\"",
-    "build": "tsc && npm run copy-viewer && npm run copy-parsers",
+    "build": "tsc && npm run copy-viewer && npm run copy-parsers && npm run copy-apex-wasm",
     "copy-fixtures": "node -e \"const fs=require('fs');const p=require('path');function cp(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=p.join(s,f),dp=p.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp(p.resolve(__dirname,'src/parsers/languages/__tests__/fixtures'),p.resolve(__dirname,'dist/parsers/languages/__tests__/fixtures'))\"",
     "test": "tsc && npm run copy-fixtures && node --test dist/parsers/languages/__tests__/java-parser.test.js",
     "test:vitest": "vitest run",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "copy-apex-wasm": "node -e \"const fs=require('fs');const p=require('path');const src=p.resolve(__dirname,'node_modules/salesforce-ast/grammars/tree-sitter-apex.wasm');const dst=p.resolve(__dirname,'src/parsers/grammars/tree-sitter-apex.wasm');if(fs.existsSync(src)){fs.mkdirSync(p.dirname(dst),{recursive:true});fs.copyFileSync(src,dst);console.log('Copied tree-sitter-apex.wasm')}else{console.warn('tree-sitter-apex.wasm not found in salesforce-ast')}\""
   },
   "keywords": [
     "mcp",
@@ -45,7 +46,8 @@
   },
   "optionalDependencies": {
     "chokidar": "^4.0.0",
-    "onnxruntime-node": "^1.18.0"
+    "onnxruntime-node": "^1.18.0",
+    "salesforce-ast": "^1.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",

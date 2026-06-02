@@ -1,0 +1,117 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="KSA-191: Component Diagram v2 - Extend Existing Server" style="text;html=1;fontSize=14;fontStyle=1;align=center;" parent="1" vertex="1">
+      <mxGeometry x="350" y="20" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_parsers" value="src/parsers/" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="40" y="70" width="450" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_registry" value="grammar-registry.ts&#10;(compound ext support)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="70" y="110" width="170" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_apex" value="apex-parser.ts&#10;(ILanguageParser)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="70" y="180" width="170" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_sfmeta" value="salesforce-meta-parser.ts&#10;(ILanguageParser)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="70" y="250" width="190" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_config" value="grammar-config.json&#10;(9 languages)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="290" y="110" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_wasm" value="tree-sitter-apex.wasm" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="290" y="180" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_ts_parser" value="typescript-parser.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=9;" parent="1" vertex="1">
+      <mxGeometry x="290" y="240" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_kt_parser" value="kotlin-parser.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=9;" parent="1" vertex="1">
+      <mxGeometry x="290" y="285" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_graph" value="src/graph/" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="540" y="70" width="400" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_dep_svc" value="dependency-graph-service.ts&#10;(+ SF relationship kinds)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="570" y="110" width="210" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_impact_svc" value="impact-analysis-service.ts&#10;(+ cross-metadata traversal)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="570" y="180" width="210" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_call_svc" value="call-graph-service.ts&#10;(+ SF call types)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="570" y="250" width="210" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_graph_repo" value="GraphRepository&#10;(SQLite - unchanged)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="800" y="160" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_indexer" value="src/indexer/" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="40" y="380" width="450" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_engine" value="indexing-engine.ts&#10;(SFDX detection + SF module mapping)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="70" y="420" width="240" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_watcher" value="file-watcher.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="70" y="480" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_tsi" value="tree-sitter-indexer.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="330" y="420" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_tools" value="src/tools/" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="540" y="380" width="400" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_status_tool" value="code-index-status.ts&#10;(+ SFDX stats)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="570" y="420" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_dep_tool" value="dependency-tools.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="750" y="420" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_impact_tool" value="impact-tools.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="570" y="475" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_callgraph_tool" value="call-graph-tools.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="750" y="475" width="140" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_shared" value="mcp-salesforce-intelligence/ (Shared Library)" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="40" y="580" width="900" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_sfdx_det" value="sfdx-detector.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="80" y="630" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_grammar_loader" value="apex-grammar-loader.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="240" y="630" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_sf_types" value="sf-relationship-types.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="430" y="630" width="170" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_sf_meta" value="sf-metadata-types.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="630" y="630" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_sf_opts" value="sf-indexing-options.ts" style="shape=component;whiteSpace=wrap;html=1;fillColor=#ffffff;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="810" y="630" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_ext" value="kiro-sdlc-agents/ (Extension)" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+      <mxGeometry x="1000" y="70" width="250" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="c_idx_sf_cmd" value="index-salesforce.ts&#10;(NEW command)" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+      <mxGeometry x="1030" y="120" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="db" value="SQLite DB&#10;(.code-intel/index.db)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="1050" y="380" width="130" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_engine_parsers" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#d6b656;" parent="1" source="c_engine" target="c_registry" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_tools_graph" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#6c8ebf;" parent="1" source="c_dep_tool" target="c_dep_svc" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_graph_db" value="queries" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;" parent="1" source="c_graph_repo" target="db" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_engine_shared" value="imports" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#b85450;" parent="1" source="c_engine" target="c_sfdx_det" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="legend" value="Legend: Green border = Modified/New for KSA-191 | White = Existing unchanged | Red = New shared library" style="text;html=1;fontSize=10;fontStyle=2;align=left;" parent="1" vertex="1">
+      <mxGeometry x="40" y="740" width="600" height="20" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

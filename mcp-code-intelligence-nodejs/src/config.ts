@@ -36,6 +36,7 @@ const DEFAULT_EXTENSIONS = [
   '.go', '.rs', '.c', '.cpp', '.h', '.hpp', '.cs',
   '.rb', '.php', '.swift', '.scala', '.sql', '.sh',
   '.yaml', '.yml', '.json', '.toml', '.gradle.kts',
+  '.cls', '.trigger',  // Salesforce Apex
 ];
 
 /** Create initial config — checks CLI args, env, then cwd. */

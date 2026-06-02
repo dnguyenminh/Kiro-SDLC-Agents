@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -133,6 +133,10 @@
       {
         "command": "kiroSdlc.getEditContext",
         "title": "Kiro SDLC: Get Edit Context for Symbol"
+      },
+      {
+        "command": "kiroSdlc.indexSalesforceProject",
+        "title": "Kiro SDLC: Index Salesforce Project"
       }
     ],
     "viewsContainers": {

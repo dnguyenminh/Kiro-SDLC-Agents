@@ -1,7 +1,7 @@
 # MCP Code Intelligence — Python
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.7.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/Python-3.11+-yellow?style=for-the-badge" alt="Python">
   <img src="https://img.shields.io/badge/deps-zero_external-green?style=for-the-badge" alt="Dependencies">
   <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="Tools">
@@ -133,7 +133,7 @@ OLLAMA_URL=http://localhost:11434 python -m mcp_code_intel
 
 Full KB management: `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_pin`, `mem_map`, `mem_crud`, `mem_graph`, `mem_consolidate`, `mem_lifecycle`, `mem_templates`, `mem_attachments`, `mem_discover`, `mem_tags`, `mem_citations`, `mem_conversation`, `mem_scoring`, `mem_admin`.
 
-**New in v1.14.0:** KB Auto-Linker - automatic relationship discovery between entries using entity extraction and semantic similarity.
+**New in v1.15.0:** Salesforce Intelligence — Apex/Flow/Object/LWC parsing and SF dependency graph (KSA-191). KB Auto-Linker - automatic relationship discovery between entries using entity extraction and semantic similarity.
 
 ---
 

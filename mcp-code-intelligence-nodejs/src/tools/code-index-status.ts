@@ -1,5 +1,6 @@
 /**
  * code_index_status tool — Show indexing statistics and health.
+ * KSA-191: Enhanced with SFDX stats section when Salesforce project detected.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -12,7 +13,7 @@ export function registerCodeIndexStatus(
 ): void {
   server.tool(
     'code_index_status',
-    'Get current indexing status: file count, symbol count, languages, last indexed time, and indexer state.',
+    'Get current indexing status: file count, symbol count, languages, last indexed time, indexer state, and SFDX stats (if Salesforce project detected).',
     {
       reindex: z.boolean().optional().default(false).describe('Trigger a full re-index'),
     },
@@ -21,16 +22,21 @@ export function registerCodeIndexStatus(
         await indexer.runFullIndex();
       }
       const status = queryLayer.getIndexStatus();
-      const text = formatStatus(status, indexer.isRunning());
+      const sfdxStats = indexer.getSfdxStats();
+      const text = formatStatus(status, indexer.isRunning(), sfdxStats);
       return { content: [{ type: 'text', text }] };
     }
   );
 }
 
-function formatStatus(status: any, isRunning: boolean): string {
+function formatStatus(
+  status: any,
+  isRunning: boolean,
+  sfdxStats: ReturnType<IndexingEngine['getSfdxStats']>
+): string {
   const lines = [
-    '📊 Code Intelligence Index Status\n',
-    `State: ${isRunning ? '🔄 Indexing...' : '✅ Idle'}`,
+    '\u{1F4CA} Code Intelligence Index Status\n',
+    `State: ${isRunning ? '\u{1F504} Indexing...' : '\u{2705} Idle'}`,
     `Files: ${status.totalFiles}`,
     `Symbols: ${status.totalSymbols}`,
     `Modules: ${status.totalModules}`,
@@ -41,6 +47,30 @@ function formatStatus(status: any, isRunning: boolean): string {
 
   for (const [lang, count] of Object.entries(status.languages)) {
     lines.push(`  ${lang}: ${count} files`);
+  }
+
+  // KSA-191: SFDX stats section
+  if (sfdxStats) {
+    lines.push('');
+    lines.push('\u{26A1} Salesforce (SFDX):');
+    lines.push(`  Detected: ${sfdxStats.detected}`);
+    lines.push(`  Package directories: ${sfdxStats.packageDirectories.join(', ')}`);
+    lines.push(`  Apex classes: ${sfdxStats.stats.apex_classes}`);
+    lines.push(`  Apex triggers: ${sfdxStats.stats.apex_triggers}`);
+    lines.push(`  Flows: ${sfdxStats.stats.flows}`);
+    lines.push(`  Objects: ${sfdxStats.stats.objects}`);
+    lines.push(`  LWC components: ${sfdxStats.stats.lwc_components}`);
+    if (sfdxStats.lastIndexed) {
+      lines.push(`  Last indexed: ${sfdxStats.lastIndexed}`);
+    }
+
+    const relEntries = Object.entries(sfdxStats.relationships);
+    if (relEntries.length > 0) {
+      lines.push('  Relationships:');
+      for (const [kind, count] of relEntries) {
+        lines.push(`    ${kind}: ${count}`);
+      }
+    }
   }
 
   return lines.join('\n');

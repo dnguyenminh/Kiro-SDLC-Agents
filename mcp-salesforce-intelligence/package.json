@@ -1,0 +1,41 @@
+{
+  "name": "mcp-salesforce-intelligence",
+  "version": "2.1.0",
+  "description": "Shared Salesforce Intelligence library — SFDX detection, SF type definitions, grammar utilities. Consumed by mcp-code-intelligence-nodejs and kiro-sdlc-agents.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "salesforce",
+    "apex",
+    "sfdx",
+    "code-intelligence",
+    "model-context-protocol"
+  ],
+  "author": "Duc Nguyen <dnguyenminh@hotmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.7"
+  }
+}

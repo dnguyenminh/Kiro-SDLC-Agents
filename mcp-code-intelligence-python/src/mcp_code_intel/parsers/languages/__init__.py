@@ -11,9 +11,12 @@ from .ruby_parser import RubyParser
 from .php_parser import PhpParser
 from .swift_parser import SwiftParser
 from .scala_parser import ScalaParser
+from .apex_parser import ApexParser
+from .salesforce_meta_parser import SalesforceMetaParser
 
 __all__ = [
     "TypeScriptParser", "PythonParser", "JavaParser", "KotlinParser",
     "GoParser", "RustParser", "CSharpParser", "RubyParser",
     "PhpParser", "SwiftParser", "ScalaParser",
+    "ApexParser", "SalesforceMetaParser",
 ]

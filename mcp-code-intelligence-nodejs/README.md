@@ -1,13 +1,14 @@
 # MCP Code Intelligence — Node.js
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.7.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge" alt="Node.js">
   <img src="https://img.shields.io/badge/transport-stdio-orange?style=for-the-badge" alt="Transport">
   <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="Tools">
+  <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
 </p>
 
-Standalone MCP server providing local code intelligence via SQLite FTS5 full-text search, ONNX embeddings, Tree-sitter AST parsing, call graph analysis, and 30+ memory/KB tools.
+Standalone MCP server providing local code intelligence via SQLite FTS5 full-text search, ONNX embeddings, Tree-sitter AST parsing, call graph analysis, **Salesforce Intelligence** (Apex/Flow/Object/LWC), and 30+ memory/KB tools.
 
 ---
 
@@ -49,6 +50,7 @@ src/
 - **Memory/KB** - 30+ tools for knowledge base management
 - **Auto-Linker** - Automatic relationship discovery between KB entries
 - **Orchestration** - `find_tools`, `execute_dynamic_tool`, `toggle_tool`
+- **Salesforce Intelligence** - SFDX detection, Apex/Flow/Object/LWC parsing, SF dependency graph (KSA-191)
 
 ---
 
@@ -140,7 +142,7 @@ Config file: `{workspace}/.code-intel/config.json`
 
 ## Supported Languages
 
-TypeScript, JavaScript, Kotlin, Java, Python, Go, Rust, C/C++, C#, Ruby, PHP, Swift, Scala, SQL, Bash, PowerShell
+TypeScript, JavaScript, Kotlin, Java, Python, Go, Rust, C/C++, C#, Ruby, PHP, Swift, Scala, SQL, Bash, PowerShell, **Apex** (Salesforce)
 
 ## Database
 

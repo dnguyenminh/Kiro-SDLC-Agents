@@ -26,6 +26,16 @@ EXTENSION_LANGUAGE_MAP: dict[str, str] = {
     ".yaml": "yaml", ".yml": "yaml",
     ".json": "json",
     ".toml": "toml",
+    ".cls": "apex", ".trigger": "apex",
+}
+
+# Compound extensions that require longest-match-first detection
+COMPOUND_EXTENSION_MAP: dict[str, str] = {
+    ".flow-meta.xml": "salesforce-meta",
+    ".object-meta.xml": "salesforce-meta",
+    ".field-meta.xml": "salesforce-meta",
+    ".js-meta.xml": "salesforce-meta",
+    ".component-meta.xml": "salesforce-meta",
 }
 
 
@@ -53,7 +63,13 @@ def scan_single_file(file_path: str, workspace: str) -> dict[str, Any] | None:
 
 
 def detect_language(file_path: str) -> str | None:
-    """Detect language from file extension."""
+    """Detect language from file extension. Supports compound extensions (longest-match-first)."""
+    # Check compound extensions first (longest match wins)
+    lower_path = file_path.lower()
+    for compound_ext, lang in COMPOUND_EXTENSION_MAP.items():
+        if lower_path.endswith(compound_ext):
+            return lang
+
     ext = _get_extension(file_path)
     return EXTENSION_LANGUAGE_MAP.get(ext)
 
@@ -96,7 +112,8 @@ def _process_file(entry: Path, rel_path: str, config: dict[str, Any]) -> dict[st
     if not lang:
         return None
     ext = _get_extension(str(entry))
-    if ext not in config["include_extensions"] and ext != ".kts":
+    # Allow through if simple extension matches, or compound extension detected (SF metadata)
+    if ext not in config["include_extensions"] and ext != ".kts" and lang not in ("salesforce-meta",):
         return None
     try:
         stat = entry.stat()

@@ -30,6 +30,9 @@ class IndexingEngine:
         self._indexing = True
         _log("Starting full index...")
         try:
+            # Detect SFDX project and log it
+            if self._is_sfdx_project():
+                _log("SFDX project detected -- Salesforce extensions enabled")
             files = scan_workspace(self._config)
             _log(f"Found {len(files)} files to index")
             self._index_files(files)
@@ -38,6 +41,11 @@ class IndexingEngine:
             _log("Full index complete")
         finally:
             self._indexing = False
+
+    def _is_sfdx_project(self) -> bool:
+        """Detect if workspace is a Salesforce DX project (sfdx-project.json exists)."""
+        workspace = Path(self._config["workspace"])
+        return (workspace / "sfdx-project.json").exists()
 
     def index_single_file(self, file_path: str) -> None:
         """Index a single file (incremental update)."""
@@ -153,8 +161,12 @@ class IndexingEngine:
 
 
 def _detect_module(relative_path: str) -> str:
-    """Detect module from relative path."""
+    """Detect module from relative path. Supports SFDX project structure."""
     parts = relative_path.split("/")
+    # SFDX structure: force-app/main/default/classes/MyClass.cls
+    if len(parts) >= 4 and parts[0] == "force-app":
+        # Return the metadata type folder (classes, triggers, flows, objects, lwc, aura)
+        return parts[3] if len(parts) > 3 else parts[2]
     if len(parts) >= 2 and parts[0] == "src":
         return parts[1]
     if parts:

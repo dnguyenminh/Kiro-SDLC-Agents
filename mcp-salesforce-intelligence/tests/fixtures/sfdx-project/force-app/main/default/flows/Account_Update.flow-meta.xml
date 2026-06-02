@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+    <recordUpdates>
+        <name>Update_Account</name>
+        <label>Update Account</label>
+        <object>Account</object>
+        <connector>
+            <targetReference>Decision_Check</targetReference>
+        </connector>
+    </recordUpdates>
+    <decisions>
+        <name>Decision_Check</name>
+        <label>Check Status</label>
+    </decisions>
+    <variables>
+        <name>recordId</name>
+        <dataType>String</dataType>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

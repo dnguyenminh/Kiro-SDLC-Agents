@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Account Custom</label>
+    <fields>
+        <fullName>Status__c</fullName>
+        <type>Picklist</type>
+        <label>Status</label>
+        <required>true</required>
+    </fields>
+    <fields>
+        <fullName>Parent_Account__c</fullName>
+        <type>Lookup</type>
+        <label>Parent Account</label>
+        <required>false</required>
+        <referenceTo>Account</referenceTo>
+    </fields>
+</CustomObject>

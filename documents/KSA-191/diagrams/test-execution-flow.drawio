@@ -1,0 +1,90 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="Test Execution Flow — KSA-191 Salesforce Language Support (v2)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;html=1;shape=mxgraph.flowchart.start_2;fillColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="385" y="50" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="fixtures" value="0. Prepare Fixtures&#xa;(SFDX sample project)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="320" y="100" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="pbt" value="1. Run PBT&#xa;(fast-check, 8 props)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="320" y="170" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="ut" value="2. Run Unit Tests&#xa;(vitest, 24 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="320" y="240" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="it" value="3. Run Integration Tests&#xa;(vitest + SQLite, 18 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;" vertex="1" parent="1">
+      <mxGeometry x="320" y="310" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2e_api" value="4. Run E2E-API Tests&#xa;(MCP client, 28 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+      <mxGeometry x="320" y="380" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2e_ui" value="5. Run E2E-UI Tests&#xa;(Extension, 4 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f7fa;strokeColor=#00838f;" vertex="1" parent="1">
+      <mxGeometry x="320" y="450" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="sit" value="6. Manual SIT&#xa;(5 scenarios)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="320" y="520" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="report" value="7. Generate Test Report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="320" y="590" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="end" value="" style="ellipse;html=1;shape=mxgraph.flowchart.terminate;fillColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="385" y="660" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="es" edge="1" parent="1" source="start" target="fixtures" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e0" edge="1" parent="1" source="fixtures" target="pbt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="pbt" target="ut" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="ut" target="it" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" edge="1" parent="1" source="it" target="e2e_api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="e2e_api" target="e2e_ui" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="e2e_ui" target="sit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="sit" target="report" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="report" target="end" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="fail" value="FAIL?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="560" y="290" width="80" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="fix" value="DEV Fix&#xa;+ Re-run" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="690" y="300" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="ef1" edge="1" parent="1" source="it" target="fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;dashed=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ef2" edge="1" parent="1" source="fail" target="fix" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;strokeColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ef3" edge="1" parent="1" source="fix" target="pbt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;strokeColor=#c62828;dashed=1;exitX=1;exitY=0;entryX=1;entryY=0.5;">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="790" y="300"/>
+          <mxPoint x="790" y="190"/>
+          <mxPoint x="480" y="190"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="compat_note" value="Backward Compat Gate:&#xa;Non-SF tests MUST pass&#xa;before E2E-API proceeds" style="text;html=1;align=left;verticalAlign=middle;strokeColor=#0288d1;fillColor=#e1f5fe;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="560" y="400" width="200" height="50" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,9 @@
+test_case_id,tool_name,scenario,expected_metric,threshold,description
+TC-600,sf_index_project,Index 800 files (500 Apex + 100 Flow + 200 Object),time_ms,30000,Full project indexing < 30 seconds
+TC-601,sf_parse_apex,Parse single Apex class,response_time_ms,500,Individual file parse < 500ms
+TC-602,sf_dependencies,Graph query depth=3 on 5000-node graph,response_time_ms,200,Dependency query < 200ms
+TC-603,sf_parser_startup,Server spawn to initialize response,startup_time_ms,2000,MCP server startup < 2 seconds
+TC-604,sf_graph_memory,5000 components in graph,memory_mb,512,Memory usage < 512MB
+TC-605,sf_parse_apex,Path with backslashes on Windows,cross_platform,pass,Cross-platform path handling
+TC-606,all_servers,50 malformed inputs then valid request,crash_count,0,Server never crashes
+TC-607,all_servers,Check network connections during operation,open_ports,0,No network exposure

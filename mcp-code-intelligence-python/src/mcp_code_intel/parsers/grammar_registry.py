@@ -21,7 +21,7 @@ from .types import ILanguageParser
 class LanguageConfig:
     id: str
     extensions: list[str]
-    grammar_path: str  # Path to .so/.dll shared library
+    grammar_path: str | None  # Path to .so/.dll shared library (None for non-tree-sitter parsers)
     parser_module: str  # Python module path for the language parser class
 
 
@@ -54,8 +54,7 @@ class GrammarRegistry:
         if not self._initialized:
             self.initialize()
 
-        ext = os.path.splitext(file_path)[1].lower()
-        lang_id = self._extension_map.get(ext)
+        lang_id = self.get_language_id(file_path)
 
         if not lang_id or lang_id in self._unavailable:
             return None
@@ -66,8 +65,14 @@ class GrammarRegistry:
         return self._load_parser(lang_id)
 
     def get_language_id(self, file_path: str) -> str | None:
-        """Get language ID for a file extension."""
-        ext = os.path.splitext(file_path)[1].lower()
+        """Get language ID for a file -- supports compound extensions (longest-match-first)."""
+        lower_path = file_path.lower()
+        # Try compound extensions first (longest match wins)
+        for ext, lang_id in self._extension_map.items():
+            if ext.count(".") > 1 and lower_path.endswith(ext):
+                return lang_id
+        # Fall back to simple extension
+        ext = os.path.splitext(lower_path)[1]
         return self._extension_map.get(ext)
 
     def list_languages(self) -> list[dict[str, Any]]:
@@ -96,16 +101,21 @@ class GrammarRegistry:
             return None
 
         try:
-            grammar_path = os.path.join(self._config.grammar_dir, lang_config.grammar_path)
+            parser = None
 
-            if not os.path.exists(grammar_path):
-                self._unavailable.add(lang_id)
-                return None
+            if lang_config.grammar_path:
+                # Standard tree-sitter path (existing behavior)
+                grammar_path = os.path.join(self._config.grammar_dir, lang_config.grammar_path)
 
-            language = Language(grammar_path, lang_id)
-            parser = Parser()
-            parser.set_language(language)
-            self._parsers[lang_id] = parser
+                if not os.path.exists(grammar_path):
+                    self._unavailable.add(lang_id)
+                    return None
+
+                language = Language(grammar_path, lang_id)
+                parser = Parser()
+                parser.set_language(language)
+                self._parsers[lang_id] = parser
+            # If grammar_path is None, parser stays None -- passed to constructor as-is
 
             # Dynamically import the language parser module
             module = importlib.import_module(lang_config.parser_module)
@@ -121,7 +131,13 @@ class GrammarRegistry:
             return None
 
     def _build_extension_map(self) -> None:
-        for lang in self._config.languages:
+        # Sort languages so compound extensions are checked first (longest match wins)
+        sorted_langs = sorted(
+            self._config.languages,
+            key=lambda l: max((len(e) for e in l.extensions), default=0),
+            reverse=True,
+        )
+        for lang in sorted_langs:
             for ext in lang.extensions:
                 self._extension_map[ext] = lang.id
 
@@ -137,7 +153,7 @@ def load_grammar_config(config_path: str) -> GrammarRegistryConfig:
         LanguageConfig(
             id=lang["id"],
             extensions=lang["extensions"],
-            grammar_path=lang.get("grammarPath", ""),
+            grammar_path=lang.get("grammarPath") or None,  # None for non-tree-sitter parsers
             parser_module=lang.get("parserModule", ""),
         )
         for lang in data.get("languages", [])

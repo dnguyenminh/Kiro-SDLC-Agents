@@ -1,0 +1,13 @@
+test_case_id,tool_name,file_path,expected_type,expected_error,description
+TC-003,sf_parse_flow,force-app/main/default/flows/Account_Update.flow-meta.xml,RecordTriggered,,Record-Triggered Flow parse
+TC-103,sf_parse_flow,force-app/main/default/flows/Create_Case.flow-meta.xml,Screen,,Screen Flow parse
+TC-203,sf_parse_flow,flows/NonExistent.flow-meta.xml,,"SF-001: File not found",Flow file not found
+TC-204,sf_parse_flow,tests/fixtures/malformed/broken.flow-meta.xml,,"Invalid Flow XML",Invalid XML parse error
+TC-312,sf_parse_flow,force-app/main/default/classes/Test.cls,,"Unsupported",BR-6: Must end with .flow-meta.xml
+TC-004,sf_parse_object,force-app/main/default/objects/Account/,CustomObject,,Object directory parse
+TC-104,sf_parse_object,force-app/main/default/objects/Account/Account.object-meta.xml,CustomObject,,Object file parse
+TC-205,sf_parse_object,objects/NonExistent__c/,,"Object metadata not found",Object not found
+TC-005,sf_parse_lwc,force-app/main/default/lwc/accountList/,,,LWC bundle parse
+TC-105,sf_parse_lwc,force-app/main/default/lwc/accountList/accountList.js,,,LWC single JS file
+TC-206,sf_parse_lwc,lwc/nonExistentComponent/,,"LWC component not found",LWC directory not found
+TC-207,sf_parse_lwc,tests/fixtures/malformed/emptyDir/,,"No LWC files found",No parseable files

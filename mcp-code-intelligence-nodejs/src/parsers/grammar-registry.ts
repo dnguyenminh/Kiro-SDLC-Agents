@@ -1,6 +1,7 @@
 /**
  * KSA-145: Grammar Registry — Manages tree-sitter WASM grammar loading and caching.
  * Maps file extensions to language parsers, lazy-loads grammars on first use.
+ * KSA-191: Added null wasmPath support + compound extension matching.
  */
 
 import { Parser, Language } from 'web-tree-sitter';
@@ -12,7 +13,7 @@ import type { ILanguageParser } from './types.js';
 export interface LanguageConfig {
   id: string;
   extensions: string[];
-  wasmPath: string;
+  wasmPath: string | null;
   parserModule: string;
 }
 
@@ -48,9 +49,7 @@ export class GrammarRegistry {
   async getParser(filePath: string): Promise<ILanguageParser | null> {
     if (!this.initialized) await this.initialize();
 
-    const ext = path.extname(filePath).toLowerCase();
-    const langId = this.extensionMap.get(ext);
-
+    const langId = this.getLanguageId(filePath);
     if (!langId || this.unavailable.has(langId)) return null;
 
     if (this.languageParsers.has(langId)) {
@@ -60,9 +59,20 @@ export class GrammarRegistry {
     return this.loadParser(langId);
   }
 
-  /** Get language ID for a file extension. */
+  /** Get language ID for a file — supports compound extensions (longest match wins). */
   getLanguageId(filePath: string): string | null {
-    const ext = path.extname(filePath).toLowerCase();
+    const lowerPath = filePath.toLowerCase().replace(/\\/g, '/');
+
+    // Try compound extensions first (longest match wins)
+    for (const [ext, langId] of this.extensionMap.entries()) {
+      // Compound extensions have multiple dots (e.g., .flow-meta.xml)
+      if (ext.split('.').length > 2 && lowerPath.endsWith(ext)) {
+        return langId;
+      }
+    }
+
+    // Fall back to simple extension
+    const ext = path.extname(lowerPath);
     return this.extensionMap.get(ext) ?? null;
   }
 
@@ -86,18 +96,24 @@ export class GrammarRegistry {
     if (!langConfig) return null;
 
     try {
-      const wasmPath = path.resolve(this.config.grammarDir, langConfig.wasmPath);
+      let parser: any = null;
 
-      if (!fs.existsSync(wasmPath)) {
-        console.error(`[grammar-registry] WASM not found: ${wasmPath}`);
-        this.unavailable.add(langId);
-        return null;
+      if (langConfig.wasmPath) {
+        // Standard tree-sitter path (existing behavior)
+        const wasmPath = path.resolve(this.config.grammarDir, langConfig.wasmPath);
+
+        if (!fs.existsSync(wasmPath)) {
+          console.error(`[grammar-registry] WASM not found: ${wasmPath}`);
+          this.unavailable.add(langId);
+          return null;
+        }
+
+        parser = new Parser();
+        const language = await Language.load(wasmPath);
+        parser.setLanguage(language);
+        this.parsers.set(langId, parser);
       }
-
-      const parser = new Parser();
-      const language = await Language.load(wasmPath);
-      parser.setLanguage(language);
-      this.parsers.set(langId, parser);
+      // If wasmPath is null, parser stays null — passed to constructor as-is
 
       // Dynamically import the language parser module
       const modulePath = langConfig.parserModule;
@@ -120,7 +136,14 @@ export class GrammarRegistry {
   }
 
   private buildExtensionMap(): void {
-    for (const lang of this.config.languages) {
+    // Sort languages so compound extensions (longer) are registered first
+    const sorted = [...this.config.languages].sort((a, b) => {
+      const maxA = Math.max(...a.extensions.map(e => e.length));
+      const maxB = Math.max(...b.extensions.map(e => e.length));
+      return maxB - maxA; // Longer extensions first
+    });
+
+    for (const lang of sorted) {
       for (const ext of lang.extensions) {
         this.extensionMap.set(ext, lang.id);
       }

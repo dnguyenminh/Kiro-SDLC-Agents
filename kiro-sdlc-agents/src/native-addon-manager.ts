@@ -210,10 +210,10 @@ export class NativeAddonManager {
             const { execSync } = require("child_process") as typeof import("child_process");
 
             // Strategy 1: Get MODULE_VERSION from the actual `node` binary that will be spawned
-            // This correctly handles Kiro IDE's embedded Node override
+            // Use process.execPath (Kiro's bundled node) instead of system "node"
             try {
                 const moduleVersion = execSync(
-                    'node -p "process.versions.modules"',
+                    `"${process.execPath}" -p "process.versions.modules"`,
                     { encoding: "utf-8", timeout: 5000 }
                 ).trim();
 
@@ -228,8 +228,8 @@ export class NativeAddonManager {
                 // Strategy 1 failed, try strategy 2
             }
 
-            // Strategy 2: node --version (may be wrong if IDE overrides PATH at spawn time)
-            const output = execSync("node --version", { encoding: "utf-8", timeout: 5000 }).trim();
+            // Strategy 2: node --version using Kiro's bundled node
+            const output = execSync(`"${process.execPath}" --version`, { encoding: "utf-8", timeout: 5000 }).trim();
             const major = output.replace("v", "").split(".")[0];
             this.outputChannel.appendLine(`[NativeAddon] System Node: ${output} (major: ${major})`);
             return major;
