@@ -127,7 +127,7 @@ The database schema is **cross-compatible** with the Node.js and Python variants
 
 Full KB management: `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_pin`, `mem_map`, `mem_crud`, `mem_graph`, `mem_consolidate`, `mem_lifecycle`, `mem_templates`, `mem_attachments`, `mem_discover`, `mem_tags`, `mem_citations`, `mem_conversation`, `mem_scoring`, `mem_admin`.
 
-**New in v1.15.0:** Salesforce Intelligence — Apex/Flow/Object/LWC parsing and SF dependency graph (KSA-191). KB Auto-Linker - automatic relationship discovery between entries using entity extraction and semantic similarity.
+**New in v1.16.0:** SSE real-time panel updates, Tree-sitter parsers (Kotlin + Python), Apex indexing fix (KSA-209, wasm + regex fallback).
 
 ---
 

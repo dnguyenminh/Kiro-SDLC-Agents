@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.15.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.16.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
@@ -31,13 +31,22 @@
 
 ---
 
-## 🆕 What's New in v1.15.0
+## 🆕 What's New in v1.16.0
+
+- **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels receive live updates via Server-Sent Events
+- **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
+- **🐛 Apex Indexing Fix (KSA-209)** — Wasm + regex fallback for reliable Apex parsing across environments
+- **21 tickets closed** — Full sprint across code intelligence, KB UI, and Salesforce modules
+
+<details>
+<summary>Previous: v1.15.0</summary>
 
 - **🎉 Salesforce Intelligence (KSA-191)** — Full SFDX project support integrated into Code Intelligence
 - **Index Salesforce Project** — New command: `Ctrl+Shift+P` → "Kiro SDLC: Index Salesforce Project"
 - **SF-enhanced tools** — `code_search`, `code_symbols`, `code_impact`, `code_dependencies` now understand Apex/Flow/Object/LWC
 - **SF Dependency Graph** — Trigger→Object, Flow→Apex, LWC→Apex relationships in call graph
 - **mcp-salesforce-intelligence v2.1.0** — Shared library with SFDX detection, parsers, and type definitions
+</details>
 
 <details>
 <summary>Previous: v1.14.0</summary>

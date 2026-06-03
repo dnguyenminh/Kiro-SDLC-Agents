@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.15.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.16.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/MCP_Servers-3-teal?style=for-the-badge" alt="MCP Servers">
   <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
@@ -19,13 +19,22 @@
 
 ---
 
-## What's New in v1.15.0
+## What's New in v1.16.0
+
+- **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels now receive live updates via Server-Sent Events (no manual refresh needed)
+- **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
+- **🐛 Apex Indexing Fix (KSA-209)** — Wasm + regex fallback ensures reliable Apex parsing across all environments
+- **21 tickets closed** — Full sprint completion across code intelligence, KB UI, and Salesforce modules
+
+<details>
+<summary>Previous: v1.15.0</summary>
 
 - **🎉 Salesforce Intelligence** — Full SFDX project support: Apex, Flow, Custom Objects, LWC parsing and analysis (KSA-191)
 - **SF Dependency Graph** — Trigger→Object, Flow→Apex, LWC→Apex relationship tracking
 - **SF Impact Analysis** — Blast radius analysis across Salesforce metadata types
 - **Index Salesforce Project** — New command to index entire SFDX projects into Code Intelligence
 - **Shared Library** — `mcp-salesforce-intelligence` v2.1.0 provides reusable SF parsers and types
+</details>
 
 <details>
 <summary>Previous: v1.14.0</summary>
@@ -64,7 +73,7 @@ FEC_CR_Builder/
 
 | Module | Description | Tech | Version |
 |--------|-------------|------|---------|
-| [`kiro-sdlc-agents`](kiro-sdlc-agents/) | VS Code extension — 9 agents, KB UI panels, native binary management | TypeScript | 1.15.0 |
+| [`kiro-sdlc-agents`](kiro-sdlc-agents/) | VS Code extension — 9 agents, KB UI panels, native binary management | TypeScript | 1.16.0 |
 | [`mcp-code-intelligence-kotlin`](mcp-code-intelligence-kotlin/) | MCP server — FTS5, coroutines, NIO watcher, call graph | Kotlin, JDK 21+ | 0.7.0 |
 | [`mcp-code-intelligence-nodejs`](mcp-code-intelligence-nodejs/) | MCP server — FTS5, ONNX embeddings, Tree-sitter AST, Salesforce Intelligence | Node.js 20+ | 0.7.0 |
 | [`mcp-code-intelligence-python`](mcp-code-intelligence-python/) | MCP server — FTS5, zero external deps, stdlib sqlite3 | Python 3.11+ | 0.7.0 |
@@ -304,7 +313,7 @@ cd mcp-code-intelligence-python && python tests/test_extractor.py
 
 ```bash
 # Bump versions → commit → tag → push
-git tag v1.15.0 -m "Release v1.15.0"
+git tag v1.16.0 -m "Release v1.16.0"
 git push origin main --tags
 ```
 
