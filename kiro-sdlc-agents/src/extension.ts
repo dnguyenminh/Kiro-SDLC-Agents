@@ -26,12 +26,14 @@ import { SecurityPanel } from "./panels/security-panel";
 import { showImpactAnalysis } from "./panels/impact-panel";
 import { NativeAddonManager } from "./native-addon-manager";
 import { OnnxAddonManager } from "./onnx-addon-manager";
+import { KbEventBus } from "./kb-event-bus";
 
 let mcpManager: McpServerManager | undefined;
 let panelManager: WebviewPanelManager | undefined;
 let configWatcher: ConfigWatcher | undefined;
 let nativeAddonManager: NativeAddonManager | undefined;
 let onnxAddonManager: OnnxAddonManager | undefined;
+let kbEventBus: KbEventBus | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -54,7 +56,11 @@ export async function activate(context: vscode.ExtensionContext) {
         onnxAddonManager = new OnnxAddonManager(context, outputChannel);
         mcpManager.setOnnxAddonManager(onnxAddonManager);
 
-        panelManager = new WebviewPanelManager(mcpManager, context.extensionUri);
+        // Initialize KbEventBus for real-time panel updates via SSE
+        kbEventBus = new KbEventBus(outputChannel);
+        context.subscriptions.push(kbEventBus);
+
+        panelManager = new WebviewPanelManager(mcpManager, context.extensionUri, kbEventBus);
         context.subscriptions.push(panelManager);
 
         // Register tree view (use createTreeView for badge support)
@@ -81,6 +87,13 @@ export async function activate(context: vscode.ExtensionContext) {
             const webviewStatus = status === "running" ? "connected" : status === "crashed" ? "failed" : "disconnected";
             panelManager?.notifyAllPanels({ type: "serverStatus", status: webviewStatus });
             updateStatusBar(statusBar, context);
+
+            // Connect/disconnect KbEventBus based on server status
+            if (status === "running" && mcpManager?.port) {
+                kbEventBus?.connect(mcpManager.port);
+            } else if (status === "stopped" || status === "crashed") {
+                kbEventBus?.disconnect();
+            }
 
             // Write mcp.json with HTTP URL once server reports its port
             if (status === "running" && mcpManager?.port) {

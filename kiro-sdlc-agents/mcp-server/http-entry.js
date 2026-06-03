@@ -21,6 +21,67 @@ let childProcess = null;
 let requestId = 0;
 const pendingRequests = new Map();
 
+// === SSE (Server-Sent Events) for real-time panel updates ===
+const sseConnections = new Set();
+
+/** Infer event type from tool name + action. Returns null for reads. */
+function inferKbEvent(toolName, args) {
+  switch (toolName) {
+    case "mem_ingest": case "mem_ingest_file": return "kb_entry_added";
+    case "mem_crud": {
+      const a = args?.action;
+      if (a === "delete") return "kb_entry_deleted";
+      if (a === "update") return "kb_entry_updated";
+      return null;
+    }
+    case "mem_tags": {
+      const a = args?.action;
+      if (a === "create") return "tag_created";
+      if (a === "delete") return "tag_deleted";
+      if (a === "tag" || a === "untag") return "tag_updated";
+      return null;
+    }
+    case "mem_scoring": {
+      const a = args?.action;
+      if (a === "quality_score" || a === "feedback_submit") return "quality_scored";
+      return null;
+    }
+    case "mem_lifecycle": {
+      const a = args?.action;
+      if (a === "archive" || a === "unarchive" || a === "mark_reviewed") return "kb_entry_updated";
+      return null;
+    }
+    case "mem_consolidate": return "consolidation_complete";
+    default: return null;
+  }
+}
+
+/** Push SSE event to all connected clients. */
+function emitSseEvent(eventType, data) {
+  const payload = JSON.stringify({ type: eventType, timestamp: Date.now(), data });
+  for (const res of sseConnections) {
+    if (res.writable) res.write(`event: ${eventType}\ndata: ${payload}\n\n`);
+  }
+}
+
+/** Handle SSE connection for /api/events. */
+function handleSseEvents(req, res) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+    "X-Accel-Buffering": "no",
+  });
+  res.write(`event: connected\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`);
+  sseConnections.add(res);
+  const keepalive = setInterval(() => { if (res.writable) res.write(": keepalive\n\n"); }, 30000);
+  const cleanup = () => { clearInterval(keepalive); sseConnections.delete(res); };
+  req.on("close", cleanup);
+  req.on("error", cleanup);
+  res.on("error", cleanup);
+}
+
 // === Child Process (MCP stdio) ===
 
 function spawnStdioServer() {
@@ -94,6 +155,16 @@ async function handleMcp(req, res) {
     const response = await forwardToChild(jsonRpc, 60000);
     res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
     res.end(JSON.stringify(response));
+    // Emit SSE event for successful tool write operations via /mcp
+    if (sseConnections.size > 0 && jsonRpc.method === "tools/call" && !response.error) {
+      const toolName = jsonRpc.params?.name;
+      const toolArgs = jsonRpc.params?.arguments;
+      const text = response.result?.content?.[0]?.text ?? "";
+      if (toolName && !text.startsWith("Error:") && !text.startsWith("Unknown tool:")) {
+        const eventType = inferKbEvent(toolName, toolArgs);
+        if (eventType) emitSseEvent(eventType, { tool: toolName, action: toolArgs?.action });
+      }
+    }
   } catch (err) {
     res.writeHead(504, { "Content-Type": CONTENT_TYPE_JSON });
     res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32000, message: err.message } }));
@@ -238,6 +309,11 @@ async function callTool(name, args) {
   if (response.error) throw new Error(response.error.message);
   const text = response.result?.content?.[0]?.text ?? "{}";
   if (text.startsWith("Unknown tool:")) throw new Error(text);
+  // Emit SSE event for write operations
+  if (sseConnections.size > 0) {
+    const eventType = inferKbEvent(name, args);
+    if (eventType) emitSseEvent(eventType, { tool: name, action: args?.action });
+  }
   return text;
 }
 
@@ -290,6 +366,8 @@ function requestHandler(req, res) {
   if (p === "/mcp") { handleMcp(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } }); return; }
   // Health
   if (p === "/health") { res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON }); res.end('{"status":"ok"}'); return; }
+  // SSE endpoint for real-time panel updates
+  if (p === "/api/events") { handleSseEvents(req, res); return; }
   // Viewer API — POST ingest-file
   if (p === "/api/memory/ingest-file" && req.method === "POST") {
     handleIngestFileApi(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } });

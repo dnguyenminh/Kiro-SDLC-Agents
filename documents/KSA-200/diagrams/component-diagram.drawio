@@ -1,0 +1,96 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — SM Agent Modular Architecture&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="280" y="10" width="450" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="sm-boundary" value="&lt;b&gt;SM Agent Boundary&lt;/b&gt;" style="swimlane;startSize=30;fillColor=none;strokeColor=#333333;fontSize=12;rounded=1;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="50" width="700" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="input-parser" value="&lt;b&gt;Input Parser&lt;/b&gt;&lt;br&gt;&lt;hr&gt;&lt;font size=1&gt;parseTicketKey()&lt;br&gt;parseAction()&lt;br&gt;parseTemplate()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="20" y="50" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="status-mgr" value="&lt;b&gt;Status Manager&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;readStatus()&lt;br&gt;updateStatus()&lt;br&gt;rebuildFromScan()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="200" y="50" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="phase-router" value="&lt;b&gt;Phase Router&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;determinePhase()&lt;br&gt;loadSteering()&lt;br&gt;checkPrereqs()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="380" y="50" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="ctx-builder" value="&lt;b&gt;Context Builder&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;buildL0()&lt;br&gt;buildL1()&lt;br&gt;formatPrompt()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="20" y="180" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="fanout-ctrl" value="&lt;b&gt;Fan-out Controller&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;checkParallel()&lt;br&gt;dispatch()&lt;br&gt;waitAll()&lt;br&gt;fanIn()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="200" y="180" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="pattern-sel" value="&lt;b&gt;Pattern Selector&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;detectPattern()&lt;br&gt;loadCatalog()&lt;br&gt;applyAdjustments()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="380" y="180" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="quality-ctrl" value="&lt;b&gt;Quality Controller&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;verifyOutput()&lt;br&gt;checkDiagrams()&lt;br&gt;validateDoc()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="20" y="310" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="jira-ctrl" value="&lt;b&gt;Jira Controller&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;transition()&lt;br&gt;addComment()&lt;br&gt;attachDoc()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="200" y="310" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="report-ctrl" value="&lt;b&gt;Report Controller&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;reportStatus()&lt;br&gt;reportProgress()&lt;br&gt;askUser()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="380" y="310" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="dep-graph" value="&lt;b&gt;Dependency Graph&lt;/b&gt;&lt;hr&gt;&lt;font size=1&gt;getParallelGroups()&lt;br&gt;checkDependencies()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;align=center;" vertex="1" parent="sm-boundary">
+      <mxGeometry x="540" y="180" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;" edge="1" source="input-parser" target="status-mgr" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;" edge="1" source="status-mgr" target="phase-router" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;" edge="1" source="phase-router" target="ctx-builder" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;" edge="1" source="phase-router" target="fanout-ctrl" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;dashed=1;" edge="1" source="fanout-ctrl" target="dep-graph" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;dashed=1;" edge="1" source="ctx-builder" target="pattern-sel" parent="sm-boundary">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-sub" value="&lt;b&gt;Sub-Agents&lt;/b&gt;&lt;br&gt;(BA, TA, SA, QA, DEV, DevOps)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="150" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-kb2" value="&lt;b&gt;Knowledge Base&lt;/b&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;size=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="250" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-jira2" value="&lt;b&gt;Jira API&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="350" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-fs2" value="&lt;b&gt;File System&lt;/b&gt;&lt;br&gt;(.kiro/steering/)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="450" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ee1" value="invoke" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="180" as="sourcePoint"/>
+        <mxPoint x="800" y="180" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="ee2" value="search" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="280" as="sourcePoint"/>
+        <mxPoint x="800" y="280" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="ee3" value="API calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="380" as="sourcePoint"/>
+        <mxPoint x="800" y="380" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="ee4" value="read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="480" as="sourcePoint"/>
+        <mxPoint x="800" y="480" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

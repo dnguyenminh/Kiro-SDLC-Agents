@@ -15,6 +15,7 @@ from .dispatcher_consolidated_handlers import (
     handle_conversation,
     handle_map,
 )
+from ..http.sse_handler import get_emitter, infer_kb_event
 
 
 class MemoryToolDispatcherConsolidated:
@@ -33,7 +34,13 @@ class MemoryToolDispatcherConsolidated:
         handler = self._get_handler(resolved_name)
         if handler is None:
             return None
-        return handler(self, resolved_args)
+        result = handler(self, resolved_args)
+        # Emit SSE event for write operations
+        if result and not result.startswith("Error:"):
+            event_type = infer_kb_event(resolved_name, resolved_args)
+            if event_type:
+                get_emitter().emit(event_type, {"tool": resolved_name, "action": resolved_args.get("action")})
+        return result
 
     def _resolve_alias(
         self, name: str, args: dict[str, Any]

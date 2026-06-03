@@ -12,6 +12,7 @@ import { handleApiRoute } from './api-routes.js';
 import { handleIngestFileRoute } from './ingest-routes.js';
 import { handleUxRoute } from './ux-routes.js';
 import { handleModelRoute } from './model-routes.js';
+import { handleSseEvents, closeSseConnections } from './sse-handler.js';
 import { ModelManager } from '../orchestration/models/model-manager.js';
 
 export class ViewerServer {
@@ -40,6 +41,7 @@ export class ViewerServer {
   }
 
   stop(): void {
+    closeSseConnections();
     this.server?.close();
     this.server = null;
   }
@@ -68,6 +70,8 @@ export class ViewerServer {
       this.serveStatic(url.pathname, res);
     } else if (url.pathname === '/api/health') {
       this.serveHealth(res);
+    } else if (url.pathname === '/api/events') {
+      handleSseEvents(req, res);
     } else if (url.pathname.startsWith('/api/models')) {
       if (!handleModelRoute(req, url, res, this.modelManager)) {
         this.send404(res);

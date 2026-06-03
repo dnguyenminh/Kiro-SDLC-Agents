@@ -93,12 +93,15 @@ async function showIndexOptions(): Promise<string[] | undefined> {
 
 function discoverDocuments(root: string): Array<{ path: string; type: string; ticket: string }> {
     const docsDir = path.join(root, "documents");
+    console.error(`[indexer] discoverDocuments: root=${root}, docsDir=${docsDir}, exists=${fs.existsSync(docsDir)}`);
     if (!fs.existsSync(docsDir)) { return []; }
 
     const results: Array<{ path: string; type: string; ticket: string }> = [];
-    const tickets = fs.readdirSync(docsDir).filter(d =>
+    const allEntries = fs.readdirSync(docsDir);
+    const tickets = allEntries.filter(d =>
         fs.statSync(path.join(docsDir, d)).isDirectory() && /^[A-Z]+-\d+$/.test(d)
     );
+    console.error(`[indexer] discoverDocuments: ${allEntries.length} entries, ${tickets.length} ticket dirs`);
 
     for (const ticket of tickets) {
         const ticketDir = path.join(docsDir, ticket);
@@ -116,6 +119,7 @@ function discoverDocuments(root: string): Array<{ path: string; type: string; ti
             }
         }
     }
+    console.error(`[indexer] discoverDocuments: found ${results.length} documents across ${tickets.length} tickets`);
     return results;
 }
 

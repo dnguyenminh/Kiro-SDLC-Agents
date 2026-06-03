@@ -1,6 +1,8 @@
 /** Consolidated dispatcher — routes 14 tools + backward-compatible aliases. KSA-85. */
 package com.codeintel.memory.tools
 
+import com.codeintel.http.KbEventEmitter
+import com.codeintel.http.inferKbEvent
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -13,7 +15,16 @@ class MemoryToolDispatcherConsolidated(
     /** Dispatch tool call. Handles new names + aliases. Returns null if not handled. */
     fun dispatch(name: String, args: JsonObject): String? {
         val (resolved, merged) = resolveAlias(name, args)
-        return HANDLERS[resolved]?.invoke(this, merged)
+        val result = HANDLERS[resolved]?.invoke(this, merged) ?: return null
+        // Emit SSE event for write operations
+        if (!result.startsWith("Error:")) {
+            val action = merged["action"]?.jsonPrimitive?.content
+            val eventType = inferKbEvent(resolved, mapOf("action" to action))
+            if (eventType != null) {
+                KbEventEmitter.emit(eventType, mapOf("tool" to resolved, "action" to action))
+            }
+        }
+        return result
     }
 
     private fun resolveAlias(name: String, args: JsonObject): Pair<String, JsonObject> {

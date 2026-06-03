@@ -1,15 +1,28 @@
 /**
  * QualityPanel — Quality scores histogram, low-quality table, bulk actions.
+ * Real-time updates via KbEventBus SSE subscription + polling fallback.
  */
 
 import * as vscode from "vscode";
-import { WebviewToExtMessage } from "../types";
+import { WebviewToExtMessage, SERVER_CONSTANTS } from "../types";
 import { McpServerManager } from "../mcp-server-manager";
 import { BasePanel } from "./base-panel";
+import { KbEventBus } from "../kb-event-bus";
 
 export class QualityPanel extends BasePanel {
-  constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri) {
+  private refreshTimer: NodeJS.Timeout | undefined;
+  private eventSubscription: vscode.Disposable | undefined;
+
+  constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri, eventBus?: KbEventBus) {
     super("quality", mcpManager, extensionUri);
+    this.startFallbackPolling();
+    if (eventBus) {
+      this.eventSubscription = eventBus.onQualityChange(() => {
+        if (this.isAlive && this.mcpManager.status === "running") {
+          this.loadData().catch(() => {});
+        }
+      });
+    }
   }
 
   getHtml(webview: vscode.Webview): string {
@@ -71,5 +84,19 @@ export class QualityPanel extends BasePanel {
         try { await this.mcpManager.restart(); } catch { this.sendMessage({ type: "serverStatus", status: "failed" }); }
         break;
     }
+  }
+
+  private startFallbackPolling(): void {
+    this.refreshTimer = setInterval(() => {
+      if (this.isAlive && this.mcpManager.status === "running") {
+        this.loadData().catch(() => {});
+      }
+    }, SERVER_CONSTANTS.PANEL_FALLBACK_REFRESH_MS);
+  }
+
+  dispose(): void {
+    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = undefined; }
+    this.eventSubscription?.dispose();
+    super.dispose();
   }
 }

@@ -13,6 +13,7 @@ from .ingest_routes import handle_ingest_file_route
 from .kb_viewer_routes import handle_kb_viewer_route
 from .model_routes import handle_model_route
 from .ux_routes import handle_ux_route
+from .sse_handler import handle_sse_events
 
 
 class ViewerServer:
@@ -84,6 +85,8 @@ def _route_get(handler: BaseHTTPRequestHandler, server: ViewerServer) -> None:
         _serve_static(handler, path, server.workspace)
     elif path == "/api/health":
         handle_health(handler, server.memory_engine, server.workspace)
+    elif path == "/api/events":
+        handle_sse_events(handler)
     elif path.startswith("/api/models"):
         handle_model_route(path, query, handler, server.model_manager, method="GET")
     elif path.startswith("/api/kb"):
