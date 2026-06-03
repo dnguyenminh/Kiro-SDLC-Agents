@@ -222,6 +222,7 @@ export class TreeSitterIndexer {
       '.js': 'javascript', '.jsx': 'javascript',
       '.py': 'python', '.kt': 'kotlin', '.kts': 'kotlin',
       '.java': 'java', '.go': 'go', '.rs': 'rust',
+      '.cls': 'apex', '.trigger': 'apex',
     };
     return map[ext] ?? 'generic';
   }

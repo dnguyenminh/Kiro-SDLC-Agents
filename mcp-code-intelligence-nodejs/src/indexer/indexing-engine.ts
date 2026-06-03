@@ -232,14 +232,14 @@ export class IndexingEngine {
   }
 
   /** Get tree-sitter indexer stats. */
-  getTreeSitterStats(): { ready: boolean; languages: string[] } {
+  getTreeSitterStats(): { ready: boolean; languages: string[]; unavailableGrammars: string[] } {
     if (!this.treeSitterReady || !this.grammarRegistry) {
-      return { ready: false, languages: [] };
+      return { ready: false, languages: [], unavailableGrammars: [] };
     }
-    const langs = this.grammarRegistry.listLanguages()
-      .filter(l => l.available)
-      .map(l => l.id);
-    return { ready: true, languages: langs };
+    const allLangs = this.grammarRegistry.listLanguages();
+    const langs = allLangs.filter(l => l.available).map(l => l.id);
+    const unavailableGrammars = allLangs.filter(l => !l.available).map(l => l.id);
+    return { ready: true, languages: langs, unavailableGrammars };
   }
 
   private async indexFiles(files: ScannedFile[]): Promise<void> {

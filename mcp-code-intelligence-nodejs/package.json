@@ -47,7 +47,8 @@
   "optionalDependencies": {
     "chokidar": "^4.0.0",
     "onnxruntime-node": "^1.18.0",
-    "salesforce-ast": "^1.0.0"
+    "salesforce-ast": "^1.0.0",
+    "tree-sitter-sfapex": "^3.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",

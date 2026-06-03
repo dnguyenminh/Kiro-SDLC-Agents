@@ -23,7 +23,8 @@ export function registerCodeIndexStatus(
       }
       const status = queryLayer.getIndexStatus();
       const sfdxStats = indexer.getSfdxStats();
-      const text = formatStatus(status, indexer.isRunning(), sfdxStats);
+      const tsStats = indexer.getTreeSitterStats();
+      const text = formatStatus(status, indexer.isRunning(), sfdxStats, tsStats);
       return { content: [{ type: 'text', text }] };
     }
   );
@@ -32,7 +33,8 @@ export function registerCodeIndexStatus(
 function formatStatus(
   status: any,
   isRunning: boolean,
-  sfdxStats: ReturnType<IndexingEngine['getSfdxStats']>
+  sfdxStats: ReturnType<IndexingEngine['getSfdxStats']>,
+  tsStats: ReturnType<IndexingEngine['getTreeSitterStats']>
 ): string {
   const lines = [
     '\u{1F4CA} Code Intelligence Index Status\n',
@@ -71,6 +73,12 @@ function formatStatus(
         lines.push(`    ${kind}: ${count}`);
       }
     }
+  }
+
+  // KSA-209: Unavailable grammars warning
+  if (tsStats.unavailableGrammars.length > 0) {
+    lines.push('');
+    lines.push(`\u{26A0}\u{FE0F} Unavailable grammars (WASM missing \u{2014} using regex fallback): ${tsStats.unavailableGrammars.join(', ')}`);
   }
 
   return lines.join('\n');
