@@ -26,6 +26,10 @@ kiro-sdlc-agents/out/
 kiro-sdlc-agents/node_modules/
 kiro-sdlc-agents/*.vsix
 
+# Salesforce Intelligence
+mcp-salesforce-intelligence/node_modules/
+mcp-salesforce-intelligence/dist/
+
 # QA screenshots (generated during testing)
 qa-*.png
 
