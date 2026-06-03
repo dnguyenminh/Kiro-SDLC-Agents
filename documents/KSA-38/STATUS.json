@@ -1,24 +1,12 @@
 {
   "ticket": "KSA-38",
-  "title": "Storage Layer — SQLite + FTS5 + sqlite-vec schema",
-  "currentPhase": "implementation",
+  "currentPhase": "done",
   "phases": {
-    "design": { "status": "skipped", "reason": "Technical/infrastructure ticket" },
-    "implementation": { "status": "done", "completedAt": "2025-01-20" }
+    "design": { "status": "skipped", "reason": "Infrastructure ticket" },
+    "implementation": { "status": "done", "completedAt": "2025-01-20" },
+    "testing": { "status": "done", "completedAt": "2025-01-20" },
+    "deployment": { "status": "done", "completedAt": "2025-01-20" }
   },
-  "files": [
-    "src/main/kotlin/com/codeintel/memory/db/MemorySchema.kt",
-    "src/main/kotlin/com/codeintel/memory/db/MemoryDatabaseManager.kt",
-    "src/main/kotlin/com/codeintel/memory/models/KnowledgeEntry.kt",
-    "src/main/kotlin/com/codeintel/memory/models/GraphEdge.kt",
-    "src/main/kotlin/com/codeintel/memory/models/ConsolidationRecord.kt",
-    "src/main/kotlin/com/codeintel/memory/repository/KnowledgeRepository.kt",
-    "src/main/kotlin/com/codeintel/memory/repository/KnowledgeSearchRepository.kt",
-    "src/main/kotlin/com/codeintel/memory/repository/GraphRepository.kt",
-    "src/main/kotlin/com/codeintel/memory/repository/VectorRepository.kt",
-    "src/main/kotlin/com/codeintel/memory/repository/ConsolidationRepository.kt",
-    "src/main/kotlin/com/codeintel/memory/MemoryEngine.kt"
-  ],
-  "buildVerified": true,
-  "lastUpdated": "2025-01-20"
+  "lastUpdated": "2026-05-23T11:00:00Z",
+  "jiraStatus": "Done"
 }

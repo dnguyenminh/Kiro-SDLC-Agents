@@ -29,7 +29,7 @@
       "mem_ingest_file (+ .cls, .trigger, .flow-meta.xml support)"
     ]
   },
-  "currentPhase": "deployment",
+  "currentPhase": "done",
   "phases": {
     "requirements": {
       "status": "done",
