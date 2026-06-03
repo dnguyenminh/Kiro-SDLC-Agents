@@ -1,0 +1,93 @@
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture Overview — Modular SM Agent&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="orchestration-layer" value="&lt;b&gt;Orchestration Layer&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="60" width="900" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="sm-core" value="&lt;b&gt;sm-core.md&lt;/b&gt;&lt;br&gt;Routing + Status&lt;br&gt;(&lt;=300 lines)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="orchestration-layer">
+      <mxGeometry x="20" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="context-builder" value="&lt;b&gt;Context Builder&lt;/b&gt;&lt;br&gt;L0+L1 Assembly" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="orchestration-layer">
+      <mxGeometry x="200" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="fanout-engine" value="&lt;b&gt;Fan-out Engine&lt;/b&gt;&lt;br&gt;Parallel Dispatch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="orchestration-layer">
+      <mxGeometry x="380" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pattern-selector" value="&lt;b&gt;Pattern Selector&lt;/b&gt;&lt;br&gt;Auto-detect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="orchestration-layer">
+      <mxGeometry x="560" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="quality-gate" value="&lt;b&gt;Quality Gate&lt;/b&gt;&lt;br&gt;Verification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="orchestration-layer">
+      <mxGeometry x="740" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="phase-layer" value="&lt;b&gt;Phase Logic Layer&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="190" width="900" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="p1" value="phase-1&lt;br&gt;Requirements" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="20" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p2" value="phase-2&lt;br&gt;Specification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="140" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p3" value="phase-3&lt;br&gt;Design" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="260" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p4" value="phase-4&lt;br&gt;Test Plan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="380" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p5" value="phase-5&lt;br&gt;Implement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="500" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p6" value="phase-6&lt;br&gt;Testing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="620" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p7" value="phase-7&lt;br&gt;Deploy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=9;" vertex="1" parent="phase-layer">
+      <mxGeometry x="740" y="40" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="shared-layer" value="&lt;b&gt;Shared Services Layer&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="320" width="500" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="s-jira" value="shared-jira.md&lt;br&gt;Transitions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="shared-layer">
+      <mxGeometry x="20" y="40" width="130" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="s-qg" value="shared-quality-gates.md&lt;br&gt;Checklists" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="shared-layer">
+      <mxGeometry x="180" y="40" width="150" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="s-diag" value="shared-diagrams.md&lt;br&gt;Draw.io Rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" vertex="1" parent="shared-layer">
+      <mxGeometry x="360" y="40" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pattern-layer" value="&lt;b&gt;Pattern Config Layer&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="580" y="320" width="370" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="pat-cat" value="catalog.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="pattern-layer">
+      <mxGeometry x="20" y="40" width="90" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pat-ai" value="ai-agent.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="pattern-layer">
+      <mxGeometry x="130" y="40" width="90" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pat-mono" value="monolith.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="pattern-layer">
+      <mxGeometry x="240" y="40" width="90" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-layer" value="&lt;b&gt;External Systems&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#fafafa;strokeColor=#999999;fontSize=11;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="450" width="900" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-kiro" value="Kiro IDE&lt;br&gt;(contextFiles)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="ext-layer">
+      <mxGeometry x="20" y="40" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-kb" value="Knowledge Base&lt;br&gt;(L2 Context)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;size=10;" vertex="1" parent="ext-layer">
+      <mxGeometry x="180" y="35" width="120" height="55" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-jira" value="Jira&lt;br&gt;(Workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="ext-layer">
+      <mxGeometry x="340" y="40" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-agents" value="Sub-Agents&lt;br&gt;(BA,TA,SA,QA,DEV)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="ext-layer">
+      <mxGeometry x="500" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext-fs" value="File System&lt;br&gt;(STATUS.json)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;fontSize=10;" vertex="1" parent="ext-layer">
+      <mxGeometry x="680" y="40" width="120" height="50" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

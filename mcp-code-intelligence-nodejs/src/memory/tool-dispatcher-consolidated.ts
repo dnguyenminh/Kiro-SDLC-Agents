@@ -12,6 +12,7 @@ import type { ConversationRepository } from './conversation-repo.js';
 import type { ConversationSummarizer } from './conversation-summarizer.js';
 import { extractStructuredMap } from './structured-map-extractor.js';
 import { classifyEntity } from './entity-classifier.js';
+import { KbEventEmitter, KbEventType } from '../http/kb-event-emitter.js';
 
 type Args = Record<string, unknown>;
 type V1Dispatcher = { dispatch(name: string, args: Args): string | null };
@@ -50,7 +51,15 @@ export class MemoryToolDispatcherConsolidated {
     const [resolved, mergedArgs] = this.resolveAlias(name, args);
     const handler = HANDLERS[resolved];
     if (!handler) return null;
-    return handler(this, mergedArgs);
+    const result = handler(this, mergedArgs);
+    // Emit KB change events for write operations
+    if (result && !result.startsWith('Error:')) {
+      const event = inferKbEvent(resolved, mergedArgs);
+      if (event) {
+        KbEventEmitter.getInstance().emitKbEvent(event, { tool: resolved, action: mergedArgs.action });
+      }
+    }
+    return result;
   }
 
   private resolveAlias(name: string, args: Args): [string, Args] {
@@ -342,3 +351,39 @@ const HANDLERS: Record<string, Handler> = {
   mem_scoring: handleScoring,
   mem_admin: handleAdmin,
 };
+
+/** Map tool+action to a KbEventType. Returns null for read-only operations. */
+function inferKbEvent(tool: string, args: Args): KbEventType | null {
+  switch (tool) {
+    case 'mem_ingest':
+    case 'mem_ingest_file':
+      return 'kb_entry_added';
+    case 'mem_crud': {
+      const action = args.action as string;
+      if (action === 'delete') return 'kb_entry_deleted';
+      if (action === 'update') return 'kb_entry_updated';
+      return null; // get, list are reads
+    }
+    case 'mem_tags': {
+      const action = args.action as string;
+      if (action === 'create') return 'tag_created';
+      if (action === 'delete') return 'tag_deleted';
+      if (action === 'tag' || action === 'untag') return 'tag_updated';
+      return null; // taxonomy, popular, search are reads
+    }
+    case 'mem_scoring': {
+      const action = args.action as string;
+      if (action === 'quality_score' || action === 'feedback_submit') return 'quality_scored';
+      return null; // stats, low_quality are reads
+    }
+    case 'mem_lifecycle': {
+      const action = args.action as string;
+      if (action === 'archive' || action === 'unarchive' || action === 'mark_reviewed') return 'kb_entry_updated';
+      return null;
+    }
+    case 'mem_consolidate':
+      return 'consolidation_complete';
+    default:
+      return null;
+  }
+}

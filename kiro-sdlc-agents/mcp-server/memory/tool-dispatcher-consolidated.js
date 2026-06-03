@@ -8,6 +8,7 @@ exports.MemoryToolDispatcherConsolidated = void 0;
 const tool_definitions_consolidated_js_1 = require("./tool-definitions-consolidated.js");
 const structured_map_extractor_js_1 = require("./structured-map-extractor.js");
 const entity_classifier_js_1 = require("./entity-classifier.js");
+const kb_event_emitter_js_1 = require("../http/kb-event-emitter.js");
 class MemoryToolDispatcherConsolidated {
     v1;
     v2;
@@ -40,7 +41,15 @@ class MemoryToolDispatcherConsolidated {
         const handler = HANDLERS[resolved];
         if (!handler)
             return null;
-        return handler(this, mergedArgs);
+        const result = handler(this, mergedArgs);
+        // Emit KB change events for write operations
+        if (result && !result.startsWith('Error:')) {
+            const event = inferKbEvent(resolved, mergedArgs);
+            if (event) {
+                kb_event_emitter_js_1.KbEventEmitter.getInstance().emitKbEvent(event, { tool: resolved, action: mergedArgs.action });
+            }
+        }
+        return result;
     }
     resolveAlias(name, args) {
         const alias = tool_definitions_consolidated_js_1.TOOL_ALIASES[name];
@@ -336,4 +345,46 @@ const HANDLERS = {
     mem_scoring: handleScoring,
     mem_admin: handleAdmin,
 };
+/** Map tool+action to a KbEventType. Returns null for read-only operations. */
+function inferKbEvent(tool, args) {
+    switch (tool) {
+        case 'mem_ingest':
+        case 'mem_ingest_file':
+            return 'kb_entry_added';
+        case 'mem_crud': {
+            const action = args.action;
+            if (action === 'delete')
+                return 'kb_entry_deleted';
+            if (action === 'update')
+                return 'kb_entry_updated';
+            return null; // get, list are reads
+        }
+        case 'mem_tags': {
+            const action = args.action;
+            if (action === 'create')
+                return 'tag_created';
+            if (action === 'delete')
+                return 'tag_deleted';
+            if (action === 'tag' || action === 'untag')
+                return 'tag_updated';
+            return null; // taxonomy, popular, search are reads
+        }
+        case 'mem_scoring': {
+            const action = args.action;
+            if (action === 'quality_score' || action === 'feedback_submit')
+                return 'quality_scored';
+            return null; // stats, low_quality are reads
+        }
+        case 'mem_lifecycle': {
+            const action = args.action;
+            if (action === 'archive' || action === 'unarchive' || action === 'mark_reviewed')
+                return 'kb_entry_updated';
+            return null;
+        }
+        case 'mem_consolidate':
+            return 'consolidation_complete';
+        default:
+            return null;
+    }
+}
 //# sourceMappingURL=tool-dispatcher-consolidated.js.map

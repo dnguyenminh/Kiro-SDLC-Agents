@@ -1,0 +1,29 @@
+{
+  "ticket": "KSA-209",
+  "type": "bug",
+  "currentPhase": "implementation",
+  "phases": {
+    "requirements": { "status": "skipped", "reason": "Bug fix - no BRD needed" },
+    "specification": { "status": "skipped", "reason": "Bug fix - no FSD needed" },
+    "design": { "status": "skipped", "reason": "Bug fix - no TDD needed" },
+    "test_planning": { "status": "skipped", "reason": "Bug fix - existing tests cover changes" },
+    "implementation": {
+      "status": "done",
+      "branch": "KSA-209",
+      "commit": "7a400db",
+      "filesChanged": [
+        "src/parsers/tree-sitter-indexer.ts",
+        "src/indexer/indexing-engine.ts",
+        "src/tools/register-tools.ts",
+        "src/tools/code-index-status.ts",
+        "src/parsers/grammars/tree-sitter-apex.wasm",
+        "package.json",
+        "package-lock.json"
+      ],
+      "completedAt": "2026-06-03T12:50:00Z"
+    },
+    "testing": { "status": "done", "result": "39/39 passed", "completedAt": "2026-06-03T12:49:00Z" },
+    "deployment": { "status": "pending_review", "note": "Awaiting Jira transition to IN REVIEW then merge" }
+  },
+  "lastUpdated": "2026-06-03T12:50:00Z"
+}

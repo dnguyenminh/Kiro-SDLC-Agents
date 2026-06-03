@@ -285,5 +285,7 @@ export const SERVER_CONSTANTS = {
   REQUEST_TIMEOUT_MS: 30000,
   KILL_TIMEOUT_MS: 5000,
   DASHBOARD_REFRESH_MS: 60000,
+  /** Fallback polling interval for event-driven panels (5 min safety net). */
+  PANEL_FALLBACK_REFRESH_MS: 300000,
   GRAPH_MAX_NODES: 500,
 };

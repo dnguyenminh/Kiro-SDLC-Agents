@@ -69,6 +69,7 @@ class ViewerServer(val config: Config) {
             get("/modules/{file}.js") { serveSubdirFile(call, "modules/" + call.parameters["file"] + ".js", "application/javascript") }
             get("/config/{file}.json") { serveSubdirFile(call, "config/" + call.parameters["file"] + ".json", "application/json") }
             get("/api/health") { call.respond(buildHealthResponse()) }
+            sseEventsRoute()
             modelApiRoutes { modelManager }
             memoryApiRoutes({ memoryEngine }, { knowledgeGraph })
             uxApiRoutes { memoryEngine }

@@ -45,6 +45,7 @@ const api_routes_js_1 = require("./api-routes.js");
 const ingest_routes_js_1 = require("./ingest-routes.js");
 const ux_routes_js_1 = require("./ux-routes.js");
 const model_routes_js_1 = require("./model-routes.js");
+const sse_handler_js_1 = require("./sse-handler.js");
 class ViewerServer {
     server = null;
     port;
@@ -67,6 +68,7 @@ class ViewerServer {
         });
     }
     stop() {
+        (0, sse_handler_js_1.closeSseConnections)();
         this.server?.close();
         this.server = null;
     }
@@ -103,6 +105,9 @@ class ViewerServer {
         }
         else if (url.pathname === '/api/health') {
             this.serveHealth(res);
+        }
+        else if (url.pathname === '/api/events') {
+            (0, sse_handler_js_1.handleSseEvents)(req, res);
         }
         else if (url.pathname.startsWith('/api/models')) {
             if (!(0, model_routes_js_1.handleModelRoute)(req, url, res, this.modelManager)) {

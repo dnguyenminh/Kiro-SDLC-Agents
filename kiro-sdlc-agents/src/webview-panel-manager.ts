@@ -17,13 +17,15 @@ import { DashboardPanel } from "./panels/dashboard-panel";
 import { TagsPanel } from "./panels/tags-panel";
 import { QualityPanel } from "./panels/quality-panel";
 import { AnalyticsPanel } from "./panels/analytics-panel";
+import { KbEventBus } from "./kb-event-bus";
 
 export class WebviewPanelManager implements IPanelManager, vscode.Disposable {
   private panels = new Map<PanelType, BasePanel>();
 
   constructor(
     private readonly mcpManager: McpServerManager,
-    private readonly extensionUri: vscode.Uri
+    private readonly extensionUri: vscode.Uri,
+    private readonly eventBus?: KbEventBus
   ) {}
 
   /**
@@ -102,11 +104,11 @@ export class WebviewPanelManager implements IPanelManager, vscode.Disposable {
       case "dashboard":
         return new DashboardPanel(this.mcpManager, this.extensionUri);
       case "tags":
-        return new TagsPanel(this.mcpManager, this.extensionUri);
+        return new TagsPanel(this.mcpManager, this.extensionUri, this.eventBus);
       case "quality":
-        return new QualityPanel(this.mcpManager, this.extensionUri);
+        return new QualityPanel(this.mcpManager, this.extensionUri, this.eventBus);
       case "analytics":
-        return new AnalyticsPanel(this.mcpManager, this.extensionUri);
+        return new AnalyticsPanel(this.mcpManager, this.extensionUri, this.eventBus);
     }
   }
 }
