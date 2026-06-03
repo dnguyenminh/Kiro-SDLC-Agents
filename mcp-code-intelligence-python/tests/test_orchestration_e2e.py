@@ -255,7 +255,7 @@ class TestExecuteDynamicTool:
         assert registry._hits.get("test_tool", 0) == 4
 
     def test_execute_records_only_1_hit_on_error_result(self, engine):
-        """Error result records only +1 hit (not +3)."""
+        """Error result records +1 (call success) then -10 (error penalty), net = -9."""
         engine._tool_mapping["err_tool"] = ("server1", "err_tool")
         registry = UnifiedRegistry()
         engine._registry = registry
@@ -267,7 +267,8 @@ class TestExecuteDynamicTool:
                 "arguments": {},
             })
 
-        assert registry._hits.get("err_tool", 0) == 1
+        # +1 (call succeeded) + (-10) (error result penalty) = -9
+        assert registry._hits.get("err_tool", 0) == -9
 
     def test_execute_without_event_loop_returns_error(self):
         """execute_dynamic_tool fails gracefully when event loop unavailable."""

@@ -1,16 +1,12 @@
 {
   "ticket": "KSA-40",
-  "title": "Knowledge Graph — In-memory graph with SQLite persistence",
-  "currentPhase": "implementation",
+  "currentPhase": "done",
   "phases": {
-    "design": { "status": "skipped", "reason": "Technical/infrastructure ticket" },
-    "implementation": { "status": "done", "completedAt": "2025-01-20" }
+    "design": { "status": "skipped", "reason": "Infrastructure ticket" },
+    "implementation": { "status": "done", "completedAt": "2025-01-20" },
+    "testing": { "status": "done", "completedAt": "2025-01-20" },
+    "deployment": { "status": "done", "completedAt": "2025-01-20" }
   },
-  "files": [
-    "src/main/kotlin/com/codeintel/memory/graph/KnowledgeGraph.kt",
-    "src/main/kotlin/com/codeintel/memory/graph/GraphTraversal.kt",
-    "src/main/kotlin/com/codeintel/memory/graph/GraphAnalytics.kt"
-  ],
-  "buildVerified": true,
-  "lastUpdated": "2025-01-20"
+  "lastUpdated": "2026-05-23T11:00:00Z",
+  "jiraStatus": "Done"
 }

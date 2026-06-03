@@ -324,6 +324,10 @@ async function handleCodeIndexStatus(
   for (const [lang, count] of Object.entries(status.languages)) {
     lines.push(`  ${lang}: ${count} files`);
   }
+  if (tsStats.unavailableGrammars.length > 0) {
+    lines.push('');
+    lines.push(`⚠️ Unavailable grammars (WASM missing — using regex fallback): ${tsStats.unavailableGrammars.join(', ')}`);
+  }
   return lines.join('\n');
 }
 
