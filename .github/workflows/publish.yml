@@ -69,6 +69,9 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+      - name: Sync version from tag
+        run: npm version ${{ needs.version-check.outputs.version }} --no-git-tag-version --allow-same-version
+        working-directory: mcp-code-intelligence-nodejs
       - run: npm ci
         working-directory: mcp-code-intelligence-nodejs
       - run: npm run build
@@ -144,6 +147,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Sync version from tag
+        run: npm version ${{ needs.version-check.outputs.version }} --no-git-tag-version --allow-same-version
       - run: npm ci
       - run: npm run copy-resources
       - run: npm run gen-checksums
