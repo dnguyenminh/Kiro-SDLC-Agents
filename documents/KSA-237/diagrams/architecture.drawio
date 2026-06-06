@@ -1,0 +1,84 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — kiro-ts Chat Proxy (KSA-237)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="MCP Code Intelligence Server (Node.js, port 9181)" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="140" y="60" width="600" height="450" as="geometry"/>
+    </mxCell>
+    <mxCell id="http_entry" value="&lt;b&gt;http-entry.js&lt;/b&gt;&#10;Request Router" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="330" y="90" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="chat_handler" value="&lt;b&gt;chat-handler.ts&lt;/b&gt;&#10;POST /v1/messages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="180" y="190" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="health_checker" value="&lt;b&gt;health-checker.ts&lt;/b&gt;&#10;GET /v1/health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="480" y="190" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_handler" value="&lt;b&gt;MCP JSON-RPC&lt;/b&gt;&#10;POST /mcp (unchanged)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="330" y="190" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="validator" value="&lt;b&gt;request-validator&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="160" y="290" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="auth_resolver" value="&lt;b&gt;auth-resolver&lt;/b&gt;&#10;API key / Kiro SSO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="310" y="290" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="sigv4_signer" value="&lt;b&gt;sigv4-signer&lt;/b&gt;&#10;HMAC-SHA256" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="480" y="290" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="stream_proxy" value="&lt;b&gt;stream-proxy&lt;/b&gt;&#10;SSE forwarding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="240" y="380" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="conv_store" value="&lt;b&gt;conversation-store&lt;/b&gt;&#10;Session + tool IDs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="420" y="380" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_kiro" value="&lt;b&gt;Kiro AI API&lt;/b&gt;&#10;(AWS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="820" y="290" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_anthropic" value="&lt;b&gt;Anthropic API&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="820" y="380" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_creds" value="&lt;b&gt;~/.aws/credentials&lt;/b&gt;" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="820" y="170" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_client" value="&lt;b&gt;Chat Panel&lt;/b&gt;&#10;Extension" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="90" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_client" target="http_entry" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="http_entry" target="chat_handler" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="http_entry" target="health_checker" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="validator" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="auth_resolver" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="auth_resolver" target="sigv4_signer" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="stream_proxy" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="conv_store" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="stream_proxy" target="ext_kiro" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="stream_proxy" target="ext_anthropic" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="auth_resolver" target="ext_creds" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

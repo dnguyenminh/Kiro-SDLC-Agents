@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSP injected by ChatPanelProvider.getHtml() at runtime -->
+    <link rel="stylesheet" href="chat.css">
+    <title>Chat Panel</title>
+</head>
+<body>
+    <div id="chat-root">
+        <div id="chat-header">
+            <span class="header-title">SDLC Pipeline</span>
+            <span id="status-indicator" class="status disconnected">disconnected</span>
+        </div>
+
+        <!-- Working status bar (Kiro-style) -->
+        <div id="working-bar">
+            <span class="working-label"><span id="working-text">Working...</span></span>
+            <div class="working-actions">
+                <button id="cancel-btn" title="Cancel">Cancel</button>
+                <button id="follow-btn" title="Follow output">Follow &#x1F441;</button>
+            </div>
+        </div>
+
+        <!-- Welcome / Empty State -->
+        <div id="welcome-state">
+            <h3>SDLC Pipeline Agent</h3>
+            <p>Ask a question or describe a task. Use ticket keys to trigger the full pipeline.</p>
+            <div class="welcome-suggestions">
+                <button data-cmd="KSA-XXX tao BRD">&#x1F4CB; Create BRD from ticket</button>
+                <button data-cmd="KSA-XXX tao FSD">&#x1F4D0; Create FSD from ticket</button>
+                <button data-cmd="status">&#x1F4CA; Show pipeline status</button>
+                <button data-cmd="resume">&#x25B6; Resume paused pipeline</button>
+            </div>
+        </div>
+
+        <!-- Chat messages -->
+        <div id="chat-messages" class="hidden"></div>
+
+        <!-- Input Area (Kiro-style) -->
+        <div id="chat-input-area">
+            <div id="input-context-chips"></div>
+            <div class="input-wrapper">
+                <textarea id="chat-input" placeholder="Ask a question or describe a task..." rows="1"></textarea>
+                <div id="input-attachments"></div>
+                <div class="input-toolbar">
+                    <div class="input-toolbar-left">
+                        <button class="toolbar-btn" id="ctx-btn" title="Add context (#)">#</button>
+                        <button class="toolbar-btn" id="attach-btn" title="Attach file">&#x1F4CE;</button>
+                        <button class="toolbar-btn" id="stop-btn" title="Stop" style="display:none;">&#x23F9;</button>
+                    </div>
+                    <div class="input-toolbar-right">
+                        <button class="model-selector" id="model-btn">
+                            <span id="model-label">Auto</span>
+                            <span class="model-chevron">&#x25BC;</span>
+                        </button>
+                        <div class="autopilot-toggle on" id="autopilot-toggle">
+                            <span class="toggle-label">Autopilot</span>
+                            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                        </div>
+                        <button id="send-btn" title="Send">&#x2191;</button>
+                    </div>
+                    <!-- Dropdowns (positioned absolute) -->
+                    <div class="model-dropdown hidden" id="model-dropdown">
+                        <button data-model="auto" class="active">Auto</button>
+                        <button data-model="claude-sonnet">Claude Sonnet</button>
+                        <button data-model="claude-haiku">Claude Haiku</button>
+                        <button data-model="gpt-4o">GPT-4o</button>
+                        <button data-model="ollama">Ollama (Local)</button>
+                        <button data-model="kiro">Kiro</button>
+                    </div>
+                    <div class="context-menu hidden" id="context-menu">
+                        <button data-ctx="file"><span class="ctx-icon">&#x1F4C4;</span> File</button>
+                        <button data-ctx="folder"><span class="ctx-icon">&#x1F4C1;</span> Folder</button>
+                        <button data-ctx="problems"><span class="ctx-icon">&#x26A0;</span> Problems</button>
+                        <button data-ctx="gitDiff"><span class="ctx-icon">&#x1F500;</span> Git Diff</button>
+                        <button data-ctx="terminal"><span class="ctx-icon">&#x1F4BB;</span> Terminal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="markdown-renderer.js"></script>
+    <script src="graph-viz.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>

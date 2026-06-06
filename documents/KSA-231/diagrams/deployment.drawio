@@ -1,0 +1,57 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-231 — Deployment Architecture&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="320" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_vscode" value="VS Code Application" style="rounded=1;dashed=0;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;html=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="480" height="400" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_ext_host" value="Extension Host Process (Node.js 18+)" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#82b366;verticalAlign=top;fontSize=11;html=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="100" width="440" height="280" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_kiro" value="&lt;b&gt;kiro-sdlc-agents&lt;/b&gt;&#10;Extension (~2MB VSIX)&#10;&#10;KiroClient + TokenManager&#10;+ AnthropicAdapter + StreamHandler&#10;+ ModelRegistry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="80" y="140" width="240" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_other" value="&lt;b&gt;Other Extensions&lt;/b&gt;&#10;(unaffected)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="140" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="settings" value="&lt;b&gt;VS Code Settings&lt;/b&gt;&#10;kiroSdlc.llmProvider: &quot;kiro&quot;&#10;kiroSdlc.kiroModel: &quot;deepseek-r1&quot;&#10;kiroSdlc.kiroRegion: &quot;&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="80" y="290" width="260" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="output_ch" value="&lt;b&gt;Output Channel&lt;/b&gt;&#10;&quot;Kiro API Client&quot;&#10;(logs, no secrets)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="360" y="290" width="150" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="status_bar" value="&lt;b&gt;Status Bar&lt;/b&gt;&#10;$(check) Kiro: Connected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="400" width="200" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="fs_cache" value="&lt;b&gt;~/.aws/sso/cache/&lt;/b&gt;&#10;*.json credential files&#10;(read + write-back)" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="600" y="80" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="net_sso" value="&lt;b&gt;AWS SSO OIDC&lt;/b&gt;&#10;oidc.{region}.amazonaws.com&#10;HTTPS (port 443)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="600" y="200" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="net_kiro" value="&lt;b&gt;Kiro API&lt;/b&gt;&#10;kiro.api.{region}.amazonaws.com&#10;HTTPS (port 443) + SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="600" y="310" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="marketplace" value="&lt;b&gt;VS Code Marketplace&lt;/b&gt;&#10;Extension distribution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="600" y="420" width="180" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="fs.readFile / writeFile" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_kiro" target="fs_cache" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="fetch (HTTPS)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_kiro" target="net_sso" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="fetch (HTTPS + SSE)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_kiro" target="net_kiro" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="install/update" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="pkg_vscode" target="marketplace" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="read/write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="ext_kiro" target="settings" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

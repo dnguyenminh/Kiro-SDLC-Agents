@@ -1,0 +1,9 @@
+test_case_id,stored_tool_use_ids,continuation_tool_use_id,expected_http_code,expected_error_code,expected_error_message,description
+UT-03,tooluse_MATCH001,tooluse_MATCH001,200,,Match found — continuation succeeds,Happy path continuation matching
+UT-07,"tooluse_STORED1,tooluse_STORED2",tooluse_WRONG,400,TOOL_USE_ID_NOT_FOUND,"tool_use_id 'tooluse_WRONG' not found in conversation history. Available IDs: [tooluse_STORED1, tooluse_STORED2]",Mismatch — diagnostic error
+UT-08,tooluse_ONLY_ONE,tooluse_FAKE,400,TOOL_USE_ID_NOT_FOUND,"tool_use_id 'tooluse_FAKE' not found in conversation history. Available IDs: [tooluse_ONLY_ONE]",Descriptive error not generic 400
+UT-12,,tooluse_ANY,400,TOOL_USE_ID_NOT_FOUND,"tool_use_id 'tooluse_ANY' not found in conversation history. Available IDs: []",Empty history — helpful diagnostic
+IT-01,tooluse_IT01,tooluse_IT01,200,,Full loop integration match,Integration test — match success
+IT-03,tooluse_CORRECT,tooluse_WRONG,400,TOOL_USE_ID_NOT_FOUND,"tool_use_id 'tooluse_WRONG' not found in conversation history. Available IDs: [tooluse_CORRECT]",Integration mismatch flow
+E2E-API-01,tooluse_E2E01,tooluse_E2E01,200,,E2E HTTP full loop success,End-to-end continuation
+E2E-API-03,tooluse_REAL_ID,tooluse_FAKE_ID,400,TOOL_USE_ID_NOT_FOUND,"received_id: tooluse_FAKE_ID available_ids: [tooluse_REAL_ID]",E2E diagnostic error verification

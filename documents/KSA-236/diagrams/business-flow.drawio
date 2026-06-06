@@ -1,0 +1,90 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Business Flow — ReAct Tool Loop (KSA-236)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_ext" value="VS Code Extension" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f4f8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="50" width="1100" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="lane_ext">
+      <mxGeometry x="130" y="55" width="40" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="p1" value="User sends&#10;chatWithTools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="lane_ext">
+      <mxGeometry x="210" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p7" value="Execute Tool&#10;Locally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="lane_ext">
+      <mxGeometry x="770" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p8" value="Send Continuation&#10;with toolUseId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="lane_ext">
+      <mxGeometry x="940" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_kiro" value="kiro-ts Converter" style="swimlane;horizontal=0;startSize=110;fillColor=#fff0e6;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="200" width="1100" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="p2" value="Convert to&#10;Kiro Q Format" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="210" y="50" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p4" value="Receive Response&#10;with tool_use_id" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="490" y="50" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p5" value="Store SAME ID&#10;in History" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="660" y="50" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p6" value="Stream Response&#10;(SAME tool_use_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="660" y="100" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="d1" value="ID Match?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="940" y="40" width="100" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_api" value="Kiro Q API" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f5e9;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="360" width="1100" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="p3" value="Process Request&#10;Generate tool_use" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_api">
+      <mxGeometry x="350" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="p10" value="Process&#10;Continuation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_api">
+      <mxGeometry x="940" y="45" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="end_ok" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="lane_api">
+      <mxGeometry x="1040" y="45" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="err" value="400 Error&#10;(MISMATCH)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="940" y="130" width="120" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_start_p1" edge="1" parent="lane_ext" source="start" target="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p1_p2" edge="1" parent="1" source="p1" target="p2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p2_p3" edge="1" parent="1" source="p2" target="p3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p3_p4" edge="1" parent="1" source="p3" target="p4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p4_p5" edge="1" parent="lane_kiro" source="p4" target="p5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p5_p6" edge="1" parent="lane_kiro" source="p5" target="p6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p6_p7" edge="1" parent="1" source="p6" target="p7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p7_p8" edge="1" parent="lane_ext" source="p7" target="p8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p8_d1" edge="1" parent="1" source="p8" target="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_d1_p10" value="Yes" edge="1" parent="1" source="d1" target="p10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_d1_err" value="No" edge="1" parent="lane_kiro" source="d1" target="err" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

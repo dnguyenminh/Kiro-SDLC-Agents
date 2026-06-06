@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fde4-10da-6df0-8002-5addd2043671",
+    "ts": "2026-06-04T06:26:00.399Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "81b488fe-eb29-4aaa-8f5a-5d023a5539fc",
+      "currentPhase": "all",
+      "intent": "sdlc",
+      "pipelineStatus": "paused",
+      "resumePoint": null,
+      "documents": {
+        "fsd": {
+          "status": "done",
+          "version": 1,
+          "path": "documents//FSD.md",
+          "completedAt": "2026-06-04T06:26:00.341Z"
+        }
+      },
+      "agentOutputs": [
+        {
+          "nodeId": "sm",
+          "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+          "timestamp": "2026-06-04T06:25:28.520Z",
+          "metadata": {
+            "phase": "all",
+            "ticketKey": ""
+          }
+        },
+        {
+          "nodeId": "ba_brd",
+          "content": "```markdown\n# Functional Specification Document (FSD) for Ticket\n\n## Table of Contents\n1. [Use Cases](#use-cases)\n2. [Business Rules](#business-rules-table-br-ids)\n3. [Data Specifications](#data-specifications)\n4. [UI Specifications](#ui-specifications)\n5. [API Specifications](#api-specifications)\n6. [Error Handling](#error-handling)\n7. [System Integration Points](#system-integration-points)\n\n---\n\n## Use Cases\n\n### Main Flow\n1. **As a user**, I want to read ticket KSA-200 so that I can understand its current status and details.\n   - **Precondition**: User is logged in with appropriate permissions.\n   - **Step 1**: The system displays the header information of the ticket (e.g., Ticket ID: KSA-200).\n   - **Step 2**: The system fetches and displays the title, description, assigned to, status, and other relevant details of the ticket.\n   - **Step 3**: The user can view or download any attachments associated with the ticket.\n\n### Alternative Flows\n1. **As a user**, I want to read multiple tickets at once so that I can compare their statuses.\n   - **Step 1**: The system prompts the user to input up to three additional ticket IDs (e.g., KSA-201, KSA-202).\n   - **Step 2**: The system fetches and displays all selected tickets in a tabular format.\n\n### Exception Flows\n1. **As a user**, I want to read a non-existent ticket so that I can be notified.\n   - **Step 1**: The user inputs an invalid or non-existent ticket ID (e.g., KSA-999).\n   - **Step 2**: The system displays an error message indicating the ticket does not exist.\n\n---\n\n## Business Rules Table (BR- IDs)\n\n| BR-ID | Rule Description                                                                                          |\n|-------|------------------------------------------------------------------------------------------------------------|\n| BR-01 | Users must be authenticated and have appropriate permissions to view a ticket.                              |\n| BR-02 | The system should handle up to three additional tickets for comparison at once.                             |\n| BR-03 | If multiple tickets are requested, the system displays them in a tabular format.                            |\n| BR-04 | The system must validate that the inputted ticket ID is valid and exists in the database before displaying it. |\n\n---\n\n## Data Specifications\n\n| Field          | Data Type  | Constraints                        | Example           |\n|----------------|------------|------------------------------------|-------------------|\n| Ticket ID      | String     | Must match pattern \"KSA-\\d{3,4}\"   | KSA-200, KSA-999   |\n| Title          | String     | Max 150 characters                 | High Priority Issue |\n| Description    | Text       | No specific limits                | Detailed description...  |\n| Assigned To    | User ID    | Must be a valid user in the system | USER-001           |\n| Status         | Enum       | Open, In Progress, Resolved, Closed| Open              |\n| Created By     | User ID    | Valid user must exist in the system| USER-002           |\n| Created Date   | Timestamp  | Not editable after creation        | 2023-10-05T14:30:00 |\n\n---\n\n## UI Specifications\n\n### Header Section\n- **Elements**: Ticket ID, Title\n- **Layout**: Displayed at the top of the ticket view.\n\n### Main Content Section\n- **Fields**:\n  - Description\n  - Assigned To (display username)\n  - Status\n  - Created By\n  - Created Date\n- **Actions**:\n  - View/Download attachments button\n\n### Additional Tickets Comparison Table\n- When multiple tickets are selected, a table is displayed with the following columns:\n  - Ticket ID\n  - Title\n  - Status\n  - Assigned To (username)\n  - Created By\n  - Created Date\n- **Actions**:\n  - Selection check boxes for each row\n\n---\n\n## API Specifications\n\n### GET /tickets/:id\n- **Endpoint**: GET /tickets/{ticket_id}\n- **Request Parameters**: \n  - `ticket_id`: String, required (e.g., \"KSA-200\")\n- **Response**:\n  - `200 OK`: Returns the ticket details.\n  - `401 Unauthorized`: If user is not authenticated or lacks permission.\n  - `404 Not Found`: If the specified ticket ID does not exist.\n\n### GET /tickets/:id/multiple\n- **Endpoint**: POST /tickets/multiple\n- **Request Parameters**:\n  - `ticket_ids[]`: Array of strings (e.g., [\"KSA-200\", \"KSA-201\"])\n- **Response**:\n  - `200 OK`: Returns a table with the requested tickets.\n  - `401 Unauthorized`: If user is not authenticated or lacks permission.\n\n---\n\n## Error Handling\n\n| Error Code | Description                | Response Example                                                                 |\n|------------|----------------------------|----------------------------------------------------------------------------------|\n| 401        | Unauthorized               | {\"error\": \"Unauthorized. Please log in.\"}                                        |\n| 403        | Forbidden                  | {\"error\": \"You do not have permission to view this ticket.\"}                     |\n| 404        | Not Found                  | {\"error\": \"Ticket with ID KSA-999 does not exist.\"}                              |\n\n---\n\n## System Integration Points\n\n1. **User Authentication Service**: To validate user permissions.\n2. **Database**: For fetching and storing ticket data.\n3. **Notification Service**: If the status of a ticket changes, notify relevant stakeholders.\n\n---\n\n**Author:** [Your Name]  \n**Date:** [Today's Date]\n```\n\nThis FSD document provides comprehensive details on how to implement reading a ticket in an application, including use cases, business rules, data specifications, UI and API descriptions, error handling, and system integration points.",
+          "timestamp": "2026-06-04T06:26:00.341Z",
+          "metadata": {
+            "docType": "FSD",
+            "phase": "all",
+            "usedLlm": true
+          }
+        }
+      ],
+      "currentStreamId": "stream-81b488fe-eb29-4aaa-8f5a-5d023a5539fc-1780554322650",
+      "approvalRequired": true,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [
+        {
+          "gateId": "QG-01",
+          "phase": "requirements",
+          "nodeId": "quality_gate_requirements",
+          "summary": "Quality gate for requirements phase — ",
+          "criteria": [
+            "BRD.md exists",
+            ">=3 User Stories with Acceptance Criteria",
+            "Business Flow Diagram (.drawio + .png)",
+            "Use Case Diagram (.drawio + .png)",
+            "Dependencies section present",
+            "Non-Functional Requirements defined"
+          ],
+          "timestamp": "2026-06-04T06:26:00.358Z"
+        }
+      ],
+      "chatHistory": [
+        {
+          "id": "d263084a-5270-406a-852b-91e24a95f490",
+          "role": "user",
+          "content": "Đọc ticket KSA-200",
+          "timestamp": "2026-06-04T06:25:22.650Z"
+        },
+        {
+          "id": "d263084a-5270-406a-852b-91e24a95f490",
+          "role": "user",
+          "content": "Đọc ticket KSA-200",
+          "timestamp": "2026-06-04T06:25:22.650Z"
+        },
+        {
+          "id": "d263084a-5270-406a-852b-91e24a95f490",
+          "role": "user",
+          "content": "Đọc ticket KSA-200",
+          "timestamp": "2026-06-04T06:25:22.650Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T06:25:22.650Z",
+      "lastUpdatedAt": "2026-06-04T06:26:00.358Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {
+        "requirements": {
+          "passed": false,
+          "issues": []
+        }
+      },
+      "toolCalls": null,
+      "toolResults": [],
+      "agentIterations": 0
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:sdlc_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4,
+      "toolCalls": 4,
+      "toolResults": 4,
+      "agentIterations": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "sdlc_subgraph": {
+        "branch:to:sdlc_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "sdlc_subgraph": {
+        "threadId": "81b488fe-eb29-4aaa-8f5a-5d023a5539fc",
+        "currentPhase": "all",
+        "intent": "sdlc",
+        "pipelineStatus": "paused",
+        "resumePoint": null,
+        "documents": {
+          "fsd": {
+            "status": "done",
+            "version": 1,
+            "path": "documents//FSD.md",
+            "completedAt": "2026-06-04T06:26:00.341Z"
+          }
+        },
+        "agentOutputs": [
+          {
+            "nodeId": "sm",
+            "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+            "timestamp": "2026-06-04T06:25:28.520Z",
+            "metadata": {
+              "phase": "all",
+              "ticketKey": ""
+            }
+          },
+          {
+            "nodeId": "ba_brd",
+            "content": "```markdown\n# Functional Specification Document (FSD) for Ticket\n\n## Table of Contents\n1. [Use Cases](#use-cases)\n2. [Business Rules](#business-rules-table-br-ids)\n3. [Data Specifications](#data-specifications)\n4. [UI Specifications](#ui-specifications)\n5. [API Specifications](#api-specifications)\n6. [Error Handling](#error-handling)\n7. [System Integration Points](#system-integration-points)\n\n---\n\n## Use Cases\n\n### Main Flow\n1. **As a user**, I want to read ticket KSA-200 so that I can understand its current status and details.\n   - **Precondition**: User is logged in with appropriate permissions.\n   - **Step 1**: The system displays the header information of the ticket (e.g., Ticket ID: KSA-200).\n   - **Step 2**: The system fetches and displays the title, description, assigned to, status, and other relevant details of the ticket.\n   - **Step 3**: The user can view or download any attachments associated with the ticket.\n\n### Alternative Flows\n1. **As a user**, I want to read multiple tickets at once so that I can compare their statuses.\n   - **Step 1**: The system prompts the user to input up to three additional ticket IDs (e.g., KSA-201, KSA-202).\n   - **Step 2**: The system fetches and displays all selected tickets in a tabular format.\n\n### Exception Flows\n1. **As a user**, I want to read a non-existent ticket so that I can be notified.\n   - **Step 1**: The user inputs an invalid or non-existent ticket ID (e.g., KSA-999).\n   - **Step 2**: The system displays an error message indicating the ticket does not exist.\n\n---\n\n## Business Rules Table (BR- IDs)\n\n| BR-ID | Rule Description                                                                                          |\n|-------|------------------------------------------------------------------------------------------------------------|\n| BR-01 | Users must be authenticated and have appropriate permissions to view a ticket.                              |\n| BR-02 | The system should handle up to three additional tickets for comparison at once.                             |\n| BR-03 | If multiple tickets are requested, the system displays them in a tabular format.                            |\n| BR-04 | The system must validate that the inputted ticket ID is valid and exists in the database before displaying it. |\n\n---\n\n## Data Specifications\n\n| Field          | Data Type  | Constraints                        | Example           |\n|----------------|------------|------------------------------------|-------------------|\n| Ticket ID      | String     | Must match pattern \"KSA-\\d{3,4}\"   | KSA-200, KSA-999   |\n| Title          | String     | Max 150 characters                 | High Priority Issue |\n| Description    | Text       | No specific limits                | Detailed description...  |\n| Assigned To    | User ID    | Must be a valid user in the system | USER-001           |\n| Status         | Enum       | Open, In Progress, Resolved, Closed| Open              |\n| Created By     | User ID    | Valid user must exist in the system| USER-002           |\n| Created Date   | Timestamp  | Not editable after creation        | 2023-10-05T14:30:00 |\n\n---\n\n## UI Specifications\n\n### Header Section\n- **Elements**: Ticket ID, Title\n- **Layout**: Displayed at the top of the ticket view.\n\n### Main Content Section\n- **Fields**:\n  - Description\n  - Assigned To (display username)\n  - Status\n  - Created By\n  - Created Date\n- **Actions**:\n  - View/Download attachments button\n\n### Additional Tickets Comparison Table\n- When multiple tickets are selected, a table is displayed with the following columns:\n  - Ticket ID\n  - Title\n  - Status\n  - Assigned To (username)\n  - Created By\n  - Created Date\n- **Actions**:\n  - Selection check boxes for each row\n\n---\n\n## API Specifications\n\n### GET /tickets/:id\n- **Endpoint**: GET /tickets/{ticket_id}\n- **Request Parameters**: \n  - `ticket_id`: String, required (e.g., \"KSA-200\")\n- **Response**:\n  - `200 OK`: Returns the ticket details.\n  - `401 Unauthorized`: If user is not authenticated or lacks permission.\n  - `404 Not Found`: If the specified ticket ID does not exist.\n\n### GET /tickets/:id/multiple\n- **Endpoint**: POST /tickets/multiple\n- **Request Parameters**:\n  - `ticket_ids[]`: Array of strings (e.g., [\"KSA-200\", \"KSA-201\"])\n- **Response**:\n  - `200 OK`: Returns a table with the requested tickets.\n  - `401 Unauthorized`: If user is not authenticated or lacks permission.\n\n---\n\n## Error Handling\n\n| Error Code | Description                | Response Example                                                                 |\n|------------|----------------------------|----------------------------------------------------------------------------------|\n| 401        | Unauthorized               | {\"error\": \"Unauthorized. Please log in.\"}                                        |\n| 403        | Forbidden                  | {\"error\": \"You do not have permission to view this ticket.\"}                     |\n| 404        | Not Found                  | {\"error\": \"Ticket with ID KSA-999 does not exist.\"}                              |\n\n---\n\n## System Integration Points\n\n1. **User Authentication Service**: To validate user permissions.\n2. **Database**: For fetching and storing ticket data.\n3. **Notification Service**: If the status of a ticket changes, notify relevant stakeholders.\n\n---\n\n**Author:** [Your Name]  \n**Date:** [Today's Date]\n```\n\nThis FSD document provides comprehensive details on how to implement reading a ticket in an application, including use cases, business rules, data specifications, UI and API descriptions, error handling, and system integration points.",
+            "timestamp": "2026-06-04T06:26:00.341Z",
+            "metadata": {
+              "docType": "FSD",
+              "phase": "all",
+              "usedLlm": true
+            }
+          }
+        ],
+        "currentStreamId": "stream-81b488fe-eb29-4aaa-8f5a-5d023a5539fc-1780554322650",
+        "approvalRequired": true,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [
+          {
+            "gateId": "QG-01",
+            "phase": "requirements",
+            "nodeId": "quality_gate_requirements",
+            "summary": "Quality gate for requirements phase — ",
+            "criteria": [
+              "BRD.md exists",
+              ">=3 User Stories with Acceptance Criteria",
+              "Business Flow Diagram (.drawio + .png)",
+              "Use Case Diagram (.drawio + .png)",
+              "Dependencies section present",
+              "Non-Functional Requirements defined"
+            ],
+            "timestamp": "2026-06-04T06:26:00.358Z"
+          }
+        ],
+        "chatHistory": [
+          {
+            "id": "d263084a-5270-406a-852b-91e24a95f490",
+            "role": "user",
+            "content": "Đọc ticket KSA-200",
+            "timestamp": "2026-06-04T06:25:22.650Z"
+          },
+          {
+            "id": "d263084a-5270-406a-852b-91e24a95f490",
+            "role": "user",
+            "content": "Đọc ticket KSA-200",
+            "timestamp": "2026-06-04T06:25:22.650Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T06:25:22.650Z",
+        "lastUpdatedAt": "2026-06-04T06:26:00.358Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {
+          "requirements": {
+            "passed": false,
+            "issues": []
+          }
+        },
+        "toolCalls": null,
+        "toolResults": [],
+        "agentIterations": 0
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T06:25:22.653Z",
+  "lastModified": "2026-06-04T06:26:00.408Z"
+}

@@ -1,0 +1,51 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — kiro-ts Module (KSA-237)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_kirots" value="&lt;b&gt;kiro-ts module&lt;/b&gt;" style="swimlane;startSize=24;fillColor=#dae8fc;strokeColor=#6c8ebf;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="700" height="400" as="geometry"/>
+    </mxCell>
+    <mxCell id="chat_handler" value="&lt;b&gt;ChatHandler&lt;/b&gt;&#10;handleChatRoute()&#10;processChatRequest()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="250" y="50" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="req_validator" value="&lt;b&gt;RequestValidator&lt;/b&gt;&#10;validateRequest()&#10;validateToolResult()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="40" y="150" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="auth_resolver" value="&lt;b&gt;AuthResolver&lt;/b&gt;&#10;resolveAuth()&#10;readKiroCredentials()&#10;readAwsCredentials()&#10;refreshToken()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="250" y="150" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="sigv4" value="&lt;b&gt;SigV4Signer&lt;/b&gt;&#10;sign()&#10;createCanonicalRequest()&#10;calculateSignature()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="470" y="150" width="190" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="stream_proxy" value="&lt;b&gt;StreamProxy&lt;/b&gt;&#10;proxyStream()&#10;forwardEvents()&#10;handleDisconnect()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="40" y="280" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="conv_store" value="&lt;b&gt;ConversationStore&lt;/b&gt;&#10;getOrCreate()&#10;addMessage()&#10;findToolUse()&#10;addToolResult()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="250" y="280" width="180" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="health" value="&lt;b&gt;HealthChecker&lt;/b&gt;&#10;check()&#10;checkCredentials()&#10;checkConnectivity()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="pkg_kirots">
+      <mxGeometry x="470" y="280" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="req_validator" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="auth_resolver" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="sigv4" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="stream_proxy" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="chat_handler" target="conv_store" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="health" target="auth_resolver" parent="pkg_kirots">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

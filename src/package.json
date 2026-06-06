@@ -1,0 +1,23 @@
+{
+  "name": "kiro-ts-anthropic",
+  "version": "1.0.0",
+  "description": "kiro-ts Anthropic converter module - tool_use_id passthrough fix (KSA-236)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "pino": "^9.2.0"
+  }
+}

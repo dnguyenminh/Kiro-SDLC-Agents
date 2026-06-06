@@ -1,0 +1,105 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Deployment Flow - KSA-236&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="360" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="60" width="80" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="checkout" value="Git Checkout&#10;Branch KSA-236" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="140" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="install" value="npm install" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="240" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="test" value="npm run test&#10;(22 tests)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="340" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="test_check" value="Tests Pass?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="440" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="build" value="npm run build&#10;(tsc)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="570" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="stop_svc" value="Stop Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="670" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="deploy" value="Deploy Artifact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="770" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="start_svc" value="Start Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="870" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="health" value="Health Check&#10;GET /health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="970" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="health_check" value="Health OK?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="1070" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="smoke" value="Smoke Test&#10;(Tool Calling)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="1200" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="smoke_check" value="Smoke Pass?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="1300" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="success" value="SUCCESS" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="1430" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="abort" value="ABORT&#10;Fix Tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="580" y="450" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="rollback" value="ROLLBACK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="580" y="1160" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="start" target="checkout">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="checkout" target="install">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="install" target="test">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="test" target="test_check">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="test_check" target="build">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="test_check" target="abort">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="build" target="stop_svc">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="stop_svc" target="deploy">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="deploy" target="start_svc">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="start_svc" target="health">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="health" target="health_check">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e12" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="health_check" target="smoke">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e13" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="health_check" target="rollback">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="smoke" target="smoke_check">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="smoke_check" target="success">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e16" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="smoke_check" target="rollback">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

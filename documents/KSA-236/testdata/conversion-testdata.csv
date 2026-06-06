@@ -1,0 +1,11 @@
+test_case_id,input_tool_use_id,input_tool_name,input_json,expected_output_id,expected_result,description
+PBT-01,tooluse_ABC123,readFile,"{""path"":""/src/main.rs""}",tooluse_ABC123,OK — ID unchanged,Valid passthrough — standard ID
+PBT-01,tooluse_aZ09bC,grep_search,"{""query"":""test""}",tooluse_aZ09bC,OK — ID unchanged,Alphanumeric ID preserved
+PBT-01,tooluse_LongId12345678901234567890,readFile,"{""path"":""/x""}",tooluse_LongId12345678901234567890,OK — ID unchanged,Long ID preserved
+UT-01,tooluse_ABC123,readFile,"{""path"":""/src/main.rs""}",tooluse_ABC123,Ok(SseContentBlock::ToolUse),Standard conversion — happy path
+UT-04,,readFile,"{""path"":""/src""}",N/A,Err(ConversionError::EmptyToolUseId),Empty string ID — validation error
+UT-05,MISSING_FIELD,readFile,"{""path"":""/src""}",N/A,Err(ConversionError::MissingIdField),No id field in JSON — rejection
+UT-06,tooluse_AAA,readFile,"{""path"":""/a""}",tooluse_AAA,OK,Multi-block first ID
+UT-06,tooluse_BBB,grep_search,"{""query"":""b""}",tooluse_BBB,OK,Multi-block second ID
+UT-06,tooluse_CCC,execute_pwsh,"{""command"":""c""}",tooluse_CCC,OK,Multi-block third ID
+UT-10,tooluse_REGRESSION_CHECK,readFile,"{""path"":""/reg""}",tooluse_REGRESSION_CHECK,OK — deterministic 100x,Regression — same output every time

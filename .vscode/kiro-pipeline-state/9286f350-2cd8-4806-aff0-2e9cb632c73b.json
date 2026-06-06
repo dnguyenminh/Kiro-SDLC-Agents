@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fe88-b84e-65b0-8002-d98c3489750f",
+    "ts": "2026-06-04T07:39:40.299Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "9286f350-2cd8-4806-aff0-2e9cb632c73b",
+      "currentPhase": "all",
+      "intent": "sdlc",
+      "pipelineStatus": "paused",
+      "resumePoint": null,
+      "documents": {
+        "fsd": {
+          "status": "done",
+          "version": 1,
+          "path": "documents//FSD.md",
+          "completedAt": "2026-06-04T07:39:40.243Z"
+        }
+      },
+      "agentOutputs": [
+        {
+          "nodeId": "sm",
+          "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+          "timestamp": "2026-06-04T07:38:55.175Z",
+          "metadata": {
+            "phase": "all",
+            "ticketKey": ""
+          }
+        },
+        {
+          "nodeId": "ba_brd",
+          "content": "```markdown\n# Functional Specification Document (FSD) for Ticket KSA-210\n\n## 1. Use Cases\n\n### Main Flows\n**UC-001: Create Ticket**  \nUser submits a new ticket with required details (subject, description, priority, category).  \n**UC-002: View Ticket List**  \nUser accesses the ticket dashboard to see all open/closed tickets with filters.  \n**UC-003: Update Ticket Status**  \nUser modifies ticket status (e.g., \"In Progress\", \"Resolved\") and adds comments.  \n**UC-004: Close Ticket**  \nUser marks a ticket as closed and provides resolution notes.  \n\n### Alternative Flows\n**UC-005: Edit Ticket After Creation**  \nUser modifies ticket details (subject, description, priority) within 24 hours of creation.  \n**UC-006: Assign Ticket to Agent**  \nUser selects an agent from a dropdown list to assign the ticket.  \n\n### Exception Flows\n**UC-007: Invalid Ticket Creation**  \nUser submits a ticket missing required fields (subject/description).  \n**UC-008: System Error During Update**  \nUser attempts to update a ticket while the system is unavailable.  \n\n---\n\n## 2. Business Rules (BR-IDs)\n\n| BR-ID | Rule Description |\n|-------|------------------|\n| BR-001 | All tickets must include a subject, description, and priority. |\n| BR-002 | Priority levels are predefined: Low, Medium, High. |\n| BR-003 | Tickets are automatically assigned to agents based on category. |\n| BR-004 | Closed tickets cannot be edited. |\n| BR-005 | Users can only edit tickets they created within 24 hours. |\n| BR-006 | Notifications are sent to assigned agents upon ticket creation. |\n\n---\n\n## 3. Data Specifications\n\n### Entities\n**Ticket**  \n- `ticket_id` (PK, UUID)  \n- `subject` (string, 255 chars)  \n- `description` (text)  \n- `priority` (enum: Low/Medium/High)  \n- `category` (string, 255 chars)  \n- `status` (enum: Open/In Progress/Resolved/Closed)  \n- `created_at` (timestamp)  \n- `updated_at` (timestamp)  \n- `assigned_agent` (FK to User)  \n- `resolved_at` (timestamp, nullable)  \n\n**User**  \n- `user_id` (PK, UUID)  \n- `name` (string)  \n- `email` (string, unique)  \n- `role` (enum: Customer/Agent/Admin)  \n\n**Agent**  \n- `agent_id` (PK, UUID)  \n- `user_id` (FK to User)  \n- `availability` (boolean)  \n\n---\n\n## 4. UI Specifications\n\n### Ticket Creation Page\n- **Form Fields**:  \n  - Subject (required)  \n  - Description (required)  \n  - Priority (dropdown)  \n  - Category (dropdown)  \n  - Submit Button  \n- **Validation**: Red border and error messages for missing fields.  \n\n### Ticket List Page\n- **Table Columns**:  \n  - Ticket ID  \n  - Subject  \n  - Priority  \n  - Category  \n  - Status  \n  - Created At  \n  - Actions (Edit/Delete)  \n- **Filters**: Priority, Category, Status.  \n\n### Ticket Details Page\n- **Read-Only Fields**: Subject, Description, Priority, Category, Status.  \n- **Editable Fields**: Status (dropdown), Comments (textarea).  \n- **Buttons**: Update Status, Close Ticket.  \n\n---\n\n## 5. API Specifications\n\n### Endpoints\n**POST /api/tickets**  \n- **Request Body**:  \n  ```json\n  {\n    \"subject\": \"Server Down\",\n    \"description\": \"The server is unresponsive.\",\n    \"priority\": \"High\",\n    \"category\": \"Technical\"\n  }\n  ```  \n- **Response**:  \n  ```json\n  {\n    \"ticket_id\": \"TICKET-123\",\n    \"status\": \"Open\",\n    \"created_at\": \"2023-10-05T10:00:00Z\"\n  }\n  ```  \n\n**GET /api/tickets**  \n- **Query Parameters**: `status`, `priority`, `category`  \n- **Response**: List of tickets with basic details.  \n\n**PUT /api/tickets/{ticket_id}/status**  \n- **Request Body**:  \n  ```json\n  {\n    \"status\": \"Resolved\",\n    \"resolution_notes\": \"Issue resolved via reboot.\"\n  }\n  ```  \n\n---\n\n## 6. Error Handling\n\n| Error Code | Description | HTTP Status |\n|------------|-------------|-------------|\n| 400-BR001 | Missing required fields (subject/description) | 400 Bad Request |\n| 403-BR005 | User cannot edit tickets created >24 hours ago | 403 Forbidden |\n| 500-BR008 | System error during ticket update | 500 Internal Server Error |\n| 404-BR004 | Ticket not found | 404 Not Found |\n\n---\n\n## 7. System Integration Points\n\n1. **User Authentication**: Integrated with existing authentication service (OAuth2).  \n2. **Notification System**: Sends email/SMS alerts to agents on ticket assignment.  \n3. **Reporting Module**: Syncs ticket data to analytics dashboard for performance tracking.  \n4. **Third-Party Ticket Categorization**: Uses NLP API to auto-categorize tickets based on description.  \n\n--- \n\n**Document Version**: 1.0  \n**Author**: Business Analyst  \n**Date**: 2023-10-05  \n**Dependencies**: User Authentication Service, Notification API, Reporting Module  \n```",
+          "timestamp": "2026-06-04T07:39:40.243Z",
+          "metadata": {
+            "docType": "FSD",
+            "phase": "all",
+            "usedLlm": true
+          }
+        }
+      ],
+      "currentStreamId": "stream-9286f350-2cd8-4806-aff0-2e9cb632c73b-1780558719462",
+      "approvalRequired": true,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [
+        {
+          "gateId": "QG-01",
+          "phase": "requirements",
+          "nodeId": "quality_gate_requirements",
+          "summary": "Quality gate for requirements phase — ",
+          "criteria": [
+            "BRD.md exists",
+            ">=3 User Stories with Acceptance Criteria",
+            "Business Flow Diagram (.drawio + .png)",
+            "Use Case Diagram (.drawio + .png)",
+            "Dependencies section present",
+            "Non-Functional Requirements defined"
+          ],
+          "timestamp": "2026-06-04T07:39:40.260Z"
+        }
+      ],
+      "chatHistory": [
+        {
+          "id": "a35d0d9c-b16c-4e11-a249-fde8329658ad",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T07:38:39.463Z"
+        },
+        {
+          "id": "a35d0d9c-b16c-4e11-a249-fde8329658ad",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T07:38:39.463Z"
+        },
+        {
+          "id": "a35d0d9c-b16c-4e11-a249-fde8329658ad",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T07:38:39.463Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T07:38:39.463Z",
+      "lastUpdatedAt": "2026-06-04T07:39:40.260Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {
+        "requirements": {
+          "passed": false,
+          "issues": []
+        }
+      },
+      "toolCalls": null,
+      "toolResults": [],
+      "agentIterations": 0
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:sdlc_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4,
+      "toolCalls": 4,
+      "toolResults": 4,
+      "agentIterations": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "sdlc_subgraph": {
+        "branch:to:sdlc_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "sdlc_subgraph": {
+        "threadId": "9286f350-2cd8-4806-aff0-2e9cb632c73b",
+        "currentPhase": "all",
+        "intent": "sdlc",
+        "pipelineStatus": "paused",
+        "resumePoint": null,
+        "documents": {
+          "fsd": {
+            "status": "done",
+            "version": 1,
+            "path": "documents//FSD.md",
+            "completedAt": "2026-06-04T07:39:40.243Z"
+          }
+        },
+        "agentOutputs": [
+          {
+            "nodeId": "sm",
+            "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+            "timestamp": "2026-06-04T07:38:55.175Z",
+            "metadata": {
+              "phase": "all",
+              "ticketKey": ""
+            }
+          },
+          {
+            "nodeId": "ba_brd",
+            "content": "```markdown\n# Functional Specification Document (FSD) for Ticket KSA-210\n\n## 1. Use Cases\n\n### Main Flows\n**UC-001: Create Ticket**  \nUser submits a new ticket with required details (subject, description, priority, category).  \n**UC-002: View Ticket List**  \nUser accesses the ticket dashboard to see all open/closed tickets with filters.  \n**UC-003: Update Ticket Status**  \nUser modifies ticket status (e.g., \"In Progress\", \"Resolved\") and adds comments.  \n**UC-004: Close Ticket**  \nUser marks a ticket as closed and provides resolution notes.  \n\n### Alternative Flows\n**UC-005: Edit Ticket After Creation**  \nUser modifies ticket details (subject, description, priority) within 24 hours of creation.  \n**UC-006: Assign Ticket to Agent**  \nUser selects an agent from a dropdown list to assign the ticket.  \n\n### Exception Flows\n**UC-007: Invalid Ticket Creation**  \nUser submits a ticket missing required fields (subject/description).  \n**UC-008: System Error During Update**  \nUser attempts to update a ticket while the system is unavailable.  \n\n---\n\n## 2. Business Rules (BR-IDs)\n\n| BR-ID | Rule Description |\n|-------|------------------|\n| BR-001 | All tickets must include a subject, description, and priority. |\n| BR-002 | Priority levels are predefined: Low, Medium, High. |\n| BR-003 | Tickets are automatically assigned to agents based on category. |\n| BR-004 | Closed tickets cannot be edited. |\n| BR-005 | Users can only edit tickets they created within 24 hours. |\n| BR-006 | Notifications are sent to assigned agents upon ticket creation. |\n\n---\n\n## 3. Data Specifications\n\n### Entities\n**Ticket**  \n- `ticket_id` (PK, UUID)  \n- `subject` (string, 255 chars)  \n- `description` (text)  \n- `priority` (enum: Low/Medium/High)  \n- `category` (string, 255 chars)  \n- `status` (enum: Open/In Progress/Resolved/Closed)  \n- `created_at` (timestamp)  \n- `updated_at` (timestamp)  \n- `assigned_agent` (FK to User)  \n- `resolved_at` (timestamp, nullable)  \n\n**User**  \n- `user_id` (PK, UUID)  \n- `name` (string)  \n- `email` (string, unique)  \n- `role` (enum: Customer/Agent/Admin)  \n\n**Agent**  \n- `agent_id` (PK, UUID)  \n- `user_id` (FK to User)  \n- `availability` (boolean)  \n\n---\n\n## 4. UI Specifications\n\n### Ticket Creation Page\n- **Form Fields**:  \n  - Subject (required)  \n  - Description (required)  \n  - Priority (dropdown)  \n  - Category (dropdown)  \n  - Submit Button  \n- **Validation**: Red border and error messages for missing fields.  \n\n### Ticket List Page\n- **Table Columns**:  \n  - Ticket ID  \n  - Subject  \n  - Priority  \n  - Category  \n  - Status  \n  - Created At  \n  - Actions (Edit/Delete)  \n- **Filters**: Priority, Category, Status.  \n\n### Ticket Details Page\n- **Read-Only Fields**: Subject, Description, Priority, Category, Status.  \n- **Editable Fields**: Status (dropdown), Comments (textarea).  \n- **Buttons**: Update Status, Close Ticket.  \n\n---\n\n## 5. API Specifications\n\n### Endpoints\n**POST /api/tickets**  \n- **Request Body**:  \n  ```json\n  {\n    \"subject\": \"Server Down\",\n    \"description\": \"The server is unresponsive.\",\n    \"priority\": \"High\",\n    \"category\": \"Technical\"\n  }\n  ```  \n- **Response**:  \n  ```json\n  {\n    \"ticket_id\": \"TICKET-123\",\n    \"status\": \"Open\",\n    \"created_at\": \"2023-10-05T10:00:00Z\"\n  }\n  ```  \n\n**GET /api/tickets**  \n- **Query Parameters**: `status`, `priority`, `category`  \n- **Response**: List of tickets with basic details.  \n\n**PUT /api/tickets/{ticket_id}/status**  \n- **Request Body**:  \n  ```json\n  {\n    \"status\": \"Resolved\",\n    \"resolution_notes\": \"Issue resolved via reboot.\"\n  }\n  ```  \n\n---\n\n## 6. Error Handling\n\n| Error Code | Description | HTTP Status |\n|------------|-------------|-------------|\n| 400-BR001 | Missing required fields (subject/description) | 400 Bad Request |\n| 403-BR005 | User cannot edit tickets created >24 hours ago | 403 Forbidden |\n| 500-BR008 | System error during ticket update | 500 Internal Server Error |\n| 404-BR004 | Ticket not found | 404 Not Found |\n\n---\n\n## 7. System Integration Points\n\n1. **User Authentication**: Integrated with existing authentication service (OAuth2).  \n2. **Notification System**: Sends email/SMS alerts to agents on ticket assignment.  \n3. **Reporting Module**: Syncs ticket data to analytics dashboard for performance tracking.  \n4. **Third-Party Ticket Categorization**: Uses NLP API to auto-categorize tickets based on description.  \n\n--- \n\n**Document Version**: 1.0  \n**Author**: Business Analyst  \n**Date**: 2023-10-05  \n**Dependencies**: User Authentication Service, Notification API, Reporting Module  \n```",
+            "timestamp": "2026-06-04T07:39:40.243Z",
+            "metadata": {
+              "docType": "FSD",
+              "phase": "all",
+              "usedLlm": true
+            }
+          }
+        ],
+        "currentStreamId": "stream-9286f350-2cd8-4806-aff0-2e9cb632c73b-1780558719462",
+        "approvalRequired": true,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [
+          {
+            "gateId": "QG-01",
+            "phase": "requirements",
+            "nodeId": "quality_gate_requirements",
+            "summary": "Quality gate for requirements phase — ",
+            "criteria": [
+              "BRD.md exists",
+              ">=3 User Stories with Acceptance Criteria",
+              "Business Flow Diagram (.drawio + .png)",
+              "Use Case Diagram (.drawio + .png)",
+              "Dependencies section present",
+              "Non-Functional Requirements defined"
+            ],
+            "timestamp": "2026-06-04T07:39:40.260Z"
+          }
+        ],
+        "chatHistory": [
+          {
+            "id": "a35d0d9c-b16c-4e11-a249-fde8329658ad",
+            "role": "user",
+            "content": "phân tích ticket KSA-210",
+            "timestamp": "2026-06-04T07:38:39.463Z"
+          },
+          {
+            "id": "a35d0d9c-b16c-4e11-a249-fde8329658ad",
+            "role": "user",
+            "content": "phân tích ticket KSA-210",
+            "timestamp": "2026-06-04T07:38:39.463Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T07:38:39.463Z",
+        "lastUpdatedAt": "2026-06-04T07:39:40.260Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {
+          "requirements": {
+            "passed": false,
+            "issues": []
+          }
+        },
+        "toolCalls": null,
+        "toolResults": [],
+        "agentIterations": 0
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T07:38:39.466Z",
+  "lastModified": "2026-06-04T07:39:40.311Z"
+}

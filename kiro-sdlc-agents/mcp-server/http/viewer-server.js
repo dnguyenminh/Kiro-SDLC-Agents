@@ -46,6 +46,7 @@ const ingest_routes_js_1 = require("./ingest-routes.js");
 const ux_routes_js_1 = require("./ux-routes.js");
 const model_routes_js_1 = require("./model-routes.js");
 const sse_handler_js_1 = require("./sse-handler.js");
+const chat_routes_js_1 = require("./chat-routes.js");
 class ViewerServer {
     server = null;
     port;
@@ -127,6 +128,9 @@ class ViewerServer {
             else {
                 (0, api_routes_js_1.handleApiRoute)(url, res, this.memoryEngine, this.knowledgeGraph);
             }
+        }
+        else if (url.pathname === '/api/chat/completions') {
+            (0, chat_routes_js_1.handleChatRoute)(req, res);
         }
         else {
             this.send404(res);

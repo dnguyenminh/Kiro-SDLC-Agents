@@ -1,0 +1,159 @@
+<mxfile host="app.diagrams.net" modified="2026-06-05T00:00:00.000Z" agent="BA Agent" version="21.0.0" type="device">
+  <diagram id="use-case-ksa231" name="Use Case — Kiro API Client">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;Use Case Diagram — Kiro API Client Integration (KSA-231)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="10" width="500" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="boundary" value="Kiro SDLC Agents Extension" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="60" width="650" height="700" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="300" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_kiro_api" value="Kiro API&#10;(External)" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="200" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_aws_sso" value="AWS SSO&#10;OIDC" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="450" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc1_node" value="UC1: Auto-detect&#10;SSO Credentials" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="90" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc2_node" value="UC2: Auto-refresh&#10;Token" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="190" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc3_node" value="UC3: Browse and&#10;Select Model" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="290" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc4_node" value="UC4: Send Prompt&#10;(Streaming)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="390" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc5_node" value="UC5: Cancel&#10;Mid-Stream" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="490" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc6_node" value="UC6: View Error&#10;Notifications" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="590" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc7_node" value="UC7: Configure&#10;Kiro Provider" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="690" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc8_node" value="UC8: Fetch&#10;Model List" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="630" y="140" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc9_node" value="UC9: Refresh&#10;Token via OIDC" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="630" y="290" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc10_node" value="UC10: Adapt to&#10;Anthropic Format" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="630" y="430" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_dev_uc1" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc1_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="125"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc3" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc3_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_dev_uc4" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc4_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="425"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc5" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc5_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="525"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc6" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc6_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="625"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc7" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_dev" target="uc7_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="725"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_api_uc8" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_kiro_api" target="uc8_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_api_uc4" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_kiro_api" target="uc4_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="230"/>
+              <mxPoint x="980" y="425"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_sso_uc9" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_aws_sso" target="uc9_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="480"/>
+              <mxPoint x="980" y="325"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_sso_uc1" style="html=1;endArrow=none;endSize=6;" edge="1" source="actor_aws_sso" target="uc1_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="480"/>
+              <mxPoint x="960" y="125"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_include_uc3_uc8" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc3_node" target="uc8_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_uc2_uc9" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc2_node" target="uc9_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_uc4_uc10" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc4_node" target="uc10_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_extend_uc5_uc4" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc5_node" target="uc4_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="650" width="60" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_auth" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_auth_label" value="Auth and Token" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="674" width="80" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_chat" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="40" y="700" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_chat_label" value="Chat and Streaming" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="694" width="100" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_error" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="40" y="720" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_error_label" value="Error Handling" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="714" width="80" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_config" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="40" y="740" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_config_label" value="Configuration" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="60" y="734" width="80" height="24" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

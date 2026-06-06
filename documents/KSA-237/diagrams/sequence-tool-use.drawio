@@ -1,0 +1,81 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence — Tool Use Cycle — KSA-237&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="150" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_client" value="Chat Panel&#10;(Agent)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#e1d5e7;strokeColor=#9673a6;size=16;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="100" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_proxy" value="kiro-ts Proxy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;size=16;" vertex="1" parent="1">
+      <mxGeometry x="260" y="60" width="100" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_ai" value="AI Backend" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#fff2cc;strokeColor=#d6b656;size=16;" vertex="1" parent="1">
+      <mxGeometry x="460" y="60" width="100" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_tool" value="MCP Tool" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;size=16;" vertex="1" parent="1">
+      <mxGeometry x="640" y="60" width="100" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="1. messages + tools" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="130" as="sourcePoint"/>
+        <mxPoint x="310" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" value="2. forward" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="160" as="sourcePoint"/>
+        <mxPoint x="510" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="3. tool_use block&#10;(id: toolu_01)" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="210" as="sourcePoint"/>
+        <mxPoint x="310" y="210" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="4. tool_use event" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="250" as="sourcePoint"/>
+        <mxPoint x="110" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="5. execute tool" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="300" as="sourcePoint"/>
+        <mxPoint x="690" y="300" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="6. tool result" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="690" y="340" as="sourcePoint"/>
+        <mxPoint x="110" y="340" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="7. toolResult (id: toolu_01)" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="390" as="sourcePoint"/>
+        <mxPoint x="310" y="390" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="8. forward with history" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="420" as="sourcePoint"/>
+        <mxPoint x="510" y="420" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="9. text response" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="470" as="sourcePoint"/>
+        <mxPoint x="310" y="470" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="10. SSE (final answer)" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="510" as="sourcePoint"/>
+        <mxPoint x="110" y="510" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

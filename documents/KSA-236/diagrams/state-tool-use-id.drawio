@@ -1,0 +1,57 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;State Diagram — tool_use_id Lifecycle&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="340" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="60" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_generated" value="&lt;b&gt;GENERATED&lt;/b&gt;&#10;Created by Kiro Q API&#10;in tool_use response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="280" y="130" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_streamed" value="&lt;b&gt;STREAMED&lt;/b&gt;&#10;Sent to extension&#10;via SSE content_block" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="250" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_stored" value="&lt;b&gt;STORED&lt;/b&gt;&#10;Saved in conversation&#10;history (in-memory)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="480" y="250" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_awaiting" value="&lt;b&gt;AWAITING_RESULT&lt;/b&gt;&#10;Extension executing tool&#10;ID expected in continuation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="280" y="380" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_matched" value="&lt;b&gt;MATCHED&lt;/b&gt;&#10;Continuation received&#10;ID correlated successfully" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="280" y="500" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_orphaned" value="&lt;b&gt;ORPHANED&lt;/b&gt;&#10;(ERROR STATE)&#10;ID mismatch — cannot match" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="500" width="190" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="end_ok" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;shape=doubleCircle;" vertex="1" parent="1">
+      <mxGeometry x="360" y="610" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_start" value="API returns tool_use" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="start" target="s_generated">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_gen_stream" value="converter emits SSE&#10;(SAME id)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="s_generated" target="s_streamed">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_gen_store" value="handler stores&#10;(SAME id)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="s_generated" target="s_stored">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_stream_await" value="extension receives ID" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="s_streamed" target="s_awaiting">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_stored_await" value="ready for match" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" parent="1" source="s_stored" target="s_awaiting">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_await_match" value="continuation.toolUseId&#10;== stored id" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontColor=#388e3c;" edge="1" parent="1" source="s_awaiting" target="s_matched">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_await_orphan" value="continuation.toolUseId&#10;!= stored id" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontColor=#c62828;" edge="1" parent="1" source="s_awaiting" target="s_orphaned">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_match_end" value="loop continues or ends" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="s_matched" target="end_ok">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

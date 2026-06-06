@@ -1,0 +1,60 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Request State Machine — kiro-ts (KSA-237)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="60" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="received" value="&lt;b&gt;RECEIVED&lt;/b&gt;&#10;Request parsed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="305" y="130" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="authenticating" value="&lt;b&gt;AUTHENTICATING&lt;/b&gt;&#10;Resolving credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="305" y="240" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="forwarding" value="&lt;b&gt;FORWARDING&lt;/b&gt;&#10;Sending to upstream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="305" y="350" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="streaming" value="&lt;b&gt;STREAMING&lt;/b&gt;&#10;SSE events flowing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="160" y="460" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="complete" value="&lt;b&gt;COMPLETE&lt;/b&gt;&#10;Response delivered" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="450" y="460" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="error" value="&lt;b&gt;ERROR&lt;/b&gt;&#10;Terminal failure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="600" y="240" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="received" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_recv_auth" value="valid body" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="received" target="authenticating" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_recv_err" value="invalid request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="received" target="error" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_auth_fwd" value="creds OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="authenticating" target="forwarding" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_auth_err" value="auth failed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="authenticating" target="error" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_fwd_stream" value="stream:true" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="forwarding" target="streaming" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_fwd_complete" value="stream:false" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="forwarding" target="complete" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_fwd_err" value="upstream error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="forwarding" target="error" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_stream_complete" value="message_stop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="streaming" target="complete" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_stream_err" value="connection drop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="streaming" target="error" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

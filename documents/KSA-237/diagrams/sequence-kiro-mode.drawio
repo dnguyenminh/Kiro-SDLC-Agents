@@ -1,0 +1,84 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence — Chat Message (Kiro Mode) — KSA-237&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="150" y="10" width="440" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_client" value="Chat Panel" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#e1d5e7;strokeColor=#9673a6;size=16;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_proxy" value="kiro-ts Proxy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;size=16;" vertex="1" parent="1">
+      <mxGeometry x="230" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_cred" value="Credential Mgr" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;size=16;" vertex="1" parent="1">
+      <mxGeometry x="400" y="60" width="110" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_sigv4" value="SigV4 Signer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;size=16;" vertex="1" parent="1">
+      <mxGeometry x="570" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_api" value="Kiro AI API" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#fff2cc;strokeColor=#d6b656;size=16;" vertex="1" parent="1">
+      <mxGeometry x="730" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="1. POST /v1/messages" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="130" as="sourcePoint"/>
+        <mxPoint x="280" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" value="2. resolveCredentials()" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="170" as="sourcePoint"/>
+        <mxPoint x="455" y="170" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="3. credentials" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="455" y="200" as="sourcePoint"/>
+        <mxPoint x="280" y="200" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="4. signRequest(body, creds)" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="240" as="sourcePoint"/>
+        <mxPoint x="620" y="240" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="5. signedHeaders" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="620" y="270" as="sourcePoint"/>
+        <mxPoint x="280" y="270" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="6. POST (signed)" style="html=1;endSize=6;endArrow=classic;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="310" as="sourcePoint"/>
+        <mxPoint x="780" y="310" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="7. SSE stream (tokens)" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="780" y="370" as="sourcePoint"/>
+        <mxPoint x="280" y="370" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="8. SSE events (forwarded)" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="410" as="sourcePoint"/>
+        <mxPoint x="110" y="410" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="9. message_stop" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="780" y="450" as="sourcePoint"/>
+        <mxPoint x="280" y="450" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="10. message_stop" style="html=1;endSize=6;endArrow=classic;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="480" as="sourcePoint"/>
+        <mxPoint x="110" y="480" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

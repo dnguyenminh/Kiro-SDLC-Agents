@@ -1,0 +1,115 @@
+<mxfile>
+<diagram name="Use Case - KSA-237" id="uc_ksa237">
+<mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Use Case Diagram — KSA-237: kiro-ts Chat Completions Proxy&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="320" y="10" width="530" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="kiro-ts Proxy System (MCP Server :9181)" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+      <mxGeometry x="280" y="60" width="600" height="700" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="300" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_chatpanel" value="Chat Panel&#10;Extension" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="500" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_kiroapi" value="Kiro AI API" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="350" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_aws" value="AWS SSO&#10;Credential Store" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="550" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="Send Chat Message" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="400" y="100" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="Receive Streaming&#10;Response (SSE)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="400" y="200" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="Use Tool Calling&#10;(ReAct Loop)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="310" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="Test Connection&#10;(Health Check)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="420" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="Auto-Detect&#10;Credentials" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="640" y="500" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc6" value="Sign Request&#10;(AWS SigV4)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="640" y="610" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc7" value="Forward to&#10;Kiro AI API" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="640" y="310" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc8" value="Validate API Key&#10;(Optional)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="640" y="190" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc2">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc3">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_dev" target="uc4">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_chatpanel" target="uc1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_chatpanel" target="uc2">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_kiroapi" target="uc7">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" value="" style="html=1;endArrow=none;" edge="1" parent="1" source="actor_aws" target="uc5">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_inc1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="uc1" target="uc5">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_inc2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="uc1" target="uc7">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_inc3" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="uc5" target="uc6">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_ext1" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="uc8" target="uc1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="690" width="60" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="310" y="720" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg1_txt" value="Client Interaction" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="330" y="714" width="100" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="450" y="720" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg2_txt" value="Feature Use Cases" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="470" y="714" width="110" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="590" y="720" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg3_txt" value="Security/Auth" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="610" y="714" width="80" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="710" y="720" width="16" height="12" as="geometry"/>
+    </mxCell>
+    <mxCell id="leg4_txt" value="Backend/Integration" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="730" y="714" width="120" height="24" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram>
+</mxfile>

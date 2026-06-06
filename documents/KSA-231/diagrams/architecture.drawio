@@ -1,0 +1,69 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-231 — Kiro API Client Architecture&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="280" y="10" width="360" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="200" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="VS Code Extension Host" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="160" y="60" width="560" height="400" as="geometry"/>
+    </mxCell>
+    <mxCell id="kiro_client" value="&lt;b&gt;KiroClient&lt;/b&gt;&#10;implements LlmProvider&#10;chat() / chatStream() / chatWithTools()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="320" y="100" width="240" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="token_mgr" value="&lt;b&gt;TokenManager&lt;/b&gt;&#10;credential detection&#10;auto-refresh + mutex" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="180" y="220" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="adapter" value="&lt;b&gt;AnthropicAdapter&lt;/b&gt;&#10;request/response mapping&#10;Kiro API &lt;-&gt; Anthropic format" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="390" y="220" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="stream_handler" value="&lt;b&gt;StreamHandler&lt;/b&gt;&#10;SSE parsing&#10;backpressure + abort" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="440" y="340" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="model_reg" value="&lt;b&gt;ModelRegistry&lt;/b&gt;&#10;fetch + cache models&#10;Settings Panel integration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="200" y="340" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="provider_factory" value="&lt;b&gt;Provider Factory&lt;/b&gt;&#10;createProviderByType()&#10;case &quot;kiro&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="340" y="440" width="200" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_sso" value="&lt;b&gt;AWS SSO OIDC&lt;/b&gt;&#10;oidc.{region}.amazonaws.com&#10;/token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="780" y="180" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_kiro_api" value="&lt;b&gt;Kiro API&lt;/b&gt;&#10;kiro.api.{region}.amazonaws.com&#10;/v1/messages + /v1/models" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="780" y="300" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_fs" value="&lt;b&gt;File System&lt;/b&gt;&#10;~/.aws/sso/cache/" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="780" y="80" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="actor_dev" target="kiro_client" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="getAccessToken()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="kiro_client" target="token_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="buildRequest()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="kiro_client" target="adapter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="processStream()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="kiro_client" target="stream_handler" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="getModels()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="kiro_client" target="model_reg" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="HTTPS POST&#10;refresh_token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="token_mgr" target="ext_sso" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="HTTPS POST/GET&#10;Bearer token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="adapter" target="ext_kiro_api" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" value="read/write&#10;JSON files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="token_mgr" target="ext_fs" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="provider_factory" target="kiro_client" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

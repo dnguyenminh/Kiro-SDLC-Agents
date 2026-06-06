@@ -1,0 +1,66 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Use Case Diagram — KSA-236: tool_use_id Mismatch Fix&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="system_boundary" value="kiro-ts System" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="60" width="600" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="200" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_extension" value="VS Code&#10;Extension" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="380" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_kiroq" value="Kiro Q API" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+      <mxGeometry x="900" y="280" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="Send Chat Message&#10;with Tool Request" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="90" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="Convert Request&#10;(Extension → Kiro Q Format)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="190" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="Receive tool_use Response&#10;and Preserve tool_use_id" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="290" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="Stream Response to Client&#10;(Consistent tool_use_id)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="390" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="Match tool_result&#10;to History" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="560" y="190" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc6" value="Execute Tool and&#10;Send Continuation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="560" y="390" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc7" value="Log Diagnostic Error&#10;on ID Mismatch" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="1">
+      <mxGeometry x="560" y="290" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="actor_dev" target="uc1" style="html=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="actor_extension" target="uc6" style="html=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" edge="1" parent="1" source="actor_kiroq" target="uc3" style="html=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="actor_kiroq" target="uc2" style="html=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" edge="1" parent="1" source="uc3" target="uc5" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" edge="1" parent="1" source="uc4" target="uc6" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="&lt;i&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/i&gt;" edge="1" parent="1" source="uc7" target="uc5" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" edge="1" parent="1" source="actor_extension" target="uc4" style="html=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

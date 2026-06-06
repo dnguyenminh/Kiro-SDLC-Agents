@@ -1,0 +1,51 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — KSA-236 Converter Fix (TypeScript)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_anthropic" value="&lt;b&gt;src/anthropic/&lt;/b&gt;" style="swimlane;startSize=24;fillColor=#dae8fc;strokeColor=#6c8ebf;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="420" height="360" as="geometry"/>
+    </mxCell>
+    <mxCell id="converter_class" value="&lt;b&gt;converter.ts&lt;/b&gt;&#10;─────────────────&#10;+ convertResponseToSSEEvents(resp): SSEEvent[]&#10;+ extractToolUseIds(resp): string[]&#10;+ validateToolUseId(id): boolean&#10;─────────────────&#10;⚠️ FIX TARGET: line id: block.id" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="pkg_anthropic">
+      <mxGeometry x="20" y="40" width="280" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="handlers_class" value="&lt;b&gt;handlers.ts&lt;/b&gt;&#10;─────────────────&#10;+ handleChatCompletions(req, res): Promise&lt;void&gt;&#10;- forwardToKiroQ(request): Promise&lt;KiroQResponse&gt;&#10;─────────────────&#10;⚠️ FIX: mismatch detection + error response" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="pkg_anthropic">
+      <mxGeometry x="20" y="180" width="280" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="types_class" value="&lt;b&gt;types.ts&lt;/b&gt;&#10;─────────────────&#10;KiroQResponse&#10;KiroQToolUseBlock&#10;ContentBlockStartEvent&#10;SSEEvent&#10;ContinuationRequest" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="pkg_anthropic">
+      <mxGeometry x="310" y="40" width="100" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_history" value="&lt;b&gt;src/history/&lt;/b&gt;" style="swimlane;startSize=24;fillColor=#e1d5e7;strokeColor=#9673a6;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="60" width="280" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="history_class" value="&lt;b&gt;ConversationHistory&lt;/b&gt;&#10;─────────────────&#10;- messages: ConversationMessage[]&#10;- toolUseIndex: Map&lt;string, ToolUseBlock&gt;&#10;- turnCounter: number&#10;─────────────────&#10;+ addAssistantMessage(resp): void&#10;+ findToolUse(id): ToolUseBlock | null&#10;+ getAllToolUseIds(): string[]&#10;+ addToolResult(id, content, isError): void&#10;+ getCurrentTurn(): number&#10;+ clear(): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="pkg_history">
+      <mxGeometry x="15" y="35" width="250" height="155" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_tests" value="&lt;b&gt;src/anthropic/__tests__/&lt;/b&gt;" style="swimlane;startSize=24;fillColor=#d5e8d4;strokeColor=#82b366;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="280" width="280" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="test_converter" value="&lt;b&gt;converter.test.ts&lt;/b&gt;&#10;TC-1, TC-5, TC-7, TC-8, TC-10" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="pkg_tests">
+      <mxGeometry x="10" y="35" width="120" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="test_handlers" value="&lt;b&gt;handlers.test.ts&lt;/b&gt;&#10;TC-3, TC-4, TC-6, TC-9" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="pkg_tests">
+      <mxGeometry x="145" y="35" width="120" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_conv_types" value="imports" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="converter_class" target="types_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_handler_conv" value="calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="handlers_class" target="converter_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_handler_history" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="handlers_class" target="history_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_test_conv" value="tests" style="rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#82b366;" edge="1" source="test_converter" target="converter_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_test_handler" value="tests" style="rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#82b366;" edge="1" source="test_handlers" target="handlers_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

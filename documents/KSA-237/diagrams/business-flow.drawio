@@ -1,0 +1,99 @@
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Business Flow — KSA-237: Chat Completions via kiro-ts Proxy&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="350" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_dev" value="Developer&#10;(Kiro IDE)" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f4f8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="50" width="1350" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="lane_dev">
+      <mxGeometry x="130" y="55" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="p1" value="Open Chat Panel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="lane_dev">
+      <mxGeometry x="200" y="45" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p2" value="Type Message&#10;&amp; Send" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="lane_dev">
+      <mxGeometry x="380" y="45" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p10" value="View Streaming&#10;Response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_dev">
+      <mxGeometry x="1150" y="45" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_proxy" value="kiro-ts Proxy&#10;(MCP Server&#10;:9181)" style="swimlane;horizontal=0;startSize=110;fillColor=#fff0e6;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="200" width="1350" height="170" as="geometry"/>
+    </mxCell>
+    <mxCell id="p3" value="Receive POST&#10;/v1/messages" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="380" y="20" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p4" value="Validate Request&#10;(Anthropic Format)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="380" y="90" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="d1" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="560" y="70" width="80" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="p5" value="Read Kiro&#10;Credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="680" y="20" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p6" value="Sign with&#10;AWS SigV4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="860" y="20" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p9" value="Stream Response&#10;to Client (SSE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="1150" y="20" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="err1" value="Return 400&#10;Error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;" vertex="1" parent="lane_proxy">
+      <mxGeometry x="560" y="110" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="lane_kiro" value="Kiro AI API&#10;(AWS)" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f5e9;html=1;" vertex="1" parent="1">
+      <mxGeometry x="0" y="370" width="1350" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="p7" value="Receive Signed&#10;Request" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="860" y="50" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="p8" value="Process &amp; Return&#10;AI Response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="1040" y="50" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="end_node" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="lane_kiro">
+      <mxGeometry x="1270" y="60" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_s_p1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_dev" source="start" target="p1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p1_p2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_dev" source="p1" target="p2">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p2_p3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="p2" target="p3">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p3_p4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_proxy" source="p3" target="p4">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p4_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_proxy" source="p4" target="d1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_d1_p5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="lane_proxy" source="d1" target="p5">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_d1_err" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="lane_proxy" source="d1" target="err1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p5_p6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_proxy" source="p5" target="p6">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p6_p7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="p6" target="p7">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p7_p8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_kiro" source="p7" target="p8">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p8_p9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="p8" target="p9">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p9_p10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="p9" target="p10">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_p8_end" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="lane_kiro" source="p8" target="end_node">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,68 @@
+<mxfile><diagram name="Provider State" id="prov-state-1">
+<mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KiroClient Provider State — KSA-231&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="280" y="10" width="350" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="150" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_created" value="&lt;b&gt;CREATED&lt;/b&gt;&#10;Not initialized" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="150" y="135" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_available" value="&lt;b&gt;AVAILABLE&lt;/b&gt;&#10;Token active&#10;API reachable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="80" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_degraded" value="&lt;b&gt;DEGRADED&lt;/b&gt;&#10;Token active&#10;API unreachable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="220" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_unavailable" value="&lt;b&gt;UNAVAILABLE&lt;/b&gt;&#10;No credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="380" y="360" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_disposed" value="&lt;b&gt;DISPOSED&lt;/b&gt;&#10;Cleanup complete" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="680" y="200" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_start" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="s_created" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_created_avail" value="Credentials found&#10;+ API OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_created" target="s_available" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_created_unavail" value="No credentials" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_created" target="s_unavailable" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_avail_degraded" value="API unreachable" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_available" target="s_degraded" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_degraded_avail" value="API recovered" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_degraded" target="s_available" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="350" y="255"/>
+          <mxPoint x="350" y="115"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_avail_unavail" value="Token expired" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_available" target="s_unavailable" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="580" y="115"/>
+          <mxPoint x="580" y="390"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_unavail_avail" value="New credentials" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="s_unavailable" target="s_available" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="320" y="390"/>
+          <mxPoint x="320" y="115"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_any_disposed" value="deactivate()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_available" target="s_disposed" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram></mxfile>

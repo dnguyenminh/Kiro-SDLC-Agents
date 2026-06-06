@@ -1,0 +1,51 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-231 — Class Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="260" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="iface_provider" value="&lt;b&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/b&gt;&#10;&lt;b&gt;LlmProvider&lt;/b&gt;&#10;─────────────&#10;+ type: LlmProviderType&#10;+ chat(messages, options): Promise&lt;string&gt;&#10;+ chatStream(messages, options): AsyncGenerator&lt;string&gt;&#10;+ chatWithTools?(messages, tools, options): Promise&lt;LlmResponse&gt;&#10;+ isAvailable(): Promise&lt;boolean&gt;&#10;+ dispose(): void" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="50" width="380" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_kiro" value="&lt;b&gt;KiroClient&lt;/b&gt;&#10;─────────────&#10;- tokenManager: TokenManager&#10;- adapter: AnthropicAdapter&#10;- streamHandler: StreamHandler&#10;- modelRegistry: ModelRegistry&#10;- outputChannel: OutputChannel&#10;- initialized: boolean&#10;─────────────&#10;+ constructor(outputChannel)&#10;+ chat(messages, options): Promise&lt;string&gt;&#10;+ chatStream(messages, options): AsyncGenerator&lt;string&gt;&#10;+ chatWithTools(messages, tools, options): Promise&lt;LlmResponse&gt;&#10;+ isAvailable(): Promise&lt;boolean&gt;&#10;+ dispose(): void&#10;- ensureInitialized(): Promise&lt;void&gt;&#10;- handleApiError(response, retried): Promise&lt;never&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="280" width="340" height="290" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_token" value="&lt;b&gt;TokenManager&lt;/b&gt;&#10;─────────────&#10;- credentials: KiroCredentials | null&#10;- refreshMutex: Mutex&#10;- watcher: FileSystemWatcher | null&#10;- refreshTimer: NodeJS.Timeout | null&#10;- outputChannel: OutputChannel&#10;- _onStatusChange: EventEmitter&#10;─────────────&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getAccessToken(): Promise&lt;string&gt;&#10;+ getRegion(): string | undefined&#10;+ getStatus(): CredentialStatus&#10;+ onStatusChange: Event&#10;+ dispose(): void&#10;- scanCacheDirectory(): Promise&lt;CacheFile[]&gt;&#10;- selectBestCredential(files): CacheFile | null&#10;- refreshToken(): Promise&lt;void&gt;&#10;- scheduleRefresh(): void&#10;- writeBackToCache(): Promise&lt;void&gt;&#10;- getCachePath(): string" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="280" width="320" height="350" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_adapter" value="&lt;b&gt;AnthropicAdapter&lt;/b&gt;&#10;─────────────&#10;+ buildRequestBody(messages, options, tools): KiroRequestBody&#10;+ buildRequestHeaders(token, modelId): Record&lt;string, string&gt;&#10;+ parseNonStreamResponse(json): LlmResponse&#10;+ getEndpointUrl(region): string&#10;- splitMessages(messages): {system, user}&#10;- formatToolResults(messages): FormattedMsg[]" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="620" width="380" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_stream" value="&lt;b&gt;StreamHandler&lt;/b&gt;&#10;─────────────&#10;+ processStream(response, signal): AsyncGenerator&lt;string&gt;&#10;+ processStreamWithToolUse(response, signal): AsyncGenerator&lt;StreamEvent&gt;&#10;- parseSSE(buffer): SSEEvent[]&#10;- extractTextDelta(event): string | null" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="680" width="360" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_model_reg" value="&lt;b&gt;ModelRegistry&lt;/b&gt;&#10;─────────────&#10;- tokenManager: TokenManager&#10;- cache: { models: KiroModel[], fetchedAt: Date } | null&#10;- cachedEtag: string | null&#10;- refreshTimer: NodeJS.Timeout | null&#10;- outputChannel: OutputChannel&#10;- _onModelsChanged: EventEmitter&#10;─────────────&#10;+ getModels(forceRefresh?): Promise&lt;KiroModel[]&gt;&#10;+ getSelectedModel(): string&#10;+ setSelectedModel(modelId): Promise&lt;void&gt;&#10;+ onModelsChanged: Event&#10;+ dispose(): void&#10;- fetchModels(): Promise&lt;KiroModel[]&gt;&#10;- isCacheStale(): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="820" width="340" height="260" as="geometry"/>
+    </mxCell>
+    <mxCell id="class_mutex" value="&lt;b&gt;Mutex&lt;/b&gt;&#10;─────────────&#10;- locked: boolean&#10;- queue: (() =&gt; void)[]&#10;─────────────&#10;+ acquire(): Promise&lt;void&gt;&#10;+ release(): void&#10;+ isLocked(): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="800" y="360" width="180" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_implements" style="html=1;endArrow=block;endSize=12;endFill=0;" edge="1" source="class_kiro" target="iface_provider" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_kiro_token" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="class_kiro" target="class_token" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_kiro_adapter" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="class_kiro" target="class_adapter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_kiro_stream" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="class_kiro" target="class_stream" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_kiro_model" style="html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="class_kiro" target="class_model_reg" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_token_mutex" value="uses" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="class_token" target="class_mutex" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_model_token" value="uses" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="class_model_reg" target="class_token" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

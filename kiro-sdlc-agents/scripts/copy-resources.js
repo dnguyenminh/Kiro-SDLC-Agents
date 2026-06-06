@@ -15,6 +15,8 @@ const MAPPINGS = [
     { src: ".kiro/hooks", dst: ".kiro/hooks" },
     { src: ".kiro/steering", dst: ".kiro/steering" },
     { src: "documents/templates", dst: "documents/templates" },
+    { src: "kiro-sdlc-agents/webview-assets/chat", dst: "webview-assets/chat" },
+    { src: "kiro-sdlc-agents/webview-assets/settings", dst: "webview-assets/settings" },
     { src: ".analysis/code-intelligence/index-config.json", dst: ".analysis/code-intelligence/index-config.json" },
     { src: ".analysis/code-intelligence/scripts/python", dst: ".analysis/code-intelligence/scripts/python" },
     { src: ".analysis/code-intelligence/scripts/java", dst: ".analysis/code-intelligence/scripts/java" },
