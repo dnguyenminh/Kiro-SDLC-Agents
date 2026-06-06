@@ -13,7 +13,6 @@ import { handleIngestFileRoute } from './ingest-routes.js';
 import { handleUxRoute } from './ux-routes.js';
 import { handleModelRoute } from './model-routes.js';
 import { handleSseEvents, closeSseConnections } from './sse-handler.js';
-import { handleChatRoute } from './chat-routes.js';
 import { ModelManager } from '../orchestration/models/model-manager.js';
 
 export class ViewerServer {
@@ -88,8 +87,6 @@ export class ViewerServer {
       } else {
         handleApiRoute(url, res, this.memoryEngine, this.knowledgeGraph);
       }
-    } else if (url.pathname === '/api/chat/completions') {
-      handleChatRoute(req, res);
     } else {
       this.send404(res);
     }
