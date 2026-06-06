@@ -38,3 +38,6 @@ qa-*.png
 
 # Workspace-level code-intel DB
 ${workspaceFolder}/
+
+kiro-rs/
+.vscode/kiro-pipeline-state/
