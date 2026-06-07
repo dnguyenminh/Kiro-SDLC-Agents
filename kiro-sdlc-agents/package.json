@@ -155,6 +155,10 @@
         "command": "kiroSdlc.openSettings",
         "title": "Kiro SDLC: Settings",
         "icon": "$(gear)"
+      },
+      {
+        "command": "kiroSdlc.openWorkflowGraph",
+        "title": "Kiro SDLC: Open Workflow Graph"
       }
     ],
     "viewsContainers": {
@@ -294,6 +298,7 @@
     "@langchain/langgraph": "^0.2.74",
     "3d-force-graph": "^1.80.0",
     "chart.js": "^4.5.1",
+    "filetomarkdown": "^1.0.0",
     "three": "^0.184.0"
   }
 }
