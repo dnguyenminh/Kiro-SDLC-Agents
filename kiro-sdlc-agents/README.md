@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.16.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.17.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
@@ -31,7 +31,22 @@
 
 ---
 
-## 🆕 What's New in v1.16.0
+## 🆕 What's New in v1.17.0
+
+- **📄 Multi-format Document Indexing (KSA-239)** — Index SDLC documents in .docx, .xlsx, .pdf, .png, .jpg, and 20+ formats
+- **Automatic conversion** — Non-markdown files converted to markdown via iletomarkdown before KB ingestion
+- **Text format optimization** — .txt, .csv, .json, .xml, .yaml read directly (no binary conversion overhead)
+- **Safety limits** — PDF 50MB max, images 20MB max, 30s per-file timeout, error isolation (one failure doesn't abort batch)
+- **39 new tests** — Property-based, unit, and integration tests for converter + discovery logic
+
+<details>
+<summary>Previous: v1.16.0</summary>
+
+- **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels receive live updates via Server-Sent Events
+- **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
+- **🐛 Apex Indexing Fix (KSA-209)** — Wasm + regex fallback for reliable Apex parsing across environments
+- **21 tickets closed** — Full sprint across code intelligence, KB UI, and Salesforce modules
+</details>
 
 - **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels receive live updates via Server-Sent Events
 - **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
