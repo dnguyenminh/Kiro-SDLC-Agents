@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fd22-2202-6960-8002-a6202852e7d8",
+    "ts": "2026-06-04T04:59:14.550Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "db38d157-bcf5-4685-8bb4-9339bd8f5289",
+      "currentPhase": "all",
+      "intent": "chat",
+      "pipelineStatus": "completed",
+      "resumePoint": null,
+      "documents": {},
+      "agentOutputs": [
+        {
+          "nodeId": "chat",
+          "content": "Xin chào! Bạn có vẻ đang hỏi về một tình huống hay vấn đề nào đó. Có thể bạn muốn chia sẻ và tôi sẽ cố gắng giúp đỡ? Vui lòng mô tả rõ hơn nếu bạn muốn nhận được sự hỗ trợ hoặc giải thích từ tôi.",
+          "timestamp": "2026-06-04T04:59:14.527Z"
+        }
+      ],
+      "currentStreamId": "stream-db38d157-bcf5-4685-8bb4-9339bd8f5289-1780549152287",
+      "approvalRequired": false,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [],
+      "chatHistory": [
+        {
+          "id": "3f713786-2197-446d-914c-2c6c49a1af15",
+          "role": "user",
+          "content": "Chuyện gì đây",
+          "timestamp": "2026-06-04T04:59:12.287Z"
+        },
+        {
+          "id": "3f713786-2197-446d-914c-2c6c49a1af15",
+          "role": "user",
+          "content": "Chuyện gì đây",
+          "timestamp": "2026-06-04T04:59:12.287Z"
+        },
+        {
+          "id": "3f713786-2197-446d-914c-2c6c49a1af15",
+          "role": "user",
+          "content": "Chuyện gì đây",
+          "timestamp": "2026-06-04T04:59:12.287Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T04:59:12.287Z",
+      "lastUpdatedAt": "2026-06-04T04:59:14.527Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {}
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:chat_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "chat_subgraph": {
+        "branch:to:chat_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "chat_subgraph": {
+        "threadId": "db38d157-bcf5-4685-8bb4-9339bd8f5289",
+        "currentPhase": "all",
+        "intent": "chat",
+        "pipelineStatus": "completed",
+        "resumePoint": null,
+        "documents": {},
+        "agentOutputs": [
+          {
+            "nodeId": "chat",
+            "content": "Xin chào! Bạn có vẻ đang hỏi về một tình huống hay vấn đề nào đó. Có thể bạn muốn chia sẻ và tôi sẽ cố gắng giúp đỡ? Vui lòng mô tả rõ hơn nếu bạn muốn nhận được sự hỗ trợ hoặc giải thích từ tôi.",
+            "timestamp": "2026-06-04T04:59:14.527Z"
+          }
+        ],
+        "currentStreamId": "stream-db38d157-bcf5-4685-8bb4-9339bd8f5289-1780549152287",
+        "approvalRequired": false,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [],
+        "chatHistory": [
+          {
+            "id": "3f713786-2197-446d-914c-2c6c49a1af15",
+            "role": "user",
+            "content": "Chuyện gì đây",
+            "timestamp": "2026-06-04T04:59:12.287Z"
+          },
+          {
+            "id": "3f713786-2197-446d-914c-2c6c49a1af15",
+            "role": "user",
+            "content": "Chuyện gì đây",
+            "timestamp": "2026-06-04T04:59:12.287Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T04:59:12.287Z",
+        "lastUpdatedAt": "2026-06-04T04:59:14.527Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {}
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T04:59:12.288Z",
+  "lastModified": "2026-06-04T04:59:14.560Z"
+}

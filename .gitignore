@@ -38,3 +38,7 @@ qa-*.png
 
 # Workspace-level code-intel DB
 ${workspaceFolder}/
+
+kiro-rs/
+.vscode/kiro-pipeline-state/
+mcp-code-intelligence-nodejs/src/http/kiro-ts/

@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fdef-ce9d-6f80-8002-3ffca5beecd8",
+    "ts": "2026-06-04T06:31:15.576Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "27400ffe-f339-42b1-bced-91ea9aa76279",
+      "currentPhase": "all",
+      "intent": "sdlc",
+      "pipelineStatus": "paused",
+      "resumePoint": null,
+      "documents": {
+        "fsd": {
+          "status": "done",
+          "version": 1,
+          "path": "documents//FSD.md",
+          "completedAt": "2026-06-04T06:31:15.523Z"
+        }
+      },
+      "agentOutputs": [
+        {
+          "nodeId": "sm",
+          "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+          "timestamp": "2026-06-04T06:30:49.471Z",
+          "metadata": {
+            "phase": "all",
+            "ticketKey": ""
+          }
+        },
+        {
+          "nodeId": "ba_brd",
+          "content": "```markdown\n# Functional Specification Document (FSD)\n\n## Project Overview\n\n### Ticket Analysis Use Case\nThis document details the use cases, business rules, data specifications, and user interface for analyzing tickets in a software system.\n\n---\n\n## Table of Contents\n1. **Use Cases**\n   - 1.1 Main Flow\n   - 1.2 Alternative Flows\n   - 1.3 Exception Flows\n\n2. **Business Rules (BR- IDs)**\n3. **Data Specifications**\n4. **UI Specifications**\n5. **API Specifications** (if applicable)\n6. **Error Handling**\n7. **System Integration Points**\n\n---\n\n## 1. Use Cases\n\n### 1.1 Main Flow\n#### Scenario: User Analyzes a Ticket KSA-210\n1. User logs into the system.\n2. User navigates to the \"Ticket Analysis\" module.\n3. System retrieves ticket KSA-210 details from the database.\n4. User reviews the retrieved ticket data.\n5. If necessary, user updates or annotates the ticket information.\n6. User saves changes and closes the ticket analysis window.\n\n### 1.2 Alternative Flows\n#### Scenario: User Chooses to View Related Tickets\n1. During step 3, if related tickets are available, system prompts user with an option to view them.\n2. If selected, user reviews relevant tickets linked to KSA-210 and can navigate back to the main ticket.\n\n### 1.3 Exception Flows\n#### Scenario: Ticket Not Found\n1. During step 3, if no ticket KSA-210 is found in the database.\n2. System displays an error message indicating that the ticket does not exist or has been archived/deleted.\n3. User can either return to the main menu or search for another ticket.\n\n---\n\n## 2. Business Rules (BR- IDs)\n| BR-ID | Rule Description |\n|-------|------------------|\n| BR-01 | The system must retrieve and display all relevant details of a specified ticket KSA-210. |\n| BR-02 | If the user attempts to update the ticket, only authorized users with the appropriate permissions should be allowed to do so. |\n| BR-03 | The system must log any changes made by the user in the ticket analysis module. |\n| BR-04 | The system must prevent duplicate entries when updating a ticket. |\n\n---\n\n## 3. Data Specifications\n### Ticket Fields\n- **Ticket ID**: KSA-210 (Primary Key)\n- **Title**: Mandatory, up to 50 characters.\n- **Description**: Optional, up to 1000 characters.\n- **Status**: Open, In Progress, Resolved, Closed.\n- **Assigned To**: User Identifier.\n- **Created On**: Date and Time of Ticket Creation.\n- **Updated On**: Timestamp for the last update.\n\n### Related Tickets\n- **Ticket ID**: KSA-205, KSA-215 (Foreign Key)\n- **Relationship Type**: Parent, Child, Linked\n\n---\n\n## 4. UI Specifications\n### Initial Page\n- **Title Bar**: \"Ticket Analysis - KSA-210\"\n- **Left Navigation Menu**:\n  - Home\n  - Ticket List\n  - Analyze Ticket\n- **Main Content Area**:\n  - Display ticket title and status.\n  - Editable fields for description, assigned to, and status.\n  - Buttons: \"Save\", \"Cancel\".\n\n### Related Tickets Section\n- **Title**: \"Related Tickets\"\n- **List View**:\n  - Ticket ID (Link)\n  - Status\n  - Assigned To\n\n---\n\n## 5. API Specifications (if applicable)\n### HTTP Methods\n- **GET /tickets/{ticketId}**\n  - Retrieve ticket details.\n- **PUT /tickets/{ticketId}**\n  - Update ticket information.\n\n### Request Body for PUT\n```json\n{\n  \"title\": \"string\",\n  \"description\": \"string\",\n  \"status\": \"Open\" | \"In Progress\" | \"Resolved\" | \"Closed\"\n}\n```\n\n---\n\n## 6. Error Handling\n- **Ticket Not Found**: HTTP Status Code 404, Message: \"Ticket KSA-210 not found.\"\n- **Unauthorized Access**: HTTP Status Code 403, Message: \"You are not authorized to access this ticket.\"\n- **Duplicate Update Attempt**: HTTP Status Code 409, Message: \"Update conflict detected.\"\n\n---\n\n## 7. System Integration Points\n### Database\n- **Tickets Table**: `ticket_id`, `title`, `description`, `status`, `assigned_to`, `created_on`, `updated_on`\n- **Related Tickets Table**: `related_ticket_id`, `parent_ticket_id`\n\n### External Systems\n- **Authentication Service** for user authorization.\n- **Notification Service** to notify users of updates.\n\n---\n\nThis FSD document provides a comprehensive overview of the ticket analysis use case, ensuring that all necessary aspects are covered for the development and implementation phases.",
+          "timestamp": "2026-06-04T06:31:15.523Z",
+          "metadata": {
+            "docType": "FSD",
+            "phase": "all",
+            "usedLlm": true
+          }
+        }
+      ],
+      "currentStreamId": "stream-27400ffe-f339-42b1-bced-91ea9aa76279-1780554648689",
+      "approvalRequired": true,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [
+        {
+          "gateId": "QG-01",
+          "phase": "requirements",
+          "nodeId": "quality_gate_requirements",
+          "summary": "Quality gate for requirements phase — ",
+          "criteria": [
+            "BRD.md exists",
+            ">=3 User Stories with Acceptance Criteria",
+            "Business Flow Diagram (.drawio + .png)",
+            "Use Case Diagram (.drawio + .png)",
+            "Dependencies section present",
+            "Non-Functional Requirements defined"
+          ],
+          "timestamp": "2026-06-04T06:31:15.539Z"
+        }
+      ],
+      "chatHistory": [
+        {
+          "id": "cf919e4c-88d4-4c06-b8a5-230aabfff366",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T06:30:48.689Z"
+        },
+        {
+          "id": "cf919e4c-88d4-4c06-b8a5-230aabfff366",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T06:30:48.689Z"
+        },
+        {
+          "id": "cf919e4c-88d4-4c06-b8a5-230aabfff366",
+          "role": "user",
+          "content": "phân tích ticket KSA-210",
+          "timestamp": "2026-06-04T06:30:48.689Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T06:30:48.689Z",
+      "lastUpdatedAt": "2026-06-04T06:31:15.539Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {
+        "requirements": {
+          "passed": false,
+          "issues": []
+        }
+      },
+      "toolCalls": null,
+      "toolResults": [],
+      "agentIterations": 0
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:sdlc_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4,
+      "toolCalls": 4,
+      "toolResults": 4,
+      "agentIterations": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "sdlc_subgraph": {
+        "branch:to:sdlc_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "sdlc_subgraph": {
+        "threadId": "27400ffe-f339-42b1-bced-91ea9aa76279",
+        "currentPhase": "all",
+        "intent": "sdlc",
+        "pipelineStatus": "paused",
+        "resumePoint": null,
+        "documents": {
+          "fsd": {
+            "status": "done",
+            "version": 1,
+            "path": "documents//FSD.md",
+            "completedAt": "2026-06-04T06:31:15.523Z"
+          }
+        },
+        "agentOutputs": [
+          {
+            "nodeId": "sm",
+            "content": "Found 10 results:\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 19154 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 27502 | Tier: SEMANTIC | Score: 0.015 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 35865 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 44444 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] Node.js Source Files (Reference): | File | Purpose |\r\n  ID: 54696 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-174/BRD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 5517 | Tier: SEMANTIC | Score: 0.014 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 22154 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 29481 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 37844 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\n[REQUIREMENT] 2.1 System Context Diagram: ![System Context](diagrams/system-context.png)\n  ID: 46423 | Tier: SEMANTIC | Score: 0.013 | Source: documents/KSA-3/FSD.md\n\nTip: use detail=true for content, or mem_get(id) for full entry.",
+            "timestamp": "2026-06-04T06:30:49.471Z",
+            "metadata": {
+              "phase": "all",
+              "ticketKey": ""
+            }
+          },
+          {
+            "nodeId": "ba_brd",
+            "content": "```markdown\n# Functional Specification Document (FSD)\n\n## Project Overview\n\n### Ticket Analysis Use Case\nThis document details the use cases, business rules, data specifications, and user interface for analyzing tickets in a software system.\n\n---\n\n## Table of Contents\n1. **Use Cases**\n   - 1.1 Main Flow\n   - 1.2 Alternative Flows\n   - 1.3 Exception Flows\n\n2. **Business Rules (BR- IDs)**\n3. **Data Specifications**\n4. **UI Specifications**\n5. **API Specifications** (if applicable)\n6. **Error Handling**\n7. **System Integration Points**\n\n---\n\n## 1. Use Cases\n\n### 1.1 Main Flow\n#### Scenario: User Analyzes a Ticket KSA-210\n1. User logs into the system.\n2. User navigates to the \"Ticket Analysis\" module.\n3. System retrieves ticket KSA-210 details from the database.\n4. User reviews the retrieved ticket data.\n5. If necessary, user updates or annotates the ticket information.\n6. User saves changes and closes the ticket analysis window.\n\n### 1.2 Alternative Flows\n#### Scenario: User Chooses to View Related Tickets\n1. During step 3, if related tickets are available, system prompts user with an option to view them.\n2. If selected, user reviews relevant tickets linked to KSA-210 and can navigate back to the main ticket.\n\n### 1.3 Exception Flows\n#### Scenario: Ticket Not Found\n1. During step 3, if no ticket KSA-210 is found in the database.\n2. System displays an error message indicating that the ticket does not exist or has been archived/deleted.\n3. User can either return to the main menu or search for another ticket.\n\n---\n\n## 2. Business Rules (BR- IDs)\n| BR-ID | Rule Description |\n|-------|------------------|\n| BR-01 | The system must retrieve and display all relevant details of a specified ticket KSA-210. |\n| BR-02 | If the user attempts to update the ticket, only authorized users with the appropriate permissions should be allowed to do so. |\n| BR-03 | The system must log any changes made by the user in the ticket analysis module. |\n| BR-04 | The system must prevent duplicate entries when updating a ticket. |\n\n---\n\n## 3. Data Specifications\n### Ticket Fields\n- **Ticket ID**: KSA-210 (Primary Key)\n- **Title**: Mandatory, up to 50 characters.\n- **Description**: Optional, up to 1000 characters.\n- **Status**: Open, In Progress, Resolved, Closed.\n- **Assigned To**: User Identifier.\n- **Created On**: Date and Time of Ticket Creation.\n- **Updated On**: Timestamp for the last update.\n\n### Related Tickets\n- **Ticket ID**: KSA-205, KSA-215 (Foreign Key)\n- **Relationship Type**: Parent, Child, Linked\n\n---\n\n## 4. UI Specifications\n### Initial Page\n- **Title Bar**: \"Ticket Analysis - KSA-210\"\n- **Left Navigation Menu**:\n  - Home\n  - Ticket List\n  - Analyze Ticket\n- **Main Content Area**:\n  - Display ticket title and status.\n  - Editable fields for description, assigned to, and status.\n  - Buttons: \"Save\", \"Cancel\".\n\n### Related Tickets Section\n- **Title**: \"Related Tickets\"\n- **List View**:\n  - Ticket ID (Link)\n  - Status\n  - Assigned To\n\n---\n\n## 5. API Specifications (if applicable)\n### HTTP Methods\n- **GET /tickets/{ticketId}**\n  - Retrieve ticket details.\n- **PUT /tickets/{ticketId}**\n  - Update ticket information.\n\n### Request Body for PUT\n```json\n{\n  \"title\": \"string\",\n  \"description\": \"string\",\n  \"status\": \"Open\" | \"In Progress\" | \"Resolved\" | \"Closed\"\n}\n```\n\n---\n\n## 6. Error Handling\n- **Ticket Not Found**: HTTP Status Code 404, Message: \"Ticket KSA-210 not found.\"\n- **Unauthorized Access**: HTTP Status Code 403, Message: \"You are not authorized to access this ticket.\"\n- **Duplicate Update Attempt**: HTTP Status Code 409, Message: \"Update conflict detected.\"\n\n---\n\n## 7. System Integration Points\n### Database\n- **Tickets Table**: `ticket_id`, `title`, `description`, `status`, `assigned_to`, `created_on`, `updated_on`\n- **Related Tickets Table**: `related_ticket_id`, `parent_ticket_id`\n\n### External Systems\n- **Authentication Service** for user authorization.\n- **Notification Service** to notify users of updates.\n\n---\n\nThis FSD document provides a comprehensive overview of the ticket analysis use case, ensuring that all necessary aspects are covered for the development and implementation phases.",
+            "timestamp": "2026-06-04T06:31:15.523Z",
+            "metadata": {
+              "docType": "FSD",
+              "phase": "all",
+              "usedLlm": true
+            }
+          }
+        ],
+        "currentStreamId": "stream-27400ffe-f339-42b1-bced-91ea9aa76279-1780554648689",
+        "approvalRequired": true,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [
+          {
+            "gateId": "QG-01",
+            "phase": "requirements",
+            "nodeId": "quality_gate_requirements",
+            "summary": "Quality gate for requirements phase — ",
+            "criteria": [
+              "BRD.md exists",
+              ">=3 User Stories with Acceptance Criteria",
+              "Business Flow Diagram (.drawio + .png)",
+              "Use Case Diagram (.drawio + .png)",
+              "Dependencies section present",
+              "Non-Functional Requirements defined"
+            ],
+            "timestamp": "2026-06-04T06:31:15.539Z"
+          }
+        ],
+        "chatHistory": [
+          {
+            "id": "cf919e4c-88d4-4c06-b8a5-230aabfff366",
+            "role": "user",
+            "content": "phân tích ticket KSA-210",
+            "timestamp": "2026-06-04T06:30:48.689Z"
+          },
+          {
+            "id": "cf919e4c-88d4-4c06-b8a5-230aabfff366",
+            "role": "user",
+            "content": "phân tích ticket KSA-210",
+            "timestamp": "2026-06-04T06:30:48.689Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T06:30:48.689Z",
+        "lastUpdatedAt": "2026-06-04T06:31:15.539Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {
+          "requirements": {
+            "passed": false,
+            "issues": []
+          }
+        },
+        "toolCalls": null,
+        "toolResults": [],
+        "agentIterations": 0
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T06:30:48.690Z",
+  "lastModified": "2026-06-04T06:31:15.585Z"
+}

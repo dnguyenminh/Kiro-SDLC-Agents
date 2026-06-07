@@ -1,0 +1,82 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="2" value="KSA-210: Class Diagram — LangGraph Module" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="350" y="10" width="500" height="30" as="geometry" />
+    </mxCell>
+    <!-- LangGraphEngine class -->
+    <mxCell id="10" value="&lt;b&gt;LangGraphEngine&lt;/b&gt;&#xa;─────────────────────&#xa;- graph: CompiledStateGraph | null&#xa;- checkpointer: WorkspaceCheckpointer&#xa;- streamHandler: StreamHandler&#xa;- mcpBridge: McpBridge&#xa;- activeThread: string | null&#xa;─────────────────────&#xa;+ invoke(ticketKey, phase, chatInput): Promise&lt;void&gt;&#xa;+ resume(threadId): Promise&lt;void&gt;&#xa;+ handleApproval(decision, feedback?): Promise&lt;void&gt;&#xa;+ cancel(): void&#xa;+ listPersistedPipelines(): PersistedPipelineInfo[]&#xa;+ getCurrentNodeStates(): PipelineGraphNode[]&#xa;- ensureGraph(): Promise&lt;CompiledStateGraph&gt;" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="320" height="260" as="geometry" />
+    </mxCell>
+    <!-- BaseNode abstract -->
+    <mxCell id="20" value="&lt;b&gt;&lt;i&gt;BaseNode (abstract)&lt;/i&gt;&lt;/b&gt;&#xa;─────────────────────&#xa;# nodeId: string&#xa;# mcpBridge: McpBridge&#xa;# streamHandler: StreamHandler&#xa;─────────────────────&#xa;+ run(state: PipelineState): Promise&lt;Partial&lt;PipelineState&gt;&gt;&#xa;# abstract execute(state): Promise&lt;Partial&lt;PipelineState&gt;&gt;&#xa;# callMcp(toolName, args): Promise&lt;string&gt;&#xa;- withTimeout&lt;T&gt;(promise, ms): Promise&lt;T&gt;&#xa;- handleError(state, error): Partial&lt;PipelineState&gt;" style="text;html=1;strokeColor=#9673a6;fillColor=#e1d5e7;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="380" width="320" height="200" as="geometry" />
+    </mxCell>
+    <!-- Concrete Nodes -->
+    <mxCell id="31" value="&lt;b&gt;SmNode&lt;/b&gt;&#xa;───────&#xa;+ execute(state)" style="text;html=1;strokeColor=#9673a6;fillColor=#e1d5e7;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=9;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="640" width="100" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="32" value="&lt;b&gt;BaNode&lt;/b&gt;&#xa;───────&#xa;+ execute(state)" style="text;html=1;strokeColor=#9673a6;fillColor=#e1d5e7;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=9;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="640" width="100" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="33" value="&lt;b&gt;SaNode&lt;/b&gt;&#xa;───────&#xa;+ execute(state)" style="text;html=1;strokeColor=#9673a6;fillColor=#e1d5e7;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=9;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="320" y="640" width="100" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="34" value="&lt;b&gt;ApprovalNode&lt;/b&gt;&#xa;───────&#xa;+ execute(state)" style="text;html=1;strokeColor=#9673a6;fillColor=#e1d5e7;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=9;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="440" y="640" width="110" height="60" as="geometry" />
+    </mxCell>
+    <!-- WorkspaceCheckpointer -->
+    <mxCell id="40" value="&lt;b&gt;WorkspaceCheckpointer&lt;/b&gt;&#xa;extends BaseCheckpointSaver&#xa;─────────────────────&#xa;- stateDir: string&#xa;─────────────────────&#xa;+ getTuple(config): Promise&lt;CheckpointTuple | undefined&gt;&#xa;+ put(config, checkpoint, metadata): Promise&lt;RunnableConfig&gt;&#xa;+ list(config): Promise&lt;CheckpointTuple[]&gt;&#xa;+ delete(config): Promise&lt;void&gt;&#xa;+ listPersistedPipelines(): PersistedPipelineInfo[]&#xa;+ cleanup(maxAgeDays): void&#xa;- ensureDir(): void&#xa;- sanitizeForPersistence(state): PipelineState" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="500" y="60" width="340" height="230" as="geometry" />
+    </mxCell>
+    <!-- StreamHandler -->
+    <mxCell id="50" value="&lt;b&gt;StreamHandler&lt;/b&gt;&#xa;─────────────────────&#xa;- buffer: ChatExtToWebviewMessage[]&#xa;- flushTimer: NodeJS.Timeout | null&#xa;- DEBOUNCE_MS: 50&#xa;─────────────────────&#xa;+ emitToken(nodeId, content, streamId): void&#xa;+ emitStatus(nodeId, status, streamId): void&#xa;+ emitComplete(nodeId, duration, streamId): void&#xa;+ emitError(nodeId, error, streamId): void&#xa;- scheduleFlush(): void&#xa;- flush(): void" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="500" y="340" width="280" height="210" as="geometry" />
+    </mxCell>
+    <!-- McpBridge -->
+    <mxCell id="60" value="&lt;b&gt;McpBridge&lt;/b&gt;&#xa;─────────────────────&#xa;- mcpManager: McpServerManager&#xa;─────────────────────&#xa;+ callTool(name, args, timeoutMs): Promise&lt;string&gt;&#xa;+ isAvailable(): boolean" style="text;html=1;strokeColor=#b85450;fillColor=#f8cecc;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="500" y="600" width="280" height="110" as="geometry" />
+    </mxCell>
+    <!-- ChatPanelProvider -->
+    <mxCell id="70" value="&lt;b&gt;ChatPanelProvider&lt;/b&gt;&#xa;implements WebviewViewProvider&#xa;─────────────────────&#xa;- view: WebviewView | undefined&#xa;- engine: LangGraphEngine | null&#xa;- messageBuffer: ChatExtToWebviewMessage[]&#xa;─────────────────────&#xa;+ resolveWebviewView(view, context, token): void&#xa;- sendToWebview(msg): void&#xa;- getEngine(): LangGraphEngine&#xa;- handleMessage(msg): Promise&lt;void&gt;&#xa;- getHtml(webview): string" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="900" y="60" width="280" height="220" as="geometry" />
+    </mxCell>
+    <!-- PipelineState interface -->
+    <mxCell id="80" value="&lt;b&gt;&lt;i&gt;PipelineState (interface)&lt;/i&gt;&lt;/b&gt;&#xa;─────────────────────&#xa;ticketKey: string&#xa;threadId: string&#xa;currentPhase: SDLCPhase&#xa;pipelineStatus: PipelineStatus&#xa;resumePoint: string | null&#xa;documents: Record&lt;string, DocumentState&gt;&#xa;agentOutputs: AgentOutput[]&#xa;approvalRequired: boolean&#xa;chatHistory: ChatMessage[]&#xa;errors: PipelineError[]&#xa;..." style="text;html=1;strokeColor=#666666;fillColor=#f5f5f5;align=left;verticalAlign=top;whiteSpace=wrap;overflow=hidden;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="900" y="340" width="260" height="200" as="geometry" />
+    </mxCell>
+    <!-- Relationships -->
+    <mxCell id="e1" value="creates" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;" edge="1" source="10" target="22" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" value="uses" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;" edge="1" source="10" target="40" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" value="uses" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;" edge="1" source="10" target="50" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" value="extends" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" edge="1" source="31" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" value="extends" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" edge="1" source="32" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e6" value="extends" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" edge="1" source="33" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" value="extends" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" edge="1" source="34" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e8" value="creates" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;" edge="1" source="70" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e9" value="operates on" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;dashed=1;" edge="1" source="20" target="80" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e10" value="uses" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;" edge="1" source="20" target="60" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

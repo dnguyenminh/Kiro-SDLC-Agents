@@ -1,11 +1,14 @@
 /**
  * Workspace indexing — prompts user to index code + documents after injection.
  * Also provides standalone command for manual indexing.
+ * Supports multi-format: .md, .docx, .xlsx, .pdf, .png, .jpg, .pptx, etc.
+ * Non-markdown files are converted via `filetomarkdown` package before ingestion.
  */
 
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { convertFileToMarkdown, isTextFormat, type ConversionResult } from "./converter";
 
 const DOCUMENT_TYPES: Record<string, string> = {
     "BRD": "REQUIREMENT",
@@ -15,8 +18,27 @@ const DOCUMENT_TYPES: Record<string, string> = {
     "STC": "PROCEDURE",
     "DPG": "PROCEDURE",
     "RLN": "PROCEDURE",
-    "UG": "PROCEDURE"
+    "UG": "PROCEDURE",
+    "TEST-REPORT": "PROCEDURE",
+    "DISCREPANCY": "CONTEXT",
+    "SECURITY-REPORT": "PROCEDURE"
 };
+
+/** File extensions supported for indexing (converted to markdown before ingest) */
+const INDEXABLE_EXTENSIONS = new Set([
+    // Markdown (native)
+    ".md",
+    // Office documents
+    ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
+    // PDF
+    ".pdf",
+    // Images (OCR/description)
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg",
+    // Text-based
+    ".txt", ".csv", ".json", ".xml", ".yaml", ".yml",
+    // Rich text
+    ".rtf", ".odt", ".ods", ".odp"
+]);
 
 /**
  * Show prompt after injection asking if user wants to index.
@@ -61,9 +83,65 @@ async function runIndexWorkspace(root: string): Promise<void> {
                 if (docs.length === 0) {
                     results.push("ℹ️ No documents found in documents/ folder");
                 } else {
-                    report.report({ message: `Indexing ${docs.length} documents via HTTP API...` });
-                    const apiResult = await ingestDocumentsViaHttp(docs, report);
-                    results.push(apiResult);
+                    // Separate markdown (direct ingest) from non-markdown (needs conversion)
+                    const mdDocs = docs.filter(d => d.format === "markdown");
+                    const nonMdDocs = docs.filter(d => d.format !== "markdown");
+
+                    report.report({ message: `Found ${docs.length} files (${nonMdDocs.length} need conversion)` });
+
+                    // Convert non-markdown files
+                    const convertedDocs: Array<{ path: string; type: string; ticket: string; format: string; content?: string }> = [];
+                    let convertedCount = 0;
+                    let skippedCount = 0;
+                    const errors: Array<{ file: string; error: string }> = [];
+
+                    const channel = vscode.window.createOutputChannel("SDLC Indexing");
+
+                    for (let i = 0; i < nonMdDocs.length; i++) {
+                        const doc = nonMdDocs[i];
+                        report.report({ message: `Converting ${i + 1}/${nonMdDocs.length} files...` });
+
+                        const absPath = path.join(root, doc.path);
+                        const result = await convertFileToMarkdown(absPath, doc.format);
+
+                        if (result.success) {
+                            convertedDocs.push({ ...doc, content: result.markdown });
+                            convertedCount++;
+                            channel.appendLine(`  ✅ Converted: ${doc.path} (${result.conversionTime}ms)`);
+                        } else {
+                            skippedCount++;
+                            errors.push({ file: doc.path, error: result.error || "unknown" });
+                            channel.appendLine(`  ⚠️ Skipped: ${doc.path} — ${result.error}`);
+                        }
+                    }
+
+                    // Combine: direct markdown + converted files
+                    const allDocsForIngest = [
+                        ...mdDocs,
+                        ...convertedDocs
+                    ];
+
+                    report.report({ message: `Indexing ${allDocsForIngest.length} files...` });
+                    const apiResult = await ingestDocumentsViaHttp(allDocsForIngest, report);
+
+                    // Summary
+                    const summary = [
+                        `✅ Documents: ${docs.length} discovered`,
+                        `   📄 Direct markdown: ${mdDocs.length}`,
+                        `   🔄 Converted: ${convertedCount}`,
+                        `   ⏭️ Skipped: ${skippedCount}`,
+                        `   ${apiResult}`
+                    ];
+                    if (errors.length > 0) {
+                        summary.push(`   ⚠️ Errors:`);
+                        for (const e of errors.slice(0, 5)) {
+                            summary.push(`      - ${path.basename(e.file)}: ${e.error}`);
+                        }
+                        if (errors.length > 5) {
+                            summary.push(`      ... and ${errors.length - 5} more`);
+                        }
+                    }
+                    results.push(summary.join("\n"));
                 }
             }
 
@@ -82,7 +160,7 @@ async function runIndexWorkspace(root: string): Promise<void> {
 async function showIndexOptions(): Promise<string[] | undefined> {
     const picks = await vscode.window.showQuickPick([
         { label: "$(code) Index Source Code", description: "Re-index all code symbols (FTS5)", id: "code", picked: true },
-        { label: "$(book) Index Documents", description: "Index BRD, FSD, TDD into Knowledge Base", id: "documents", picked: true },
+        { label: "$(book) Index Documents", description: "Index all SDLC documents into Knowledge Base", id: "documents", picked: true },
         { label: "$(sync) Sync Code → Memory", description: "Sync code entities into memory graph", id: "sync", picked: true }
     ], {
         canPickMany: true,
@@ -91,12 +169,12 @@ async function showIndexOptions(): Promise<string[] | undefined> {
     return picks?.map(p => p.id);
 }
 
-function discoverDocuments(root: string): Array<{ path: string; type: string; ticket: string }> {
+function discoverDocuments(root: string): Array<{ path: string; type: string; ticket: string; format: string }> {
     const docsDir = path.join(root, "documents");
     console.error(`[indexer] discoverDocuments: root=${root}, docsDir=${docsDir}, exists=${fs.existsSync(docsDir)}`);
     if (!fs.existsSync(docsDir)) { return []; }
 
-    const results: Array<{ path: string; type: string; ticket: string }> = [];
+    const results: Array<{ path: string; type: string; ticket: string; format: string }> = [];
     const allEntries = fs.readdirSync(docsDir);
     const tickets = allEntries.filter(d =>
         fs.statSync(path.join(docsDir, d)).isDirectory() && /^[A-Z]+-\d+$/.test(d)
@@ -105,22 +183,47 @@ function discoverDocuments(root: string): Array<{ path: string; type: string; ti
 
     for (const ticket of tickets) {
         const ticketDir = path.join(docsDir, ticket);
-        const files = fs.readdirSync(ticketDir).filter(f => f.endsWith(".md"));
-
-        for (const file of files) {
-            const baseName = path.basename(file, ".md").toUpperCase();
-            const docType = DOCUMENT_TYPES[baseName];
-            if (docType) {
-                results.push({
-                    path: `documents/${ticket}/${file}`,
-                    type: docType,
-                    ticket
-                });
-            }
-        }
+        scanDirectoryRecursive(ticketDir, ticket, `documents/${ticket}`, results);
     }
     console.error(`[indexer] discoverDocuments: found ${results.length} documents across ${tickets.length} tickets`);
     return results;
+}
+
+/** Recursively scan a directory for indexable files (skip diagrams/*.drawio) */
+function scanDirectoryRecursive(
+    dir: string,
+    ticket: string,
+    relativePath: string,
+    results: Array<{ path: string; type: string; ticket: string; format: string }>
+): void {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        if (entry.isDirectory()) {
+            // Skip diagrams source folder (drawio files are not text-indexable)
+            if (entry.name === "diagrams" || entry.name === "testdata") { continue; }
+            scanDirectoryRecursive(
+                path.join(dir, entry.name),
+                ticket,
+                `${relativePath}/${entry.name}`,
+                results
+            );
+        } else if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase();
+            if (!INDEXABLE_EXTENSIONS.has(ext)) { continue; }
+
+            const baseName = path.basename(entry.name, ext).toUpperCase();
+            const docType = DOCUMENT_TYPES[baseName] || "CONTEXT";
+            const format = ext === ".md" ? "markdown" : ext.replace(".", "");
+
+            results.push({
+                path: `${relativePath}/${entry.name}`,
+                type: docType,
+                ticket,
+                format
+            });
+        }
+    }
 }
 
 function formatDocList(docs: Array<{ path: string; type: string; ticket: string }>): string {
@@ -205,7 +308,7 @@ function resolveViewerPort(root: string): number {
 
 /** Call MCP server HTTP API to ingest documents. */
 async function ingestDocumentsViaHttp(
-    docs: Array<{ path: string; type: string; ticket: string }>,
+    docs: Array<{ path: string; type: string; ticket: string; content?: string }>,
     report: vscode.Progress<{ message?: string }>
 ): Promise<string> {
     const root = getWorkspaceRoot();
@@ -215,7 +318,12 @@ async function ingestDocumentsViaHttp(
     const url = `http://localhost:${port}/api/memory/ingest-file`;
 
     const payload = {
-        files: docs.map(d => ({ file_path: d.path, type: d.type, format: "markdown" }))
+        files: docs.map(d => ({
+            file_path: d.path,
+            type: d.type,
+            format: "markdown",
+            ...(d.content ? { content: d.content } : {})
+        }))
     };
 
     try {

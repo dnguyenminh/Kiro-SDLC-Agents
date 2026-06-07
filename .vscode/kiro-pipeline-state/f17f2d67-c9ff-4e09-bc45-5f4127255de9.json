@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fd21-0ee0-6040-8002-28600d0a2e21",
+    "ts": "2026-06-04T04:58:45.700Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "f17f2d67-c9ff-4e09-bc45-5f4127255de9",
+      "currentPhase": "all",
+      "intent": "chat",
+      "pipelineStatus": "completed",
+      "resumePoint": null,
+      "documents": {},
+      "agentOutputs": [
+        {
+          "nodeId": "chat",
+          "content": "Hello! How can I assist you today with software development or any related topics?",
+          "timestamp": "2026-06-04T04:58:45.666Z"
+        }
+      ],
+      "currentStreamId": "stream-f17f2d67-c9ff-4e09-bc45-5f4127255de9-1780549116630",
+      "approvalRequired": false,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [],
+      "chatHistory": [
+        {
+          "id": "cec6079e-83e9-4f77-ba57-d3b997e27539",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T04:58:36.630Z"
+        },
+        {
+          "id": "cec6079e-83e9-4f77-ba57-d3b997e27539",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T04:58:36.630Z"
+        },
+        {
+          "id": "cec6079e-83e9-4f77-ba57-d3b997e27539",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T04:58:36.630Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T04:58:36.630Z",
+      "lastUpdatedAt": "2026-06-04T04:58:45.666Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {}
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:chat_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "chat_subgraph": {
+        "branch:to:chat_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "chat_subgraph": {
+        "threadId": "f17f2d67-c9ff-4e09-bc45-5f4127255de9",
+        "currentPhase": "all",
+        "intent": "chat",
+        "pipelineStatus": "completed",
+        "resumePoint": null,
+        "documents": {},
+        "agentOutputs": [
+          {
+            "nodeId": "chat",
+            "content": "Hello! How can I assist you today with software development or any related topics?",
+            "timestamp": "2026-06-04T04:58:45.666Z"
+          }
+        ],
+        "currentStreamId": "stream-f17f2d67-c9ff-4e09-bc45-5f4127255de9-1780549116630",
+        "approvalRequired": false,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [],
+        "chatHistory": [
+          {
+            "id": "cec6079e-83e9-4f77-ba57-d3b997e27539",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-04T04:58:36.630Z"
+          },
+          {
+            "id": "cec6079e-83e9-4f77-ba57-d3b997e27539",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-04T04:58:36.630Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T04:58:36.630Z",
+        "lastUpdatedAt": "2026-06-04T04:58:45.666Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {}
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T04:58:36.633Z",
+  "lastModified": "2026-06-04T04:58:45.710Z"
+}

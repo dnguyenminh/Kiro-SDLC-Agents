@@ -1,0 +1,60 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-231 — Component Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="300" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pkg_providers" value="src/langgraph/providers/" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="720" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_kiro_client" value="&lt;b&gt;KiroClient&lt;/b&gt;&#10;kiro-client.ts&#10;&#10;+ chat(): Promise&lt;string&gt;&#10;+ chatStream(): AsyncGenerator&lt;string&gt;&#10;+ chatWithTools(): Promise&lt;LlmResponse&gt;&#10;+ isAvailable(): Promise&lt;boolean&gt;&#10;+ dispose(): void&#10;&#10;- tokenManager: TokenManager&#10;- adapter: AnthropicAdapter&#10;- streamHandler: StreamHandler&#10;- modelRegistry: ModelRegistry" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="pkg_providers">
+      <mxGeometry x="220" y="50" width="280" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_token_mgr" value="&lt;b&gt;TokenManager&lt;/b&gt;&#10;token-manager.ts&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getAccessToken(): Promise&lt;string&gt;&#10;+ getRegion(): string&#10;+ getStatus(): CredentialStatus&#10;+ onStatusChange: Event&#10;+ dispose(): void&#10;&#10;- credentials: KiroCredentials&#10;- refreshMutex: Mutex&#10;- watcher: FileSystemWatcher&#10;- refreshTimer: NodeJS.Timeout" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="pkg_providers">
+      <mxGeometry x="20" y="280" width="260" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_adapter" value="&lt;b&gt;AnthropicAdapter&lt;/b&gt;&#10;anthropic-adapter.ts&#10;&#10;+ buildRequestBody(): KiroRequestBody&#10;+ buildRequestHeaders(): Headers&#10;+ parseNonStreamResponse(): LlmResponse&#10;+ getEndpointUrl(region): string" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="pkg_providers">
+      <mxGeometry x="440" y="280" width="260" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_stream" value="&lt;b&gt;StreamHandler&lt;/b&gt;&#10;stream-handler.ts&#10;&#10;+ processStream(): AsyncGenerator&lt;string&gt;&#10;+ processStreamWithToolUse(): AsyncGenerator&lt;StreamEvent&gt;&#10;&#10;- parseSSE(buffer): Event[]" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="pkg_providers">
+      <mxGeometry x="440" y="440" width="260" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_model_reg" value="&lt;b&gt;ModelRegistry&lt;/b&gt;&#10;model-registry.ts&#10;&#10;+ getModels(force?): Promise&lt;KiroModel[]&gt;&#10;+ getSelectedModel(): string&#10;+ setSelectedModel(id): Promise&lt;void&gt;&#10;+ onModelsChanged: Event&#10;+ dispose(): void&#10;&#10;- cache: ModelCache&#10;- cachedEtag: string" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="pkg_providers">
+      <mxGeometry x="110" y="280" width="220" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="iface_llm" value="&lt;b&gt;&lt;&lt;interface&gt;&gt;&lt;/b&gt;&#10;LlmProvider" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="320" y="600" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_existing_anthropic" value="&lt;b&gt;AnthropicProvider&lt;/b&gt;&#10;(existing — KSA-210)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="100" y="600" width="180" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_existing_openai" value="&lt;b&gt;OpenAIProvider&lt;/b&gt;&#10;(existing — KSA-210)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="520" y="600" width="180" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impl" style="html=1;endArrow=block;endSize=12;endFill=0;" edge="1" source="comp_kiro_client" target="iface_llm" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impl2" style="html=1;endArrow=block;endSize=12;endFill=0;" edge="1" source="comp_existing_anthropic" target="iface_llm" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impl3" style="html=1;endArrow=block;endSize=12;endFill=0;" edge="1" source="comp_existing_openai" target="iface_llm" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dep1" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="comp_kiro_client" target="comp_token_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dep2" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="comp_kiro_client" target="comp_adapter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dep3" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="comp_kiro_client" target="comp_stream" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dep4" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="comp_kiro_client" target="comp_model_reg" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_dep5" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="comp_model_reg" target="comp_token_mgr" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

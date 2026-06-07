@@ -27,6 +27,8 @@ import { showImpactAnalysis } from "./panels/impact-panel";
 import { NativeAddonManager } from "./native-addon-manager";
 import { OnnxAddonManager } from "./onnx-addon-manager";
 import { KbEventBus } from "./kb-event-bus";
+import { ChatPanelProvider } from "./chat-panel/chat-panel-provider";
+import { SettingsPanel } from "./panels/settings-panel";
 
 let mcpManager: McpServerManager | undefined;
 let panelManager: WebviewPanelManager | undefined;
@@ -77,6 +79,74 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.commands.executeCommand(cmd);
             }
         });
+
+        // Register Chat Panel (KSA-210) — lazy-init LangGraph engine
+        const chatPanelProvider = new ChatPanelProvider(context.extensionUri, mcpManager, workspaceRoot, context.secrets);
+        context.subscriptions.push(
+            vscode.window.registerWebviewViewProvider("kiroChatPanel", chatPanelProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            }),
+            chatPanelProvider
+        );
+
+        // Test command: detect available Language Models (Option D validation)
+        context.subscriptions.push(
+            vscode.commands.registerCommand("kiroSdlc.testLanguageModels", async () => {
+                const outputCh = vscode.window.createOutputChannel("LM Test");
+                outputCh.show();
+                outputCh.appendLine("[LM Test] Starting vscode.lm API test...");
+
+                try {
+                    // Check if vscode.lm exists
+                    if (!vscode.lm || !vscode.lm.selectChatModels) {
+                        outputCh.appendLine("[LM Test] ERROR: vscode.lm API does NOT exist in this IDE.");
+                        vscode.window.showErrorMessage("vscode.lm API not available in Kiro IDE.");
+                        return;
+                    }
+                    outputCh.appendLine("[LM Test] vscode.lm namespace exists. Calling selectChatModels({})...");
+
+                    // Try to select ALL available models
+                    const allModels = await vscode.lm.selectChatModels({});
+                    outputCh.appendLine(`[LM Test] selectChatModels returned ${allModels.length} model(s)`);
+
+                    if (allModels.length === 0) {
+                        outputCh.appendLine("[LM Test] No models found. Kiro does not expose models via vscode.lm.");
+                        vscode.window.showWarningMessage(
+                            "vscode.lm API exists but returned 0 models. Kiro does not expose LLM through this API."
+                        );
+                        return;
+                    }
+
+                    for (const m of allModels) {
+                        outputCh.appendLine(`  - ${m.vendor}/${m.family} id=${m.id} maxTokens=${m.maxInputTokens}`);
+                    }
+
+                    const pick = await vscode.window.showInformationMessage(
+                        `Found ${allModels.length} model(s). First: ${allModels[0].vendor}/${allModels[0].family}`,
+                        "Test Chat", "Cancel"
+                    );
+                    if (pick === "Test Chat") {
+                        const model = allModels[0];
+                        outputCh.appendLine(`[LM Test] Sending test request to ${model.id}...`);
+                        const messages = [
+                            vscode.LanguageModelChatMessage.User("Say hello in 10 words or less.")
+                        ];
+                        const response = await model.sendRequest(messages, {}, new vscode.CancellationTokenSource().token);
+                        let result = "";
+                        for await (const chunk of response.text) {
+                            result += chunk;
+                        }
+                        outputCh.appendLine(`[LM Test] Response: ${result}`);
+                        vscode.window.showInformationMessage(`LLM Response: ${result}`);
+                    }
+                } catch (err: any) {
+                    outputCh.appendLine(`[LM Test] EXCEPTION: ${err?.message || err}`);
+                    outputCh.appendLine(`[LM Test] Code: ${err?.code || "N/A"}`);
+                    outputCh.appendLine(`[LM Test] Stack: ${err?.stack || "N/A"}`);
+                    vscode.window.showErrorMessage(`LM API Error: ${err?.message || String(err)}`);
+                }
+            })
+        );
 
         // Initialize config watcher for mcp.json changes
         configWatcher = new ConfigWatcher(workspaceRoot, mcpManager, outputChannel);
@@ -144,6 +214,15 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.changePort", () => handleChangePort()),
         vscode.commands.registerCommand("kiroSdlc.editConfig", () => handleEditConfig()),
         vscode.commands.registerCommand("kiroSdlc.changeConfig", () => handleChangeConfig()),
+    );
+
+    // Register LLM API key management commands (KSA-210)
+    context.subscriptions.push(
+        vscode.commands.registerCommand("kiroSdlc.setLlmApiKey", () => handleSetLlmApiKey(context)),
+        vscode.commands.registerCommand("kiroSdlc.clearLlmApiKey", () => handleClearLlmApiKey(context)),
+        vscode.commands.registerCommand("kiroSdlc.openSettings", () =>
+            SettingsPanel.open(context.extensionUri, context.secrets)
+        ),
     );
 
     // Register new feature commands (KSA-170 P2)
@@ -418,6 +497,56 @@ function createStatusBar(): vscode.StatusBarItem {
     item.command = "kiroSdlc.status";
     item.show();
     return item;
+}
+
+// === LLM API Key Management (KSA-210) ===
+
+const LLM_SECRET_KEYS: Record<string, string> = {
+    anthropic: "kiroSdlc.anthropicApiKey",
+    openai: "kiroSdlc.openaiApiKey",
+};
+
+async function handleSetLlmApiKey(context: vscode.ExtensionContext): Promise<void> {
+    const config = vscode.workspace.getConfiguration("kiroSdlc");
+    const provider = config.get<string>("llmProvider", "anthropic");
+
+    if (provider === "ollama") {
+        vscode.window.showInformationMessage("Ollama does not require an API key.");
+        return;
+    }
+
+    const secretKey = LLM_SECRET_KEYS[provider];
+    if (!secretKey) {
+        vscode.window.showErrorMessage(`Unknown provider: ${provider}`);
+        return;
+    }
+
+    const apiKey = await vscode.window.showInputBox({
+        prompt: `Enter API key for ${provider}`,
+        password: true,
+        placeHolder: provider === "anthropic" ? "sk-ant-..." : "sk-...",
+        ignoreFocusOut: true,
+    });
+    if (!apiKey) { return; }
+
+    await context.secrets.store(secretKey, apiKey);
+    vscode.window.showInformationMessage(`${provider} API key stored securely.`);
+}
+
+async function handleClearLlmApiKey(context: vscode.ExtensionContext): Promise<void> {
+    const config = vscode.workspace.getConfiguration("kiroSdlc");
+    const provider = config.get<string>("llmProvider", "anthropic");
+
+    if (provider === "ollama") {
+        vscode.window.showInformationMessage("Ollama does not use stored API keys.");
+        return;
+    }
+
+    const secretKey = LLM_SECRET_KEYS[provider];
+    if (!secretKey) { return; }
+
+    await context.secrets.delete(secretKey);
+    vscode.window.showInformationMessage(`${provider} API key removed.`);
 }
 
 function updateStatusBar(item: vscode.StatusBarItem, context: vscode.ExtensionContext) {

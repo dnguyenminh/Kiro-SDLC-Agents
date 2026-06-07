@@ -1,0 +1,71 @@
+<mxfile><diagram name="Token State Machine" id="token-state-1">
+<mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;TokenManager State Machine — KSA-231&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="350" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="195" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_init" value="&lt;b&gt;INITIALIZING&lt;/b&gt;&#10;Scanning cache dir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="160" y="180" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_active" value="&lt;b&gt;ACTIVE&lt;/b&gt;&#10;Token valid, ready" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="180" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_refreshing" value="&lt;b&gt;REFRESHING&lt;/b&gt;&#10;Token refresh in progress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="720" y="180" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_expired" value="&lt;b&gt;EXPIRED&lt;/b&gt;&#10;Needs re-login" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="380" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="s_no_cred" value="&lt;b&gt;NO_CREDENTIALS&lt;/b&gt;&#10;No cache found" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="160" y="380" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_start" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="s_init" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init_active" value="Valid token found" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_init" target="s_active" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init_nocred" value="No cache dir" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_init" target="s_no_cred" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init_expired" value="All expired" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_init" target="s_expired" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_active_refresh" value="Timer fires&#10;(expiresAt - 5min)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_active" target="s_refreshing" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_refresh_active" value="Refresh success" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_refreshing" target="s_active" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="810" y="150"/>
+          <mxPoint x="520" y="150"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_refresh_expired" value="3x retry fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="s_refreshing" target="s_expired" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_expired_active" value="New file detected&#10;(FileWatcher)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="s_expired" target="s_active" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="680" y="410"/>
+          <mxPoint x="680" y="210"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_nocred_init" value="FileWatcher&#10;new file" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="s_no_cred" target="s_init" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="120" y="410"/>
+          <mxPoint x="120" y="210"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram></mxfile>

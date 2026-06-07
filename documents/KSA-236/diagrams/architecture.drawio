@@ -1,0 +1,63 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — KSA-236 tool_use_id Passthrough (Node.js/TypeScript)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="580" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="200" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_vscode" value="&lt;b&gt;VS Code Extension&lt;/b&gt;&#10;Chat Panel Client&#10;(sends chatWithTools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="180" y="190" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;" vertex="1" parent="1">
+      <mxGeometry x="420" y="70" width="380" height="360" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary_label" value="&lt;b&gt;kiro-ts (Node.js/Express)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="520" y="75" width="200" height="25" as="geometry"/>
+    </mxCell>
+    <mxCell id="handlers" value="&lt;b&gt;handlers.ts&lt;/b&gt;&#10;Express Route Handler&#10;POST /chat/completions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="460" y="110" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="converter" value="&lt;b&gt;converter.ts&lt;/b&gt;&#10;Anthropic Converter&#10;⚠️ FIX: id passthrough" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="460" y="210" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="history" value="&lt;b&gt;conversation.ts&lt;/b&gt;&#10;ConversationHistory&#10;Map&lt;id, ToolUseBlock&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="460" y="320" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="types" value="&lt;b&gt;types.ts&lt;/b&gt;&#10;TypeScript Interfaces" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="680" y="210" width="100" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_kiroq" value="&lt;b&gt;Kiro Q API&lt;/b&gt;&#10;LLM Backend&#10;(generates tool_use_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="860" y="190" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="chatWithTools&#10;(JSON)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="actor_dev" target="ext_vscode" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="SSE Stream&#10;(tool_use_id=XYZ)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="ext_vscode" target="handlers" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="convertResponse()&#10;id: block.id" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="handlers" target="converter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="addAssistantMessage()&#10;stores same id" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="handlers" target="history" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="HTTP POST&#10;(tool_use_id originates)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="handlers" target="ext_kiroq" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="converter" target="types" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="history" target="types" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_fix" value="🔧 FIX: Remove generateToolUseId()&#10;Use block.id directly (BR-1)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="660" y="110" width="220" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_note" style="rounded=1;html=1;dashed=1;endArrow=none;strokeColor=#d6b656;" edge="1" source="note_fix" target="converter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

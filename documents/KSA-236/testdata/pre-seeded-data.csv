@@ -1,0 +1,9 @@
+test_case_id,tool_use_id,tool_name,tool_input,role,status,description
+PBT-01,tooluse_ABC123,readFile,"{""path"":""/src/main.rs""}",assistant,ACTIVE,Base tool_use entry for passthrough testing
+PBT-02,tooluse_XYZ789,grep_search,"{""query"":""fn main""}",assistant,ACTIVE,Second entry for history lookup testing
+PBT-03,tooluse_DEF456,execute_pwsh,"{""command"":""ls""}",assistant,ACTIVE,Third entry for multi-block testing
+IT-01,tooluse_IT01,readFile,"{""path"":""/test""}",assistant,ACTIVE,Integration test base entry
+IT-05,tooluse_CONC_0,readFile,"{""path"":""/conc0""}",assistant,ACTIVE,Concurrent access test entry 0
+IT-05,tooluse_CONC_1,grep_search,"{""query"":""test""}",assistant,ACTIVE,Concurrent access test entry 1
+IT-05,tooluse_CONC_2,execute_pwsh,"{""command"":""pwd""}",assistant,ACTIVE,Concurrent access test entry 2
+E2E-API-01,tooluse_E2E01,readFile,"{""path"":""/src/main.rs""}",assistant,ACTIVE,E2E full loop test entry

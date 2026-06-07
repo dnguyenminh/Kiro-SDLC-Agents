@@ -1,0 +1,45 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;System Context — kiro-ts tool_use_id Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="200" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="kiro-ts Service" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;fontStyle=1;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="200" y="80" width="500" height="340" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_extension" value="&lt;b&gt;VS Code Extension&lt;/b&gt;&#10;Chat Panel Client&#10;(sends requests,&#10;receives SSE stream)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="240" y="120" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_handler" value="&lt;b&gt;Request Handler&lt;/b&gt;&#10;handlers.ts&#10;(routes, SSE stream)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="240" y="240" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_converter" value="&lt;b&gt;Anthropic Converter&lt;/b&gt;&#10;converter.ts&#10;(format transform)&#10;&lt;font color=&quot;#c62828&quot;&gt;⚠ BUG HERE&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="480" y="240" width="190" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp_history" value="&lt;b&gt;Conversation History&lt;/b&gt;&#10;(in-memory store)&#10;stores tool_use_id" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="350" y="350" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_kiroq" value="&lt;b&gt;Kiro Q API&lt;/b&gt;&#10;LLM Backend&#10;(generates tool_use_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="780" y="240" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="Types message" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" parent="1" source="actor_dev" target="ext_extension">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="chatWithTools /&#10;continuation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;" edge="1" parent="1" source="ext_extension" target="comp_handler">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="convert format" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;" edge="1" parent="1" source="comp_handler" target="comp_converter">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="HTTP (JSON)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;" edge="1" parent="1" source="comp_converter" target="ext_kiroq">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="store/lookup&#10;tool_use_id" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;" edge="1" parent="1" source="comp_handler" target="comp_history">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

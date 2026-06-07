@@ -1,0 +1,110 @@
+<mxfile><diagram name="Chat Stream Sequence" id="seq-chat-1">
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Chat Stream Sequence — KSA-231&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="380" y="10" width="350" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_user" value="Chat Panel" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_kiro" value="KiroClient" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_token" value="TokenManager" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="60" width="120" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_adapter" value="AnthropicAdapter" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="620" y="60" width="130" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_api" value="Kiro API" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="820" y="60" width="100" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_stream" value="StreamHandler" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=16;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1000" y="60" width="120" height="650" as="geometry"/>
+    </mxCell>
+    <mxCell id="m1" value="chatStream(messages, opts)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="120" as="sourcePoint"/>
+        <mxPoint x="290" y="120" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="getAccessToken()" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="160" as="sourcePoint"/>
+        <mxPoint x="480" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="token" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="480" y="190" as="sourcePoint"/>
+        <mxPoint x="290" y="190" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="formatRequest(messages)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="230" as="sourcePoint"/>
+        <mxPoint x="685" y="230" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="POST /v1/messages&#10;Authorization: Bearer {token}&#10;stream: true" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="685" y="280" as="sourcePoint"/>
+        <mxPoint x="870" y="280" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="200 OK (text/event-stream)" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="870" y="320" as="sourcePoint"/>
+        <mxPoint x="685" y="320" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="processStream(response)" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="685" y="360" as="sourcePoint"/>
+        <mxPoint x="1060" y="360" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="content_block_delta" style="html=1;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="870" y="400" as="sourcePoint"/>
+        <mxPoint x="1060" y="400" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="yield text" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1060" y="440" as="sourcePoint"/>
+        <mxPoint x="110" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="content_block_delta..." style="html=1;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="870" y="480" as="sourcePoint"/>
+        <mxPoint x="1060" y="480" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m11" value="yield text" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1060" y="520" as="sourcePoint"/>
+        <mxPoint x="110" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m12" value="message_stop" style="html=1;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="870" y="580" as="sourcePoint"/>
+        <mxPoint x="1060" y="580" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m13" value="stream complete" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1060" y="620" as="sourcePoint"/>
+        <mxPoint x="110" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="loop_box" value="loop [for each SSE chunk]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="50" y="390" width="1100" height="200" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram></mxfile>

@@ -1,0 +1,4 @@
+test_case_id,concurrent_task_count,tool_use_ids,expected_stored_count,expected_result,description
+IT-05,10,"tooluse_CONC_0,tooluse_CONC_1,tooluse_CONC_2,tooluse_CONC_3,tooluse_CONC_4,tooluse_CONC_5,tooluse_CONC_6,tooluse_CONC_7,tooluse_CONC_8,tooluse_CONC_9",10,All 10 IDs stored without panic or deadlock,Thread safety — 10 concurrent writes
+IT-05,50,"tooluse_STRESS_{0..49}",50,All 50 IDs stored correctly,Stress test — 50 concurrent writes
+PBT-03,5,"tooluse_PBT_A,tooluse_PBT_B,tooluse_PBT_C,tooluse_PBT_D,tooluse_PBT_E",5,All 5 independently retrievable,Property — no ID collision

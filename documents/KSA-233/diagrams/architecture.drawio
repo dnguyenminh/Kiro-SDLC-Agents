@@ -1,0 +1,102 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="SDLC StateGraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;verticalAlign=top;align=center;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="1080" height="700" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="SM Node" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="80" y="120" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="Agent Node&#xa;(BA/SA/DEV/QA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="280" y="120" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="Verify Node&#xa;(NEW - KSA-233)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="520" y="120" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="Quality Gate&#xa;(Existing)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="760" y="120" width="140" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" source="4" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="pass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontColor=#009900;" edge="1" source="5" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="Layer 1: RETRY&#xa;(inside BaseNode.run())" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+      <mxGeometry x="260" y="240" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="execute() throws Error&#xa;&#xa;Retry 1: wait 1s&#xa;Retry 2: wait 2s&#xa;&#xa;If NonRecoverableError&#xa;--> skip retry" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="260" y="330" width="200" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="Layer 2: VERIFY&#xa;(VerifyNode class)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+      <mxGeometry x="500" y="240" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="Evaluates output quality&#xa;via LLM or rules&#xa;&#xa;Pass --> next node&#xa;Fail --> feedback to agent&#xa;Fail (max) --> strategy" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="500" y="330" width="200" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="Layer 3: STRATEGY&#xa;(edge routing)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+      <mxGeometry x="740" y="240" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="Primary fails 2x&#xa;--> Switch to Alternate&#xa;&#xa;Alternate fails&#xa;--> Pipeline Paused&#xa;--> Human Intervention" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="740" y="330" width="200" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="16" value="fail (attempts &lt; max)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontColor=#CC0000;curved=1;" edge="1" source="5" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="600" y="210" />
+          <mxPoint x="360" y="210" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="17" value="Strategy Switch&#xa;Node" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="480" width="140" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="fail (attempts &gt;= max)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontColor=#CC0000;" edge="1" source="5" target="17" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="alternate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;fontColor=#0000CC;curved=1;" edge="1" source="17" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="360" y="520" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="20" value="Pipeline Paused&#xa;(Human Intervention)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="760" y="490" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="no alternate /&#xa;alternate failed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontColor=#CC0000;" edge="1" source="17" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="StreamHandler" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="480" width="120" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="Chat Panel UI" style="shape=mxgraph.basic.rect;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="620" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="24" value="events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;" edge="1" source="22" target="23" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="25" value="WorkspaceCheckpointer" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="880" y="620" width="160" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="26" value="persist on pause" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;" edge="1" source="20" target="25" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="27" value="LLM Provider" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="620" width="120" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="28" value="verify eval" style="edgeStyle=orthogonalEdgeStyle;rounded=0;dashed=1;" edge="1" source="5" target="27" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="600" y="200" />
+          <mxPoint x="450" y="200" />
+          <mxPoint x="450" y="660" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

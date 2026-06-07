@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f15fd8c-9371-6140-8002-3aa8f86b50f9",
+    "ts": "2026-06-04T05:46:51.860Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "20af3b3d-c4e3-4291-84b0-abc7088b2967",
+      "currentPhase": "all",
+      "intent": "chat",
+      "pipelineStatus": "completed",
+      "resumePoint": null,
+      "documents": {},
+      "agentOutputs": [
+        {
+          "nodeId": "chat",
+          "content": "Hello! How can I assist you today? Whether you have questions about software development, need some advice on project management, or need help with coding, feel free to ask.",
+          "timestamp": "2026-06-04T05:46:51.837Z"
+        }
+      ],
+      "currentStreamId": "stream-20af3b3d-c4e3-4291-84b0-abc7088b2967-1780552005971",
+      "approvalRequired": false,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [],
+      "chatHistory": [
+        {
+          "id": "718deb20-7ecc-41b1-b0bb-d37713c77e57",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T05:46:45.971Z"
+        },
+        {
+          "id": "718deb20-7ecc-41b1-b0bb-d37713c77e57",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T05:46:45.971Z"
+        },
+        {
+          "id": "718deb20-7ecc-41b1-b0bb-d37713c77e57",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-04T05:46:45.971Z"
+        }
+      ],
+      "errors": [],
+      "retryCount": {},
+      "createdAt": "2026-06-04T05:46:45.971Z",
+      "lastUpdatedAt": "2026-06-04T05:46:51.837Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {},
+      "qualityGateResults": {}
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:chat_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "chat_subgraph": {
+        "branch:to:chat_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "chat_subgraph": {
+        "threadId": "20af3b3d-c4e3-4291-84b0-abc7088b2967",
+        "currentPhase": "all",
+        "intent": "chat",
+        "pipelineStatus": "completed",
+        "resumePoint": null,
+        "documents": {},
+        "agentOutputs": [
+          {
+            "nodeId": "chat",
+            "content": "Hello! How can I assist you today? Whether you have questions about software development, need some advice on project management, or need help with coding, feel free to ask.",
+            "timestamp": "2026-06-04T05:46:51.837Z"
+          }
+        ],
+        "currentStreamId": "stream-20af3b3d-c4e3-4291-84b0-abc7088b2967-1780552005971",
+        "approvalRequired": false,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [],
+        "chatHistory": [
+          {
+            "id": "718deb20-7ecc-41b1-b0bb-d37713c77e57",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-04T05:46:45.971Z"
+          },
+          {
+            "id": "718deb20-7ecc-41b1-b0bb-d37713c77e57",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-04T05:46:45.971Z"
+          }
+        ],
+        "errors": [],
+        "retryCount": {},
+        "createdAt": "2026-06-04T05:46:45.971Z",
+        "lastUpdatedAt": "2026-06-04T05:46:51.837Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {},
+        "qualityGateResults": {}
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-04T05:46:45.974Z",
+  "lastModified": "2026-06-04T05:46:51.871Z"
+}

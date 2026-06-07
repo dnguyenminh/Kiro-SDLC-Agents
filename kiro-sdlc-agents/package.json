@@ -30,6 +30,7 @@
   ],
   "activationEvents": [
     "onView:kiroSdlcTree",
+    "onView:kiroChatPanel",
     "onCommand:kiroSdlc.injectAll",
     "onCommand:kiroSdlc.status",
     "onCommand:kiroSdlc.indexWorkspace",
@@ -137,6 +138,27 @@
       {
         "command": "kiroSdlc.indexSalesforceProject",
         "title": "Kiro SDLC: Index Salesforce Project"
+      },
+      {
+        "command": "kiroSdlc.testLanguageModels",
+        "title": "Kiro SDLC: Test Language Models (vscode.lm)"
+      },
+      {
+        "command": "kiroSdlc.setLlmApiKey",
+        "title": "Kiro SDLC: Set LLM API Key"
+      },
+      {
+        "command": "kiroSdlc.clearLlmApiKey",
+        "title": "Kiro SDLC: Clear LLM API Key"
+      },
+      {
+        "command": "kiroSdlc.openSettings",
+        "title": "Kiro SDLC: Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "kiroSdlc.openWorkflowGraph",
+        "title": "Kiro SDLC: Open Workflow Graph"
       }
     ],
     "viewsContainers": {
@@ -153,6 +175,11 @@
         {
           "id": "kiroSdlcTree",
           "name": "SDLC Agents"
+        },
+        {
+          "id": "kiroChatPanel",
+          "name": "Chat Panel",
+          "type": "webview"
         }
       ]
     },
@@ -173,6 +200,47 @@
           "type": "string",
           "default": ".code-intel/orchestration.json",
           "description": "Path to orchestration config file (relative to workspace root). Controls MCP server behavior, child servers, and model routing."
+        },
+        "kiroSdlc.llmProvider": {
+          "enum": [
+            "anthropic",
+            "openai",
+            "ollama",
+            "onnx"
+          ],
+          "type": "string",
+          "description": "LLM provider for direct agent calls. Anthropic (recommended — use gateway base URL for zero-config). OpenAI requires API key. Ollama runs locally. ONNX runs CPU-only local models.",
+          "default": "anthropic"
+        },
+        "kiroSdlc.kiroModel": {
+          "type": "string",
+          "default": "",
+          "description": "Selected Kiro model ID (auto-populated from API). Leave empty to use default."
+        },
+        "kiroSdlc.kiroRegion": {
+          "type": "string",
+          "default": "",
+          "description": "AWS region for Kiro API. Leave empty to auto-detect from SSO credentials."
+        },
+        "kiroSdlc.llmModel": {
+          "type": "string",
+          "description": "Override the default model for the selected LLM provider. Leave empty to use provider defaults (claude-sonnet-4-20250514, gpt-4o, llama3.1).",
+          "default": ""
+        },
+        "kiroSdlc.anthropicBaseUrl": {
+          "type": "string",
+          "description": "Custom base URL for Anthropic API. Default points to the local gateway (uses Kiro IDE credentials, no API key needed). Change to https://api.anthropic.com for direct Anthropic API access.",
+          "default": "http://127.0.0.1:9181/anthropic"
+        },
+        "kiroSdlc.openaiBaseUrl": {
+          "type": "string",
+          "description": "Custom base URL for OpenAI API. Use for Azure OpenAI, OpenRouter, vLLM, or any OpenAI-compatible endpoint. Leave empty for official API.",
+          "default": ""
+        },
+        "kiroSdlc.ollamaUrl": {
+          "type": "string",
+          "description": "Base URL for Ollama API when using the ollama provider.",
+          "default": "http://localhost:11434"
         }
       }
     },
@@ -180,6 +248,11 @@
       "view/title": [
         {
           "command": "kiroSdlc.injectAll",
+          "when": "view == kiroSdlcTree",
+          "group": "navigation"
+        },
+        {
+          "command": "kiroSdlc.openSettings",
           "when": "view == kiroSdlcTree",
           "group": "navigation"
         },
@@ -216,11 +289,16 @@
     "mocha": "^10.7.3",
     "sinon": "^17.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.8"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
+    "@langchain/core": "^0.3.80",
+    "@langchain/langgraph": "^0.2.74",
     "3d-force-graph": "^1.80.0",
     "chart.js": "^4.5.1",
+    "filetomarkdown": "^1.0.0",
     "three": "^0.184.0"
   }
 }

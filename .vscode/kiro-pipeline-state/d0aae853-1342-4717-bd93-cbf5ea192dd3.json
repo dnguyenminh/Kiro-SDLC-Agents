@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "schemaVersion": "1.0.0",
+  "graphCheckpoint": {
+    "v": 1,
+    "id": "1f160c81-e55e-6f30-8002-720da073107d",
+    "ts": "2026-06-05T10:20:04.387Z",
+    "channel_values": {
+      "ticketKey": "",
+      "threadId": "d0aae853-1342-4717-bd93-cbf5ea192dd3",
+      "currentPhase": "all",
+      "intent": "chat",
+      "pipelineStatus": "failed",
+      "resumePoint": null,
+      "documents": {},
+      "agentOutputs": [],
+      "currentStreamId": "stream-d0aae853-1342-4717-bd93-cbf5ea192dd3-1780654803045",
+      "approvalRequired": false,
+      "approvalDecision": null,
+      "userFeedback": null,
+      "pendingApprovals": [],
+      "chatHistory": [
+        {
+          "id": "4e4e0d01-f309-4224-a107-7feb1ae12205",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-05T10:20:03.045Z"
+        },
+        {
+          "id": "4e4e0d01-f309-4224-a107-7feb1ae12205",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-05T10:20:03.045Z"
+        },
+        {
+          "id": "4e4e0d01-f309-4224-a107-7feb1ae12205",
+          "role": "user",
+          "content": "Hi",
+          "timestamp": "2026-06-05T10:20:03.045Z"
+        }
+      ],
+      "errors": [
+        {
+          "nodeId": "chat",
+          "code": "LLM_ERROR",
+          "message": "Connection error.",
+          "timestamp": "2026-06-05T10:20:04.357Z",
+          "recoverable": true
+        }
+      ],
+      "retryCount": {},
+      "createdAt": "2026-06-05T10:20:03.045Z",
+      "lastUpdatedAt": "2026-06-05T10:20:04.357Z",
+      "lastCheckpointAt": null,
+      "feedbackIterations": 0,
+      "maxFeedbackIterations": 5,
+      "discrepancyFound": false,
+      "previousNode": null,
+      "parallelResults": {
+        "toolsJson": "[{\"name\":\"read_file\",\"description\":\"Read the content of a file. Returns the full text content. Use relative paths from workspace root.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path relative to workspace root\"},\"start_line\":{\"type\":\"number\",\"description\":\"Optional start line (1-indexed)\"},\"end_line\":{\"type\":\"number\",\"description\":\"Optional end line (1-indexed)\"}},\"required\":[\"path\"]}},{\"name\":\"list_directory\",\"description\":\"List files and directories at the given path. Returns names with type indicators (d for directory, f for file).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Directory path relative to workspace root\"},\"recursive\":{\"type\":\"boolean\",\"description\":\"Whether to list recursively (default false, max depth 2)\"}},\"required\":[\"path\"]}},{\"name\":\"search_text\",\"description\":\"Search for text pattern in files. Returns matching lines with file paths and line numbers.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"pattern\":{\"type\":\"string\",\"description\":\"Text or regex pattern to search for\"},\"include\":{\"type\":\"string\",\"description\":\"Glob pattern for files to include (e.g. '**/*.ts')\"},\"max_results\":{\"type\":\"number\",\"description\":\"Maximum results to return (default 20)\"}},\"required\":[\"pattern\"]}},{\"name\":\"write_file\",\"description\":\"Write content to a file. Creates the file if it doesn't exist, overwrites if it does.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path relative to workspace root\"},\"content\":{\"type\":\"string\",\"description\":\"Content to write\"}},\"required\":[\"path\",\"content\"]}},{\"name\":\"get_diagnostics\",\"description\":\"Get compile errors, warnings, and lint issues for a file or the entire workspace.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path (optional — omit for all workspace diagnostics)\"}}}},{\"name\":\"get_open_files\",\"description\":\"Get the list of currently open files in the editor.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{}}}]"
+      },
+      "qualityGateResults": {},
+      "toolCalls": null,
+      "toolResults": [],
+      "agentIterations": 0,
+      "verifyPassed": true,
+      "verifyFeedback": null,
+      "verifyAttempts": {},
+      "maxVerifyAttempts": 2,
+      "activeStrategy": {},
+      "strategyHistory": []
+    },
+    "channel_versions": {
+      "__start__": 2,
+      "ticketKey": 4,
+      "threadId": 4,
+      "currentPhase": 4,
+      "intent": 4,
+      "pipelineStatus": 4,
+      "resumePoint": 4,
+      "documents": 4,
+      "agentOutputs": 4,
+      "currentStreamId": 4,
+      "approvalRequired": 4,
+      "approvalDecision": 4,
+      "userFeedback": 4,
+      "pendingApprovals": 4,
+      "chatHistory": 4,
+      "errors": 4,
+      "retryCount": 4,
+      "createdAt": 4,
+      "lastUpdatedAt": 4,
+      "lastCheckpointAt": 4,
+      "branch:to:classify_intent": 3,
+      "branch:to:chat_subgraph": 4,
+      "feedbackIterations": 4,
+      "maxFeedbackIterations": 4,
+      "discrepancyFound": 4,
+      "previousNode": 4,
+      "parallelResults": 4,
+      "qualityGateResults": 4,
+      "toolCalls": 4,
+      "toolResults": 4,
+      "agentIterations": 4,
+      "verifyPassed": 4,
+      "verifyFeedback": 4,
+      "verifyAttempts": 4,
+      "maxVerifyAttempts": 4,
+      "activeStrategy": 4,
+      "strategyHistory": 4
+    },
+    "versions_seen": {
+      "__input__": {},
+      "__start__": {
+        "__start__": 1
+      },
+      "classify_intent": {
+        "branch:to:classify_intent": 2
+      },
+      "chat_subgraph": {
+        "branch:to:chat_subgraph": 3
+      }
+    },
+    "pending_sends": []
+  },
+  "state": {
+    "source": "loop",
+    "writes": {
+      "chat_subgraph": {
+        "threadId": "d0aae853-1342-4717-bd93-cbf5ea192dd3",
+        "currentPhase": "all",
+        "intent": "chat",
+        "pipelineStatus": "failed",
+        "resumePoint": null,
+        "documents": {},
+        "agentOutputs": [],
+        "currentStreamId": "stream-d0aae853-1342-4717-bd93-cbf5ea192dd3-1780654803045",
+        "approvalRequired": false,
+        "approvalDecision": null,
+        "userFeedback": null,
+        "pendingApprovals": [],
+        "chatHistory": [
+          {
+            "id": "4e4e0d01-f309-4224-a107-7feb1ae12205",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-05T10:20:03.045Z"
+          },
+          {
+            "id": "4e4e0d01-f309-4224-a107-7feb1ae12205",
+            "role": "user",
+            "content": "Hi",
+            "timestamp": "2026-06-05T10:20:03.045Z"
+          }
+        ],
+        "errors": [
+          {
+            "nodeId": "chat",
+            "code": "LLM_ERROR",
+            "message": "Connection error.",
+            "timestamp": "2026-06-05T10:20:04.357Z",
+            "recoverable": true
+          }
+        ],
+        "retryCount": {},
+        "createdAt": "2026-06-05T10:20:03.045Z",
+        "lastUpdatedAt": "2026-06-05T10:20:04.357Z",
+        "lastCheckpointAt": null,
+        "feedbackIterations": 0,
+        "maxFeedbackIterations": 5,
+        "discrepancyFound": false,
+        "previousNode": null,
+        "parallelResults": {
+          "toolsJson": "[{\"name\":\"read_file\",\"description\":\"Read the content of a file. Returns the full text content. Use relative paths from workspace root.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path relative to workspace root\"},\"start_line\":{\"type\":\"number\",\"description\":\"Optional start line (1-indexed)\"},\"end_line\":{\"type\":\"number\",\"description\":\"Optional end line (1-indexed)\"}},\"required\":[\"path\"]}},{\"name\":\"list_directory\",\"description\":\"List files and directories at the given path. Returns names with type indicators (d for directory, f for file).\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"Directory path relative to workspace root\"},\"recursive\":{\"type\":\"boolean\",\"description\":\"Whether to list recursively (default false, max depth 2)\"}},\"required\":[\"path\"]}},{\"name\":\"search_text\",\"description\":\"Search for text pattern in files. Returns matching lines with file paths and line numbers.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"pattern\":{\"type\":\"string\",\"description\":\"Text or regex pattern to search for\"},\"include\":{\"type\":\"string\",\"description\":\"Glob pattern for files to include (e.g. '**/*.ts')\"},\"max_results\":{\"type\":\"number\",\"description\":\"Maximum results to return (default 20)\"}},\"required\":[\"pattern\"]}},{\"name\":\"write_file\",\"description\":\"Write content to a file. Creates the file if it doesn't exist, overwrites if it does.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path relative to workspace root\"},\"content\":{\"type\":\"string\",\"description\":\"Content to write\"}},\"required\":[\"path\",\"content\"]}},{\"name\":\"get_diagnostics\",\"description\":\"Get compile errors, warnings, and lint issues for a file or the entire workspace.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\",\"description\":\"File path (optional — omit for all workspace diagnostics)\"}}}},{\"name\":\"get_open_files\",\"description\":\"Get the list of currently open files in the editor.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{}}}]"
+        },
+        "qualityGateResults": {},
+        "toolCalls": null,
+        "toolResults": [],
+        "agentIterations": 0,
+        "verifyPassed": true,
+        "verifyFeedback": null,
+        "verifyAttempts": {},
+        "maxVerifyAttempts": 2,
+        "activeStrategy": {},
+        "strategyHistory": []
+      }
+    },
+    "step": 2,
+    "parents": {}
+  },
+  "createdAt": "2026-06-05T10:20:03.048Z",
+  "lastModified": "2026-06-05T10:20:04.401Z"
+}
