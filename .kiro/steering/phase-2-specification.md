@@ -1,5 +1,4 @@
 ---
-name: phase-2-specification
 inclusion: manual
 description: Phase 2 Specification workflow. Activate when SM runs Phase 2 (BA+TA creates FSD).
 ---

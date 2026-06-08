@@ -1,5 +1,4 @@
 ---
-name: phase-7-deployment
 inclusion: manual
 description: Phase 7 Deployment workflow. Activate when SM runs Phase 7 (DevOps deploys).
 ---

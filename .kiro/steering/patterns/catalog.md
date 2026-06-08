@@ -1,5 +1,4 @@
 ---
-name: pattern-catalog
 inclusion: manual
 description: Pattern catalog for architecture detection. Activate when SM initializes.
 ---

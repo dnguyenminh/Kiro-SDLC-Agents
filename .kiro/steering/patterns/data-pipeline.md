@@ -1,5 +1,4 @@
 ---
-name: pattern-data-pipeline
 inclusion: manual
 description: Data Pipeline architecture pattern. Activate when SM detects data-pipeline pattern.
 ---

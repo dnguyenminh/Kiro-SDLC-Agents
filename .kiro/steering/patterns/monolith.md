@@ -1,5 +1,4 @@
 ---
-name: pattern-monolith
 inclusion: manual
 description: Monolith architecture pattern (default). Activate when SM detects monolith pattern.
 ---

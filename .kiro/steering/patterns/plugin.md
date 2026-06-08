@@ -1,5 +1,4 @@
 ---
-name: pattern-plugin
 inclusion: manual
 description: Plugin/Extension architecture pattern. Activate when SM detects plugin pattern.
 ---

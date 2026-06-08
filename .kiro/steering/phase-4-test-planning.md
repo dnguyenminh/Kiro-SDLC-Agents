@@ -1,5 +1,4 @@
 ---
-name: phase-4-test-planning
 inclusion: manual
 description: Phase 4 Test Planning workflow. Activate when SM runs Phase 4 (QA creates STP/STC).
 ---
