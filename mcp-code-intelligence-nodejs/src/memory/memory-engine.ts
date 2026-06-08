@@ -22,6 +22,7 @@ import { SemanticStrategy } from './linking-strategies/semantic-strategy.js';
 import { EntityStrategy } from './linking-strategies/entity-strategy.js';
 import { TagStrategy } from './linking-strategies/tag-strategy.js';
 import { FtsStrategy } from './linking-strategies/fts-strategy.js';
+import { ContradictionResolver } from './contradiction-resolver.js';
 import { TierStats } from './models.js';
 
 export interface MemoryStats {
@@ -44,6 +45,7 @@ export class MemoryEngine {
   readonly entities: EntityRepository;
   readonly conversations: ConversationRepository;
   readonly autoLinker: AutoLinker;
+  readonly contradictionResolver: ContradictionResolver;
 
   private readonly _db: Database.Database;
   private currentSessionId: string | null = null;
@@ -77,6 +79,9 @@ export class MemoryEngine {
       new FtsStrategy(db),
     ];
     this.autoLinker = new AutoLinker(this.graphRepo, strategies);
+
+    // Wire ContradictionResolver (all 3 strategies)
+    this.contradictionResolver = new ContradictionResolver(db, this.graphRepo);
   }
 
   /** Start a new session. */

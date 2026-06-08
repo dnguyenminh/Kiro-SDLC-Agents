@@ -53,6 +53,7 @@ class HybridSearch(
     private var tokenBudget: TokenBudget? = null
     private var workingExpiry: WorkingTierExpiry? = null
     private var pinnedContextProvider: (() -> String)? = null
+    private var contradictionResolver: com.codeintel.memory.contradiction.ContradictionResolver? = null
 
     /** Inject AgentScopeFilter for tag-based isolation. */
     fun setScopeFilter(filter: AgentScopeFilter) { this.scopeFilter = filter }
@@ -65,6 +66,9 @@ class HybridSearch(
 
     /** Inject pinned context provider (CoreMemoryManager.getContext). */
     fun setPinnedContextProvider(provider: () -> String) { this.pinnedContextProvider = provider }
+
+    /** Inject ContradictionResolver for filtering superseded entries. */
+    fun setContradictionResolver(resolver: com.codeintel.memory.contradiction.ContradictionResolver) { this.contradictionResolver = resolver }
 
     /** Enhanced search: expiry → pins → search → scope → budget. */
     fun enhancedSearch(params: EnhancedSearchParams): EnhancedSearchResponse {
@@ -85,6 +89,9 @@ class HybridSearch(
         if (params.agentScope != null && scopeFilter != null) {
             results = scopeFilter!!.filter(results, params.agentScope)
         }
+
+        // 4.5. Filter superseded entries (contradiction resolution)
+        contradictionResolver?.let { results = it.filterSuperseded(results) }
 
         // 5. Apply token budget
         val maxTokens = params.maxTokens

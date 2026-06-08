@@ -1,0 +1,51 @@
+﻿<mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Test Execution Flow - KSA-248&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="300" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="400" y="60" width="80" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="pbt_run" value="&lt;b&gt;Run PBT&lt;/b&gt;&#10;(6 properties)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="130" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ut_run" value="&lt;b&gt;Run Unit Tests&lt;/b&gt;&#10;(24 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="210" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="it_run" value="&lt;b&gt;Run Integration&lt;/b&gt;&#10;(12 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="290" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2e_run" value="&lt;b&gt;Run E2E-API&lt;/b&gt;&#10;(8 cases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="370" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="sit_run" value="&lt;b&gt;Run SIT&lt;/b&gt;&#10;(4 cross-platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="380" y="450" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="done" value="Done" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="400" y="530" width="80" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="f1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="start" target="pbt_run" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="pbt_run" target="ut_run" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ut_run" target="it_run" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="it_run" target="e2e_run" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="e2e_run" target="sit_run" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="f6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="sit_run" target="done" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="platforms" value="&lt;b&gt;Per Platform:&lt;/b&gt;&#10;NodeJS | Python | Kotlin/MCP | Kotlin/SDLC" style="text;html=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="560" y="270" width="250" height="40" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

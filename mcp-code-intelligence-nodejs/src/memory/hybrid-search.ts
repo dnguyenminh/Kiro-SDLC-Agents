@@ -14,6 +14,7 @@ import type { CoreMemoryManager } from './core-memory.js';
 import type { AgentScopeFilter } from './v2/agent-scope-filter.js';
 import type { TokenBudget, BudgetResult } from './v2/token-budget.js';
 import type { WorkingTierExpiry, ExpiryAction } from './v2/working-tier-expiry.js';
+import type { ContradictionResolver } from './contradiction-resolver.js';
 
 export interface SearchParams {
   query: string;
@@ -46,6 +47,7 @@ export class HybridSearch {
   private scopeFilter: AgentScopeFilter | null = null;
   private tokenBudget: TokenBudget | null = null;
   private workingExpiry: WorkingTierExpiry | null = null;
+  private contradictionResolver: ContradictionResolver | null = null;
 
   constructor(ftsRepo: KnowledgeSearchRepository, graph: KnowledgeGraph) {
     this.ftsRepo = ftsRepo;
@@ -72,6 +74,11 @@ export class HybridSearch {
     this.workingExpiry = expiry;
   }
 
+  /** Inject ContradictionResolver for filtering superseded entries from results. */
+  setContradictionResolver(resolver: ContradictionResolver): void {
+    this.contradictionResolver = resolver;
+  }
+
   /** Get pinned context prefix (for prepending to search results). */
   getPinnedContext(): string {
     if (!this.coreMemory) return '';
@@ -92,6 +99,11 @@ export class HybridSearch {
     // 4. Apply agent scope filter
     if (params.agent_scope && this.scopeFilter) {
       results = this.scopeFilter.filter(results, params.agent_scope);
+    }
+
+    // 4.5. Filter superseded entries (contradiction resolution)
+    if (this.contradictionResolver) {
+      results = this.contradictionResolver.filterSuperseded(results);
     }
 
     // 5. Apply token budget

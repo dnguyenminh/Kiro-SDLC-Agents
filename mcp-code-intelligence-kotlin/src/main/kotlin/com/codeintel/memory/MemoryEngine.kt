@@ -25,6 +25,10 @@ class MemoryEngine(db: DatabaseManager) {
     var autoLinker: AutoLinker? = null
         private set
 
+    /** ContradictionResolver instance, available after initialize(). */
+    var contradictionResolver: com.codeintel.memory.contradiction.ContradictionResolver? = null
+        private set
+
     /** Current active session ID (set after initialize). */
     var currentSessionId: String? = null
         private set
@@ -33,7 +37,8 @@ class MemoryEngine(db: DatabaseManager) {
     fun initialize() {
         memoryDb.initialize()
         autoLinker = createAutoLinker()
-        log("Memory engine ready (auto-linker enabled)")
+        contradictionResolver = com.codeintel.memory.contradiction.ContradictionResolver(connection, graph)
+        log("Memory engine ready (auto-linker + contradiction-resolver enabled)")
     }
 
     /** Start a new session and set it as current. */

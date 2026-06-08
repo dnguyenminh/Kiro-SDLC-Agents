@@ -1,0 +1,45 @@
+﻿<mxGraphModel dx="1000" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="600" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Test Coverage Overview - KSA-248&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="300" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="pbt" value="&lt;b&gt;PBT (6)&lt;/b&gt;&#10;Signal detection&#10;Confidence bounds&#10;Filter properties" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="80" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="ut" value="&lt;b&gt;Unit Tests (24)&lt;/b&gt;&#10;Signal detection (4)&#10;Confidence scoring (4)&#10;Conflict discovery (4)&#10;Filtering (4)&#10;LLM consolidation (4)&#10;Manual ops (4)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="240" y="80" width="160" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="it" value="&lt;b&gt;Integration (12)&lt;/b&gt;&#10;Full lifecycle (4)&#10;Schema mgmt (1)&#10;Search filter (3)&#10;LLM integration (2)&#10;Edge cases (2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="440" y="80" width="160" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2e" value="&lt;b&gt;E2E-API (8)&lt;/b&gt;&#10;Ingest flow (2)&#10;Manual ops (2)&#10;Config toggle (2)&#10;Stats + bilingual (2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="640" y="80" width="160" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="sit" value="&lt;b&gt;SIT (4)&lt;/b&gt;&#10;Cross-platform signal (1)&#10;Cross-platform confidence (1)&#10;Cross-platform resolution (1)&#10;Audit format (1 manual)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="840" y="80" width="140" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc01" value="&lt;b&gt;UC-01&lt;/b&gt;&#10;Detect + Resolve" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="100" y="280" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc02" value="&lt;b&gt;UC-02&lt;/b&gt;&#10;Filter Superseded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="260" y="280" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc03" value="&lt;b&gt;UC-03&lt;/b&gt;&#10;LLM Consolidation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="420" y="280" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc04" value="&lt;b&gt;UC-04&lt;/b&gt;&#10;Manual Supersede" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="280" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc05" value="&lt;b&gt;UC-05&lt;/b&gt;&#10;Revalidate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="740" y="280" width="100" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc06" value="&lt;b&gt;UC-06&lt;/b&gt;&#10;Stats" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="880" y="280" width="80" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="cov_note" value="&lt;b&gt;Coverage: 100%&lt;/b&gt; - All 6 Use Cases covered&#10;Total: 54 test cases (53 automated, 1 manual)" style="text;html=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="250" y="380" width="500" height="40" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

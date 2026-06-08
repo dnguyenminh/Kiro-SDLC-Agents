@@ -16,6 +16,7 @@ class ToolDispatcher(
     private val repository: MemoryRepository,
     private val search: HybridSearch,
     private val graph: KnowledgeGraph,
+    private val contradictionResolver: com.fec.memory.contradiction.ContradictionResolver? = null,
 ) {
     fun dispatch(name: String, args: JsonObject): String {
         return when (name) {
@@ -43,7 +44,9 @@ class ToolDispatcher(
             importance = args.num("importance") ?: 0.5,
         )
         val id = repository.insert(entry)
-        return "Memory stored (id=$id, tier=working, category=${entry.category})"
+        val crResult = try { contradictionResolver?.detectAndResolve(id) } catch (_: Exception) { null }
+        val crInfo = if (crResult != null && crResult.resolved > 0) " | superseded ${crResult.supersededIds.size} old entries" else ""
+        return "Memory stored (id=$id, tier=working, category=${entry.category})$crInfo"
     }
 
     private fun handleObserve(args: JsonObject): String {
@@ -63,7 +66,11 @@ class ToolDispatcher(
     private fun handleRecall(args: JsonObject): String {
         val query = args.str("query") ?: return "query is required"
         val limit = args.num("limit")?.toInt() ?: 10
-        val results = search.search(query, args.str("ticket_key"), args.str("agent"), limit)
+        var results = search.search(query, args.str("ticket_key"), args.str("agent"), limit)
+        // Filter superseded entries
+        if (contradictionResolver != null) {
+            results = contradictionResolver.filterSuperseded(results)
+        }
         if (results.isEmpty()) return "No memories found for: $query"
         val lines = mutableListOf("Found ${results.size} memories:")
         results.forEach { r ->
@@ -71,8 +78,7 @@ class ToolDispatcher(
             lines.add("  ${r.entry.content.take(200)}")
             lines.add("")
         }
-        return lines.joinToString("
-")
+        return lines.joinToString("\n")
     }
 
     private fun handleDecide(args: JsonObject): String {

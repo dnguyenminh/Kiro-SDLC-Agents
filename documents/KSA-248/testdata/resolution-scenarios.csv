@@ -1,0 +1,8 @@
+﻿scenario,signal,entities_overlap,fts_fallback,confidence_range,should_resolve,expected_action
+cancel_shared_entity,cancel,true,false,0.7-1.0,true,mark_superseded+create_edge
+deprecated_same_source,deprecated,true,false,0.8-1.0,true,mark_superseded+create_edge
+replace_different_type,replace,true,false,0.7-0.9,true,mark_superseded+create_edge
+weak_no_overlap,thay đổi,false,true,0.5-0.6,false,detection_only
+no_signal,none,true,false,N/A,false,no_detection
+manual_supersede,manual,N/A,N/A,1.0,true,mark_superseded+create_edge
+revalidate_after_supersede,N/A,N/A,N/A,N/A,false,restore_active

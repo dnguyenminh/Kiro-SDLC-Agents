@@ -1,0 +1,48 @@
+﻿<mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="700" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;ER Diagram - Contradiction Resolution Schema&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ent_ke" value="&lt;b&gt;knowledge_entries&lt;/b&gt;&#10;---------------------&#10;id: INTEGER PK&#10;content: TEXT&#10;summary: TEXT&#10;type: TEXT&#10;source: TEXT&#10;created_at: DATETIME&#10;validity_status: TEXT&#10;superseded_by: INTEGER FK&#10;superseded_at: DATETIME&#10;archived_at: DATETIME" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="80" width="200" height="220" as="geometry"/>
+    </mxCell>
+    <mxCell id="ent_edge" value="&lt;b&gt;knowledge_graph_edges&lt;/b&gt;&#10;---------------------&#10;source_id: INTEGER FK&#10;target_id: INTEGER FK&#10;relation: TEXT&#10;weight: REAL&#10;metadata: TEXT" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="360" y="80" width="200" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="ent_entity" value="&lt;b&gt;entity_index&lt;/b&gt;&#10;---------------------&#10;entry_id: INTEGER FK&#10;entity_name: TEXT" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="380" width="200" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="ent_audit" value="&lt;b&gt;memory_audit&lt;/b&gt;&#10;---------------------&#10;operation: TEXT&#10;details: TEXT (JSON)&#10;created_at: DATETIME" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="360" y="320" width="200" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="ent_fts" value="&lt;b&gt;knowledge_fts&lt;/b&gt;&#10;---------------------&#10;(FTS5 virtual table)&#10;rowid: INTEGER FK&#10;summary: TEXT" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="640" y="80" width="180" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1" value="1:N source" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#6c8ebf;fontSize=10;" edge="1" source="ent_ke" target="ent_edge" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2" value="1:N target" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#9673a6;fontSize=10;" edge="1" source="ent_ke" target="ent_edge" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="300" y="220"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="r3" value="1:N" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#82b366;fontSize=10;" edge="1" source="ent_ke" target="ent_entity" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4" value="1:1 self-ref&#10;(superseded_by)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#6c8ebf;fontSize=9;dashed=1;" edge="1" source="ent_ke" target="ent_ke" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="20" y="190"/>
+          <mxPoint x="20" y="130"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="r5" value="rowid" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#666666;dashed=1;fontSize=10;" edge="1" source="ent_ke" target="ent_fts" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,26 @@
+﻿signal,language,strength,expected_detected
+hủy bỏ,vi,strong,true
+hủy,vi,strong,true
+cancel,en,strong,true
+cancelled,en,strong,true
+replace,en,strong,true
+replaced,en,weak,true
+supersede,en,strong,true
+deprecated,en,strong,true
+obsolete,en,strong,true
+revoke,en,strong,true
+thay thế,vi,weak,true
+không còn,vi,weak,true
+đã xóa,vi,weak,true
+thay đổi,vi,weak,true
+no longer,en,weak,true
+removed,en,weak,true
+changed to,en,weak,true
+updated to,en,weak,true
+stop using,en,weak,true
+was wrong,en,weak,true
+implement,en,none,false
+feature request,en,none,false
+login page,en,none,false
+user story,en,none,false
+sprint planning,en,none,false

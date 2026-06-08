@@ -1,0 +1,17 @@
+﻿signal_type,is_newer,same_source,same_type,expected_min,expected_max
+strong,true,true,true,0.95,1.0
+strong,true,true,false,0.90,0.95
+strong,true,false,true,0.85,0.95
+strong,true,false,false,0.80,0.90
+strong,false,true,true,0.80,0.90
+strong,false,true,false,0.75,0.85
+strong,false,false,true,0.70,0.80
+strong,false,false,false,0.65,0.75
+weak,true,true,true,0.75,0.85
+weak,true,true,false,0.70,0.80
+weak,true,false,true,0.65,0.75
+weak,true,false,false,0.60,0.70
+weak,false,true,true,0.60,0.70
+weak,false,true,false,0.55,0.65
+weak,false,false,true,0.50,0.60
+weak,false,false,false,0.45,0.55

@@ -1,0 +1,35 @@
+<mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;State Diagram — Entry Validity Lifecycle&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+      <mxGeometry x="80" y="250" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="state_active" value="&lt;b&gt;ACTIVE&lt;/b&gt;&#10;Entry is valid and&#10;appears in search results" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="220" y="230" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="state_superseded" value="&lt;b&gt;SUPERSEDED&lt;/b&gt;&#10;Entry is outdated and&#10;filtered from search" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="230" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init" value="ingested" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;fontSize=10;" edge="1" source="initial" target="state_active" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_supersede" value="detectAndResolve()&#10;confidence &gt;= 0.6&#10;OR manualSupersede()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#c62828;fontSize=10;" edge="1" source="state_active" target="state_superseded" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_revalidate" value="revalidate()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;fontSize=10;" edge="1" source="state_superseded" target="state_active" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="650" y="380"/>
+          <mxPoint x="310" y="380"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note1" value="&lt;i&gt;validity_status column&#10;Default = ACTIVE (or NULL)&lt;/i&gt;" style="text;html=1;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="300" y="450" width="200" height="40" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -14,6 +14,7 @@ import { classifyEntity } from './entity-classifier.js';
 import type { QualityGate, QualityResult } from './v2/quality-gate.js';
 import type { AutoLinker } from './auto-linker.js';
 import type { AutoLinkResult } from './linking-strategies/types.js';
+import type { ContradictionResolver, ResolutionResult } from './contradiction-resolver.js';
 
 /** Result of ingesting a document. */
 export interface IngestResult {
@@ -27,6 +28,7 @@ export interface IngestEntryResult {
   quality: QualityResult | null;
   success: boolean;
   autoLink?: AutoLinkResult | null;
+  contradiction?: ResolutionResult | null;
 }
 
 export class IngestPipeline {
@@ -36,6 +38,7 @@ export class IngestPipeline {
   private entityRepo: EntityRepository | null = null;
   private qualityGate: QualityGate | null = null;
   private autoLinker: AutoLinker | null = null;
+  private contradictionResolver: ContradictionResolver | null = null;
 
   constructor(repo: KnowledgeRepository, embeddingService: EmbeddingService | null = null) {
     this.repo = repo;
@@ -55,6 +58,11 @@ export class IngestPipeline {
   /** Inject AutoLinker for automatic graph edge creation. KSA-190. */
   setAutoLinker(linker: AutoLinker): void {
     this.autoLinker = linker;
+  }
+
+  /** Inject ContradictionResolver for detecting conflicting info on ingest. */
+  setContradictionResolver(resolver: ContradictionResolver): void {
+    this.contradictionResolver = resolver;
   }
 
   /** Ingest a single knowledge entry with quality gate. Returns entry ID or rejection. */
@@ -89,13 +97,15 @@ export class IngestPipeline {
       this.tryExtractMap(id, content);
       const autoLink = this.tryAutoLink(id);
       this.trySetQualityScore(id, content, { tags, type, source });
-      return { id, quality, success: true, autoLink };
+      const contradiction = this.tryDetectContradiction(id);
+      return { id, quality, success: true, autoLink, contradiction };
     }
     const id = this.repo.insert({ content, summary, type, tier: 'WORKING', source, tags });
     this.tryEmbed(id, summary);
     this.tryExtractMap(id, content);
     const autoLink = this.tryAutoLink(id);
-    return { id, quality: null, success: true, autoLink };
+    const contradiction = this.tryDetectContradiction(id);
+    return { id, quality: null, success: true, autoLink, contradiction };
   }
 
   /** Ingest a markdown document — splits by sections. */
@@ -176,6 +186,17 @@ export class IngestPipeline {
       const result = this.qualityGate.validate(content, meta);
       this.repo.updateQualityScore(entryId, result.score);
     } catch { /* quality scoring must not break ingest */ }
+  }
+
+  /** Detect contradictions with existing entries (fire-and-forget). */
+  private tryDetectContradiction(entryId: number): ResolutionResult | null {
+    if (!this.contradictionResolver) return null;
+    try {
+      return this.contradictionResolver.detectAndResolve(entryId);
+    } catch (err) {
+      process.stderr.write(`[ingest] Contradiction detection failed for entry ${entryId}: ${err}\n`);
+      return null;
+    }
   }
 }
 

@@ -1,0 +1,57 @@
+﻿<mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="700" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram - ContradictionResolver Internal Structure&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="resolver_box" value="&lt;b&gt;ContradictionResolver&lt;/b&gt;" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#388e3c;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="880" height="580" as="geometry"/>
+    </mxCell>
+    <mxCell id="pub_api" value="&lt;b&gt;Public API&lt;/b&gt;&#10;detectAndResolve()&#10;filterSuperseded()&#10;consolidateWithLlm()&#10;manualSupersede()&#10;revalidate()&#10;getStats()&#10;updateConfig()&#10;getConfig()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="100" y="100" width="180" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="detection" value="&lt;b&gt;Detection Engine&lt;/b&gt;&#10;detectSupersessionSignal()&#10;findConflicting()&#10;extractEntities()&#10;findByEntities()&#10;findBySimilarContent()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="100" width="200" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="scoring" value="&lt;b&gt;Confidence Scoring&lt;/b&gt;&#10;computeConfidence()&#10;Base: 0.5&#10;+Signal: 0.2&#10;+Temporal: 0.15&#10;+Source: 0.1&#10;+Type: 0.05" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="250" width="160" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="resolution" value="&lt;b&gt;Resolution Actions&lt;/b&gt;&#10;markSuperseded()&#10;addSupersedesEdge()&#10;logResolution()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="600" y="100" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="filtering" value="&lt;b&gt;Search Filtering&lt;/b&gt;&#10;getValidityStatus()&#10;getSupersedingEdges()&#10;Chain resolution check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="600" y="220" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="llm_comp" value="&lt;b&gt;LLM Integration&lt;/b&gt;&#10;buildConsolidationPrompt()&#10;callLlm()&#10;parseLlmResponse()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;align=left;spacingLeft=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="340" width="180" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="schema" value="&lt;b&gt;Schema Management&lt;/b&gt;&#10;ensureSchema()&#10;(idempotent ALTER TABLE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="100" y="310" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="config_comp" value="&lt;b&gt;ContradictionConfig&lt;/b&gt;&#10;enableStatusMarking: bool&#10;enableLlmConsolidation: bool&#10;enableGraphSupersedes: bool&#10;llmEndpoint: String?&#10;llmApiKey: String?&#10;llmModel: String?" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="100" y="420" width="200" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="signals_comp" value="&lt;b&gt;SupersessionSignals&lt;/b&gt;&#10;SUPERSESSION_SIGNALS (40)&#10;STRONG_SIGNALS (7)&#10;detectSupersessionSignal()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="420" width="200" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="models_comp" value="&lt;b&gt;Models&lt;/b&gt;&#10;ContradictionDetection&#10;ResolutionResult&#10;ContradictionStats&#10;SearchResultEntry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="600" y="460" width="180" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#6c8ebf;" edge="1" source="pub_api" target="detection" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#82b366;" edge="1" source="detection" target="scoring" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#82b366;" edge="1" source="detection" target="resolution" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#6c8ebf;" edge="1" source="pub_api" target="filtering" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;strokeColor=#6c8ebf;dashed=1;" edge="1" source="pub_api" target="llm_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

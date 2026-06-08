@@ -35,12 +35,16 @@ class IngestPipeline(
 ) {
     private var qualityGate: QualityGate? = null
     private var autoLinker: AutoLinker? = null
+    private var contradictionResolver: com.codeintel.memory.contradiction.ContradictionResolver? = null
 
     /** Inject QualityGate for ingest validation. */
     fun setQualityGate(gate: QualityGate) { this.qualityGate = gate }
 
     /** Inject AutoLinker for post-ingest linking (KSA-190). */
     fun setAutoLinker(linker: AutoLinker) { this.autoLinker = linker }
+
+    /** Inject ContradictionResolver for detecting conflicting info on ingest. */
+    fun setContradictionResolver(resolver: com.codeintel.memory.contradiction.ContradictionResolver) { this.contradictionResolver = resolver }
 
     /** Ingest a markdown document. */
     fun ingestMarkdown(text: String, source: String, type: String = KnowledgeType.CONTEXT.name): IngestResult {
@@ -73,6 +77,7 @@ class IngestPipeline(
         embeddingService?.embedAndStore(id, summary)
         trySetQualityScore(id, content, tags, type, source)
         tryAutoLink(id)
+        tryDetectContradiction(id)
         return id
     }
 
@@ -89,6 +94,16 @@ class IngestPipeline(
         } catch (e: Exception) {
             log("[ingest] Auto-link failed for entry $entryId: $e")
             null
+        }
+    }
+
+    /** Detect contradictions with existing entries after ingest. */
+    private fun tryDetectContradiction(entryId: Long) {
+        val resolver = contradictionResolver ?: return
+        try {
+            resolver.detectAndResolve(entryId)
+        } catch (e: Exception) {
+            log("[ingest] Contradiction detection failed for entry $entryId: $e")
         }
     }
 
