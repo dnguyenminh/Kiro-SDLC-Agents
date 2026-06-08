@@ -1,0 +1,5 @@
+id,has_date,prompt_preview
+1,yes,"You are a helpful assistant. Today is July 14, 2025."
+2,yes,"Current date: 2025-07-14. You help with coding tasks."
+3,no,"You are an AI assistant that helps with software development."
+4,yes,"The current time is 2025-07-14T10:30:00Z. Help the user."
