@@ -1,0 +1,10 @@
+test_case_id,input_html,expected_output,description
+UT-08,<script>alert("xss")</script>,&lt;script&gt;alert("xss")&lt;/script&gt;,XSS script tag escaped
+UT-08,a & b > c < d,a &amp; b &gt; c &lt; d,Multiple special chars escaped
+UT-08,,,"Null input returns empty string"
+UT-08,,,"Empty string returns empty string"
+UT-09,hello world,hello world,Normal text unchanged
+UT-09,file_search(path=/src),file_search(path=/src),No special HTML chars — unchanged
+PBT-02,<img onerror=alert(1)>,&lt;img onerror=alert(1)&gt;,Image tag XSS vector escaped
+PBT-02,"><svg onload=alert()>,&quot;&gt;&lt;svg onload=alert()&gt;,Attribute breakout escaped
+TC-404,<script>alert("xss")</script>,<script>alert("xss")</script>,Body uses textContent — safe by default

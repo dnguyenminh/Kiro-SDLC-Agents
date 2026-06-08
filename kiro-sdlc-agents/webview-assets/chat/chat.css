@@ -85,9 +85,15 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  border-bottom: none;
   background: var(--vscode-sideBar-background, var(--vscode-editor-background));
   flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-title {
@@ -108,6 +114,304 @@ body {
 .status.connected { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 .status.disconnected { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 .status.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+/* === Context Usage Icon (KSA-240) === */
+.context-usage-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.context-usage-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.context-usage-icon .arc-bg {
+  fill: none;
+  stroke: var(--vscode-badge-background, #333);
+  stroke-width: 3;
+}
+
+.context-usage-icon .arc-progress {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+}
+
+.context-usage-icon .arc-progress.safe { stroke: #4CAF50; }
+.context-usage-icon .arc-progress.warning { stroke: #FFC107; }
+.context-usage-icon .arc-progress.critical { stroke: #F44336; }
+.context-usage-icon .arc-progress.full { stroke: #F44336; }
+
+.context-usage-icon.pulse .arc-progress {
+  animation: ctx-pulse 2s ease-out;
+}
+
+@keyframes ctx-pulse {
+  0% { opacity: 1; stroke-width: 3; }
+  25% { opacity: 0.6; stroke-width: 4; }
+  50% { opacity: 1; stroke-width: 3; }
+  75% { opacity: 0.6; stroke-width: 4; }
+  100% { opacity: 1; stroke-width: 3; }
+}
+
+.context-usage-tooltip {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+  background: var(--vscode-editorWidget-background, #1e1e2e);
+  border: 1px solid var(--vscode-panel-border, #333);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  pointer-events: none;
+}
+
+.context-usage-icon:hover .context-usage-tooltip {
+  display: block;
+}
+
+/* Context full warning in input area */
+.context-full-warning {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  margin: 0 12px 4px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #F44336;
+}
+
+.context-full-warning.visible { display: flex; }
+
+.context-full-warning .new-tab-link {
+  margin-left: auto;
+  color: var(--vscode-textLink-foreground, #93c5fd);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* === Tab Bar (KSA-240) === */
+#tab-bar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 4px;
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border));
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+#tab-bar::-webkit-scrollbar { display: none; }
+
+.tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  max-width: 150px;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  flex-shrink: 0;
+  transition: opacity 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.tab-item:hover {
+  opacity: 0.9;
+  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
+}
+
+.tab-item.active {
+  opacity: 1;
+  border-bottom-color: var(--vscode-focusBorder, #6366f1);
+  background: var(--vscode-tab-activeBackground, transparent);
+}
+
+.tab-item .tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+.tab-item .tab-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.tab-item:hover .tab-close { display: inline-flex; }
+.tab-item .tab-close:hover { opacity: 1; background: rgba(239, 68, 68, 0.2); }
+
+/* Tab rename input */
+.tab-item .tab-rename-input {
+  width: 80px;
+  max-width: 100px;
+  font-size: 12px;
+  padding: 0 2px;
+  border: 1px solid var(--vscode-focusBorder, #6366f1);
+  border-radius: 2px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  outline: none;
+}
+
+/* Add tab button */
+.tab-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+.tab-add-btn:hover { opacity: 1; background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1)); }
+.tab-add-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+/* Context notification toast */
+.context-toast {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--vscode-editorWidget-background, #1e1e2e);
+  border: 1px solid #FFC107;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-toast.visible { display: flex; }
+
+.context-toast .toast-dismiss {
+  cursor: pointer;
+  opacity: 0.6;
+  border: none;
+  background: none;
+  color: var(--vscode-foreground);
+}
+
+.context-toast .toast-dismiss:hover { opacity: 1; }
+
+/* === Steering Rules & Hooks Indicators (KSA-240) === */
+.steering-section {
+  display: none;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--vscode-panel-border, #333);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  flex-shrink: 0;
+}
+
+.steering-section.visible { display: block; }
+
+.steering-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0.7;
+  user-select: none;
+}
+
+.steering-header:hover { opacity: 1; }
+.steering-header .steering-chevron { font-size: 8px; transition: transform 0.2s; }
+.steering-section.expanded .steering-chevron { transform: rotate(90deg); }
+
+.steering-list {
+  display: none;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.steering-section.expanded .steering-list { display: flex; }
+
+.steering-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--vscode-textLink-foreground, #93c5fd);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.steering-badge .badge-icon { opacity: 0.6; }
+
+/* Hook trigger badges (inline in messages) */
+.hook-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  margin: 2px 0;
+  font-size: 11px;
+  border-radius: 4px;
+  background: rgba(236, 72, 153, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  color: #ec4899;
+}
+
+.hook-badge .hook-icon { font-size: 12px; }
+.hook-badge .hook-name { font-weight: 500; }
+.hook-badge .hook-status { opacity: 0.7; margin-left: auto; }
+.hook-badge .hook-status.completed { color: #10b981; }
+.hook-badge .hook-status.skipped { color: #f59e0b; }
 
 /* === Messages Area === */
 #chat-messages {
@@ -174,7 +478,7 @@ body {
 .message {
   padding: 8px 12px;
   border-radius: 6px;
-  max-width: 90%;
+  max-width: 100%;
   word-wrap: break-word;
   line-height: 1.5;
 }
@@ -183,12 +487,14 @@ body {
   align-self: flex-end;
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
+  max-width: 95%;
 }
 
 .message.assistant {
   align-self: flex-start;
   background: var(--vscode-editorWidget-background, var(--vscode-input-background));
   border: 1px solid var(--vscode-editorWidget-border, var(--vscode-input-border));
+  max-width: 100%;
 }
 
 .message.system {
@@ -236,6 +542,7 @@ body {
 .node-badge.qa { background: #f59e0b; color: #fff; }
 .node-badge.dev { background: #10b981; color: #fff; }
 .node-badge.devops { background: #6366f1; color: #fff; }
+.node-badge.chat { background: #6366f1; color: #fff; }
 .node-badge.approval { background: #ec4899; color: #fff; }
 
 /* === Context Chips === */
@@ -263,33 +570,94 @@ body {
 .context-chip .chip-remove:hover { opacity: 1; }
 
 /* === Tool Call (Collapsible) === */
+/* KSA-247: Isolated container prevents streaming from affecting tool blocks */
+.ksa247-tool-container {
+  contain: layout style;
+  display: block;
+  margin: 4px 0;
+}
+.ksa247-tool-container[data-sealed="true"] {
+  pointer-events: auto;
+}
+
 .tool-call-block {
   margin: 4px 0;
   border-radius: 4px;
-  border: 1px solid var(--vscode-panel-border, #333);
+  border: 1px solid var(--vscode-panel-border, #444);
   overflow: hidden;
+  background: var(--vscode-editorWidget-background, #1e1e2e);
 }
 
 .tool-call-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 6px 10px;
+  font-size: 12px;
   cursor: pointer;
-  background: var(--vscode-editorWidget-background, rgba(0, 0, 0, 0.15));
+  background: var(--vscode-editorWidget-background, rgba(30, 30, 46, 0.8));
+  border-bottom: 1px solid var(--vscode-panel-border, #333);
   user-select: none;
 }
 
 .tool-call-header:hover { background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08)); }
-.tool-call-header .tool-icon { font-size: 12px; }
+.tool-call-header .tool-icon {
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
 .tool-call-header .tool-name { font-weight: 500; }
+
+/* KSA-240: Activity category labels */
+.tool-call-header .tool-cat {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.tool-cat.cat-command { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
+.tool-cat.cat-file { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.tool-cat.cat-search { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.tool-cat.cat-memory { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
+.tool-cat.cat-jira { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.tool-cat.cat-doc { background: rgba(6, 182, 212, 0.18); color: #22d3ee; }
+.tool-cat.cat-tool { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
 .tool-call-header .tool-status { margin-left: auto; }
 .tool-call-header .tool-status.running { color: #f59e0b; }
 .tool-call-header .tool-status.completed { color: #10b981; }
 .tool-call-header .tool-status.failed { color: #ef4444; }
+.tool-call-header .tool-status.interrupted { color: #94a3b8; }
 .tool-call-header .tool-chevron { transition: transform 0.2s; opacity: 0.5; }
 .tool-call-block.expanded .tool-chevron { transform: rotate(90deg); }
+
+/* Duration span styling (KSA-247) */
+.tool-duration {
+  margin-left: 8px;
+  opacity: 0.5;
+  font-size: 10px;
+}
+
+/* Accessibility: focus-visible outline (KSA-247) */
+.tool-call-block:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, #6366f1);
+  outline-offset: 1px;
+}
+
+/* Failed body styling (KSA-247) */
+.tool-call-body.failed {
+  color: #ef4444;
+  border-left: 2px solid #ef4444;
+  padding-left: 10px;
+}
 
 .tool-call-body {
   display: none;
@@ -691,7 +1059,8 @@ body {
   background: var(--vscode-sideBar-background, var(--vscode-editor-background));
   overflow: hidden;
   transition: max-height 0.3s ease;
-  max-height: 200px;
+  max-height: 220px;
+  position: relative;
 }
 
 .graph-container.collapsed { max-height: 28px; }
@@ -712,7 +1081,10 @@ body {
 
 .graph-toggle:hover { opacity: 1; background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08)); }
 
-.graph-svg-wrap { overflow-x: auto; padding: 4px 8px 8px; }
+.graph-popout { position: absolute; top: 3px; right: 8px; background: none; border: none; color: var(--vscode-foreground); opacity: 0.5; cursor: pointer; font-size: 12px; padding: 2px 4px; z-index: 2; }
+.graph-popout:hover { opacity: 1; }
+
+.graph-svg-wrap { overflow-x: auto; overflow-y: auto; padding: 4px 8px 8px; max-height: 180px; }
 .graph-svg-wrap svg { display: block; min-width: 100%; }
 
 /* === Typing Indicator === */

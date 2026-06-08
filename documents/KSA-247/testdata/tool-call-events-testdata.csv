@@ -1,0 +1,22 @@
+test_case_id,tool_id,tool_name,tool_args,tool_status,tool_result,tool_duration_ms,description
+TC-001,tc-001,mem_search,"{""query"":""KSA-247""}",running,,,Render running tool block with MEM category
+TC-002,tc-002a,grep_search,"{""pattern"":""test""}",completed,Found 5 matches,800,First tool block for streaming test
+TC-002,tc-002b,read_file,"{""path"":""/src/main.ts""}",completed,File content here,1200,Second tool block for streaming test
+IT-01,tc-it01,mem_search,"{""query"":""test""}",running,,,Integration test — postMessage flow
+IT-02,tc-it01,mem_search,,completed,Found 3 results,1500,Integration test — update completion
+IT-03,tc-it03a,execute_pwsh,"{""command"":""ls""}",running,,,Persistence test — running tool
+IT-03,tc-it03b,read_file,"{""path"":""/readme.md""}",completed,README content,900,Persistence test — completed tool
+IT-04,tc-it04,grep_search,"{""query"":""pattern""}",running,,,Stale running → interrupted on restore
+IT-05,tc-it05a,mem_search,"{""query"":""a""}",completed,Result A,500,Streaming protection test — tool A
+IT-05,tc-it05b,read_file,"{""path"":""/b""}",completed,Result B,700,Streaming protection test — tool B
+IT-06,tc-it06,execute_pwsh,"{""cmd"":""echo hi""}",completed,hi,,Duration guard — first update no duration
+TC-103,tc-103,grep_search,"{""query"":""find""}",running,,,Stale running in persisted state
+TC-200,,test_tool,"{""x"":1}",running,,,Missing ID — should skip
+TC-200,tc-200x,,"{""x"":1}",running,,,Missing name — should skip
+TC-202,tc-202a,read_file,"{""path"":""/a""}",completed,File A,300,Valid tool in corrupted batch
+TC-202,,,,,,,"Corrupted entry — missing all fields"
+TC-202,tc-202c,mem_search,"{""query"":""b""}",completed,Found B,600,Valid tool after corrupted entry
+TC-401,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,,,,,,Very long tool name (200 chars)
+TC-402,tc-402,read_file,"{large 50KB JSON object placeholder}",running,,,Large args object
+TC-403,tc-403,execute_pwsh,,running,,,Null args — body should show "No data available"
+TC-405,tc-405,mem_search,,completed,Done,0,Duration = 0ms edge case
