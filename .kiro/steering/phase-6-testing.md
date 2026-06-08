@@ -1,4 +1,5 @@
 ---
+name: phase-6-testing
 inclusion: manual
 description: Phase 6 Testing workflow. Activate when SM runs Phase 6 (QA tests).
 ---

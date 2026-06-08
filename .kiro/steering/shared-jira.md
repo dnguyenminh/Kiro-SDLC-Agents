@@ -1,4 +1,5 @@
 ---
+name: shared-jira
 inclusion: manual
 description: Jira integration rules for SDLC pipeline. Activate when working with Jira tickets.
 ---

@@ -1,4 +1,5 @@
 ---
+name: phase-3-design
 inclusion: manual
 description: Phase 3 Design workflow. Activate when SM runs Phase 3 (SA creates TDD).
 ---

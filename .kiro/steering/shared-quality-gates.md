@@ -1,4 +1,5 @@
 ---
+name: shared-quality-gates
 inclusion: manual
 description: Quality gate checklists for SDLC phases. Activate after sub-agent completes a phase.
 ---

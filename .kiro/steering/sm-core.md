@@ -1,4 +1,5 @@
 ---
+name: sm-core
 inclusion: manual
 description: SM Core Orchestrator rules. Activate when running SDLC pipeline via sm-agent.
 ---
