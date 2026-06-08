@@ -1,0 +1,4 @@
+id,language,content_preview
+1,typescript,"import * as fs from 'fs'; export function readFile()..."
+2,python,"import os\ndef main():\n    print('hello')"
+3,java,"public class Main { public static void main(String[] args) {} }"

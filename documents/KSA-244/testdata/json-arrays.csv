@@ -1,0 +1,10 @@
+id,description,item_count,expected_type
+1,"Valid JSON array 10 items",10,json
+2,"Valid JSON array 100 items",100,json
+3,"Valid JSON array 1000 items",1000,json
+4,"Source code with imports",0,code
+5,"Log output with timestamps",0,logs
+6,"Plain text paragraph",0,text
+7,"JSON object (not array)",0,json_object
+8,"Empty string",0,empty
+9,"Short string (<100)",0,short
