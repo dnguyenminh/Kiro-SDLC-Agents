@@ -8,6 +8,7 @@
   "use strict";
 
   var vscode = acquireVsCodeApi();
+  window.__vscode = vscode;
 
   // === DOM References ===
   var messagesEl = document.getElementById("chat-messages");
@@ -32,6 +33,7 @@
   // === State ===
   var streamingNodes = {};
   var isStreaming = false;
+  var graphDone = false; // KSA-240: prevents working re-activation after completion
   var hasMessages = false;
   var currentModel = "auto";
   var currentMode = "autopilot";
@@ -41,6 +43,312 @@
   var historyIndex = -1;
   var pendingInput = "";
 
+  // === Tab State (KSA-240) ===
+  var defaultTabId = crypto.randomUUID();
+  var tabs = [{ id: defaultTabId, name: "Chat 1", messages: [], tokenCount: 0, maxTokens: 128000 }];
+  var activeTabId = defaultTabId;
+  var tabCounter = 1;
+  var MAX_TABS = 10;
+  var lastThreshold = "safe";
+
+  // === Tab DOM References (KSA-240) ===
+  var tabBar = document.getElementById("tab-bar");
+  var tabAddBtn = document.getElementById("tab-add-btn");
+  var contextUsageIcon = document.getElementById("context-usage-icon");
+  var contextTooltip = document.getElementById("context-tooltip");
+  var contextFullWarning = document.getElementById("context-full-warning");
+  var fullNewTabLink = document.getElementById("full-new-tab");
+  var contextToast = document.getElementById("context-toast");
+  var toastText = document.getElementById("toast-text");
+  var toastDismiss = document.getElementById("toast-dismiss");
+
+  // === Context Usage Icon Logic (KSA-240) ===
+  var ARC_CIRCUMFERENCE = 50.27; // 2*PI*8
+
+  function updateContextIcon(tokenCount, maxTokens) {
+    if (maxTokens <= 0) return;
+    var pct = Math.min(100, Math.round((tokenCount / maxTokens) * 100));
+    var offset = ARC_CIRCUMFERENCE - (ARC_CIRCUMFERENCE * pct / 100);
+    var arcEl = contextUsageIcon.querySelector(".arc-progress");
+
+    // Update arc
+    arcEl.setAttribute("stroke-dashoffset", offset.toString());
+
+    // Determine threshold
+    var ratio = pct / 100;
+    var threshold = "safe";
+    if (ratio >= 0.95) threshold = "full";
+    else if (ratio >= 0.80) threshold = "critical";
+    else if (ratio >= 0.60) threshold = "warning";
+
+    // Update color class
+    arcEl.className.baseVal = "arc-progress " + threshold;
+
+    // Tooltip
+    var formatted = tokenCount.toLocaleString() + " / " + maxTokens.toLocaleString() + " tokens (" + pct + "%)";
+    contextTooltip.textContent = formatted;
+
+    // Pulse animation when crossing 80% boundary
+    if (threshold === "critical" && lastThreshold !== "critical" && lastThreshold !== "full") {
+      contextUsageIcon.classList.add("pulse");
+      setTimeout(function() { contextUsageIcon.classList.remove("pulse"); }, 2000);
+    }
+
+    // Notification toast at 95%
+    if (ratio >= 0.95 && lastThreshold !== "full") {
+      toastText.textContent = "Context usage at " + pct + "% \u2014 consider starting a new tab";
+      contextToast.classList.add("visible");
+    }
+
+    // Full warning in input area
+    if (ratio >= 1.0) {
+      contextFullWarning.classList.add("visible");
+    } else {
+      contextFullWarning.classList.remove("visible");
+    }
+
+    lastThreshold = threshold;
+  }
+
+  // Toast dismiss
+  toastDismiss.addEventListener("click", function() {
+    contextToast.classList.remove("visible");
+  });
+
+  // Full warning "new tab" link
+  fullNewTabLink.addEventListener("click", function() {
+    createNewTab();
+    contextFullWarning.classList.remove("visible");
+  });
+
+  // === Tab Bar Logic (KSA-240) ===
+  function createNewTab() {
+    if (tabs.length >= MAX_TABS) return;
+    tabCounter++;
+    var newTab = { id: crypto.randomUUID(), name: "Chat " + tabCounter, messages: [], tokenCount: 0, maxTokens: 128000 };
+    tabs.push(newTab);
+    switchToTab(newTab.id);
+    renderTabBar();
+    vscode.postMessage({ type: "tab:create" });
+  }
+
+  function switchToTab(tabId) {
+    if (tabId === activeTabId) return;
+    // Save current tab state
+    var current = getTab(activeTabId);
+    if (current) {
+      current.scrollPosition = messagesEl.scrollTop;
+    }
+
+    activeTabId = tabId;
+    var tab = getTab(tabId);
+
+    // Clear message area and re-render target tab messages
+    messagesEl.innerHTML = "";
+    activeToolContainer = null; // Reset container on tab switch
+    if (tab && tab.messages && tab.messages.length > 0) {
+      showMessages();
+      for (var i = 0; i < tab.messages.length; i++) {
+        var msg = tab.messages[i];
+        if (msg.role === "tool" && msg.toolData) {
+          renderToolCall(msg.toolData, true);
+        } else {
+          finalizeToolContainer();
+          appendMessage(msg.role, msg.content, msg.nodeId);
+        }
+      }
+      finalizeToolContainer();
+      // Restore scroll position
+      if (tab.scrollPosition) {
+        messagesEl.scrollTop = tab.scrollPosition;
+      }
+    } else {
+      // Empty tab — show welcome state
+      messagesEl.classList.add("hidden");
+      welcomeEl.classList.remove("hidden");
+      hasMessages = false;
+    }
+
+    if (tab) {
+      // Update context icon for this tab
+      updateContextIcon(tab.tokenCount, tab.maxTokens);
+      lastThreshold = "safe"; // Reset to avoid false pulse
+    }
+    renderTabBar();
+    vscode.postMessage({ type: "tab:switch", payload: { tabId: tabId } });
+  }
+
+  function closeTab(tabId) {
+    if (tabs.length <= 1) return;
+    var idx = -1;
+    for (var i = 0; i < tabs.length; i++) { if (tabs[i].id === tabId) { idx = i; break; } }
+    if (idx === -1) return;
+    tabs.splice(idx, 1);
+
+    if (tabId === activeTabId) {
+      var newIdx = idx > 0 ? idx - 1 : 0;
+      activeTabId = tabs[newIdx].id;
+    }
+    renderTabBar();
+    vscode.postMessage({ type: "tab:close", payload: { tabId: tabId } });
+  }
+
+  function renameTab(tabId, newName) {
+    var tab = getTab(tabId);
+    if (!tab) return;
+    var trimmed = (newName || "").trim();
+    if (!trimmed) return;
+    tab.name = trimmed.substring(0, 30);
+    renderTabBar();
+    vscode.postMessage({ type: "tab:rename", payload: { tabId: tabId, newName: tab.name } });
+  }
+
+  function getTab(tabId) {
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].id === tabId) return tabs[i];
+    }
+    return null;
+  }
+
+  function renderTabBar() {
+    // Remove all tab items (keep add button)
+    var existingTabs = tabBar.querySelectorAll(".tab-item");
+    for (var i = 0; i < existingTabs.length; i++) {
+      existingTabs[i].remove();
+    }
+
+    // Create tab elements
+    for (var t = 0; t < tabs.length; t++) {
+      var tab = tabs[t];
+      var el = document.createElement("button");
+      el.className = "tab-item" + (tab.id === activeTabId ? " active" : "");
+      el.setAttribute("data-tab-id", tab.id);
+      el.setAttribute("role", "tab");
+      el.setAttribute("aria-selected", tab.id === activeTabId ? "true" : "false");
+
+      var label = document.createElement("span");
+      label.className = "tab-label";
+      label.textContent = tab.name;
+      el.appendChild(label);
+
+      if (tabs.length > 1) {
+        var closeBtn = document.createElement("span");
+        closeBtn.className = "tab-close";
+        closeBtn.setAttribute("aria-label", "Close tab");
+        closeBtn.innerHTML = "&times;";
+        closeBtn.setAttribute("data-tab-id", tab.id);
+        el.appendChild(closeBtn);
+      }
+
+      tabBar.insertBefore(el, tabAddBtn);
+    }
+
+    // Update add button state
+    tabAddBtn.disabled = tabs.length >= MAX_TABS;
+    tabAddBtn.title = tabs.length >= MAX_TABS ? "Maximum 10 tabs" : "New conversation (Ctrl+Shift+T)";
+
+    // Bind events
+    bindTabEvents();
+  }
+
+  function bindTabEvents() {
+    var tabItems = tabBar.querySelectorAll(".tab-item");
+    for (var i = 0; i < tabItems.length; i++) {
+      (function(item) {
+        // Click to switch
+        item.addEventListener("click", function(e) {
+          if (e.target.classList.contains("tab-close")) return;
+          var id = this.getAttribute("data-tab-id");
+          switchToTab(id);
+        });
+        // Double-click to rename
+        item.addEventListener("dblclick", function(e) {
+          e.preventDefault();
+          var tabId = this.getAttribute("data-tab-id");
+          startRename(this, tabId);
+        });
+      })(tabItems[i]);
+    }
+    // Close buttons
+    var closeBtns = tabBar.querySelectorAll(".tab-close");
+    for (var c = 0; c < closeBtns.length; c++) {
+      (function(btn) {
+        btn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          var id = this.getAttribute("data-tab-id");
+          closeTab(id);
+        });
+      })(closeBtns[c]);
+    }
+  }
+
+  function startRename(tabEl, tabId) {
+    var labelEl = tabEl.querySelector(".tab-label");
+    var currentName = labelEl.textContent;
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "tab-rename-input";
+    input.value = currentName;
+    input.maxLength = 30;
+    labelEl.style.display = "none";
+    tabEl.insertBefore(input, labelEl);
+    input.focus();
+    input.select();
+
+    function finishRename() {
+      var val = input.value.trim();
+      if (val) renameTab(tabId, val);
+      input.remove();
+      labelEl.style.display = "";
+      var tab = getTab(tabId);
+      if (tab) labelEl.textContent = tab.name;
+    }
+
+    input.addEventListener("blur", finishRename);
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") { e.preventDefault(); finishRename(); }
+      if (e.key === "Escape") { input.remove(); labelEl.style.display = ""; }
+    });
+  }
+
+  // Tab add button
+  tabAddBtn.addEventListener("click", function() {
+    createNewTab();
+  });
+
+  // Keyboard shortcuts for tabs
+  document.addEventListener("keydown", function(e) {
+    // Ctrl+Shift+T = new tab
+    if (e.ctrlKey && e.shiftKey && e.key === "T") {
+      e.preventDefault();
+      createNewTab();
+    }
+    // Ctrl+W = close tab
+    if (e.ctrlKey && !e.shiftKey && e.key === "w") {
+      e.preventDefault();
+      closeTab(activeTabId);
+    }
+    // Ctrl+Tab = next tab
+    if (e.ctrlKey && e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      var idx = -1;
+      for (var i = 0; i < tabs.length; i++) { if (tabs[i].id === activeTabId) { idx = i; break; } }
+      var nextIdx = (idx + 1) % tabs.length;
+      switchToTab(tabs[nextIdx].id);
+    }
+    // Ctrl+Shift+Tab = prev tab
+    if (e.ctrlKey && e.shiftKey && e.key === "Tab") {
+      e.preventDefault();
+      var idx2 = -1;
+      for (var j = 0; j < tabs.length; j++) { if (tabs[j].id === activeTabId) { idx2 = j; break; } }
+      var prevIdx = (idx2 - 1 + tabs.length) % tabs.length;
+      switchToTab(tabs[prevIdx].id);
+    }
+  });
+
+  // Initial render
+  renderTabBar();
+
   // === Initialization ===
   vscode.postMessage({ type: "ready" });
 
@@ -48,6 +356,11 @@
   var suggestionBtns = welcomeEl.querySelectorAll(".welcome-suggestions button");
   for (var i = 0; i < suggestionBtns.length; i++) {
     suggestionBtns[i].addEventListener("click", function () {
+      var action = this.getAttribute("data-action");
+      if (action) {
+        vscode.postMessage({ type: "executeCommand", command: "kiroSdlc." + action });
+        return;
+      }
       var cmd = this.getAttribute("data-cmd");
       inputEl.value = cmd;
       inputEl.focus();
@@ -255,20 +568,89 @@
     contextMenu.classList.add("hidden");
   });
 
-  var modelBtns = modelDropdown.querySelectorAll("button");
-  for (var m = 0; m < modelBtns.length; m++) {
-    modelBtns[m].addEventListener("click", function () {
-      var model = this.getAttribute("data-model");
-      setModel(model);
-      modelDropdown.classList.add("hidden");
-      vscode.postMessage({ type: "chat:setModel", model: model });
-    });
+  // Available models are populated dynamically from the extension
+  // (chat:models message) based on the configured SDLC provider.
+  var availableModels = [];
+  var supportsAuto = true;
+
+  // Delegate clicks on dynamically-rendered model buttons.
+  modelDropdown.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("button[data-model]") : null;
+    if (!btn) return;
+    var model = btn.getAttribute("data-model");
+    setModel(model);
+    modelDropdown.classList.add("hidden");
+    vscode.postMessage({ type: "chat:setModel", model: model });
+  });
+
+  function renderModelDropdown() {
+    modelDropdown.innerHTML = "";
+    if (supportsAuto) {
+      modelDropdown.appendChild(makeModelButton({ id: "auto", name: "Auto" }));
+    }
+    for (var i = 0; i < availableModels.length; i++) {
+      modelDropdown.appendChild(makeModelButton(availableModels[i]));
+    }
+    // Reflect current selection
+    var allBtns = modelDropdown.querySelectorAll("button");
+    for (var j = 0; j < allBtns.length; j++) {
+      allBtns[j].classList.toggle("active", allBtns[j].getAttribute("data-model") === currentModel);
+    }
+  }
+
+  function makeModelButton(model) {
+    var btn = document.createElement("button");
+    btn.setAttribute("data-model", model.id);
+    // KSA-237: render name + rate badge like Kiro IDE
+    var nameSpan = document.createElement("span");
+    nameSpan.className = "model-item-name";
+    nameSpan.textContent = model.name;
+    btn.appendChild(nameSpan);
+
+    if (typeof model.rateMultiplier === "number") {
+      var badge = document.createElement("span");
+      badge.className = "model-rate-badge";
+      if (model.rateMultiplier === 0) {
+        badge.textContent = "Free";
+        badge.classList.add("rate-free");
+      } else {
+        badge.textContent = model.rateMultiplier + (model.rateMultiplier === 1 ? " Credit" : " Credits");
+      }
+      btn.appendChild(badge);
+    }
+
+    if (model.description) {
+      var desc = document.createElement("span");
+      desc.className = "model-item-desc";
+      desc.textContent = model.description;
+      btn.appendChild(desc);
+    }
+
+    return btn;
+  }
+
+  function labelForModel(model) {
+    if (model === "auto") return "Auto";
+    for (var i = 0; i < availableModels.length; i++) {
+      if (availableModels[i].id === model) {
+        var lbl = availableModels[i].name;
+        // KSA-237: show compact rate in the button label
+        if (typeof availableModels[i].rateMultiplier === "number" && availableModels[i].rateMultiplier !== 1) {
+          if (availableModels[i].rateMultiplier === 0) {
+            lbl += " (Free)";
+          } else {
+            lbl += " (" + availableModels[i].rateMultiplier + "x)";
+          }
+        }
+        return lbl;
+      }
+    }
+    return model;
   }
 
   function setModel(model) {
     currentModel = model;
-    var labels = { auto: "Auto", "claude-sonnet": "Claude Sonnet", "claude-haiku": "Claude Haiku", "gpt-4o": "GPT-4o", ollama: "Ollama", kiro: "Kiro" };
-    modelLabel.textContent = labels[model] || model;
+    modelLabel.textContent = labelForModel(model);
     var allBtns = modelDropdown.querySelectorAll("button");
     for (var i = 0; i < allBtns.length; i++) {
       allBtns[i].classList.toggle("active", allBtns[i].getAttribute("data-model") === model);
@@ -320,7 +702,12 @@
         setWorking(false);
         break;
       case "chat:toolCall":
-        renderToolCall(msg.toolCall);
+        vscode.postMessage({ type: "chat:debugLog", text: "toolCall obj: " + JSON.stringify(msg.toolCall || msg).slice(0, 200) });
+        try {
+          renderToolCall(msg.toolCall);
+        } catch (e) {
+          vscode.postMessage({ type: "chat:debugLog", text: "renderToolCall ERROR: " + e.message });
+        }
         break;
       case "chat:toolCallUpdate":
         updateToolCall(msg);
@@ -336,6 +723,18 @@
           autopilotToggle.classList.toggle("on", msg.mode === "autopilot");
         }
         break;
+      case "chat:models":
+        availableModels = Array.isArray(msg.models) ? msg.models : [];
+        supportsAuto = msg.supportsAuto !== false;
+        renderModelDropdown();
+        if (msg.selected) {
+          setModel(msg.selected);
+        } else if (supportsAuto) {
+          setModel("auto");
+        } else if (availableModels.length > 0) {
+          setModel(availableModels[0].id);
+        }
+        break;
       case "chat:workingStatus":
         setWorking(msg.working, msg.label);
         break;
@@ -344,6 +743,18 @@
       case "serverStatus":
         updateServerStatus(msg.status);
         break;
+      case "tab:updated":
+        handleTabsUpdated(msg.payload);
+        break;
+      case "tab:contextUpdate":
+        handleContextUpdate(msg.payload);
+        break;
+      case "chat:steeringLoaded":
+        renderSteeringRules(msg.rules);
+        break;
+      case "chat:hookTriggered":
+        renderHookBadge(msg.hook);
+        break;
     }
   });
 
@@ -351,6 +762,9 @@
   function sendMessage() {
     var text = inputEl.value.trim();
     if (!text && pastedAttachments.length === 0) return;
+
+    // Reset graph completion flag for new interaction
+    graphDone = false;
 
     showMessages();
     if (text) appendMessage("user", text);
@@ -362,6 +776,22 @@
       }
     }
     setWorking(true);
+
+    // KSA-240: Auto-rename tab to first message excerpt
+    var currentTab = getTab(activeTabId);
+    if (currentTab && text && (!currentTab.messages || currentTab.messages.length === 0)) {
+      var excerpt = text.substring(0, 25).trim();
+      if (text.length > 25) excerpt += "\u2026";
+      currentTab.name = excerpt;
+      renderTabBar();
+      vscode.postMessage({ type: "tab:rename", payload: { tabId: activeTabId, newName: excerpt } });
+    }
+    // Track message in local tab state
+    if (currentTab) {
+      if (!currentTab.messages) currentTab.messages = [];
+      currentTab.messages.push({ role: "user", content: text });
+    }
+    saveStateToDisk();
 
     var attachments = pastedAttachments.map(function (att) {
       return { name: att.name, type: att.type === "image" ? "image/png" : "application/octet-stream", size: 0, uri: att.dataUrl || "" };
@@ -391,11 +821,14 @@
   // === Working Status ===
   function setWorking(active, label) {
     if (active) {
+      // Don't re-activate if graph already signaled completion
+      if (graphDone) return;
       workingBar.classList.add("active");
       workingText.textContent = label || "Working...";
       stopBtn.style.display = "inline-flex";
       isStreaming = true;
     } else {
+      graphDone = true; // Mark done — ignore subsequent setWorking(true) calls
       workingBar.classList.remove("active");
       stopBtn.style.display = "none";
       isStreaming = false;
@@ -449,11 +882,21 @@
 
   function renderChatHistory(messages) {
     messagesEl.innerHTML = "";
+    activeToolContainer = null; // Reset container on full re-render
     if (messages && messages.length > 0) {
       showMessages();
       for (var i = 0; i < messages.length; i++) {
-        appendMessage(messages[i].role, messages[i].content, messages[i].nodeId);
+        var m = messages[i];
+        if (m.role === "tool" && m.toolData) {
+          // Re-render persisted tool call block (into container)
+          renderToolCall(m.toolData, true);
+        } else {
+          // Seal tool container before rendering non-tool messages
+          finalizeToolContainer();
+          appendMessage(m.role, m.content, m.nodeId);
+        }
       }
+      finalizeToolContainer();
     }
   }
 
@@ -462,13 +905,28 @@
     showMessages();
     setWorking(true, "Working...");
 
+    // KSA-247: Seal the tool container before streaming text starts
+    // This ensures tool blocks are never touched by streaming logic
+    finalizeToolContainer();
+
     if (!streamingNodes[msg.nodeId]) {
       var el = document.createElement("div");
       el.className = "message assistant streaming";
 
       var badge = document.createElement("span");
       badge.className = "node-badge " + msg.nodeId;
-      badge.textContent = msg.nodeId.toUpperCase();
+      // Map nodeId to friendly agent name
+      var agentNames = {
+        chat: "Pipeline Agent",
+        sm: "SM",
+        ba: "BA",
+        sa: "SA",
+        ta: "TA",
+        qa: "QA",
+        dev: "DEV",
+        devops: "DevOps"
+      };
+      badge.textContent = agentNames[msg.nodeId] || msg.nodeId.toUpperCase();
       el.appendChild(badge);
 
       var contentEl = document.createElement("span");
@@ -482,7 +940,15 @@
     var node = streamingNodes[msg.nodeId];
 
     if (msg.eventType === "token") {
-      node.content += msg.content;
+      // Skip pure whitespace/newline-only tokens entirely
+      var tokenContent = msg.content;
+      if (!tokenContent || !tokenContent.replace(/[\s\n\r]/g, "")) return;
+      // Trim leading whitespace from first meaningful token
+      if (!node.content) {
+        tokenContent = tokenContent.replace(/^[\s\n\r]+/, "");
+        if (!tokenContent) return;
+      }
+      node.content += tokenContent;
       var contentSpan = node.el.querySelector(".stream-content");
       contentSpan.innerHTML = MarkdownRenderer.render(node.content);
       addCodeActions(contentSpan);
@@ -511,6 +977,16 @@
         contentSpan.innerHTML = MarkdownRenderer.render(msg.finalContent);
         addCodeActions(contentSpan);
       }
+      // Save assistant message to tab state
+      var content = node.content || msg.finalContent || "";
+      if (content) {
+        var currentTab = getTab(activeTabId);
+        if (currentTab) {
+          if (!currentTab.messages) currentTab.messages = [];
+          currentTab.messages.push({ role: "assistant", content: content, nodeId: msg.nodeId });
+        }
+        saveStateToDisk();
+      }
       delete streamingNodes[msg.nodeId];
     }
 
@@ -519,57 +995,251 @@
     }
   }
 
-  // === Tool Calls (Collapsible) ===
-  function renderToolCall(tc) {
+  // === Tool Calls (Collapsible) — Isolated Container ===
+  // KSA-247: Tool call blocks render in their own scoped container
+  // completely isolated from streaming DOM manipulation
+  var activeToolContainer = null;
+
+  function getOrCreateToolContainer() {
+    if (!activeToolContainer || !activeToolContainer.parentNode) {
+      activeToolContainer = document.createElement("div");
+      activeToolContainer.className = "ksa247-tool-container";
+      activeToolContainer.setAttribute("data-turn", "turn-" + Date.now());
+      messagesEl.appendChild(activeToolContainer);
+    }
+    return activeToolContainer;
+  }
+
+  function finalizeToolContainer() {
+    if (activeToolContainer) {
+      activeToolContainer.setAttribute("data-sealed", "true");
+      activeToolContainer = null;
+    }
+  }
+  // Categorize a tool by name -> { icon, label, cssClass }
+  // KSA-247: Enhanced with explicit prefixMap to fix OI-4 priority bug
+  function categorizeTool(name) {
+    var n = (name || "").toLowerCase();
+
+    // Priority 1: Explicit prefix matches (most specific first)
+    var prefixMap = [
+      { prefix: "execute_pwsh",    icon: "&gt;_", label: "CMD",    cls: "cat-command" },
+      { prefix: "control_pwsh",    icon: "&gt;_", label: "CMD",    cls: "cat-command" },
+      { prefix: "get_process",     icon: "&gt;_", label: "CMD",    cls: "cat-command" },
+      { prefix: "list_process",    icon: "&gt;_", label: "CMD",    cls: "cat-command" },
+      { prefix: "grep_search",     icon: "?",  label: "SEARCH", cls: "cat-search" },
+      { prefix: "file_search",     icon: "?",  label: "SEARCH", cls: "cat-search" },
+      { prefix: "mem_search",      icon: "m",  label: "MEM",    cls: "cat-memory" },
+      { prefix: "mem_ingest",      icon: "m",  label: "MEM",    cls: "cat-memory" },
+      { prefix: "read_file",       icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "read_files",      icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "read_code",       icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "list_directory",  icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "fs_write",        icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "str_replace",     icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "stream_write",    icon: "[]", label: "FILE",   cls: "cat-file" },
+      { prefix: "export_docx",     icon: "D",  label: "DOC",    cls: "cat-doc" },
+      { prefix: "embed_images",    icon: "D",  label: "DOC",    cls: "cat-doc" },
+      { prefix: "drawio",          icon: "D",  label: "DOC",    cls: "cat-doc" },
+      { prefix: "jira_",           icon: "J",  label: "JIRA",   cls: "cat-jira" }
+    ];
+
+    for (var i = 0; i < prefixMap.length; i++) {
+      if (n.indexOf(prefixMap[i].prefix) === 0) {
+        return { icon: prefixMap[i].icon, label: prefixMap[i].label, cls: prefixMap[i].cls };
+      }
+    }
+
+    // Priority 2: Contains-based matching (broader patterns)
+    if (n.indexOf("pwsh") !== -1 || n.indexOf("shell") !== -1 || n.indexOf("command") !== -1)
+      return { icon: "&gt;_", label: "CMD", cls: "cat-command" };
+    if (n.indexOf("search") !== -1 || n.indexOf("grep") !== -1 || n.indexOf("find") !== -1)
+      return { icon: "?", label: "SEARCH", cls: "cat-search" };
+    if (n.indexOf("mem_") !== -1 || n.indexOf("kb_") !== -1)
+      return { icon: "m", label: "MEM", cls: "cat-memory" };
+    if (n.indexOf("jira") !== -1 || n.indexOf("issue") !== -1)
+      return { icon: "J", label: "JIRA", cls: "cat-jira" };
+    if (n.indexOf("read") !== -1 || n.indexOf("write") !== -1 || n.indexOf("file") !== -1 ||
+        n.indexOf("list") !== -1 || n.indexOf("directory") !== -1)
+      return { icon: "[]", label: "FILE", cls: "cat-file" };
+    if (n.indexOf("drawio") !== -1 || n.indexOf("export") !== -1 || n.indexOf("docx") !== -1)
+      return { icon: "D", label: "DOC", cls: "cat-doc" };
+
+    // Priority 3: Fallback
+    return { icon: "T", label: "TOOL", cls: "cat-tool" };
+  }
+
+  function renderToolCall(tc, isReplay) {
+    // EF-1: Validation - skip if required fields missing
+    if (!tc || !tc.id || !tc.name) {
+      console.warn("[chat.js] renderToolCall: missing id or name, skipping", tc);
+      return;
+    }
+
     showMessages();
     var block = document.createElement("div");
     block.className = "tool-call-block";
     block.id = "tc-" + tc.id;
 
+    // Accessibility: BR-17, OI-2
+    block.setAttribute("tabindex", "0");
+    block.setAttribute("role", "button");
+    block.setAttribute("aria-expanded", "false");
+    block.setAttribute("aria-label", "Tool call: " + tc.name + " - " + (tc.status || "running"));
+
+    var cat = categorizeTool(tc.name);
+
+    // OI-3: stale running -> interrupted on restore
+    var displayStatus = tc.status;
+    if (isReplay && tc.status === "running") {
+      displayStatus = "interrupted";
+    }
+
     var header = document.createElement("div");
     header.className = "tool-call-header";
     header.innerHTML = '<span class="tool-chevron">&#x25B6;</span>' +
-      '<span class="tool-icon">&#x1F527;</span>' +
+      '<span class="tool-icon">' + cat.icon + '</span>' +
+      '<span class="tool-cat ' + cat.cls + '">' + cat.label + '</span>' +
       '<span class="tool-name">' + escapeHtml(tc.name) + '</span>' +
-      '<span class="tool-status ' + tc.status + '">' + statusIcon(tc.status) + '</span>';
+      '<span class="tool-status ' + displayStatus + '">' + statusIcon(displayStatus) + '</span>';
 
+    // Duration display (for completed/replayed blocks)
+    if (tc.duration) {
+      var dur = document.createElement("span");
+      dur.className = "tool-duration";
+      dur.textContent = formatDuration(tc.duration);
+      header.appendChild(dur);
+    }
+
+    // Click handler: toggle expand/collapse
     header.addEventListener("click", function () {
-      block.classList.toggle("expanded");
+      var isExpanded = block.classList.toggle("expanded");
+      block.setAttribute("aria-expanded", isExpanded ? "true" : "false");
     });
 
+    // Keyboard handler: Enter/Space toggle (BR-17)
+    block.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        var isExpanded = block.classList.toggle("expanded");
+        block.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+      }
+    });
+
+    // Body content
     var body = document.createElement("div");
     body.className = "tool-call-body";
-    body.textContent = tc.args ? JSON.stringify(tc.args, null, 2) : "";
+    if (displayStatus === "completed" && tc.result) {
+      body.textContent = tc.result;
+    } else if (displayStatus === "failed" && tc.error) {
+      body.textContent = tc.error;
+      body.classList.add("failed");
+    } else if (tc.args) {
+      body.textContent = JSON.stringify(tc.args, null, 2);
+    } else {
+      body.textContent = "No data available";
+    }
 
     block.appendChild(header);
     block.appendChild(body);
-    messagesEl.appendChild(block);
+
+    // KSA-247: Append to isolated tool container (NOT messagesEl directly)
+    var container = getOrCreateToolContainer();
+    container.appendChild(block);
     toolCalls[tc.id] = block;
     scrollToBottom();
+
+    // KSA-240: Persist tool call into active tab so it survives re-renders/reload
+    if (!isReplay) {
+      var currentTab = getTab(activeTabId);
+      if (currentTab) {
+        if (!currentTab.messages) currentTab.messages = [];
+        currentTab.messages.push({
+          role: "tool",
+          content: "",
+          toolData: {
+            id: tc.id,
+            name: tc.name,
+            args: tc.args,
+            status: tc.status,
+            result: tc.result,
+            duration: tc.duration,
+            timestamp: new Date().toISOString()
+          }
+        });
+        saveStateToDisk();
+      }
+    }
   }
 
   function updateToolCall(msg) {
     var block = toolCalls[msg.id];
-    if (!block) return;
+    if (!block) {
+      console.warn("[chat.js] updateToolCall: block not found for id", msg.id);
+      return;
+    }
+
+    // Update status indicator
     var statusSpan = block.querySelector(".tool-status");
     statusSpan.className = "tool-status " + msg.status;
     statusSpan.textContent = statusIcon(msg.status);
+
+    // Update aria-label
+    var toolName = block.querySelector(".tool-name");
+    block.setAttribute("aria-label", "Tool call: " +
+      (toolName ? toolName.textContent : "") + " - " + msg.status);
+
+    // Update body content (BR-14: result replaces args)
     if (msg.result) {
       var body = block.querySelector(".tool-call-body");
       body.textContent = msg.result;
+      if (msg.status === "failed") {
+        body.classList.add("failed");
+      } else {
+        body.classList.remove("failed");
+      }
     }
+
+    // Duration display - guard against duplicates (OI-6)
     if (msg.duration) {
-      var dur = document.createElement("span");
-      dur.style.cssText = "margin-left:8px;opacity:0.5;font-size:10px;";
-      dur.textContent = msg.duration + "ms";
-      block.querySelector(".tool-call-header").appendChild(dur);
+      var existingDur = block.querySelector(".tool-duration");
+      if (!existingDur) {
+        var dur = document.createElement("span");
+        dur.className = "tool-duration";
+        dur.textContent = formatDuration(msg.duration);
+        block.querySelector(".tool-call-header").appendChild(dur);
+      } else {
+        existingDur.textContent = formatDuration(msg.duration);
+      }
     }
+
+    // Update persisted state in tab
+    var currentTab = getTab(activeTabId);
+    if (currentTab && currentTab.messages) {
+      for (var i = currentTab.messages.length - 1; i >= 0; i--) {
+        var m = currentTab.messages[i];
+        if (m.role === "tool" && m.toolData && m.toolData.id === msg.id) {
+          m.toolData.status = msg.status;
+          if (msg.result) m.toolData.result = msg.result;
+          if (msg.duration) m.toolData.duration = msg.duration;
+          break;
+        }
+      }
+      saveStateToDisk();
+    }
+  }
+
+  // KSA-247: Format duration from ms to human-readable
+  function formatDuration(ms) {
+    if (ms < 1000) return ms + "ms";
+    return (ms / 1000).toFixed(1) + "s";
   }
 
   function statusIcon(status) {
     if (status === "running") return "\u23F3";
     if (status === "completed") return "\u2713";
     if (status === "failed") return "\u2717";
+    if (status === "interrupted") return "\u23F8";
     return "";
   }
 
@@ -783,5 +1453,91 @@
 
   function escapeHtml(str) {
     return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // === Tab/Context Update Handlers (KSA-240) ===
+  function handleTabsUpdated(payload) {
+    if (!payload) return;
+    if (payload.tabs) {
+      tabs = payload.tabs.map(function(t) {
+        return { id: t.id, name: t.name, messages: t.messages || [], tokenCount: t.tokenCount || 0, maxTokens: t.maxTokens || 128000 };
+      });
+    }
+    if (payload.activeTabId) {
+      activeTabId = payload.activeTabId;
+    }
+    // Restore input history if provided
+    if (payload.messageHistory && Array.isArray(payload.messageHistory)) {
+      messageHistory = payload.messageHistory;
+    }
+    renderTabBar();
+    var active = getTab(activeTabId);
+    if (active) {
+      updateContextIcon(active.tokenCount, active.maxTokens);
+    }
+  }
+
+  function handleContextUpdate(payload) {
+    if (!payload) return;
+    // Update local tab data
+    var tab = getTab(payload.tabId);
+    if (tab) {
+      tab.tokenCount = payload.tokenCount;
+      tab.maxTokens = payload.maxTokens;
+    }
+    // Only update icon if this is the active tab
+    if (payload.tabId === activeTabId) {
+      updateContextIcon(payload.tokenCount, payload.maxTokens);
+    }
+  }
+
+  // === State Persistence (KSA-240) ===
+  var saveTimer = null;
+
+  function saveStateToDisk() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function() {
+      vscode.postMessage({
+        type: "chat:saveState",
+        payload: { tabs: tabs, activeTabId: activeTabId, messageHistory: messageHistory }
+      });
+    }, 500);
+  }
+
+  // === Steering Rules & Hooks Rendering (KSA-240) ===
+  var steeringSection = document.getElementById("steering-section");
+  var steeringHeader = document.getElementById("steering-header");
+  var steeringList = document.getElementById("steering-list");
+  var steeringCount = document.getElementById("steering-count");
+
+  steeringHeader.addEventListener("click", function() {
+    steeringSection.classList.toggle("expanded");
+  });
+
+  function renderSteeringRules(rules) {
+    if (!rules || rules.length === 0) return;
+    steeringSection.classList.add("visible");
+    steeringCount.textContent = "(" + rules.length + ")";
+    steeringList.innerHTML = "";
+    for (var i = 0; i < rules.length; i++) {
+      var badge = document.createElement("span");
+      badge.className = "steering-badge";
+      badge.innerHTML = '<span class="badge-icon">\u{1F4CB}</span>' + escapeHtml(rules[i].name);
+      badge.title = rules[i].file;
+      steeringList.appendChild(badge);
+    }
+  }
+
+  function renderHookBadge(hook) {
+    if (!hook) return;
+    showMessages();
+    var el = document.createElement("div");
+    el.className = "hook-badge";
+    var statusIcon = hook.status === "completed" ? "\u2713" : hook.status === "skipped" ? "\u23ED" : "\u23F3";
+    el.innerHTML = '<span class="hook-icon">\u{1F517}</span>' +
+      '<span class="hook-name">' + escapeHtml(hook.name) + '</span>' +
+      '<span class="hook-status ' + hook.status + '">' + statusIcon + '</span>';
+    messagesEl.appendChild(el);
+    scrollToBottom();
   }
 })();

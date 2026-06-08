@@ -1,0 +1,23 @@
+test_case_id,tool_name,expected_icon,expected_label,expected_cls,description
+UT-01,grep_search,?,SEARCH,cat-search,Prefix match — grep_search → SEARCH
+UT-01,file_search,?,SEARCH,cat-search,Prefix match — file_search → SEARCH (OI-4 fix)
+UT-01,mem_search,m,MEM,cat-memory,Prefix match — mem_search → MEM
+UT-02,execute_pwsh,>_,CMD,cat-command,Prefix match — execute_pwsh → CMD
+UT-02,control_pwsh_process,>_,CMD,cat-command,Prefix match — control_pwsh → CMD
+UT-03,read_file,[],FILE,cat-file,Prefix match — read_file → FILE
+UT-03,read_files,[],FILE,cat-file,Prefix match — read_files → FILE
+UT-03,list_directory,[],FILE,cat-file,Prefix match — list_directory → FILE
+UT-03,fs_write,[],FILE,cat-file,Prefix match — fs_write → FILE
+UT-03,stream_write_file,[],FILE,cat-file,Prefix match — stream_write → FILE
+UT-04,unknown_tool_xyz,T,TOOL,cat-tool,Fallback — unknown tool → TOOL
+UT-04,,T,TOOL,cat-tool,Fallback — empty string → TOOL
+UT-05,file_search,?,SEARCH,cat-search,OI-4 priority fix — file_search must be SEARCH not FILE
+UT-10,custom_shell_command,>_,CMD,cat-command,Contains match — shell → CMD
+UT-10,deep_search_v2,?,SEARCH,cat-search,Contains match — search → SEARCH
+UT-10,my_jira_plugin,J,JIRA,cat-jira,Contains match — jira → JIRA
+UT-11,export_docx,D,DOC,cat-doc,Prefix match — export_docx → DOC
+UT-11,embed_images,D,DOC,cat-doc,Prefix match — embed_images → DOC
+UT-11,drawio_export,D,DOC,cat-doc,Prefix match — drawio → DOC
+UT-12,EXECUTE_PWSH,>_,CMD,cat-command,Case insensitivity — uppercase → CMD
+UT-12,Grep_Search,?,SEARCH,cat-search,Case insensitivity — mixed case → SEARCH
+UT-12,READ_FILE,[],FILE,cat-file,Case insensitivity — uppercase → FILE

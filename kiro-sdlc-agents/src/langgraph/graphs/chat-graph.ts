@@ -18,9 +18,14 @@ import { ToolRegistry } from "../tool-registry";
 import type { McpToolDefinition } from "../tool-registry";
 import type { LlmProvider, LlmMessage, LlmToolCall } from "../llm-provider";
 import { VSCODE_TOOL_DEFINITIONS, isVscodeTool, executeVscodeTool } from "../vscode-tools";
+import { loadSteeringRules, injectSteering } from "../steering-loader";
+import { debugLog, debugError } from "../../debug-logger";
 
-/** Maximum ReAct iterations to prevent infinite loops */
-const MAX_AGENT_ITERATIONS = 10;
+/** Maximum ReAct iterations — generous cap; on hit we force a final answer */
+const MAX_AGENT_ITERATIONS = 25;
+
+/** LLM call timeout (3 minutes) — prevents hanging on API issues */
+const LLM_CALL_TIMEOUT_MS = 180_000;
 
 const AGENT_SYSTEM_PROMPT = `You are a conversational AI assistant. You help users understand their project by answering questions.
 
@@ -49,15 +54,14 @@ const AGENT_SYSTEM_PROMPT = `You are a conversational AI assistant. You help use
 
 /**
  * Build messages array from chat history and accumulated tool results.
- * Reconstructs the full conversation including tool call/result pairs
- * in proper Anthropic Messages format.
+ * Dynamically loads steering rules and injects into system prompt (KSA-242).
  */
-function buildMessages(state: PipelineState, tools: McpToolDefinition[]): LlmMessage[] {
+function buildMessages(state: PipelineState, tools: McpToolDefinition[], systemPrompt: string): LlmMessage[] {
   const messages: LlmMessage[] = [
-    { role: "system", content: AGENT_SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
   ];
 
-  // Add chat history (user messages only — tool interactions handled separately)
+  // Add chat history (user + assistant final answers from previous turns)
   const history = state.chatHistory || [];
   for (const msg of history) {
     if (msg.role === "user" || msg.role === "assistant") {
@@ -65,29 +69,13 @@ function buildMessages(state: PipelineState, tools: McpToolDefinition[]): LlmMes
     }
   }
 
-  // If we have tool results, we need to include the preceding assistant tool_use
-  // message so the Anthropic API can match tool_result to tool_use.
-  const toolResults = state.toolResults || [];
-  if (toolResults.length > 0) {
-    // Reconstruct assistant message with tool_use blocks (stored in parallelResults)
-    const lastToolCalls = state.parallelResults?.lastToolCallsJson;
-    if (lastToolCalls) {
-      // Assistant message indicating tool calls — adapter will format as content array
-      messages.push({
-        role: "assistant",
-        content: lastToolCalls, // JSON string of tool calls for adapter to parse
-      });
-    }
-
-    // Add tool results as user messages (adapter converts to tool_result blocks)
-    for (const result of toolResults) {
-      messages.push({
-        role: "tool",
-        content: result.content,
-        toolCallId: result.toolCallId,
-        toolName: result.name,
-      });
-    }
+  // KSA-240: Append the ReAct scratchpad — correctly-paired assistant(tool_use)
+  // and tool(result) messages accumulated across iterations. This ensures the
+  // LLM sees each tool_use matched with its tool_result, so it can synthesize
+  // a final answer instead of looping forever.
+  const scratchpad = state.agentScratchpad || [];
+  for (const m of scratchpad) {
+    messages.push(m);
   }
 
   return messages;
@@ -98,8 +86,10 @@ function buildMessages(state: PipelineState, tools: McpToolDefinition[]): LlmMes
  */
 function routeAgentStep(state: PipelineState): string {
   if (state.toolCalls && state.toolCalls.length > 0) {
+    debugLog(`[graph] routeAgentStep: ${state.toolCalls.length} toolCalls -> execute_tools`);
     return "execute_tools";
   }
+  debugLog(`[graph] routeAgentStep: no toolCalls -> __end__`);
   return "__end__";
 }
 
@@ -108,8 +98,10 @@ function routeAgentStep(state: PipelineState): string {
  */
 function routeAfterToolExec(state: PipelineState): string {
   if ((state.agentIterations || 0) >= MAX_AGENT_ITERATIONS) {
-    return "__end__";
+    debugLog(`[graph] routeAfterToolExec: iterations=${state.agentIterations} >= MAX(${MAX_AGENT_ITERATIONS}) -> synthesize (force final answer)`);
+    return "synthesize";
   }
+  debugLog(`[graph] routeAfterToolExec: iterations=${state.agentIterations} -> agent_step (loop)`);
   return "agent_step";
 }
 
@@ -124,7 +116,18 @@ export async function buildChatSubgraph(
   workspaceRoot?: string
 ) {
   const toolRegistry = mcpBridge ? new ToolRegistry(mcpBridge) : null;
-  const wsRoot = workspaceRoot || "";
+  const wsRoot = workspaceRoot || require("vscode").workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+
+  // KSA-242: Load steering rules once at graph build time for chat system prompt
+  let enrichedSystemPrompt = AGENT_SYSTEM_PROMPT;
+  try {
+    if (wsRoot) {
+      const rules = await loadSteeringRules(wsRoot, "langgraph");
+      enrichedSystemPrompt = injectSteering(AGENT_SYSTEM_PROMPT, rules);
+    }
+  } catch {
+    // Fallback to base prompt if steering load fails
+  }
 
   const graph = new StateGraph(PipelineAnnotation)
     // Node 1: Fetch available tools from MCP + VS Code built-in tools
@@ -140,6 +143,7 @@ export async function buildChatSubgraph(
 
       // Merge VS Code tools (always available) + MCP tools
       const allTools = [...VSCODE_TOOL_DEFINITIONS, ...mcpTools];
+      debugLog(`[graph] fetch_tools: ${mcpTools.length} MCP tools + ${VSCODE_TOOL_DEFINITIONS.length} VSCode tools = ${allTools.length} total`);
 
       return {
         parallelResults: { toolsJson: JSON.stringify(allTools) },
@@ -172,18 +176,28 @@ export async function buildChatSubgraph(
       }
 
       // If provider supports tool calling AND tools are available, use ReAct
+      debugLog(`[graph] agent_step: iteration=${state.agentIterations || 0}, hasChatWithTools=${!!llmProvider.chatWithTools}, toolCount=${tools.length}`);
       if (llmProvider.chatWithTools && tools.length > 0) {
         try {
-          const messages = buildMessages(state, tools);
+          const messages = buildMessages(state, tools, enrichedSystemPrompt);
           // Limit tools to max 15 to reduce token overhead in request
           const limitedTools = tools.slice(0, 15);
-          const response = await llmProvider.chatWithTools(messages, limitedTools, { maxTokens: 8192 });
+
+          // Wrap LLM call with timeout to prevent infinite hang
+          const llmPromise = llmProvider.chatWithTools(messages, limitedTools, { maxTokens: 8192 });
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            const timer = setTimeout(() => reject(new Error("LLM call timed out after 3 minutes")), LLM_CALL_TIMEOUT_MS);
+            if (timer.unref) timer.unref();
+          });
+          const response = await Promise.race([llmPromise, timeoutPromise]);
+          debugLog(`[graph] agent_step: LLM response type="${response.type}", textLen=${response.text?.length || 0}, toolCalls=${response.toolCalls?.length || 0}`);
 
           if (response.type === "text") {
             // LLM responded with final text — stream to UI
             streamHandler.emitStatus("chat", "active", streamId);
             streamHandler.emitToken("chat", response.text || "", streamId);
             streamHandler.emitComplete("chat", 0, streamId);
+            streamHandler.emitDirect({ type: "chat:workingStatus", working: false });
 
             return {
               agentOutputs: [{
@@ -232,7 +246,7 @@ export async function buildChatSubgraph(
       // Fallback: simple streaming chat (no tool calling)
       streamHandler.emitStatus("chat", "active", streamId);
       try {
-        const messages = buildMessages(state, tools);
+        const messages = buildMessages(state, tools, enrichedSystemPrompt);
         const stream = llmProvider.chatStream(messages, { maxTokens: 8192 });
         let fullResponse = "";
 
@@ -242,6 +256,7 @@ export async function buildChatSubgraph(
         }
 
         streamHandler.emitComplete("chat", 0, streamId);
+        streamHandler.emitDirect({ type: "chat:workingStatus", working: false });
 
         return {
           agentOutputs: [{
@@ -275,11 +290,24 @@ export async function buildChatSubgraph(
       const streamId = state.currentStreamId || `stream-chat-${Date.now()}`;
       const calls = state.toolCalls || [];
       const results: Array<{ toolCallId: string; name: string; content: string }> = [];
+      debugLog(`[graph] execute_tools: executing ${calls.length} tool calls: [${calls.map(c => c.name).join(", ")}]`);
+
+      // KSA-247: Complete any open stream BEFORE emitting tool call blocks
+      // This ensures tool blocks render AFTER any prior streaming text and aren't wiped
+      streamHandler.emitComplete("chat", 0, streamId);
 
       for (const call of calls) {
-        // Show tool execution indicator in chat
-        streamHandler.emitToken("chat", `\n\u{1F527} **${call.name}**(...)\n`, streamId);
+        const tcId = call.id || `tc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const argsStr = JSON.stringify(call.arguments || {});
+        debugLog(`[graph] execute_tools: TOOL "${call.name}" args=${argsStr.length > 300 ? argsStr.slice(0, 300) + "...(truncated)" : argsStr}`);
 
+        // KSA-247: Emit structured tool call block (collapsible UI)
+        streamHandler.emitDirect({
+          type: "chat:toolCall",
+          toolCall: { id: tcId, name: call.name, args: call.arguments, status: "running" }
+        } as any);
+
+        const startTime = Date.now();
         try {
           let result: string;
 
@@ -292,28 +320,112 @@ export async function buildChatSubgraph(
             result = `Error: Tool '${call.name}' not available (no MCP connection)`;
           }
 
+          const duration = Date.now() - startTime;
+          debugLog(`[graph] execute_tools: RESULT "${call.name}" (${duration}ms, ${result.length} chars): ${result.slice(0, 200).replace(/\n/g, " ")}${result.length > 200 ? "..." : ""}`);
+
+          // KSA-247: Emit tool call update with result (truncated for UI display)
+          const displayResult = result.length > 500 ? result.slice(0, 500) + "..." : result;
+          streamHandler.emitDirect({
+            type: "chat:toolCallUpdate",
+            id: tcId, status: "completed", result: displayResult, duration
+          } as any);
+
           results.push({
             toolCallId: call.id,
             name: call.name,
             content: result,
           });
         } catch (error) {
-          // Tool execution failed — still add result so LLM can handle the error
+          const duration = Date.now() - startTime;
+          debugError(`[graph] execute_tools: TOOL "${call.name}" FAILED (${duration}ms)`, error as Error);
+
+          // KSA-247: Emit tool call failure
+          streamHandler.emitDirect({
+            type: "chat:toolCallUpdate",
+            id: tcId, status: "failed", result: (error as Error).message, duration
+          } as any);
+
           results.push({
             toolCallId: call.id,
             name: call.name,
             content: `Error: ${(error as Error).message}`,
           });
-          streamHandler.emitToken("chat", `  \u274C Error: ${(error as Error).message}\n`, streamId);
         }
       }
 
+      // KSA-240: Build correctly-paired scratchpad messages for this iteration.
+      // assistant(tool_use blocks) followed by tool(result) for each call.
+      const assistantToolUse = JSON.stringify(
+        calls.map(c => ({ type: "tool_use", id: c.id, name: c.name, input: c.arguments }))
+      );
+      const scratchpadMessages: LlmMessage[] = [
+        { role: "assistant", content: assistantToolUse },
+      ];
+      for (const r of results) {
+        scratchpadMessages.push({
+          role: "tool",
+          content: r.content,
+          toolCallId: r.toolCallId,
+          toolName: r.name,
+        });
+      }
+      debugLog(`[graph] execute_tools: appending ${scratchpadMessages.length} scratchpad messages (1 assistant + ${results.length} results)`);
+
       return {
         toolResults: results,
+        agentScratchpad: scratchpadMessages,
         toolCalls: null, // Clear tool calls after execution
         agentIterations: (state.agentIterations || 0) + 1,
+        currentStreamId: `stream-chat-${Date.now()}`, // KSA-247: New streamId so next text streams fresh
         lastUpdatedAt: new Date().toISOString(),
       };
+    })
+
+    // Node 4: Synthesize — force a final text answer when iteration cap is hit.
+    // Calls the LLM WITHOUT tools so it must produce text instead of more tool calls.
+    .addNode("synthesize", async (state: PipelineState) => {
+      const streamId = state.currentStreamId || `stream-chat-${Date.now()}`;
+      debugLog(`[graph] synthesize: forcing final answer after ${state.agentIterations} iterations`);
+
+      if (!llmProvider) {
+        return { pipelineStatus: "completed" as const, lastUpdatedAt: new Date().toISOString() };
+      }
+
+      try {
+        const messages = buildMessages(state, [], enrichedSystemPrompt);
+        messages.push({
+          role: "user",
+          content: "Based on all the information gathered above, provide your final answer now. Do not call any more tools — synthesize what you found into a clear, concise response.",
+        });
+
+        streamHandler.emitStatus("chat", "active", streamId);
+        // Use streaming if available, else single call
+        let fullResponse = "";
+        if (llmProvider.chatStream) {
+          const stream = llmProvider.chatStream(messages, { maxTokens: 8192 });
+          for await (const token of stream) {
+            fullResponse += token;
+            streamHandler.emitToken("chat", token, streamId);
+          }
+        } else if (llmProvider.chatWithTools) {
+          const resp = await llmProvider.chatWithTools(messages, [], { maxTokens: 8192 });
+          fullResponse = resp.text || "";
+          streamHandler.emitToken("chat", fullResponse, streamId);
+        }
+        streamHandler.emitComplete("chat", 0, streamId);
+        streamHandler.emitDirect({ type: "chat:workingStatus", working: false });
+        debugLog(`[graph] synthesize: produced ${fullResponse.length} chars`);
+
+        return {
+          agentOutputs: [{ nodeId: "chat", content: fullResponse, timestamp: new Date().toISOString() }],
+          pipelineStatus: "completed" as const,
+          lastUpdatedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        streamHandler.emitError("chat", (error as Error).message, streamId);
+        streamHandler.emitDirect({ type: "chat:workingStatus", working: false });
+        return { pipelineStatus: "failed" as const, lastUpdatedAt: new Date().toISOString() };
+      }
     })
 
     // Edges
@@ -325,8 +437,9 @@ export async function buildChatSubgraph(
     })
     .addConditionalEdges("execute_tools", routeAfterToolExec, {
       agent_step: "agent_step",
-      __end__: END,
-    });
+      synthesize: "synthesize",
+    })
+    .addEdge("synthesize", END);
 
   return graph.compile();
 }

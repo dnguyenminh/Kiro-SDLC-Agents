@@ -1,0 +1,11 @@
+test_case_id,input_status,expected_icon,expected_unicode,description
+UT-07,running,⏳,U+23F3,Running status — hourglass
+UT-07,completed,✓,U+2713,Completed status — checkmark
+UT-07,failed,✗,U+2717,Failed status — X mark
+UT-07,interrupted,⏸,U+23F8,Interrupted status — pause (OI-3)
+UT-07,unknown,,empty,Unknown status — empty string
+PBT-04,running,⏳,U+23F3,Property: known status → non-empty
+PBT-04,completed,✓,U+2713,Property: known status → non-empty
+PBT-04,failed,✗,U+2717,Property: known status → non-empty
+PBT-04,interrupted,⏸,U+23F8,Property: known status → non-empty
+PBT-04,randomXYZ,,empty,Property: unknown status → empty
