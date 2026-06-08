@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Pattern catalog for architecture detection. Activate when SM initializes.
+---
+
 # Pattern Catalog — Architecture Pattern Detection
 
 ## Purpose

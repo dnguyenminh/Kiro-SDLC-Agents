@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Phase 6 Testing workflow. Activate when SM runs Phase 6 (QA tests).
+---
+
 # Phase 6: Testing (QA → Test Execution + Quality Review)
 
 ## Prerequisites

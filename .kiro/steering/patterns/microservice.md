@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Microservice architecture pattern. Activate when SM detects microservice pattern.
+---
+
 # Pattern: Microservice
 
 ## Description

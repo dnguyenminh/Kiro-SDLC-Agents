@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Phase 7 Deployment workflow. Activate when SM runs Phase 7 (DevOps deploys).
+---
+
 # Phase 7: Deployment (DevOps → DPG/RLN + Deploy)
 
 ## Prerequisites

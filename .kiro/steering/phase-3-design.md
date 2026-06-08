@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: Phase 3 Design workflow. Activate when SM runs Phase 3 (SA creates TDD).
+---
+
 # Phase 3: Design (SA → TDD) + Feedback Loop
 
 ## Prerequisites

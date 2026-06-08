@@ -1,3 +1,8 @@
+---
+inclusion: manual
+description: AI Agent architecture pattern. Activate when SM detects ai-agent pattern.
+---
+
 # Pattern: AI Agent System
 
 ## Description
