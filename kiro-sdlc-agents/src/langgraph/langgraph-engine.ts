@@ -6,6 +6,7 @@
  */
 
 import * as crypto from "crypto";
+import { debugLog, debugError } from "../debug-logger";
 import { McpServerManager } from "../mcp-server-manager";
 import { ChatExtToWebviewMessage } from "../chat-panel/message-protocol";
 import { McpBridge } from "./mcp-bridge";
@@ -34,6 +35,8 @@ export class LangGraphEngine {
   private llmProvider: LlmProvider | undefined;
   private activeThread: string | null = null;
   private cancelled = false;
+  private chatHistoryByTab: Map<string, ChatMessage[]> = new Map(); // KSA-240: Per-tab conversation history
+  private activeTabId: string = ""; // KSA-240: Current active tab for context routing
 
   constructor(
     private readonly mcpManager: McpServerManager,
@@ -55,6 +58,26 @@ export class LangGraphEngine {
     this.llmProvider = provider;
     // Force graph rebuild on next invocation so nodes get the new provider
     this.graph = null;
+  }
+
+  /** KSA-240: Set chat history from persisted state (e.g., after reload) */
+  setChatHistory(history: ChatMessage[], tabId?: string): void {
+    const id = tabId || this.activeTabId || "default";
+    this.chatHistoryByTab.set(id, history);
+    if (!this.activeTabId) this.activeTabId = id;
+  }
+
+  /** KSA-240: Get current chat history for persistence */
+  getChatHistory(): ChatMessage[] {
+    return this.chatHistoryByTab.get(this.activeTabId) || [];
+  }
+
+  /** KSA-240: Switch active tab — engine uses this tab's chatHistory */
+  switchActiveTab(tabId: string): void {
+    this.activeTabId = tabId;
+    if (!this.chatHistoryByTab.has(tabId)) {
+      this.chatHistoryByTab.set(tabId, []);
+    }
   }
 
   /** Lazy-init: build graph on first invocation */
@@ -132,6 +155,8 @@ export class LangGraphEngine {
         message: (error as Error).message,
         retryable: true,
       });
+    } finally {
+      this.onEvent({ type: "chat:workingStatus", working: false });
     }
   }
 
@@ -210,12 +235,30 @@ export class LangGraphEngine {
     this.cancelled = false;
 
     const streamId = `stream-${threadId}-${Date.now()}`;
+    debugLog(` invokeChat: activeTabId="${this.activeTabId}", input="${chatInput.slice(0, 50)}..."`);
+
+    // KSA-240: Add user message to accumulated history for active tab
+    if (!this.activeTabId) this.activeTabId = "default";
+    const tabHistory = this.chatHistoryByTab.get(this.activeTabId) || [];
+    debugLog(` invokeChat: tabHistory has ${tabHistory.length} messages before adding user msg`);
+    tabHistory.push({
+      id: crypto.randomUUID(),
+      role: "user",
+      content: chatInput,
+      timestamp: new Date().toISOString(),
+    } as ChatMessage);
+
+    // Keep only last 20 messages to avoid token overflow
+    if (tabHistory.length > 20) {
+      tabHistory.splice(0, tabHistory.length - 20);
+    }
+    this.chatHistoryByTab.set(this.activeTabId, tabHistory);
 
     const initialState: Partial<PipelineState> = {
       ticketKey: "",
       threadId,
       currentPhase: "all",
-      intent: "chat", // Default — router may reclassify if patterns match
+      intent: "chat",
       pipelineStatus: "running",
       resumePoint: null,
       documents: {},
@@ -225,12 +268,7 @@ export class LangGraphEngine {
       approvalDecision: null,
       userFeedback: null,
       pendingApprovals: [],
-      chatHistory: [{
-        id: crypto.randomUUID(),
-        role: "user",
-        content: chatInput,
-        timestamp: new Date().toISOString(),
-      }],
+      chatHistory: [...tabHistory], // Pass full conversation context for active tab
       errors: [],
       retryCount: {},
       createdAt: new Date().toISOString(),
@@ -239,16 +277,64 @@ export class LangGraphEngine {
     };
 
     try {
-      await graph.invoke(initialState, {
+      // Overall timeout: 4 minutes max for entire chat graph execution
+      const CHAT_GRAPH_TIMEOUT_MS = 240_000;
+      const graphPromise = graph.invoke(initialState, {
         configurable: { thread_id: threadId },
+        recursionLimit: 100, // Allow up to ~50 ReAct iterations (2 nodes each)
       });
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        const timer = setTimeout(() => reject(new Error("Chat execution timed out (2 min limit). Try a simpler question or start a new tab.")), CHAT_GRAPH_TIMEOUT_MS);
+        if (timer.unref) timer.unref();
+      });
+      const result = await Promise.race([graphPromise, timeoutPromise]);
+
+      // KSA-240: Capture assistant response into chatHistory for context continuity
+      debugLog(` invokeChat: graph completed. agentOutputs=${(result as any)?.agentOutputs?.length || 0}`);
+      if (result && (result as any).agentOutputs) {
+        const outputs = (result as any).agentOutputs as Array<{ content: string }>;
+        const lastOutput = outputs[outputs.length - 1];
+        if (lastOutput && lastOutput.content) {
+          const activeHistory = this.chatHistoryByTab.get(this.activeTabId) || [];
+          activeHistory.push({
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: lastOutput.content,
+            timestamp: new Date().toISOString(),
+          } as ChatMessage);
+          this.chatHistoryByTab.set(this.activeTabId, activeHistory);
+        }
+      } else {
+        // Graph ended without text output (e.g., max iterations reached)
+        // Emit a summary so UI doesn't show blank
+        debugLog(` invokeChat: no agentOutputs — emitting max-iterations notice`);
+        this.streamHandler.emitDirect({
+          type: "chat:streamChunk",
+          streamId: streamId,
+          nodeId: "chat",
+          eventType: "token",
+          content: "I gathered information using tools but reached the iteration limit before synthesizing a final answer. Please ask a more specific question or try again.",
+          timestamp: new Date().toISOString(),
+        });
+        this.streamHandler.emitDirect({
+          type: "chat:streamComplete",
+          streamId: streamId,
+          nodeId: "chat",
+          finalContent: "",
+        });
+      }
     } catch (error) {
+      debugError(` invokeChat ERROR: ${(error as Error).message}`);
       this.onEvent({
         type: "chat:error",
         code: "PIPELINE_ERROR",
         message: (error as Error).message,
         retryable: true,
       });
+    } finally {
+      debugLog(` invokeChat: FINALLY — emitting workingStatus:false`);
+      // Always clear working status when graph finishes
+      this.onEvent({ type: "chat:workingStatus", working: false });
     }
   }
 
@@ -279,3 +365,4 @@ export class LangGraphEngine {
     this.activeThread = null;
   }
 }
+

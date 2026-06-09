@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/KB_Panels-5-orange?style=for-the-badge" alt="KB Panels">
   <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="MCP Tools">
-  <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
+  <img src="https://img.shields.io/badge/Salesforce-compatible-00A1E0?style=for-the-badge" alt="Salesforce Compatible">
 </p>
 
 <p align="center">
@@ -468,6 +468,13 @@ Having issues? Here are the most common problems and how to fix them:
 3. Check that your Node version is 20, 22, or 24
 
 ---
+
+## ⚖️ Trademarks
+
+- "Kiro" is a trademark of Amazon Web Services, Inc. This extension is designed to work with the Kiro IDE but is not affiliated with, endorsed by, or sponsored by Amazon.
+- "Salesforce", "Apex", "SFDX", and "Lightning Web Components" are trademarks of Salesforce, Inc.
+- "Jira" and "Atlassian" are trademarks of Atlassian Pty Ltd.
+- All other trademarks are the property of their respective owners.
 
 ## 📝 License
 

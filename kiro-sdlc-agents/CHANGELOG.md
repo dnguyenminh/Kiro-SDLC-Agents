@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.18.0] - 2025-07-28
+
+### Added
+- **KSA-249: Context Usage Graph + Full Hook System** — complete DX improvement suite:
+  - `ContextUsageTracker` — tracks token consumption per source (steering files, code-intel, KB, user messages) with real-time percentage breakdown
+  - `ConversationManager` — manages multi-turn conversation state, context window limits, and automatic compaction
+  - `TokenCounter` — accurate token estimation for messages, tool calls, and system prompts
+  - **Hook System** — full lifecycle hooks (`hook-loader.ts`, `hook-executor.ts`, `hook-events.ts`, `hook-commands.ts`) for pre/post agent execution, tool calls, and streaming events
+  - **Workflow Executor** — orchestrates multi-agent workflows with state transitions and hook integration
+  - **Context Usage Graph visualization** — real-time webview showing token usage breakdown by category
+  - **Workflow Graph visualization** — interactive workflow state diagram in chat panel
+
+### Changed
+- **Chat panel** enhanced with context usage indicators and conversation management
+- **LangGraph engine** integrated with hook system for extensible agent pipelines
+- **All agent nodes** (BA, SA, QA, DEV, DevOps, Security, TA, UI) updated with hook support
+- **Steering files** updated with Phase 1-7 SDLC patterns and shared quality gates
+
 ## [1.10.0] - 2025-07-20
 
 ### Added

@@ -16,6 +16,7 @@ import {
   ChatMessage,
   AgentOutput,
 } from "../langgraph/state";
+import { ContextUsagePayload } from "./context-usage-tracker";
 
 // === Context & Attachment Types ===
 
@@ -70,6 +71,12 @@ export type ChatWebviewToExtMessage =
   | { type: "chat:setMode"; mode: AutopilotMode }
   | { type: "chat:applyCode"; code: string; filePath?: string }
   | { type: "chat:insertCode"; code: string }
+  | { type: "tab:create" }
+  | { type: "tab:switch"; payload: { tabId: string } }
+  | { type: "tab:close"; payload: { tabId: string } }
+  | { type: "tab:rename"; payload: { tabId: string; newName: string } }
+  | { type: "chat:openWorkflowGraph" }
+  | { type: "chat:saveState"; payload: { tabs: unknown[]; activeTabId: string } }
   | { type: "ready" }
   | { type: "refresh" };
 
@@ -91,4 +98,9 @@ export type ChatExtToWebviewMessage =
   | { type: "chat:configUpdate"; model: string; mode: AutopilotMode; availableModels: ModelOption[] }
   | { type: "chat:models"; provider: string; models: ChatModelEntry[]; selected: string; supportsAuto: boolean }
   | { type: "chat:workingStatus"; working: boolean; label?: string }
+  | { type: "tab:updated"; payload: { tabs: Array<{ id: string; name: string; messages: unknown[]; tokenCount: number; maxTokens: number }>; activeTabId: string } }
+  | { type: "tab:contextUpdate"; payload: { tabId: string; tokenCount: number; maxTokens: number; percentage: number; threshold: string } }
+  | { type: "chat:steeringLoaded"; rules: Array<{ name: string; file: string }> }
+  | { type: "chat:hookTriggered"; hook: { name: string; type: string; status: "running" | "completed" | "skipped" } }
+  | { type: "chat:contextUsage"; payload: ContextUsagePayload }
   | { type: "serverStatus"; status: "connected" | "disconnected" | "failed" };

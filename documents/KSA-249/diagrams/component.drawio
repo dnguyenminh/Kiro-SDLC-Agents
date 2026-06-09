@@ -1,0 +1,36 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-249 Component Diagram — Hook System Classes&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_loader_class" value="&lt;b&gt;HookLoader&lt;/b&gt;&#10;───────────&#10;- cachedHooks: HookDefinition[]&#10;- outputChannel: OutputChannel&#10;───────────&#10;+ loadHooks(root, force): Promise&lt;HookDefinition[]&gt;&#10;+ clearHookCache(): void&#10;+ filterHooksByType(hooks, type): HookDefinition[]&#10;+ filterPreToolUseHooks(hooks, category): HookDefinition[]&#10;+ filterFileHooks(hooks, type, path): HookDefinition[]&#10;- validateHook(parsed, file): ValidationResult&#10;- matchGlob(pattern, path): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="320" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_events_class" value="&lt;b&gt;HookEventsManager&lt;/b&gt;&#10;───────────&#10;- executionStack: Set&lt;string&gt;&#10;- executionLog: HookLogEntry[]&#10;- maxDepth: number&#10;- hooks: HookDefinition[]&#10;- executor: HookExecutor&#10;───────────&#10;+ fireEvent(type, context): Promise&lt;void&gt;&#10;+ firePreToolUse(tool, cat, args): Promise&lt;PreToolUseResult&gt;&#10;- isCircular(hookName): boolean&#10;- classifyTool(toolName): string&#10;- matchesToolType(hook, tool, cat): boolean" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="440" y="60" width="320" height="220" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_executor_class" value="&lt;b&gt;HookExecutor&lt;/b&gt;&#10;───────────&#10;- outputChannel: OutputChannel&#10;- defaultTimeout: number&#10;───────────&#10;+ executeAskAgent(hook, ctx): Promise&lt;HookResult&gt;&#10;+ executeRunCommand(hook, ctx): Promise&lt;HookResult&gt;&#10;- killProcess(pid): Promise&lt;void&gt;&#10;- substitutePlaceholders(tmpl, ctx): string&#10;- detectDenial(output): boolean&#10;- detectModification(output): Record|null" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="440" y="320" width="320" height="190" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_commands_class" value="&lt;b&gt;HookCommands&lt;/b&gt;&#10;───────────&#10;- disposables: Disposable[]&#10;- executor: HookExecutor&#10;───────────&#10;+ registerCommands(hooks): void&#10;+ dispose(): void&#10;- sanitizeName(name): string" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="320" width="300" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="ctx_tracker_class" value="&lt;b&gt;ContextUsageTracker&lt;/b&gt;&#10;───────────&#10;- tabUsage: Map&lt;string, TabContextUsage&gt;&#10;- maxTokens: number&#10;───────────&#10;+ updateFromMessages(tabId, msgs): void&#10;+ addToolTokens(tabId, result): void&#10;+ updateSteeringTokens(tabId, content): void&#10;+ getUsagePayload(tabId): ContextUsagePayload&#10;+ clearTab(tabId): void&#10;- estimateTokens(text): number" style="rounded=0;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="510" width="320" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="uses" style="endArrow=classic;endSize=6;dashed=1;html=1;rounded=1;fontSize=9;" edge="1" source="hook_events_class" target="hook_executor_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="loads" style="endArrow=classic;endSize=6;dashed=1;html=1;rounded=1;fontSize=9;" edge="1" source="hook_loader_class" target="hook_events_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="uses" style="endArrow=classic;endSize=6;dashed=1;html=1;rounded=1;fontSize=9;" edge="1" source="hook_commands_class" target="hook_executor_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="provides hooks" style="endArrow=classic;endSize=6;dashed=1;html=1;rounded=1;fontSize=9;" edge="1" source="hook_loader_class" target="hook_commands_class" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

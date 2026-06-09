@@ -5,7 +5,7 @@
  */
 
 import { Annotation } from "@langchain/langgraph";
-import type { LlmToolCall } from "./llm-provider";
+import type { LlmToolCall, LlmMessage } from "./llm-provider";
 
 // === Enums & Literal Types ===
 
@@ -168,6 +168,12 @@ export const PipelineAnnotation = Annotation.Root({
     default: () => null,
   }),
   toolResults: Annotation<Array<{ toolCallId: string; name: string; content: string }>>({
+    reducer: (existing, update) => [...existing, ...update],
+    default: () => [],
+  }),
+  // KSA-240: Properly-paired ReAct conversation turns (assistant tool_use + tool results).
+  // Accumulates across iterations so the LLM sees correct tool_use/tool_result pairing.
+  agentScratchpad: Annotation<LlmMessage[]>({
     reducer: (existing, update) => [...existing, ...update],
     default: () => [],
   }),

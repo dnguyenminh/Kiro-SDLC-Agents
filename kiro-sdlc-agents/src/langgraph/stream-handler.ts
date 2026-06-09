@@ -161,6 +161,12 @@ export class StreamHandler {
     }
   }
 
+  /** Emit a raw message directly (used for toolCall messages) */
+  emitDirect(msg: ChatExtToWebviewMessage): void {
+    this.flush();
+    this.emit(msg);
+  }
+
   private scheduleFlush(): void {
     if (this.flushTimer) { return; }
     this.flushTimer = setTimeout(() => this.flush(), this.DEBOUNCE_MS);

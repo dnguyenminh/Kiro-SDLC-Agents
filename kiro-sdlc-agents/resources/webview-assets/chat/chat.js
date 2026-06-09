@@ -755,6 +755,9 @@
       case "chat:hookTriggered":
         renderHookBadge(msg.hook);
         break;
+      case "chat:contextUsage":
+        handleContextUsageDetail(msg.payload);
+        break;
     }
   });
 
@@ -1489,6 +1492,76 @@
     if (payload.tabId === activeTabId) {
       updateContextIcon(payload.tokenCount, payload.maxTokens);
     }
+  }
+
+  // === Context Usage Detail Panel (KSA-249) ===
+  function handleContextUsageDetail(payload) {
+    if (!payload) return;
+    if (payload.tabId !== activeTabId) return;
+
+    updateContextIcon(payload.total.tokens, payload.maxTokens);
+
+    var panel = document.getElementById("context-usage-detail");
+    if (!panel) {
+      panel = createContextUsagePanel();
+    }
+    updateContextUsagePanel(panel, payload);
+
+    var tooltip = document.getElementById("context-tooltip");
+    if (tooltip) {
+      tooltip.textContent = formatNumber(payload.total.tokens) + " / " + formatNumber(payload.maxTokens) + " tokens (" + payload.total.percentage + "%)";
+    }
+  }
+
+  function createContextUsagePanel() {
+    var icon = document.getElementById("context-usage-icon");
+    var panel = document.createElement("div");
+    panel.id = "context-usage-detail";
+    panel.className = "context-usage-panel";
+    panel.innerHTML =
+      '<div class="panel-title">Context Window Usage</div>' +
+      '<div class="usage-row"><span class="usage-label"><span class="usage-dot conversation"></span>Conversation</span><span class="usage-value" id="ctx-conv-val">0</span></div>' +
+      '<div class="usage-row"><span class="usage-label"><span class="usage-dot mcp-tools"></span>MCP Tools</span><span class="usage-value" id="ctx-mcp-val">0</span></div>' +
+      '<div class="usage-row"><span class="usage-label"><span class="usage-dot steering"></span>Steering</span><span class="usage-value" id="ctx-steer-val">0</span></div>' +
+      '<div class="usage-bar"><div class="bar-segment conversation" id="ctx-bar-conv"></div><div class="bar-segment mcp-tools" id="ctx-bar-mcp"></div><div class="bar-segment steering" id="ctx-bar-steer"></div></div>' +
+      '<div class="usage-total"><span id="ctx-total-text">0 tokens</span><span class="threshold-badge safe" id="ctx-threshold">safe</span></div>';
+    icon.appendChild(panel);
+    icon.addEventListener("click", function(e) {
+      e.stopPropagation();
+      panel.classList.toggle("visible");
+    });
+    document.addEventListener("click", function() {
+      panel.classList.remove("visible");
+    });
+    return panel;
+  }
+
+  function updateContextUsagePanel(panel, payload) {
+    var convEl = document.getElementById("ctx-conv-val");
+    var mcpEl = document.getElementById("ctx-mcp-val");
+    var steerEl = document.getElementById("ctx-steer-val");
+    var barConv = document.getElementById("ctx-bar-conv");
+    var barMcp = document.getElementById("ctx-bar-mcp");
+    var barSteer = document.getElementById("ctx-bar-steer");
+    var totalEl = document.getElementById("ctx-total-text");
+    var threshEl = document.getElementById("ctx-threshold");
+
+    if (convEl) convEl.textContent = formatNumber(payload.conversation.tokens) + " (" + payload.conversation.percentage + "%)";
+    if (mcpEl) mcpEl.textContent = formatNumber(payload.mcpTools.tokens) + " (" + payload.mcpTools.percentage + "%)";
+    if (steerEl) steerEl.textContent = formatNumber(payload.steering.tokens) + " (" + payload.steering.percentage + "%)";
+    if (barConv) barConv.style.width = payload.conversation.percentage + "%";
+    if (barMcp) barMcp.style.width = payload.mcpTools.percentage + "%";
+    if (barSteer) barSteer.style.width = payload.steering.percentage + "%";
+    if (totalEl) totalEl.textContent = formatNumber(payload.total.tokens) + " / " + formatNumber(payload.maxTokens);
+    if (threshEl) {
+      threshEl.textContent = payload.total.threshold;
+      threshEl.className = "threshold-badge " + payload.total.threshold;
+    }
+  }
+
+  function formatNumber(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1) + "k";
+    return String(n);
   }
 
   // === State Persistence (KSA-240) ===

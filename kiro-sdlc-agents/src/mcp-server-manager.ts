@@ -224,7 +224,9 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
     // KSA-112: Also detect ERR_DLOPEN_FAILED for auto-recovery
     child.stderr?.on("data", (chunk: Buffer) => {
       const text = chunk.toString();
-      this.outputChannel.appendLine(text.trimEnd());
+      try { this.outputChannel.appendLine(text.trimEnd()); } catch (e) {
+        console.error("[kiro-sdlc] OutputChannel write failed:", (e as Error).message);
+      }
       if (text.includes("ERR_DLOPEN_FAILED") || text.includes("NODE_MODULE_VERSION")) {
         this.dlopenErrorDetected = true;
       }

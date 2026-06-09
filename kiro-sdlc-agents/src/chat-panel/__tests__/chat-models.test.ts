@@ -47,8 +47,8 @@ describe("fetchGatewayModels (BUG 2)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns null when no port is provided", async () => {
-    expect(await fetchGatewayModels(0)).toBeNull();
+  it("returns null when no base URL is provided", async () => {
+    expect(await fetchGatewayModels("")).toBeNull();
   });
 
   it("parses the Anthropic /v1/models envelope from the gateway", async () => {
@@ -66,7 +66,7 @@ describe("fetchGatewayModels (BUG 2)", () => {
       })
     );
 
-    const models = await fetchGatewayModels(9181);
+    const models = await fetchGatewayModels("http://127.0.0.1:8990/anthropic");
     expect(models).toEqual([
       { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
       { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
@@ -100,7 +100,7 @@ describe("fetchGatewayModels (BUG 2)", () => {
       })
     );
 
-    const models = await fetchGatewayModels(9181);
+    const models = await fetchGatewayModels("http://127.0.0.1:8990/anthropic");
     expect(models).toEqual([
       {
         id: "claude-opus-4.8",
@@ -119,16 +119,16 @@ describe("fetchGatewayModels (BUG 2)", () => {
 
   it("returns null when the gateway responds non-OK", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
-    expect(await fetchGatewayModels(9181)).toBeNull();
+    expect(await fetchGatewayModels("http://127.0.0.1:8990/anthropic")).toBeNull();
   });
 
   it("returns null when fetch throws (gateway unreachable)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
-    expect(await fetchGatewayModels(9181)).toBeNull();
+    expect(await fetchGatewayModels("http://127.0.0.1:8990/anthropic")).toBeNull();
   });
 
   it("returns null when the envelope has an empty data array", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ data: [] }) }));
-    expect(await fetchGatewayModels(9181)).toBeNull();
+    expect(await fetchGatewayModels("http://127.0.0.1:8990/anthropic")).toBeNull();
   });
 });

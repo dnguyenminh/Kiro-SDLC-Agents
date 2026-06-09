@@ -27,11 +27,15 @@ export const DEFAULT_MODELS: Record<string, string> = {
 /** Available models per provider — static catalog (fallback when gateway is unreachable). */
 export const AVAILABLE_MODELS: Record<string, ChatModelEntry[]> = {
   anthropic: [
-    { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
-    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
-    { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5" },
-    { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
-    { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5" },
+    { id: "claude-opus-4-8", name: "Claude Opus 4.8", rateMultiplier: 2.2 },
+    { id: "claude-opus-4-7", name: "Claude Opus 4.7", rateMultiplier: 2.2 },
+    { id: "claude-opus-4-6", name: "Claude Opus 4.6", rateMultiplier: 2.2 },
+    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", rateMultiplier: 1.3 },
+    { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", rateMultiplier: 1.3 },
+    { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", rateMultiplier: 1.3 },
+    { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", rateMultiplier: 0.4 },
+    { id: "deepseek-v3-2", name: "Deepseek v3.2", rateMultiplier: 0.25 },
+    { id: "minimax-m2-5", name: "MiniMax M2.5", rateMultiplier: 0.25 },
   ],
   openai: [
     { id: "gpt-4o", name: "GPT-4o" },
@@ -69,18 +73,20 @@ export function getDefaultModel(provider: string): string {
 }
 
 /**
- * Fetch the model list from the local kiro-ts gateway (/v1/models).
+ * Fetch the model list from an Anthropic-compatible gateway (`{baseUrl}/v1/models`).
+ * `baseUrl` is the configured gateway base URL (e.g. http://127.0.0.1:8990/anthropic).
  * Returns the parsed model entries, or null on any failure so the caller can
  * fall back to the static catalog.
  */
-export async function fetchGatewayModels(port: number): Promise<ChatModelEntry[] | null> {
-  if (!port) {
+export async function fetchGatewayModels(baseUrl: string): Promise<ChatModelEntry[] | null> {
+  if (!baseUrl) {
     return null;
   }
+  const modelsUrl = `${baseUrl.replace(/\/$/, "")}/v1/models`;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(`http://127.0.0.1:${port}/v1/models`, {
+    const response = await fetch(modelsUrl, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal: controller.signal,

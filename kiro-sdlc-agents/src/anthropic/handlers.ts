@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { convertResponseToSSEEvents, extractToolUseIds, validateToolUseId } from './converter';
 import { ConversationHistory } from '../history/conversation';
 import { KiroQResponse, ContinuationRequest } from './types';
-import { logger } from '../../logger';
+import { logger } from '../logger';
 
 /**
  * Creates a handler with injectable dependencies for testability.

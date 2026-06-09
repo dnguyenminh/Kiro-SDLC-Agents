@@ -17,6 +17,7 @@ import { DashboardPanel } from "./panels/dashboard-panel";
 import { TagsPanel } from "./panels/tags-panel";
 import { QualityPanel } from "./panels/quality-panel";
 import { AnalyticsPanel } from "./panels/analytics-panel";
+import { WorkflowPanel } from "./panels/workflow-panel";
 import { KbEventBus } from "./kb-event-bus";
 
 export class WebviewPanelManager implements IPanelManager, vscode.Disposable {
@@ -109,6 +110,8 @@ export class WebviewPanelManager implements IPanelManager, vscode.Disposable {
         return new QualityPanel(this.mcpManager, this.extensionUri, this.eventBus);
       case "analytics":
         return new AnalyticsPanel(this.mcpManager, this.extensionUri, this.eventBus);
+      case "workflow":
+        return new WorkflowPanel(this.mcpManager, this.extensionUri);
     }
   }
 }

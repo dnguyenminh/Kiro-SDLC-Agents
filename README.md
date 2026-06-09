@@ -10,21 +10,32 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.16.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.18.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/MCP_Servers-3-teal?style=for-the-badge" alt="MCP Servers">
-  <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
+  <img src="https://img.shields.io/badge/Salesforce-compatible-00A1E0?style=for-the-badge" alt="Salesforce Compatible">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License">
 </p>
 
 ---
 
-## What's New in v1.16.0
+## What's New in v1.18.0
+
+- **📊 Context Usage Graph** (KSA-249) — Real-time visualization of token consumption per source (steering, code-intel, KB, user messages) with percentage breakdown
+- **🪝 Full Hook System** — Lifecycle hooks for pre/post agent execution, tool calls, and streaming events (`hook-loader`, `hook-executor`, `hook-events`, `hook-commands`)
+- **💬 Conversation Manager** — Multi-turn state management with context window limits and automatic compaction
+- **🔢 Token Counter** — Accurate token estimation for messages, tool calls, and system prompts
+- **🔄 Workflow Executor** — Multi-agent workflow orchestration with state transitions and hook integration
+- **📈 Workflow Graph Visualization** — Interactive workflow state diagram in chat panel
+
+<details>
+<summary>Previous: v1.16.0</summary>
 
 - **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels now receive live updates via Server-Sent Events (no manual refresh needed)
 - **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
 - **🐛 Apex Indexing Fix (KSA-209)** — Wasm + regex fallback ensures reliable Apex parsing across all environments
 - **21 tickets closed** — Full sprint completion across code intelligence, KB UI, and Salesforce modules
+</details>
 
 <details>
 <summary>Previous: v1.15.0</summary>
@@ -320,6 +331,13 @@ git push origin main --tags
 See [Release & Versioning Rules](.kiro/steering/release-versioning.md) for full process.
 
 ---
+
+## Trademarks
+
+- "Kiro" is a trademark of Amazon Web Services, Inc. This project is designed to work with the Kiro IDE but is not affiliated with, endorsed by, or sponsored by Amazon.
+- "Salesforce", "Apex", "SFDX", and "Lightning Web Components" are trademarks of Salesforce, Inc.
+- "Jira" and "Atlassian" are trademarks of Atlassian Pty Ltd.
+- All other trademarks are the property of their respective owners.
 
 ## License
 

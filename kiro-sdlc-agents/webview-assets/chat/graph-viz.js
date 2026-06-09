@@ -7,11 +7,11 @@
 (function () {
   "use strict";
 
-  var NODE_WIDTH = 90;
-  var NODE_HEIGHT = 36;
-  var NODE_GAP_X = 20;
-  var NODE_GAP_Y = 50;
-  var PADDING = 16;
+  var NODE_WIDTH = 70;
+  var NODE_HEIGHT = 32;
+  var NODE_GAP_X = 10;
+  var NODE_GAP_Y = 40;
+  var PADDING = 10;
 
   var PIPELINE_NODES = [
     { id: "sm", label: "SM", phase: "all", row: 0, col: 2 },
@@ -47,7 +47,7 @@
   var graphContainer = document.createElement("div");
   graphContainer.id = "pipeline-graph";
   graphContainer.className = "graph-container collapsed";
-  graphContainer.innerHTML = '<button class="graph-toggle" title="Toggle pipeline graph">&#9650; Pipeline</button><div class="graph-svg-wrap"></div>';
+  graphContainer.innerHTML = '<button class="graph-toggle" title="Toggle pipeline graph">&#9650; Pipeline</button><button class="graph-popout" title="Open in full panel">&#x2197;</button><div class="graph-svg-wrap"></div>';
 
   var header = document.getElementById("chat-header");
   if (header && header.parentNode) {
@@ -59,6 +59,12 @@
     graphContainer.classList.toggle("collapsed");
     toggleBtn.innerHTML = graphContainer.classList.contains("collapsed")
       ? "&#9650; Pipeline" : "&#9660; Pipeline";
+  });
+
+  var popoutBtn = graphContainer.querySelector(".graph-popout");
+  popoutBtn.addEventListener("click", function () {
+    var vs = window.__vscode;
+    if (vs) vs.postMessage({ type: "executeCommand", command: "kiroSdlc.openWorkflowGraph" });
   });
 
   function renderGraph() {
@@ -92,7 +98,7 @@
       var y = PADDING + node.row * (NODE_HEIGHT + NODE_GAP_Y);
 
       svg += '<rect x="' + x + '" y="' + y + '" width="' + NODE_WIDTH + '" height="' + NODE_HEIGHT + '" rx="4" ry="4" fill="' + colors.fill + '" stroke="' + colors.stroke + '" stroke-width="1.5"/>';
-      svg += '<text x="' + (x + NODE_WIDTH / 2) + '" y="' + (y + NODE_HEIGHT / 2 + 4) + '" text-anchor="middle" font-size="11" font-family="system-ui, sans-serif" font-weight="500" fill="' + colors.text + '">' + node.label + '</text>';
+      svg += '<text x="' + (x + NODE_WIDTH / 2) + '" y="' + (y + NODE_HEIGHT / 2 + 4) + '" text-anchor="middle" font-size="9" font-family="system-ui, sans-serif" font-weight="500" fill="' + colors.text + '">' + node.label + '</text>';
 
       if (state === "active") {
         svg += '<rect x="' + x + '" y="' + y + '" width="' + NODE_WIDTH + '" height="' + NODE_HEIGHT + '" rx="4" ry="4" fill="none" stroke="' + colors.stroke + '" stroke-width="2" opacity="0.5"><animate attributeName="opacity" values="0.5;0;0.5" dur="1.5s" repeatCount="indefinite"/></rect>';

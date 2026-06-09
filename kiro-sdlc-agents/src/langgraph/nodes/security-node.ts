@@ -1,13 +1,18 @@
 /**
- * SecurityNode — KSA-210
+ * SecurityNode — KSA-210, KSA-242
  * Security review agent node. Performs security analysis on
  * design documents and implementation code.
+ * KSA-242: Added template ref, steering injection.
  */
 
 import { BaseNode } from "./base-node";
 import { PipelineState, AgentOutput } from "../state";
+import { loadSteeringRules, injectSteering } from "../steering-loader";
 
-const SECURITY_SYSTEM_PROMPT = `You are a Security Engineer agent for an SDLC pipeline.
+/** Template path for Security Report */
+const SECURITY_REPORT_TEMPLATE = "documents/templates/SECURITY-REPORT-TEMPLATE.md";
+
+const SECURITY_SYSTEM_PROMPT_FALLBACK = `You are a Security Engineer agent for an SDLC pipeline.
 Your role is to review designs and code for security vulnerabilities.
 
 Review areas:
@@ -22,7 +27,8 @@ Review areas:
 - Least privilege principle
 - Secure error handling (no information leakage)
 
-Report findings with severity (Critical/High/Medium/Low) and remediation steps.`;
+Report findings with severity (Critical/High/Medium/Low) and remediation steps.
+Follow the provided Security Report template structure.`;
 
 export class SecurityNode extends BaseNode {
   async execute(state: PipelineState): Promise<Partial<PipelineState>> {
@@ -37,6 +43,8 @@ export class SecurityNode extends BaseNode {
 
     if (llmAvailable) {
       const userPrompt = `Perform security review for ${state.ticketKey}.
+
+TEMPLATE: ${SECURITY_REPORT_TEMPLATE}
 
 TDD: ${state.documents.tdd?.path || "documents/" + state.ticketKey + "/TDD.md"}
 FSD: ${state.documents.fsd?.path || "documents/" + state.ticketKey + "/FSD.md"}
@@ -57,11 +65,18 @@ Report each finding with:
 - Description: what the issue is
 - Remediation: how to fix`;
 
-      result = await this.callLlmStreamFull(SECURITY_SYSTEM_PROMPT, userPrompt, state);
+      // KSA-242: Inject steering rules
+      const workspaceRoot = require("vscode").workspace.workspaceFolders?.[0]?.uri.fsPath;
+      let systemPrompt = await this.loadAgentPrompt("security-agent", SECURITY_SYSTEM_PROMPT_FALLBACK);
+      if (workspaceRoot) {
+        const rules = await loadSteeringRules(workspaceRoot, "langgraph");
+        systemPrompt = injectSteering(systemPrompt, rules);
+      }
+      result = await this.callLlmStreamFull(systemPrompt, userPrompt, state);
     } else {
       result = await this.callMcp("invoke_sub_agent", {
         name: "security-agent",
-        prompt: `Security review cho ${state.ticketKey}. Review TDD va code. Report findings.`,
+        prompt: `Security review cho ${state.ticketKey}. Review TDD va code. Report findings. Template: ${SECURITY_REPORT_TEMPLATE}`,
       });
     }
 

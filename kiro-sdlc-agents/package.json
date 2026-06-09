@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -229,8 +229,8 @@
         },
         "kiroSdlc.anthropicBaseUrl": {
           "type": "string",
-          "description": "Custom base URL for Anthropic API. Default points to the local gateway (uses Kiro IDE credentials, no API key needed). Change to https://api.anthropic.com for direct Anthropic API access.",
-          "default": "http://127.0.0.1:9181/anthropic"
+          "description": "Custom base URL for Anthropic API. Default points to the standalone Kiro Gateway extension (http://127.0.0.1:8990/anthropic) which uses Kiro IDE credentials. Set your Anthropic key (or the gateway's API key) via Save key. Change to https://api.anthropic.com for direct Anthropic API access.",
+          "default": "http://127.0.0.1:8990/anthropic"
         },
         "kiroSdlc.openaiBaseUrl": {
           "type": "string",

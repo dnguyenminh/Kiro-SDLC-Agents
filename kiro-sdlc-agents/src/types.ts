@@ -47,7 +47,7 @@ export interface McpResponse {
 
 // === Panel Management ===
 
-export type PanelType = "graph" | "dashboard" | "tags" | "quality" | "analytics";
+export type PanelType = "graph" | "dashboard" | "tags" | "quality" | "analytics" | "workflow";
 
 export interface IPanelManager {
   openPanel(type: PanelType): void;
@@ -255,6 +255,7 @@ export const PANEL_VIEW_TYPES: Record<PanelType, string> = {
   tags: "kiroKbTags",
   quality: "kiroKbQuality",
   analytics: "kiroKbAnalytics",
+  workflow: "kiroWorkflowGraph",
 };
 
 export const PANEL_TITLES: Record<PanelType, string> = {
@@ -263,6 +264,7 @@ export const PANEL_TITLES: Record<PanelType, string> = {
   tags: "KB Tags",
   quality: "KB Quality",
   analytics: "KB Analytics",
+  workflow: "SDLC Workflow Graph",
 };
 
 export const NODE_TYPE_COLORS: Record<string, string> = {

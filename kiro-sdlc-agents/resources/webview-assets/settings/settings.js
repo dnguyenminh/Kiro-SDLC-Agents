@@ -13,14 +13,6 @@
   const providerSelect = document.getElementById("provider-select");
   const apiSection = document.getElementById("api-section");
   const ollamaSection = document.getElementById("ollama-section");
-  const gatewaySection = document.getElementById("gateway-section");
-
-  const gatewayEndpointInput = document.getElementById("gateway-endpoint-input");
-  const gatewayKeyInput = document.getElementById("gateway-key-input");
-  const toggleGatewayKeyBtn = document.getElementById("toggle-gateway-key");
-  const copyGatewayKeyBtn = document.getElementById("copy-gateway-key");
-  const copyGatewayEndpointBtn = document.getElementById("copy-gateway-endpoint");
-  const gatewayStatus = document.getElementById("gateway-status");
 
   const apiKeyInput = document.getElementById("api-key-input");
   const toggleKeyBtn = document.getElementById("toggle-key-visibility");
@@ -70,7 +62,6 @@
     if (provider === "ollama") {
       apiSection.style.display = "none";
       ollamaSection.style.display = "block";
-      if (gatewaySection) { gatewaySection.style.display = "none"; }
     } else {
       apiSection.style.display = "block";
       ollamaSection.style.display = "none";
@@ -78,20 +69,8 @@
       if (apiKeyInput) { apiKeyInput.placeholder = "Enter API key..."; }
       if (baseUrlInput) { baseUrlInput.placeholder = "Leave empty for official API"; }
       updateKeyStatus(provider);
-      updateGatewayVisibility();
     }
     updateModelOptions(provider);
-  }
-
-  /** Show gateway info section when base URL contains 127.0.0.1 (= gateway mode) */
-  function updateGatewayVisibility() {
-    if (!gatewaySection) return;
-    var url = baseUrlInput ? baseUrlInput.value : "";
-    if (url.indexOf("127.0.0.1") !== -1) {
-      gatewaySection.style.display = "block";
-    } else {
-      gatewaySection.style.display = "none";
-    }
   }
 
   function updateModelOptions(provider) {
@@ -200,7 +179,6 @@
   var baseUrlTimeout = null;
   baseUrlInput.addEventListener("input", function () {
     clearTimeout(baseUrlTimeout);
-    updateGatewayVisibility();
     updateKeyStatus(currentProvider);
     baseUrlTimeout = setTimeout(function () {
       vscode.postMessage({ type: "setBaseUrl", provider: currentProvider, url: baseUrlInput.value.trim() });
@@ -235,58 +213,6 @@
       url: ollamaUrlInput.value.trim() || "http://localhost:11434",
     });
   });
-
-  // ─── Gateway ──────────────────────────────────────────────────────────────
-
-  if (toggleGatewayKeyBtn && gatewayKeyInput) {
-    toggleGatewayKeyBtn.addEventListener("click", function () {
-      var isPassword = gatewayKeyInput.type === "password";
-      gatewayKeyInput.type = isPassword ? "text" : "password";
-      toggleGatewayKeyBtn.textContent = isPassword ? "\uD83D\uDE48" : "\uD83D\uDC41\uFE0F";
-      toggleGatewayKeyBtn.title = isPassword ? "Hide" : "Show";
-    });
-  }
-
-  function copyToClipboard(text, label) {
-    if (!text) { return; }
-    var done = function () {
-      if (gatewayStatus) {
-        gatewayStatus.textContent = "\u2705 " + label + " copied to clipboard";
-        gatewayStatus.className = "status-indicator success";
-      }
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done).catch(function () {
-        fallbackCopy(text); done();
-      });
-    } else {
-      fallbackCopy(text); done();
-    }
-  }
-
-  function fallbackCopy(text) {
-    try {
-      var ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-    } catch (e) { /* ignore */ }
-  }
-
-  if (copyGatewayKeyBtn) {
-    copyGatewayKeyBtn.addEventListener("click", function () {
-      copyToClipboard(gatewayKeyInput ? gatewayKeyInput.value : "", "Gateway API key");
-    });
-  }
-  if (copyGatewayEndpointBtn) {
-    copyGatewayEndpointBtn.addEventListener("click", function () {
-      copyToClipboard(gatewayEndpointInput ? gatewayEndpointInput.value : "", "Gateway endpoint");
-    });
-  }
 
   // ─── Test LLM ─────────────────────────────────────────────────────────────
 
@@ -325,26 +251,9 @@
 
     baseUrlInput.value = msg.baseUrl || "";
 
-    if (gatewayEndpointInput) {
-      gatewayEndpointInput.value = msg.gatewayEndpoint || "";
-    }
-    if (gatewayKeyInput) {
-      gatewayKeyInput.value = msg.gatewayApiKey || "";
-    }
-    if (gatewayStatus) {
-      if (msg.gatewayApiKey) {
-        gatewayStatus.textContent = "\u2705 Gateway key ready \u2014 copy it into your external agent";
-        gatewayStatus.className = "status-indicator success";
-      } else {
-        gatewayStatus.textContent = "\u26A0\uFE0F MCP server not reachable \u2014 start the server, then reopen Settings";
-        gatewayStatus.className = "status-indicator warning";
-      }
-    }
-
     ollamaUrlInput.value = msg.ollamaUrl || "http://localhost:11434";
 
     updateSections(msg.provider);
-    updateGatewayVisibility();
   }
 
   function handleModels(msg) {

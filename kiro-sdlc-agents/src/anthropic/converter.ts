@@ -4,7 +4,7 @@ import {
   SSEEvent,
   ContentBlockStartEvent,
 } from './types';
-import { logger } from '../../logger';
+import { logger } from '../logger';
 
 /**
  * Convert a Kiro Q API response into a sequence of SSE events.

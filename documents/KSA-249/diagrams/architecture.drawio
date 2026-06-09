@@ -1,0 +1,107 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-249 Architecture — Context Usage + Hook System&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="480" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_boundary" value="kiro-sdlc-agents Extension" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="50" width="820" height="460" as="geometry"/>
+    </mxCell>
+    <mxCell id="webview_boundary" value="Webview (chat.js + chat.css)" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#82b366;verticalAlign=top;fontSize=11;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="80" width="300" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="host_boundary" value="Extension Host" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#9673a6;verticalAlign=top;fontSize=11;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="80" width="440" height="420" as="geometry"/>
+    </mxCell>
+    <mxCell id="ctx_panel" value="&lt;b&gt;Context Usage Panel&lt;/b&gt;&#10;Bars + Thresholds&#10;Collapse/Expand" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="110" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="msg_display" value="&lt;b&gt;Message Display&lt;/b&gt;&#10;Chat messages&#10;Tool calls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="185" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="provider" value="&lt;b&gt;ChatPanelProvider&lt;/b&gt;&#10;postMessage bridge&#10;State management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="110" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="tracker" value="&lt;b&gt;ContextUsageTracker&lt;/b&gt;&#10;Token estimation&#10;Per-tab tracking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="620" y="110" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_loader" value="&lt;b&gt;HookLoader&lt;/b&gt;&#10;Load + Validate&#10;FileSystemWatcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="210" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_events" value="&lt;b&gt;HookEventsManager&lt;/b&gt;&#10;Dispatch events&#10;Circular detection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="620" y="210" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_executor" value="&lt;b&gt;HookExecutor&lt;/b&gt;&#10;askAgent / runCommand&#10;Timeout handling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="620" y="310" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_commands" value="&lt;b&gt;HookCommands&lt;/b&gt;&#10;userTriggered&#10;Command Palette" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="310" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="pipeline" value="&lt;b&gt;Pipeline Executor&lt;/b&gt;&#10;LangGraph nodes&#10;Tool interception" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="410" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp" value="&lt;b&gt;MCP Tools&lt;/b&gt;&#10;External tool calls" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="620" y="410" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hooks_dir" value="&lt;b&gt;.kiro/hooks/&lt;/b&gt;&#10;14 hook files" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="320" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="vscode_api" value="&lt;b&gt;VS Code API&lt;/b&gt;&#10;Commands&#10;OutputChannel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="420" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="chat:contextUsage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="provider" target="ctx_panel" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="getUsage()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="provider" target="tracker" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="loadHooks()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="hook_loader" target="hooks_dir" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="300" y="240"/>
+          <mxPoint x="300" y="350"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="fireEvent()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="hook_loader" target="hook_events" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="execute()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="hook_events" target="hook_executor" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="register" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="hook_commands" target="vscode_api" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="300" y="340"/>
+          <mxPoint x="300" y="450"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="pre/postTask" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="pipeline" target="hook_events" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="500" y="390"/>
+          <mxPoint x="700" y="390"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="pre/postToolUse" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="mcp" target="hook_events" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="780" y="440"/>
+          <mxPoint x="780" y="240"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="token data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" source="pipeline" target="tracker" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="500" y="390"/>
+          <mxPoint x="810" y="390"/>
+          <mxPoint x="810" y="140"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

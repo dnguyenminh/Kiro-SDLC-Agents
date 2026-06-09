@@ -362,16 +362,6 @@ function requestHandler(req, res) {
 
   let p = url.pathname;
 
-  // Optional `/anthropic` base prefix so external Anthropic-compatible clients
-  // can be configured with base URL `http://127.0.0.1:<port>/anthropic`; the
-  // SDK then appends `/v1/messages` -> `/anthropic/v1/messages`. Strip the
-  // prefix from both the routing path and req.url so downstream handlers
-  // (which read req.url) match the bare `/v1/messages` route.
-  if (p === "/anthropic" || p.startsWith("/anthropic/")) {
-    p = p.slice("/anthropic".length) || "/";
-    req.url = (req.url || "").replace(/^\/anthropic/, "") || "/";
-  }
-
   // MCP endpoint
   if (p === "/mcp") { handleMcp(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } }); return; }
   // Health
@@ -381,55 +371,6 @@ function requestHandler(req, res) {
   // Viewer API — POST ingest-file
   if (p === "/api/memory/ingest-file" && req.method === "POST") {
     handleIngestFileApi(req, res).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end(); } });
-    return;
-  }
-  // === Health Check (GET /v1/health) — KSA-237 ===
-  if (p === "/v1/health" && req.method === "GET") {
-    const { checkHealth } = require("./http/kiro-ts/health-checker.js");
-    checkHealth().then(status => {
-      res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
-      res.end(JSON.stringify(status));
-    }).catch(err => {
-      res.writeHead(500, { "Content-Type": CONTENT_TYPE_JSON });
-      res.end(JSON.stringify({ status: "unhealthy", error: err.message, timestamp: new Date().toISOString() }));
-    });
-    return;
-  }
-  // === Gateway API Key (GET /v1/gateway-key) — KSA-237 ===
-  // Returns the STABLE gateway API key so the Settings panel can show it for
-  // the user to copy into external agents (Cline/Cursor/...). The key is
-  // generated + persisted on first access.
-  if (p === "/v1/gateway-key" && req.method === "GET") {
-    try {
-      const { getGatewayApiKey } = require("./http/kiro-ts/auth-resolver.js");
-      const key = getGatewayApiKey();
-      res.writeHead(200, { "Content-Type": CONTENT_TYPE_JSON });
-      res.end(JSON.stringify({ gatewayApiKey: key }));
-    } catch (err) {
-      res.writeHead(500, { "Content-Type": CONTENT_TYPE_JSON });
-      res.end(JSON.stringify({ error: String(err && err.message || err) }));
-    }
-    return;
-  }
-    // === Chat/LLM Proxy (POST /v1/messages) — KSA-237 ===
-  if (p === "/v1/messages" && req.method === "POST") {
-    const { handleChatRoute } = require("./http/kiro-ts/chat-handler.js");
-    handleChatRoute(req, res);
-    return;
-  }
-  // === Models List (GET /v1/models) — KSA-237 (Adapter Pattern) ===
-  // Lists available models in Anthropic /v1/models format. Auth is relaxed
-  // like the gateway: SSO -> Kiro models; sk-ant- key -> Anthropic passthrough.
-  // The `/anthropic` prefix is already stripped above, so this matches both
-  // `/v1/models` and `/anthropic/v1/models`.
-  if (p === "/v1/models" && req.method === "GET") {
-    const { handleModelsRoute } = require("./http/kiro-ts/models-handler.js");
-    if (handleModelsRoute(req, res)) return;
-  }
-  // === Chat Completions API (POST /api/chat/completions) — KSA-237 ===
-  if (p === "/api/chat/completions" && req.method === "POST") {
-    const { handleChatRoute } = require("./http/kiro-ts/chat-handler.js");
-    handleChatRoute(req, res);
     return;
   }
   // Viewer API

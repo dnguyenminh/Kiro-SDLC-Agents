@@ -3,6 +3,8 @@
  * Dispatches incoming webview messages to the appropriate engine actions.
  */
 
+import * as vscode from "vscode";
+import { debugLog } from "../debug-logger";
 import { LangGraphEngine } from "../langgraph/langgraph-engine";
 import { ChatWebviewToExtMessage, ChatExtToWebviewMessage, AutopilotMode } from "./message-protocol";
 import { SDLCPhase } from "../langgraph/state";
@@ -48,15 +50,18 @@ export class MessageHandler {
   ) {}
 
   async handle(msg: ChatWebviewToExtMessage): Promise<void> {
+    debugLog(` MessageHandler.handle: type="${msg.type}"`);
     switch (msg.type) {
       case "ready":
+        debugLog(` MessageHandler: webview READY`);
         await this.handleReady();
         break;
       case "refresh":
         await this.handleReady();
         break;
       case "chat:userMessage":
-        await this.handleUserMessage(msg.text);
+        debugLog(` MessageHandler: userMessage="${(msg as any).text?.slice(0, 80)}"`);
+        await this.handleUserMessage((msg as any).text);
         break;
       case "chat:approvalAction":
         await this.handleApproval(msg.decision, msg.feedback);
@@ -75,6 +80,9 @@ export class MessageHandler {
         break;
       case "chat:graphNodeClick":
         this.handleNodeClick(msg.nodeId);
+        break;
+      case "chat:openWorkflowGraph":
+        vscode.commands.executeCommand("kiroSdlc.openWorkflowGraph");
         break;
       case "chat:pickContext":
         if (this.onPickContext) {
@@ -105,6 +113,19 @@ export class MessageHandler {
           this.onInsertCode(msg.code);
         }
         break;
+      case "tab:create":
+        debugLog(` MessageHandler: tab:create`);
+        break;
+      case "tab:switch":
+        debugLog(` MessageHandler: tab:switch to ${(msg as any).payload?.tabId}`);
+        // Tab switch — swap LLM context to target tab
+        this.getEngine().switchActiveTab((msg as any).payload.tabId);
+        break;
+      case "tab:close":
+        debugLog(` MessageHandler: tab:close ${(msg as any).payload?.tabId}`);
+        break;
+      case "tab:rename":
+        break;
     }
   }
 
@@ -130,12 +151,14 @@ export class MessageHandler {
 
   private async handleUserMessage(text: string): Promise<void> {
     const trimmed = text.trim().toLowerCase();
+    debugLog(` handleUserMessage: "${text.slice(0, 80)}" (trimmed: "${trimmed.slice(0, 40)}")`);
 
     // Emit working status
     this.sendToWebview({ type: "chat:workingStatus", working: true, label: "Working..." });
 
     // Check direct commands
     if (DIRECT_COMMANDS[trimmed]) {
+      debugLog(` handleUserMessage: routed to DIRECT COMMAND "${trimmed}"`);
       await this.handleDirectCommand(DIRECT_COMMANDS[trimmed]);
       return;
     }
@@ -146,13 +169,16 @@ export class MessageHandler {
       const ticketKey = match[1];
       const action = match[2].trim().toLowerCase();
       const phase = this.parsePhase(action);
+      debugLog(` handleUserMessage: routed to SDLC PIPELINE ticket=${ticketKey} phase=${phase}`);
       this.sendToWebview({ type: "chat:workingStatus", working: true, label: `${ticketKey} — ${phase}` });
       await this.getEngine().invoke(ticketKey, phase, text);
       return;
     }
 
     // All other messages go through router graph (intent auto-classified)
+    debugLog(` handleUserMessage: routed to CHAT (invokeChat)`);
     await this.getEngine().invokeChat(text);
+    debugLog(` handleUserMessage: invokeChat RETURNED`);
   }
 
   private async handleApproval(decision: string, feedback?: string): Promise<void> {
@@ -208,3 +234,4 @@ export class MessageHandler {
     return "all";
   }
 }
+

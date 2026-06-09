@@ -1,0 +1,153 @@
+<mxfile>
+  <diagram name="Use Cases" id="uc1">
+    <mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-249 Use Case Diagram — Context Usage Graph + Full Hook System&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="10" width="560" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="boundary" value="kiro-sdlc-agents Extension" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="60" width="680" height="720" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="300" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_ext" value="LangGraph&#10;Engine" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="200" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_mcp" value="MCP Tool&#10;System" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="450" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc1_node" value="View Context&#10;Usage Breakdown" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="100" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc2_node" value="Expand/Collapse&#10;Usage Panel" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="200" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc3_node" value="See Threshold&#10;Color Alerts" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="100" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc4_node" value="Trigger Hook&#10;Manually" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="320" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc5_node" value="Define Hook&#10;in .kiro/hooks/" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="420" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc6_node" value="preToolUse&#10;Access Control" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="320" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc7_node" value="postToolUse&#10;Monitoring" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="420" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc8_node" value="preTaskExecution&#10;Gate/Prepare" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="520" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc9_node" value="postTaskExecution&#10;Audit/Log" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="620" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc10_node" value="Hook Schema&#10;Validation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="530" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc11_node" value="runCommand&#10;with Timeout" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="640" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc12_node" value="Circular Dependency&#10;Detection" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="720" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_dev_uc1" style="html=1;endArrow=none;" edge="1" source="actor_dev" target="uc1_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="135"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc2" style="html=1;endArrow=none;" edge="1" source="actor_dev" target="uc2_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="235"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc4" style="html=1;endArrow=none;" edge="1" source="actor_dev" target="uc4_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="355"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dev_uc5" style="html=1;endArrow=none;" edge="1" source="actor_dev" target="uc5_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="455"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ext_uc8" style="html=1;endArrow=none;" edge="1" source="actor_ext" target="uc8_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="555"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ext_uc9" style="html=1;endArrow=none;" edge="1" source="actor_ext" target="uc9_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="655"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_mcp_uc6" style="html=1;endArrow=none;" edge="1" source="actor_mcp" target="uc6_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="355"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_mcp_uc7" style="html=1;endArrow=none;" edge="1" source="actor_mcp" target="uc7_node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="455"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_include_uc5_uc10" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc5_node" target="uc10_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_uc4_uc11" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc4_node" target="uc11_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_include_uc6_uc12" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;rounded=1;" edge="1" source="uc6_node" target="uc12_node" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="620" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="645" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend1_text" value="Context Usage UI" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="62" y="641" width="120" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="665" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend2_text" value="Hook Management" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="62" y="661" width="120" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="685" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend3_text" value="Hook Events (System)" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="62" y="681" width="130" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="705" width="16" height="12" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend4_text" value="Safety Constraints" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="62" y="701" width="120" height="20" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

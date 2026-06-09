@@ -67,11 +67,11 @@ export function createProviderByType(
       return new OnnxProvider(workspaceRoot, customModel || undefined);
     }
     case "kiro": {
-      // KSA-237: backward compat — alias "kiro" to anthropic + gateway base URL.
-      // Users who had "kiro" in their config will transparently use the gateway.
+      // Backward compat — alias "kiro" to anthropic + the configured gateway
+      // base URL. The gateway now runs as the standalone Kiro Gateway extension
+      // (default http://127.0.0.1:8990/anthropic via kiroSdlc.anthropicBaseUrl).
       const config2 = vscode.workspace.getConfiguration("kiroSdlc");
-      const port2 = config2.get<number>("mcpServerPort", 9181);
-      const gatewayUrl = `http://127.0.0.1:${port2}/anthropic`;
+      const gatewayUrl = anthropicBaseUrl || config2.get<string>("anthropicBaseUrl", "http://127.0.0.1:8990/anthropic");
       const { AnthropicProvider } = require("./anthropic-provider");
       return new AnthropicProvider(
         secrets ? () => secrets.get(SECRET_KEYS.anthropic) : () => Promise.resolve(undefined),

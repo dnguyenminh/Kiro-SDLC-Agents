@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-249 Test Coverage Overview&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="300" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="feature_cug" value="&lt;b&gt;Context Usage Graph&lt;/b&gt;&#10;4 Use Cases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="feature_hooks" value="&lt;b&gt;Hook System&lt;/b&gt;&#10;9 Use Cases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="280" y="60" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ut_cug" value="&lt;b&gt;UT: 12 cases&lt;/b&gt;&#10;Token calc&#10;Thresholds&#10;Formatting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="150" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="it_cug" value="&lt;b&gt;IT: 5 cases&lt;/b&gt;&#10;Tab switch&#10;Auto-expand&#10;Provider integration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="250" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2e_cug" value="&lt;b&gt;E2E-UI: 3 cases&lt;/b&gt;&#10;Panel visual&#10;(manual)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="350" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ut_hooks" value="&lt;b&gt;UT: 22 cases&lt;/b&gt;&#10;Schema validation&#10;Circular detection&#10;Tool classification&#10;Denial/Modification&#10;Timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="280" y="150" width="160" height="90" as="geometry"/>
+    </mxCell>
+    <mxCell id="it_hooks" value="&lt;b&gt;IT: 9 cases&lt;/b&gt;&#10;Pipeline lifecycle&#10;Command palette&#10;FileSystemWatcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="280" y="270" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="total" value="&lt;b&gt;Total: 51 test cases&lt;/b&gt;&#10;48 automated (94%) | 3 manual (6%)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="120" y="440" width="280" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="feature_cug" target="ut_cug" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="feature_cug" target="it_cug" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="feature_cug" target="e2e_cug" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="feature_hooks" target="ut_hooks" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="feature_hooks" target="it_hooks" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="ut_cug" target="total" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="ut_hooks" target="total" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

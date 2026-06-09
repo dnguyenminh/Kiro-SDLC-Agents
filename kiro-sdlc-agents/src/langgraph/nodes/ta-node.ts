@@ -1,13 +1,16 @@
 /**
- * TaNode — Technical Analyst agent node.
+ * TaNode — KSA-210, KSA-242
+ * Technical Analyst agent node.
  * Reviews and enriches FSD with technical depth:
  * API contracts, integration specs, pseudocode, NFR quantification.
+ * KSA-242: Added steering injection, KB ingest.
  */
 
 import { BaseNode } from "./base-node";
 import { PipelineState, AgentOutput, DocumentState } from "../state";
+import { loadSteeringRules, injectSteering } from "../steering-loader";
 
-const TA_SYSTEM_PROMPT = `You are a Technical Analyst agent for an SDLC pipeline.
+const TA_SYSTEM_PROMPT_FALLBACK = `You are a Technical Analyst agent for an SDLC pipeline.
 Your role is to review and ENRICH existing FSD (Functional Specification Document) with technical depth.
 
 You do NOT create the FSD from scratch — the BA has already written the business sections.
@@ -36,7 +39,14 @@ export class TaNode extends BaseNode {
 
     if (llmAvailable) {
       const userPrompt = this.buildUserPrompt(state);
-      result = await this.callLlmStreamFull(TA_SYSTEM_PROMPT, userPrompt, state);
+      // KSA-242: Inject steering rules
+      const workspaceRoot = require("vscode").workspace.workspaceFolders?.[0]?.uri.fsPath;
+      let systemPrompt = await this.loadAgentPrompt("ta-agent", TA_SYSTEM_PROMPT_FALLBACK);
+      if (workspaceRoot) {
+        const rules = await loadSteeringRules(workspaceRoot, "langgraph");
+        systemPrompt = injectSteering(systemPrompt, rules);
+      }
+      result = await this.callLlmStreamFull(systemPrompt, userPrompt, state);
     } else {
       result = await this.callMcp("invoke_sub_agent", {
         name: "ta-agent",
@@ -44,11 +54,23 @@ export class TaNode extends BaseNode {
       });
     }
 
+    // KSA-242: Ingest enriched FSD into KB
+    try {
+      await this.callMcp("mem_ingest", {
+        content: result,
+        type: "DOCUMENT",
+        source: "langgraph-ta-fsd-enriched",
+        tags: [state.ticketKey, "FSD", "ta-agent", "enriched", "langgraph"],
+      });
+    } catch {
+      // KB ingest failure is non-blocking
+    }
+
     const output: AgentOutput = {
       nodeId: this.nodeId,
       content: result,
       timestamp: new Date().toISOString(),
-      metadata: { phase: "specification", action: "enrich_fsd", usedLlm: llmAvailable },
+      metadata: { phase: "specification", action: "enrich_fsd", usedLlm: llmAvailable, kbIngested: true },
     };
 
     const documents = { ...state.documents };

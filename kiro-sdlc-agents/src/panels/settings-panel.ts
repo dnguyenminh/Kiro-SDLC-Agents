@@ -26,7 +26,7 @@ export type SettingsWebviewToExtMsg =
 
 /** Messages FROM extension TO webview */
 export type SettingsExtToWebviewMsg =
-  | { type: "state"; provider: string; model: string; ollamaUrl: string; baseUrl: string; hasAnthropicKey: boolean; hasOpenaiKey: boolean; gatewayEndpoint: string; gatewayApiKey: string }
+  | { type: "state"; provider: string; model: string; ollamaUrl: string; baseUrl: string; hasAnthropicKey: boolean; hasOpenaiKey: boolean }
   | { type: "models"; provider: string; models: ChatModelEntry[]; selected: string; defaultModel: string }
   | { type: "keySaved"; provider: string; success: boolean; error?: string }
   | { type: "keyCleared"; provider: string }
@@ -163,14 +163,6 @@ export class SettingsPanel implements vscode.Disposable {
     const anthropicKey = await this.secrets.get(SECRET_KEYS.anthropic);
     const openaiKey = await this.secrets.get(SECRET_KEYS.openai);
 
-    // Gateway info (for the Kiro provider) — endpoint + stable gateway key the
-    // user copies into external agents (Cline/Cursor/...).
-    const port = config.get<number>("mcpServerPort", 9181);
-    // Base URL for external Anthropic-compatible clients. Clients append
-    // `/v1/messages` themselves, so we expose the `/anthropic` base prefix.
-    const gatewayEndpoint = `http://127.0.0.1:${port}/anthropic`;
-    const gatewayApiKey = await this.fetchGatewayApiKey(port);
-
     this.postMessage({
       type: "state",
       provider,
@@ -179,38 +171,33 @@ export class SettingsPanel implements vscode.Disposable {
       baseUrl: baseUrl || "",
       hasAnthropicKey: !!anthropicKey,
       hasOpenaiKey: !!openaiKey,
-      gatewayEndpoint,
-      gatewayApiKey,
     });
 
     // Push the provider-aware model catalog to the webview (single source of
-    // truth — same module the Chat Panel uses). For gateway base URLs, fetch
-    // /v1/models so Settings + Chat box show the identical list.
+    // truth — same module the Chat Panel uses). When the base URL points at a
+    // gateway, fetch /v1/models so Settings + Chat box show the identical list.
     await this.sendModels(provider, model);
   }
 
   /**
    * Build and send the provider-aware model list to the webview.
-   * KSA-237: When the base URL points at the local gateway (127.0.0.1),
-   * fetch models dynamically so the dropdown shows all available Kiro models.
+   * When the base URL points at an Anthropic-compatible gateway (local or
+   * remote), fetch models dynamically so the dropdown shows the real list.
    */
   private async sendModels(provider: string, currentModel: string): Promise<void> {
     let models: ChatModelEntry[] = getStaticModels(provider);
 
-    // KSA-237: When the base URL points at the local gateway,
-    // fetch models dynamically from the gateway — it returns the REAL Kiro
-    // model list (14 models including deepseek/minimax/etc.). This ensures
-    // Settings shows all available models regardless of provider label.
     const config = vscode.workspace.getConfiguration("kiroSdlc");
-    const port = config.get<number>("mcpServerPort", 9181);
     const anthropicBaseUrl = config.get<string>("anthropicBaseUrl", "");
     const openaiBaseUrl = config.get<string>("openaiBaseUrl", "");
-    const isGatewayBaseUrl =
-      (provider === "anthropic" && anthropicBaseUrl.includes("127.0.0.1")) ||
-      (provider === "openai" && openaiBaseUrl.includes("127.0.0.1"));
+    const gatewayBaseUrl =
+      provider === "anthropic" ? anthropicBaseUrl :
+      provider === "openai" ? openaiBaseUrl : "";
 
-    if (isGatewayBaseUrl) {
-      const gatewayModels = port ? await fetchGatewayModels(port) : null;
+    // KSA-242: Always try to fetch models from gateway (not just 127.0.0.1)
+    // This ensures the model list stays in sync with whatever API endpoint is configured.
+    if (gatewayBaseUrl) {
+      const gatewayModels = await fetchGatewayModels(gatewayBaseUrl);
       if (gatewayModels && gatewayModels.length > 0) {
         models = gatewayModels;
       }
@@ -228,27 +215,6 @@ export class SettingsPanel implements vscode.Disposable {
       selected,
       defaultModel: getDefaultModel(provider),
     });
-  }
-
-  /**
-   * Fetch the stable gateway API key from the local MCP server.
-   * Returns an empty string if the server is not running (the panel shows a
-   * hint to start the server in that case).
-   */
-  private async fetchGatewayApiKey(port: number): Promise<string> {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-      const response = await fetch(`http://127.0.0.1:${port}/v1/gateway-key`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!response.ok) { return ""; }
-      const data = await response.json() as { gatewayApiKey?: string };
-      return data.gatewayApiKey || "";
-    } catch {
-      return "";
-    }
   }
 
   private async updateConfig(key: string, value: string): Promise<void> {
@@ -372,7 +338,6 @@ export class SettingsPanel implements vscode.Disposable {
         if (provider === "anthropic") {
           const model = customModel || "claude-sonnet-4-20250514";
           const baseUrl = anthropicBaseUrl || "https://api.anthropic.com";
-          const isGateway = baseUrl.includes("127.0.0.1");
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 30000);
 
@@ -382,13 +347,6 @@ export class SettingsPanel implements vscode.Disposable {
           };
           if (apiKey) {
             headers["x-api-key"] = apiKey;
-          } else if (isGateway) {
-            // Gateway mode: fetch the gateway API key for authentication
-            const port = config.get<number>("mcpServerPort", 9181);
-            const gatewayKey = await this.fetchGatewayApiKey(port);
-            if (gatewayKey) {
-              headers["x-api-key"] = gatewayKey;
-            }
           }
 
           const response = await fetch(`${baseUrl}/v1/messages`, {
@@ -498,27 +456,6 @@ export class SettingsPanel implements vscode.Disposable {
                     <option value="ollama">Ollama — Local models (no API key needed)</option>
                     <option value="onnx">ONNX — CPU-only local (Phi-3, SmolLM2)</option>
                 </select>
-            </div>
-        </section>
-
-        <section class="card" id="gateway-section" style="display:none;">
-            <h2>&#128268; Gateway Info (Anthropic-compatible)</h2>
-            <p class="card-desc">No API key needed — gateway uses Kiro IDE credentials. Copy endpoint + key below to configure external agents (Cline/Cursor/...).</p>
-            <div class="form-group">
-                <label for="gateway-endpoint-input">Gateway Endpoint</label>
-                <div class="input-with-toggle">
-                    <input type="text" id="gateway-endpoint-input" readonly value="">
-                    <button class="icon-btn" id="copy-gateway-endpoint" title="Copy endpoint" aria-label="Copy gateway endpoint">&#128203;</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="gateway-key-input">Gateway API Key</label>
-                <div class="input-with-toggle">
-                    <input type="password" id="gateway-key-input" readonly value="">
-                    <button class="icon-btn" id="toggle-gateway-key" title="Show/Hide" aria-label="Toggle gateway key visibility">&#128065;</button>
-                    <button class="icon-btn" id="copy-gateway-key" title="Copy key" aria-label="Copy gateway key">&#128203;</button>
-                </div>
-                <div id="gateway-status" class="status-indicator"></div>
             </div>
         </section>
 

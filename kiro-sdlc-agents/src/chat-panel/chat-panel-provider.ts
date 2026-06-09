@@ -6,12 +6,14 @@
 
 import * as vscode from "vscode";
 import { getNonce } from "../mcp-server-manager";
+import { debugLog, debugError } from "../debug-logger";
 import { McpServerManager } from "../mcp-server-manager";
 import { LangGraphEngine } from "../langgraph/langgraph-engine";
 import { createLlmProvider } from "../langgraph/providers";
 import { MessageHandler } from "./message-handler";
 import { ChatWebviewToExtMessage, ChatExtToWebviewMessage } from "./message-protocol";
 import { getStaticModels, getDefaultModel, fetchGatewayModels } from "./chat-models";
+import { ContextUsageTracker } from "./context-usage-tracker";
 
 export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "kiroChatPanel";
@@ -20,13 +22,15 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
   private engine: LangGraphEngine | null = null;
   private messageHandler: MessageHandler | null = null;
   private messageBuffer: ChatExtToWebviewMessage[] = [];
+  private contextUsageTracker: ContextUsageTracker = new ContextUsageTracker();
   private disposables: vscode.Disposable[] = [];
 
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly mcpManager: McpServerManager,
     private readonly workspaceRoot: string,
-    private readonly secrets?: vscode.SecretStorage
+    private readonly secrets?: vscode.SecretStorage,
+    private readonly workspaceState?: vscode.Memento
   ) {}
 
   resolveWebviewView(
@@ -48,6 +52,21 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 
     webviewView.webview.onDidReceiveMessage(
       (msg: ChatWebviewToExtMessage) => {
+        // Handle executeCommand from webview (e.g. Workflow Graph button)
+        if ((msg as any).type === "executeCommand" && (msg as any).command) {
+          vscode.commands.executeCommand((msg as any).command);
+          return;
+        }
+        // KSA-240: Handle state persistence directly
+        if (msg.type === "chat:saveState") {
+          this.saveChatState(msg.payload);
+          return;
+        }
+        // KSA-240: Webview debug log round-trip
+        if ((msg as any).type === "chat:debugLog") {
+          debugLog(`[webview] ${(msg as any).text}`);
+          return;
+        }
         // On ready, send initial MCP server status
         if (msg.type === "ready") {
           const currentStatus = this.mcpManager.status;
@@ -57,6 +76,10 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
           this.sendToWebview({ type: "serverStatus", status: webviewStatus });
           // Send the provider-aware model list to populate the dropdown
           void this.sendModels();
+          // KSA-240: Restore persisted chat state
+          this.restoreChatState();
+          // KSA-240: Send loaded steering rules
+          this.sendSteeringInfo();
         }
         this.handleMessage(msg);
       },
@@ -121,8 +144,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
       (provider === "anthropic" && anthropicBaseUrl.includes("127.0.0.1"));
 
     if (isGatewayBaseUrl) {
-      const port = this.mcpManager.port;
-      const gatewayModels = port ? await fetchGatewayModels(port) : null;
+      const gatewayModels = await fetchGatewayModels(anthropicBaseUrl);
       if (gatewayModels && gatewayModels.length > 0) {
         models = gatewayModels;
       }
@@ -147,15 +169,108 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
   }
 
   private sendToWebview(msg: ChatExtToWebviewMessage): void {
-    if (this.view?.visible) {
+    // retainContextWhenHidden keeps the webview alive, so postMessage works even
+    // when the panel is not focused/visible. Always deliver directly; only buffer
+    // if the view hasn't been resolved yet.
+    if (this.view) {
       this.view.webview.postMessage(msg);
     } else {
       this.messageBuffer.push(msg);
-      // Cap buffer at 100 messages
-      if (this.messageBuffer.length > 100) {
+      if (this.messageBuffer.length > 200) {
         this.messageBuffer.shift();
       }
     }
+  }
+
+  // === KSA-240: Chat State Persistence ===
+  private static readonly STATE_KEY = "chatPanel.state";
+
+  /** Save current chat state (called from webview via message) */
+  saveChatState(state: { tabs: unknown[]; activeTabId: string; messageHistory?: string[] }): void {
+    if (this.workspaceState) {
+      debugLog(` saveChatState: ${(state.tabs as any[])?.length || 0} tabs, activeTab=${state.activeTabId}, history=${state.messageHistory?.length || 0}`);
+      void this.workspaceState.update(ChatPanelProvider.STATE_KEY, state);
+    }
+  }
+
+  /** Restore chat state on webview ready */
+  private restoreChatState(): void {
+    if (!this.workspaceState) return;
+    const state = this.workspaceState.get<{ tabs: unknown[]; activeTabId: string; messageHistory?: string[] }>(ChatPanelProvider.STATE_KEY);
+    debugLog(` restoreChatState: state=${state ? "found" : "null"}, tabs=${state?.tabs?.length || 0}, activeTab=${state?.activeTabId || "none"}`);
+    if (state && state.tabs && state.tabs.length > 0) {
+      this.sendToWebview({
+        type: "tab:updated",
+        payload: { tabs: state.tabs as any, activeTabId: state.activeTabId, messageHistory: state.messageHistory } as any,
+      });
+      // Also send chat history for active tab and restore LLM context
+      const activeTab = (state.tabs as any[]).find((t: any) => t.id === state.activeTabId);
+      if (activeTab && activeTab.messages && activeTab.messages.length > 0) {
+        this.sendToWebview({
+          type: "chat:chatHistory",
+          messages: activeTab.messages,
+        });
+        // KSA-240: Restore LLM conversation context in engine
+        try {
+          const engine = this.getEngine();
+          const chatMsgs = (activeTab.messages as any[])
+            .filter((m: any) => m.role === "user" || m.role === "assistant")
+            .slice(-20) // Keep last 20 for token budget
+            .map((m: any) => ({
+              id: m.id || require("crypto").randomUUID(),
+              role: m.role,
+              content: m.content,
+              timestamp: m.timestamp || new Date().toISOString(),
+            }));
+          debugLog(` restoreChatState: restoring ${chatMsgs.length} messages to engine for tab ${state.activeTabId}`);
+          engine.setChatHistory(chatMsgs, state.activeTabId);
+        } catch (e) {
+          debugError(` restoreChatState: engine restore failed:`, (e as Error));
+        }
+      }
+    }
+  }
+
+  /** Send steering files and hooks info to webview */
+  private sendSteeringInfo(): void {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const steeringDir = path.join(this.workspaceRoot, ".kiro", "steering");
+      const rules: Array<{ name: string; file: string }> = [];
+
+      if (fs.existsSync(steeringDir)) {
+        const files = this.getSteeringFilesRecursive(steeringDir, steeringDir);
+        for (const file of files) {
+          const name = path.basename(file, ".md").replace(/-/g, " ");
+          rules.push({ name, file });
+        }
+      }
+
+      if (rules.length > 0) {
+        this.sendToWebview({ type: "chat:steeringLoaded", rules });
+      }
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  private getSteeringFilesRecursive(dir: string, baseDir: string): string[] {
+    const fs = require("fs");
+    const path = require("path");
+    const results: string[] = [];
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...this.getSteeringFilesRecursive(fullPath, baseDir));
+        } else if (entry.name.endsWith(".md")) {
+          results.push(path.relative(baseDir, fullPath).replace(/\\/g, "/"));
+        }
+      }
+    } catch { /* ignore */ }
+    return results;
   }
 
   /** Lazy-init LangGraph engine (BR-11: zero activation impact) */
@@ -357,8 +472,47 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 <body>
     <div id="chat-root">
         <div id="chat-header">
-            <span class="header-title">SDLC Pipeline</span>
+            <div class="header-left">
+                <div class="context-usage-icon" id="context-usage-icon" aria-label="Context window usage">
+                    <svg viewBox="0 0 20 20">
+                        <circle class="arc-bg" cx="10" cy="10" r="8" />
+                        <circle class="arc-progress safe" cx="10" cy="10" r="8"
+                            stroke-dasharray="50.27"
+                            stroke-dashoffset="50.27"
+                            transform="rotate(-90 10 10)" />
+                    </svg>
+                    <span class="context-usage-tooltip" id="context-tooltip">0 / 128,000 tokens (0%)</span>
+                </div>
+                <span class="header-title">SDLC Pipeline</span>
+            </div>
             <span id="status-indicator" class="status disconnected">disconnected</span>
+        </div>
+
+        <!-- Tab Bar (KSA-240) -->
+        <div id="tab-bar" role="tablist" aria-label="Conversation tabs">
+            <button class="tab-add-btn" id="tab-add-btn" title="New conversation (Ctrl+Shift+T)" aria-label="New tab">+</button>
+        </div>
+
+        <!-- Steering Rules (KSA-240) -->
+        <div class="steering-section" id="steering-section">
+            <div class="steering-header" id="steering-header">
+                <span class="steering-chevron">&#x25B6;</span>
+                <span>Included Rules</span>
+                <span id="steering-count">(0)</span>
+            </div>
+            <div class="steering-list" id="steering-list"></div>
+        </div>
+
+        <!-- Context full warning -->
+        <div class="context-full-warning" id="context-full-warning">
+            <span>Context window is full.</span>
+            <span class="new-tab-link" id="full-new-tab">Start new tab</span>
+        </div>
+
+        <!-- Context notification toast -->
+        <div class="context-toast" id="context-toast">
+            <span id="toast-text">Context usage at 95%</span>
+            <button class="toast-dismiss" id="toast-dismiss">&times;</button>
         </div>
 
         <!-- Working status bar (Kiro-style) -->
@@ -377,8 +531,10 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
             <div class="welcome-suggestions">
                 <button data-cmd="KSA-XXX tao BRD">&#x1F4CB; Create BRD from ticket</button>
                 <button data-cmd="KSA-XXX tao FSD">&#x1F4D0; Create FSD from ticket</button>
+                <button data-cmd="KSA-XXX tao tai lieu day du">&#x1F4DA; Full pipeline (BRD→FSD→TDD)</button>
                 <button data-cmd="status">&#x1F4CA; Show pipeline status</button>
                 <button data-cmd="resume">&#x25B6; Resume paused pipeline</button>
+                <button data-action="openWorkflowGraph">&#x1F5FA; Open Workflow Graph</button>
             </div>
         </div>
 
@@ -430,9 +586,24 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 </html>`;
   }
 
+  /**
+   * Send context usage update to webview for a given tab.
+   * Call this after engine responses, tool calls, or steering loads.
+   */
+  sendContextUsage(tabId: string): void {
+    const payload = this.contextUsageTracker.getUsagePayload(tabId);
+    this.sendToWebview({ type: "chat:contextUsage", payload });
+  }
+
+  /** Get the context usage tracker instance (for MessageHandler integration). */
+  getContextUsageTracker(): ContextUsageTracker {
+    return this.contextUsageTracker;
+  }
+
   dispose(): void {
     this.engine?.dispose();
     this.disposables.forEach(d => d.dispose());
     this.disposables = [];
   }
 }
+

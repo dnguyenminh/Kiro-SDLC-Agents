@@ -1,0 +1,92 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-249 System Context — Context Usage Graph + Hook System&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="540" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="kiro-sdlc-agents Extension" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="60" width="520" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="240" width="30" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="chat_panel" value="&lt;b&gt;Chat Panel Webview&lt;/b&gt;&#10;Context Usage Graph&#10;Message Display" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="100" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_host" value="&lt;b&gt;Extension Host&lt;/b&gt;&#10;ChatPanelProvider&#10;Token Calculator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="500" y="100" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_loader" value="&lt;b&gt;Hook Loader&lt;/b&gt;&#10;Load / Validate / Fire&#10;Schema Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="240" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="hook_executor" value="&lt;b&gt;Hook Executor&lt;/b&gt;&#10;askAgent / runCommand&#10;Timeout / Circular Detection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="500" y="240" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="langgraph" value="&lt;b&gt;LangGraph Pipeline&lt;/b&gt;&#10;Node Execution&#10;pre/postTask Events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="380" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_tools" value="&lt;b&gt;MCP Tool System&lt;/b&gt;&#10;pre/postToolUse&#10;Tool Categories" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="500" y="380" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_hooks_dir" value="&lt;b&gt;.kiro/hooks/&lt;/b&gt;&#10;*.json, *.kiro.hook&#10;14 hook files" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="400" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="vscode" value="&lt;b&gt;VS Code API&lt;/b&gt;&#10;Commands&#10;FileSystemWatcher" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="780" y="240" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="postMessage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;fontSize=10;" edge="1" source="chat_panel" target="ext_host" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="chat:contextUsage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="ext_host" target="chat_panel" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="590" y="85"/>
+          <mxPoint x="330" y="85"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="fire events" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="hook_loader" target="hook_executor" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="preTask/postTask" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="langgraph" target="hook_loader" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="pre/postToolUse" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="mcp_tools" target="hook_loader" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="590" y="350"/>
+          <mxPoint x="330" y="350"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="read hook files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="hook_loader" target="ext_hooks_dir" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="180" y="275"/>
+          <mxPoint x="180" y="435"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="register commands" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="hook_executor" target="vscode" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" style="html=1;endArrow=none;fontSize=10;" edge="1" source="actor_dev" target="chat_panel" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="160" y="135"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="token data" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="langgraph" target="ext_host" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="440" y="415"/>
+          <mxPoint x="440" y="480"/>
+          <mxPoint x="700" y="480"/>
+          <mxPoint x="700" y="135"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

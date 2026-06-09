@@ -1,8 +1,12 @@
 /**
- * SteeringLoader — KSA-217
- * Parses .kiro/steering/*.md files, extracts front-matter,
- * and injects relevant steering rules into LLM agent prompts.
+ * SteeringLoader — KSA-217, KSA-242
+ * Parses .kiro/steering/ files (including subdirectories) recursively,
+ * extracts front-matter, and injects relevant steering rules into LLM agent prompts.
  * Supports `targets` field: "kiro" | "langgraph" | "all" (default).
+ *
+ * KSA-242 fixes:
+ * - Recursive scan: now includes subdirectories (e.g., patterns/)
+ * - inclusion: "auto" treated as "always" for langgraph target
  */
 
 import * as vscode from "vscode";
@@ -20,8 +24,8 @@ export interface SteeringRule {
 export interface SteeringMeta {
   /** Which system this rule targets: kiro (IDE agent), langgraph (pipeline), or all */
   targets: "kiro" | "langgraph" | "all";
-  /** Inclusion strategy: always, fileMatch, manual */
-  inclusion: "always" | "fileMatch" | "manual";
+  /** Inclusion strategy: always, auto, fileMatch, manual */
+  inclusion: "always" | "auto" | "fileMatch" | "manual";
   /** Glob pattern for fileMatch inclusion */
   fileMatchPattern?: string;
   /** Human-readable title */
@@ -33,7 +37,13 @@ export interface SteeringMeta {
 const FRONT_MATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 
 /**
- * Load all steering rules from .kiro/steering/ directory.
+ * Inclusion strategies that qualify for automatic injection into langgraph prompts.
+ * "always" = always inject; "auto" = inject automatically (same behavior for pipeline).
+ */
+const AUTO_INJECT_INCLUSIONS: Set<string> = new Set(["always", "auto"]);
+
+/**
+ * Load all steering rules from .kiro/steering/ directory (recursively).
  * Filters by target ("langgraph" or "all") for pipeline injection.
  */
 export async function loadSteeringRules(
@@ -43,30 +53,8 @@ export async function loadSteeringRules(
   const steeringDir = path.join(workspaceRoot, ".kiro", "steering");
 
   try {
-    const dirUri = vscode.Uri.file(steeringDir);
-    const entries = await vscode.workspace.fs.readDirectory(dirUri);
-    const mdFiles = entries
-      .filter(([name, type]) => name.endsWith(".md") && type === vscode.FileType.File)
-      .map(([name]) => name);
-
     const rules: SteeringRule[] = [];
-
-    for (const fileName of mdFiles) {
-      const filePath = path.join(steeringDir, fileName);
-      const content = await readFileContent(filePath);
-      if (!content) continue;
-
-      const parsed = parseSteeringFile(content, path.join(".kiro", "steering", fileName));
-      if (!parsed) continue;
-
-      // Filter by target
-      if (parsed.meta.targets === "all" || parsed.meta.targets === target) {
-        // Only include "always" inclusion rules for automatic injection
-        if (parsed.meta.inclusion === "always") {
-          rules.push(parsed);
-        }
-      }
-    }
+    await scanDirectoryRecursive(steeringDir, steeringDir, target, rules);
 
     // Sort by priority (descending)
     rules.sort((a, b) => (b.meta.priority ?? 0) - (a.meta.priority ?? 0));
@@ -75,6 +63,58 @@ export async function loadSteeringRules(
   } catch {
     // Directory doesn't exist or read failed
     return [];
+  }
+}
+
+/**
+ * Recursively scan a directory for .md steering files.
+ * KSA-242: Supports subdirectories (e.g., .kiro/steering/patterns/).
+ */
+async function scanDirectoryRecursive(
+  currentDir: string,
+  rootSteeringDir: string,
+  target: "kiro" | "langgraph" | "all",
+  rules: SteeringRule[]
+): Promise<void> {
+  const dirUri = vscode.Uri.file(currentDir);
+  let entries: [string, vscode.FileType][];
+
+  try {
+    entries = await vscode.workspace.fs.readDirectory(dirUri);
+  } catch {
+    return; // Directory unreadable, skip
+  }
+
+  for (const [name, type] of entries) {
+    const fullPath = path.join(currentDir, name);
+
+    if (type === vscode.FileType.Directory) {
+      // Recurse into subdirectory
+      await scanDirectoryRecursive(fullPath, rootSteeringDir, target, rules);
+    } else if (type === vscode.FileType.File && name.endsWith(".md")) {
+      // Process markdown file
+      const content = await readFileContent(fullPath);
+      if (!content) continue;
+
+      // Build relative path from .kiro/steering/ root
+      const relativePath = path.relative(
+        path.join(rootSteeringDir, ".."), // parent of steering = .kiro
+        fullPath
+      ).replace(/\\/g, "/");
+      // Result: "steering/patterns/ai-agent.md" → prefix with .kiro/
+      const filePath = `.kiro/${relativePath}`;
+
+      const parsed = parseSteeringFile(content, filePath);
+      if (!parsed) continue;
+
+      // Filter by target
+      if (parsed.meta.targets === "all" || parsed.meta.targets === target) {
+        // KSA-242: Accept "always" AND "auto" for automatic injection
+        if (AUTO_INJECT_INCLUSIONS.has(parsed.meta.inclusion)) {
+          rules.push(parsed);
+        }
+      }
+    }
   }
 }
 
@@ -144,7 +184,7 @@ function parseFrontMatter(raw: string): SteeringMeta {
         }
         break;
       case "inclusion":
-        if (value === "always" || value === "filematch" || value === "manual") {
+        if (value === "always" || value === "auto" || value === "filematch" || value === "manual") {
           meta.inclusion = value.toLowerCase() as SteeringMeta["inclusion"];
         }
         break;

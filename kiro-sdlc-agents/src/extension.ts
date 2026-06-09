@@ -81,7 +81,7 @@ export async function activate(context: vscode.ExtensionContext) {
         });
 
         // Register Chat Panel (KSA-210) — lazy-init LangGraph engine
-        const chatPanelProvider = new ChatPanelProvider(context.extensionUri, mcpManager, workspaceRoot, context.secrets);
+        const chatPanelProvider = new ChatPanelProvider(context.extensionUri, mcpManager, workspaceRoot, context.secrets, context.workspaceState);
         context.subscriptions.push(
             vscode.window.registerWebviewViewProvider("kiroChatPanel", chatPanelProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
@@ -204,6 +204,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.openKbTags", () => panelManager?.openPanel("tags")),
         vscode.commands.registerCommand("kiroSdlc.openKbQuality", () => panelManager?.openPanel("quality")),
         vscode.commands.registerCommand("kiroSdlc.openKbAnalytics", () => panelManager?.openPanel("analytics")),
+        vscode.commands.registerCommand("kiroSdlc.openWorkflowGraph", () => panelManager?.openPanel("workflow")),
     );
 
     // Register MCP server commands
