@@ -1,0 +1,1 @@
+{"version":3,"file":"types.d.ts","sourceRoot":"","sources":["../../../webview/badges/types.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,iBAAiB,EAAE,eAAe,EAAE,eAAe,EAAE,MAAM,uBAAuB,CAAC;AAEjG,OAAO,EAAE,iBAAiB,EAAE,eAAe,EAAE,eAAe,EAAE,CAAC;AAE/D,MAAM,WAAW,kBAAkB;IACjC,SAAS,EAAE,WAAW,CAAC;IACvB,QAAQ,EAAE,CAAC,OAAO,EAAE,MAAM,KAAK,IAAI,CAAC;CACrC"}

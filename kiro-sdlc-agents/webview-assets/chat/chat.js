@@ -129,6 +129,7 @@
     tabs.push(newTab);
     switchToTab(newTab.id);
     renderTabBar();
+    saveStateToDisk();
     vscode.postMessage({ type: "tab:create" });
   }
 
@@ -190,6 +191,7 @@
       activeTabId = tabs[newIdx].id;
     }
     renderTabBar();
+    saveStateToDisk();
     vscode.postMessage({ type: "tab:close", payload: { tabId: tabId } });
   }
 
@@ -200,6 +202,7 @@
     if (!trimmed) return;
     tab.name = trimmed.substring(0, 30);
     renderTabBar();
+    saveStateToDisk();
     vscode.postMessage({ type: "tab:rename", payload: { tabId: tabId, newName: tab.name } });
   }
 
@@ -352,6 +355,70 @@
   // === Initialization ===
   vscode.postMessage({ type: "ready" });
 
+  // === Contenteditable Input Helpers ===
+  function getInputText() {
+    var clone = inputEl.cloneNode(true);
+    var badges = clone.querySelectorAll(".slash-badge");
+    for (var i = 0; i < badges.length; i++) {
+      var textNode = document.createTextNode(badges[i].getAttribute("data-value") + " ");
+      badges[i].parentNode.replaceChild(textNode, badges[i]);
+    }
+    return (clone.innerText || clone.textContent || "").replace(/\n$/, "");
+  }
+
+  function setInputText(text) {
+    inputEl.textContent = text;
+  }
+
+  function clearInput() {
+    inputEl.innerHTML = "";
+  }
+
+  function isInputEmpty() {
+    return !inputEl.textContent.trim() && !inputEl.querySelector(".slash-badge");
+  }
+
+  function insertSlashBadge(label, value, icon) {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var textNode = range.startContainer;
+    if (textNode.nodeType === 3) {
+      var text = textNode.textContent;
+      var offset = range.startOffset;
+      var before = text.substring(0, offset);
+      var slashIdx = before.lastIndexOf("/");
+      if (slashIdx !== -1) {
+        textNode.textContent = text.substring(0, slashIdx) + text.substring(offset);
+        var badge = document.createElement("span");
+        badge.className = "slash-badge";
+        badge.contentEditable = "false";
+        badge.setAttribute("data-value", value);
+        badge.innerHTML = '<span class="badge-icon">' + icon + '</span> /' + escapeHtml(label);
+        var afterText = textNode.splitText(slashIdx);
+        textNode.parentNode.insertBefore(badge, afterText);
+        var space = document.createTextNode("\u00A0");
+        badge.parentNode.insertBefore(space, badge.nextSibling);
+        var newRange = document.createRange();
+        newRange.setStartAfter(space);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+    }
+  }
+
+  function getCursorContext() {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return { text: "", cursorPos: 0 };
+    var range = sel.getRangeAt(0);
+    var node = range.startContainer;
+    if (node.nodeType === 3) {
+      return { text: node.textContent, cursorPos: range.startOffset, textNode: node };
+    }
+    return { text: "", cursorPos: 0 };
+  }
+
   // === Welcome Suggestions ===
   var suggestionBtns = welcomeEl.querySelectorAll(".welcome-suggestions button");
   for (var i = 0; i < suggestionBtns.length; i++) {
@@ -362,7 +429,7 @@
         return;
       }
       var cmd = this.getAttribute("data-cmd");
-      inputEl.value = cmd;
+      setInputText(cmd);
       inputEl.focus();
       if (cmd === "status" || cmd === "resume") {
         sendMessage();
@@ -378,20 +445,20 @@
       e.preventDefault();
       sendMessage();
     }
-    if (e.key === "#" && inputEl.value === "") {
+    if (e.key === "#" && isInputEmpty()) {
       e.preventDefault();
       toggleContextMenu();
     }
     // Up/Down arrow history navigation
-    if (e.key === "ArrowUp" && inputEl.value === "" && messageHistory.length > 0) {
+    if (e.key === "ArrowUp" && isInputEmpty() && messageHistory.length > 0) {
       e.preventDefault();
       if (historyIndex === -1) {
-        pendingInput = inputEl.value;
+        pendingInput = getInputText();
         historyIndex = messageHistory.length - 1;
       } else if (historyIndex > 0) {
         historyIndex--;
       }
-      inputEl.value = messageHistory[historyIndex];
+      setInputText(messageHistory[historyIndex]);
       inputEl.style.height = "auto";
       inputEl.style.height = Math.min(inputEl.scrollHeight, 300) + "px";
     }
@@ -399,10 +466,10 @@
       e.preventDefault();
       if (historyIndex < messageHistory.length - 1) {
         historyIndex++;
-        inputEl.value = messageHistory[historyIndex];
+        setInputText(messageHistory[historyIndex]);
       } else {
         historyIndex = -1;
-        inputEl.value = pendingInput;
+        setInputText(pendingInput);
       }
       inputEl.style.height = "auto";
       inputEl.style.height = Math.min(inputEl.scrollHeight, 300) + "px";
@@ -760,7 +827,7 @@
 
   // === Send Message ===
   function sendMessage() {
-    var text = inputEl.value.trim();
+    var text = getInputText().trim();
     if (!text && pastedAttachments.length === 0) return;
 
     // Reset graph completion flag for new interaction
@@ -804,7 +871,7 @@
       attachments: attachments.length > 0 ? attachments : undefined
     });
 
-    inputEl.value = "";
+    inputEl.innerHTML = "";
     inputEl.style.height = "auto";
     clearContextChips();
     pastedAttachments = [];
@@ -1021,6 +1088,12 @@
   function categorizeTool(name) {
     var n = (name || "").toLowerCase();
 
+    // KSA-279: System/meta events (steering, hooks) - distinct category
+    if (n.indexOf("steering") !== -1 || n.indexOf("_rules_") !== -1)
+      return { icon: "S", label: "RULES", cls: "cat-rules" };
+    if (n.indexOf("hook") !== -1)
+      return { icon: "H", label: "HOOK", cls: "cat-hook" };
+
     // Priority 1: Explicit prefix matches (most specific first)
     var prefixMap = [
       { prefix: "execute_pwsh",    icon: "&gt;_", label: "CMD",    cls: "cat-command" },
@@ -1126,19 +1199,47 @@
       }
     });
 
-    // Body content
+    // Body content — KSA-281: Two sections (Request + Response)
     var body = document.createElement("div");
     body.className = "tool-call-body";
+
+    // --- REQUEST section (always show args) ---
+    var reqSection = document.createElement("div");
+    reqSection.className = "tool-section tool-section-request";
+    var reqLabel = document.createElement("div");
+    reqLabel.className = "tool-section-label";
+    reqLabel.textContent = "Request";
+    var reqContent = document.createElement("pre");
+    reqContent.className = "tool-section-content";
+    reqContent.textContent = tc.args && Object.keys(tc.args).length > 0
+      ? JSON.stringify(tc.args, null, 2)
+      : "(no parameters)";
+    reqSection.appendChild(reqLabel);
+    reqSection.appendChild(reqContent);
+
+    // --- RESPONSE section ---
+    var resSection = document.createElement("div");
+    resSection.className = "tool-section tool-section-response";
+    var resLabel = document.createElement("div");
+    resLabel.className = "tool-section-label";
+    resLabel.textContent = "Response";
+    var resContent = document.createElement("pre");
+    resContent.className = "tool-section-content";
     if (displayStatus === "completed" && tc.result) {
-      body.textContent = tc.result;
+      resContent.textContent = tc.result;
     } else if (displayStatus === "failed" && tc.error) {
-      body.textContent = tc.error;
-      body.classList.add("failed");
-    } else if (tc.args) {
-      body.textContent = JSON.stringify(tc.args, null, 2);
+      resContent.textContent = tc.error;
+      resSection.classList.add("failed");
+    } else if (displayStatus === "interrupted") {
+      resContent.textContent = "(interrupted)";
     } else {
-      body.textContent = "No data available";
+      resContent.textContent = "(waiting...)";
     }
+    resSection.appendChild(resLabel);
+    resSection.appendChild(resContent);
+
+    body.appendChild(reqSection);
+    body.appendChild(resSection);
 
     block.appendChild(header);
     block.appendChild(body);
@@ -1189,14 +1290,19 @@
     block.setAttribute("aria-label", "Tool call: " +
       (toolName ? toolName.textContent : "") + " - " + msg.status);
 
-    // Update body content (BR-14: result replaces args)
-    if (msg.result) {
-      var body = block.querySelector(".tool-call-body");
-      body.textContent = msg.result;
-      if (msg.status === "failed") {
-        body.classList.add("failed");
-      } else {
-        body.classList.remove("failed");
+    // Update Response section content (KSA-281: keep Request visible)
+    if (msg.result || msg.error) {
+      var resSection = block.querySelector(".tool-section-response");
+      if (resSection) {
+        var resContent = resSection.querySelector(".tool-section-content");
+        if (resContent) {
+          resContent.textContent = msg.error || msg.result;
+        }
+        if (msg.status === "failed") {
+          resSection.classList.add("failed");
+        } else {
+          resSection.classList.remove("failed");
+        }
       }
     }
 
@@ -1463,17 +1569,25 @@
         return { id: t.id, name: t.name, messages: t.messages || [], tokenCount: t.tokenCount || 0, maxTokens: t.maxTokens || 128000 };
       });
     }
-    if (payload.activeTabId) {
-      activeTabId = payload.activeTabId;
-    }
     // Restore input history if provided
     if (payload.messageHistory && Array.isArray(payload.messageHistory)) {
       messageHistory = payload.messageHistory;
     }
-    renderTabBar();
-    var active = getTab(activeTabId);
-    if (active) {
-      updateContextIcon(active.tokenCount, active.maxTokens);
+    // Update tabCounter to avoid duplicate names
+    tabCounter = tabs.length;
+
+    // Render tab bar first, then switch to active tab to render its messages correctly
+    if (payload.activeTabId && getTab(payload.activeTabId)) {
+      // Force activeTabId to differ so switchToTab actually executes
+      activeTabId = "";
+      renderTabBar();
+      switchToTab(payload.activeTabId);
+    } else if (tabs.length > 0) {
+      activeTabId = "";
+      renderTabBar();
+      switchToTab(tabs[0].id);
+    } else {
+      renderTabBar();
     }
   }
 
@@ -1540,4 +1654,209 @@
     messagesEl.appendChild(el);
     scrollToBottom();
   }
+
+  // === Slash Command Popup ===
+  var slashPopup = document.getElementById("slash-popup");
+  var slashSteeringList = document.getElementById("slash-steering-list");
+  var slashActiveIndex = -1;
+  var slashVisible = false;
+  var slashFilterText = "";
+
+  // Steering rules data (populated from extension message or defaults)
+  var slashSteeringRules = [];
+
+  // Populate steering list from chat:steeringLoaded message data
+  function populateSlashSteering(rules) {
+    slashSteeringRules = rules || [];
+    slashSteeringList.innerHTML = "";
+    for (var i = 0; i < slashSteeringRules.length; i++) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "slash-item";
+      btn.setAttribute("data-slash", "/" + slashSteeringRules[i].name);
+      btn.setAttribute("role", "option");
+      btn.innerHTML = '<span class="slash-icon">\u{1F9ED}</span>' +
+        '<span class="slash-label">' + escapeHtml(slashSteeringRules[i].name) + '</span>' +
+        '<span class="slash-desc">' + escapeHtml(slashSteeringRules[i].file || "") + '</span>';
+      slashSteeringList.appendChild(btn);
+    }
+  }
+
+  // Default steering entries (fallback if extension hasn't sent steeringLoaded)
+  var defaultSteeringNames = [
+    "concise-responses", "sm-core", "phase-1-requirements", "phase-2-specification",
+    "phase-3-design", "phase-4-test-planning", "phase-5-implementation",
+    "phase-6-testing", "phase-7-deployment", "shared-jira", "shared-quality-gates",
+    "shared-diagrams", "tool-usage-dynamic", "code-standards"
+  ];
+  (function initDefaultSteering() {
+    var defaults = [];
+    for (var i = 0; i < defaultSteeringNames.length; i++) {
+      defaults.push({ name: defaultSteeringNames[i], file: ".kiro/steering/" + defaultSteeringNames[i] + ".md" });
+    }
+    populateSlashSteering(defaults);
+  })();
+
+  // Override renderSteeringRules to also populate slash popup
+  var _origRenderSteering = renderSteeringRules;
+  renderSteeringRules = function(rules) {
+    _origRenderSteering(rules);
+    populateSlashSteering(rules);
+  };
+
+  function showSlashPopup() {
+    slashPopup.classList.remove("hidden");
+    slashVisible = true;
+    slashActiveIndex = -1;
+    filterSlashItems();
+  }
+
+  function hideSlashPopup() {
+    slashPopup.classList.add("hidden");
+    slashVisible = false;
+    slashActiveIndex = -1;
+    slashFilterText = "";
+    // Remove active class from all items
+    var items = slashPopup.querySelectorAll(".slash-item");
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.remove("active");
+    }
+  }
+
+  function filterSlashItems() {
+    var filter = slashFilterText.toLowerCase();
+    var items = slashPopup.querySelectorAll(".slash-item");
+    for (var i = 0; i < items.length; i++) {
+      var label = items[i].getAttribute("data-slash") || "";
+      var desc = items[i].querySelector(".slash-desc");
+      var descText = desc ? desc.textContent : "";
+      var matches = !filter || label.toLowerCase().indexOf(filter) !== -1 || descText.toLowerCase().indexOf(filter) !== -1;
+      items[i].style.display = matches ? "" : "none";
+    }
+    // Show/hide section titles based on visible children
+    var sections = slashPopup.querySelectorAll(".slash-section");
+    for (var s = 0; s < sections.length; s++) {
+      var sectionItems = sections[s].querySelectorAll(".slash-item");
+      var hasVisible = false;
+      for (var si = 0; si < sectionItems.length; si++) {
+        if (sectionItems[si].style.display !== "none") { hasVisible = true; break; }
+      }
+      sections[s].style.display = hasVisible ? "" : "none";
+    }
+  }
+
+  function getVisibleSlashItems() {
+    var items = slashPopup.querySelectorAll(".slash-item");
+    var visible = [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].style.display !== "none") visible.push(items[i]);
+    }
+    return visible;
+  }
+
+  function selectSlashItem(item) {
+    if (!item) return;
+    var slashValue = item.getAttribute("data-slash");
+    var slashLabel = item.querySelector(".slash-label");
+    var slashIcon = item.querySelector(".slash-icon");
+    var label = slashLabel ? slashLabel.textContent : slashValue;
+    var icon = slashIcon ? slashIcon.textContent : "/";
+
+    // Insert inline badge in contenteditable
+    insertSlashBadge(label, slashValue, icon);
+
+    hideSlashPopup();
+    inputEl.focus();
+  }
+
+  // Detect / trigger in input — listen on the existing input handler
+  var _origInputHandler = inputEl.oninput;
+  inputEl.addEventListener("input", function () {
+    var ctx = getCursorContext();
+    var beforeCursor = ctx.text.substring(0, ctx.cursorPos);
+
+    // Check if / is at start or after a space
+    var slashIdx = beforeCursor.lastIndexOf("/");
+    var shouldShow = false;
+
+    if (slashIdx !== -1) {
+      if (slashIdx === 0 || /[\s\n\u00A0]/.test(beforeCursor[slashIdx - 1])) {
+        var afterSlash = beforeCursor.substring(slashIdx + 1);
+        if (afterSlash.indexOf(" ") === -1) {
+          shouldShow = true;
+          slashFilterText = afterSlash;
+        }
+      }
+    }
+
+    if (shouldShow) {
+      if (!slashVisible) showSlashPopup();
+      else filterSlashItems();
+    } else if (slashVisible) {
+      hideSlashPopup();
+    }
+  });
+
+  // Keyboard navigation for slash popup (added before the existing keydown)
+  inputEl.addEventListener("keydown", function (e) {
+    if (!slashVisible) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var items = getVisibleSlashItems();
+      if (items.length === 0) return;
+      slashActiveIndex = Math.min(slashActiveIndex + 1, items.length - 1);
+      updateSlashActive(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var items2 = getVisibleSlashItems();
+      if (items2.length === 0) return;
+      slashActiveIndex = Math.max(slashActiveIndex - 1, 0);
+      updateSlashActive(items2);
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      var items3 = getVisibleSlashItems();
+      if (items3.length > 0 && slashActiveIndex >= 0) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        selectSlashItem(items3[slashActiveIndex]);
+      } else if (e.key === "Tab" && items3.length > 0) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        selectSlashItem(items3[0]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      hideSlashPopup();
+    }
+  }, true); // capture phase to intercept before other handlers
+
+  function updateSlashActive(items) {
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle("active", i === slashActiveIndex);
+    }
+    // Scroll active into view
+    if (slashActiveIndex >= 0 && items[slashActiveIndex]) {
+      items[slashActiveIndex].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  // Click handler for slash items
+  slashPopup.addEventListener("click", function (e) {
+    var item = e.target.closest ? e.target.closest(".slash-item") : null;
+    if (item) {
+      e.preventDefault();
+      e.stopPropagation();
+      selectSlashItem(item);
+    }
+  });
+
+  // Hide popup on outside click
+  document.addEventListener("click", function (e) {
+    if (slashVisible && !slashPopup.contains(e.target) && e.target !== inputEl) {
+      hideSlashPopup();
+    }
+  });
 })();

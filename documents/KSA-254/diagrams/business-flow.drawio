@@ -1,0 +1,75 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-254: Slash Command Menu — Business Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="420" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="start" value="User focuses&#10;chat input" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="320" y="60" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="type_slash" value="User types /&#10;character" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="160" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="check_pos" value="Valid trigger&#10;position?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="260" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="show_popup" value="Show Slash&#10;Command Popup&#10;(Agents + Steering)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="390" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="no_trigger" value="/ remains as&#10;literal text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="275" width="130" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="filter_type" value="User types&#10;filter text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="500" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="select_check" value="Agent or&#10;Steering?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="600" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="agent_select" value="Insert /agent-name&#10;prefix in textarea" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="120" y="730" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="steering_select" value="Attach steering rule&#10;as context chip" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="480" y="730" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="end" value="User continues&#10;typing message" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="320" y="850" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="dismiss" value="Popup dismissed&#10;(Escape)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="540" y="500" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="start" target="type_slash" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="type_slash" target="check_pos" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="check_pos" target="show_popup" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="check_pos" target="no_trigger" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="show_popup" target="filter_type" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="filter_type" target="select_check" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="Agent" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="select_check" target="agent_select" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" value="Steering" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="select_check" target="steering_select" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="agent_select" target="end" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="steering_select" target="end" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" value="Escape" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="show_popup" target="dismiss" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

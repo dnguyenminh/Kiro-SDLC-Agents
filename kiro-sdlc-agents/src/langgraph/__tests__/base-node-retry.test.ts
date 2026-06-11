@@ -4,6 +4,16 @@
  * backoff timing, and timeout-during-retry behavior.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// Mock vscode module (unavailable outside extension host)
+vi.mock("vscode", () => ({
+  workspace: { workspaceFolders: [], getConfiguration: () => ({ get: () => undefined }) },
+  Uri: { file: (p: string) => ({ fsPath: p }) },
+  FileType: { Directory: 2, File: 1 },
+  window: { tabGroups: { all: [] } },
+  languages: { getDiagnostics: () => [] },
+}));
+
 import { BaseNode } from "../nodes/base-node";
 import { StreamHandler } from "../stream-handler";
 import { McpBridge } from "../mcp-bridge";

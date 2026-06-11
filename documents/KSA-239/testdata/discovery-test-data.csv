@@ -1,0 +1,16 @@
+file_path,expected_type,expected_format,expected_ticket,should_discover,reason
+documents/KSA-239/BRD.md,REQUIREMENT,markdown,KSA-239,true,Known document name
+documents/KSA-239/FSD.docx,SPECIFICATION,docx,KSA-239,true,Known document name + office format
+documents/KSA-239/TDD.pdf,ARCHITECTURE,pdf,KSA-239,true,Known document name + pdf
+documents/KSA-239/STP.xlsx,PROCEDURE,xlsx,KSA-239,true,Known document name + excel
+documents/KSA-239/notes.txt,CONTEXT,txt,KSA-239,true,Unknown name defaults to CONTEXT
+documents/KSA-239/meeting-minutes.docx,CONTEXT,docx,KSA-239,true,Unknown name defaults to CONTEXT
+documents/KSA-239/api-spec.yaml,CONTEXT,yaml,KSA-239,true,Unknown name + text format
+documents/KSA-239/config.json,CONTEXT,json,KSA-239,true,Text format
+documents/KSA-239/diagrams/arch.drawio,,,KSA-239,false,diagrams/ excluded
+documents/KSA-239/diagrams/arch.png,,,KSA-239,false,diagrams/ excluded
+documents/KSA-239/testdata/data.csv,,,KSA-239,false,testdata/ excluded
+documents/KSA-239/attachments/spec.pdf,CONTEXT,pdf,KSA-239,true,Other subdirs included
+documents/KSA-239/script.exe,,,KSA-239,false,Extension not in INDEXABLE_EXTENSIONS
+documents/KSA-239/run.sh,,,KSA-239,false,Extension not in INDEXABLE_EXTENSIONS
+documents/PROJ-10/BRD.md,REQUIREMENT,markdown,PROJ-10,true,Different ticket folder

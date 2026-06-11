@@ -1,0 +1,98 @@
+<mxfile host="65bd71144e">
+    <diagram id="sFU0FjuT4Isjr1y3cfbZ" name="Page-1">
+        <mxGraphModel dx="872" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="State Machine: Authentication Lifecycle" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="140" y="10" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="160" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="unauth" value="UNAUTHENTICATED&#10;&#10;- Login Webview shown&#10;- Status: Not Authenticated (red)&#10;- No Bearer token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="120" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="authenticating" value="AUTHENTICATING&#10;&#10;- Login in progress&#10;- Status: Logging in... (yellow)&#10;- Waiting for response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="120" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="authenticated" value="AUTHENTICATED&#10;&#10;- Valid JWT in SecretStorage&#10;- Status: Authenticated (green)&#10;- Bearer token on all requests&#10;- Refresh timer active" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="320" width="220" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="refreshing" value="REFRESHING&#10;&#10;- Refresh in progress&#10;- Status: unchanged (green)&#10;- Transparent to user" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="320" width="220" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="logging_out" value="LOGGING_OUT&#10;&#10;- Logout in progress&#10;- Status: Logging out... (yellow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="500" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_start" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="1" source="start" target="unauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_unauth_auth" value="Submit credentials /&#10;Click SSO" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;" parent="1" source="unauth" target="authenticating" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_auth_success" value="Auth success&#10;→ store tokens" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;" parent="1" source="authenticating" target="authenticated" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_auth_fail" value="Auth failed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="authenticating" target="unauth" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="420" y="260"/>
+                            <mxPoint x="230" y="260"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_authenticated_refresh" value="Timer: expiry - 5min" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;" parent="1" source="authenticated" target="refreshing" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_refresh_success" value="New JWT received" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="refreshing" target="authenticated" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="230" y="290"/>
+                            <mxPoint x="400" y="290"/>
+                            <mxPoint x="400" y="375"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_refresh_fail" value="Refresh failed&#10;(revoked/expired)" style="rounded=1;html=1;fontSize=9;edgeStyle=orthogonalEdgeStyle;" parent="1" target="unauth" edge="1">
+                    <mxGeometry x="-0.25" y="-10" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="170" y="265"/>
+                            <mxPoint x="200" y="265"/>
+                        </Array>
+                        <mxPoint x="170" y="310" as="sourcePoint"/>
+                        <mxPoint x="120" y="220" as="targetPoint"/>
+                        <mxPoint x="-10" y="-10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_authenticated_logout" value="User clicks Logout" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;exitX=0;exitY=1;exitDx=0;exitDy=0;" parent="1" source="authenticated" target="logging_out" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="420" y="460"/>
+                            <mxPoint x="380" y="460"/>
+                            <mxPoint x="380" y="540"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_logout_done" value="Tokens cleared" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" parent="1" source="logging_out" target="unauth" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="230" y="470"/>
+                            <mxPoint x="60" y="470"/>
+                            <mxPoint x="60" y="200"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_401" value="401 from any API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=9;dashed=1;exitX=1;exitY=1;exitDx=0;exitDy=0;" parent="1" source="authenticated" target="unauth" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="680" y="430"/>
+                            <mxPoint x="680" y="60"/>
+                            <mxPoint x="230" y="60"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

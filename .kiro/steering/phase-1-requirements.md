@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Phase 1 Requirements workflow. Activate when SM runs Phase 1 (BA creates BRD).
----
-
 # Phase 1: Requirements (BA → BRD)
 
 ## Prerequisites

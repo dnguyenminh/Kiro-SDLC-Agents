@@ -1,0 +1,20 @@
+query,items,expected_matches,notes
+"",Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Empty returns all
+f,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Files|Folder|Current File,Matches F in Files/Folder/Current File
+fi,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Files|Current File,Subsequence fi
+git,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Git Diff,Exact prefix
+ter,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Terminal|Steering,Subsequence ter
+m,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,MCP|Problems|Terminal,Contains m
+sp,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Spec,Prefix sp
+mcp,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,MCP,Exact match
+xyz,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,,No match
+cur,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Current File,Prefix cur
+steer,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Steering,Prefix steer
+pro,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Problems,Prefix pro
+GIT,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Git Diff,Case insensitive
+FILES,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Files,Case insensitive upper
+gd,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Git Diff,Subsequence g-d
+fo,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Folder,Prefix fo
+cf,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Current File,Subsequence c-f
+verylongquerythatmatchesnothing,Files|Spec,,,Long query no match
+s,Files|Spec|Git Diff|Terminal|Problems|Folder|Current File|Steering|MCP,Spec|Files|Steering|Problems,Contains s

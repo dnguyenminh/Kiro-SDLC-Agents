@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Phase 2 Specification workflow. Activate when SM runs Phase 2 (BA+TA creates FSD).
----
-
 # Phase 2: Specification (BA + TA → FSD)
 
 ## Prerequisites

@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Library/SDK architecture pattern. Activate when SM detects library pattern.
----
-
 # Pattern: Library / SDK
 
 ## Description

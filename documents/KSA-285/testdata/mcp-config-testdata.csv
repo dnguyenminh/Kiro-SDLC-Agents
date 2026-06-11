@@ -1,0 +1,8 @@
+﻿test_case_id,server_name,jira_url,jira_username,jira_token,drawio_path,export_dir,expected_http_code,expected_result,description
+IT-13,jira,https://company.atlassian.net,john@company.com,ATATT3xFfGF0Token123,,, 200,token_configured:true,GET returns masked config
+IT-14,jira,https://company.atlassian.net,john@company.com,ATATT3xFfGF0Token123,,,200,Configuration saved,PUT saves with encryption
+IT-15,jira,https://company.atlassian.net,john@company.com,ATATT3xFfGF0Token123,,,200,status:success,Test connection success (mock OK)
+IT-15,jira,https://company.atlassian.net,john@company.com,InvalidToken,,,200,status:failed,Test connection failure (mock 401)
+E2E-API-10,jira,https://company.atlassian.net,john@company.com,NewToken456,,,200,Configuration saved,Config update lifecycle
+E2E-UI-07,jira,https://company.atlassian.net,john@company.com,ATATT3xToken,,,200,Configuration saved,UI save flow
+E2E-UI-08,jira,not-a-url,john@company.com,token,,,422,,Invalid URL validation

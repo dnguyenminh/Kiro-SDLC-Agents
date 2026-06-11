@@ -1,0 +1,56 @@
+/* Spinner + Working Indicator — KSA-255 */
+
+.spinner-container {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.spinner-container.visible {
+  display: flex;
+}
+
+.spinner-icon {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--vscode-descriptionForeground, #717171);
+  border-top-color: var(--vscode-progressBar-background, #0078d4);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner-text {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #717171);
+  user-select: none;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-icon {
+    animation: none;
+    border: none;
+    width: 8px;
+    height: 8px;
+    background-color: var(--vscode-progressBar-background, #0078d4);
+    border-radius: 50%;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,98 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Context Menu State Machine — KSA-252&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="360" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="370" y="60" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="closed" value="&lt;b&gt;CLOSED&lt;/b&gt;&#10;Menu not visible" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="130" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="open" value="&lt;b&gt;OPEN&lt;/b&gt;&#10;9 items displayed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="250" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="filtering" value="&lt;b&gt;FILTERING&lt;/b&gt;&#10;Fuzzy match active" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="380" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="picker_open" value="&lt;b&gt;PICKER_OPEN&lt;/b&gt;&#10;Secondary panel visible" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="530" y="380" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="badge_inserted" value="&lt;b&gt;BADGE_INSERTED&lt;/b&gt;&#10;Tag added (transient)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="520" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="closed" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_open" value="&quot;#&quot; typed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="closed" target="open" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_filter" value="Type chars" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="open" target="filtering" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_picker" value="Select picker" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="open" target="picker_open" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_instant" value="Select instant" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="open" target="badge_inserted" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="390" y="400"/>
+          <mxPoint x="390" y="480"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_dismiss_open" value="Escape / click-outside" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="open" target="closed" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="520" y="280"/>
+          <mxPoint x="520" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_filter_picker" value="Select picker" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="filtering" target="picker_open" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_filter_badge" value="Select instant" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="filtering" target="badge_inserted" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="160" y="550"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_filter_close" value="Escape" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="filtering" target="closed" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="60" y="410"/>
+          <mxPoint x="60" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_picker_badge" value="Select item" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="picker_open" target="badge_inserted" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="620" y="550"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_picker_close" value="Escape" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="picker_open" target="closed" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="740" y="410"/>
+          <mxPoint x="740" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_badge_close" value="Auto" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="badge_inserted" target="closed" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="390" y="620"/>
+          <mxPoint x="780" y="620"/>
+          <mxPoint x="780" y="100"/>
+          <mxPoint x="390" y="100"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

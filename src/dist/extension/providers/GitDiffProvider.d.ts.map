@@ -1,0 +1,1 @@
+{"version":3,"file":"GitDiffProvider.d.ts","sourceRoot":"","sources":["../../../extension/providers/GitDiffProvider.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAIH,qBAAa,eAAe;IAC1B,OAAO,CAAC,aAAa,CAAS;gBAElB,aAAa,EAAE,MAAM;IAI3B,OAAO,IAAI,OAAO,CAAC,MAAM,CAAC;CAcjC"}

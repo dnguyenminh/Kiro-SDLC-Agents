@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — Context Menu (KSA-252)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ctrl_comp" value="&lt;b&gt;ContextMenuController&lt;/b&gt;&#10;state: ContextMenuState&#10;filterText: string&#10;highlightIndex: number&#10;---&#10;open() / close()&#10;filter(text)&#10;openPicker(item)&#10;selectInstant(item)&#10;handleKeyDown(e)&#10;handleEscape()" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="60" width="200" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="view_comp" value="&lt;b&gt;ContextMenuView&lt;/b&gt;&#10;container: HTMLElement&#10;itemElements: Map&#10;---&#10;render(items)&#10;highlight(index)&#10;show() / hide()&#10;showPicker(type)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="320" y="60" width="180" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="fuzzy_comp" value="&lt;b&gt;FuzzyFilter&lt;/b&gt;&#10;---&#10;filter(items, query)&#10;fuzzyMatch(target, query)&#10;  : { match, score }" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="560" y="60" width="180" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="badge_comp" value="&lt;b&gt;BadgeManager&lt;/b&gt;&#10;badges: Map&lt;id, Badge&gt;&#10;---&#10;insert(badge)&#10;remove(id)&#10;getAll(): Badge[]&#10;resolveAll(): Promise" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="290" width="180" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="badge_render" value="&lt;b&gt;BadgeRenderer&lt;/b&gt;&#10;---&#10;createBadgeElement(badge)&#10;removeBadgeElement(id)&#10;getIcon(type)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="300" y="290" width="180" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="bridge_comp" value="&lt;b&gt;MessageBridge&lt;/b&gt;&#10;pendingRequests: Map&#10;defaultTimeout: 3000&#10;---&#10;request&lt;T&gt;(msg, timeout)&#10;handleResponse(event)&#10;getFileTree()&#10;getSpecList()&#10;resolveGitDiff()" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="480" width="180" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="picker_comp" value="&lt;b&gt;PickerPanel&lt;/b&gt;&#10;---&#10;render(data)&#10;filterItems(query)&#10;handleSelect(item)&#10;---&#10;&lt;i&gt;FilePicker extends&lt;/i&gt;&#10;&lt;i&gt;FolderPicker extends&lt;/i&gt;&#10;&lt;i&gt;ListPicker extends&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="540" y="220" width="180" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="resolver_comp" value="&lt;b&gt;ContextResolverProvider&lt;/b&gt;&#10;(Extension Host)&#10;---&#10;handleMessage(req)&#10;dispose()&#10;---&#10;FileTreeProvider&#10;GitDiffProvider&#10;TerminalProvider&#10;DiagnosticsProvider&#10;SpecProvider&#10;SteeringProvider&#10;McpProvider" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="320" y="440" width="180" height="200" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ctrl_comp" target="view_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ctrl_comp" target="fuzzy_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ctrl_comp" target="badge_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="badge_comp" target="badge_render" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ctrl_comp" target="bridge_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="view_comp" target="picker_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="postMessage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="bridge_comp" target="resolver_comp" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

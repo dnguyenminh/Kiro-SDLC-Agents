@@ -1,0 +1,11 @@
+﻿test_case_id,entry_id,quality_score,tags,reviewed_by,referenced_by_projects,admin_promoted,target_tier,expected_result,description
+UT-11,kb-007,0.85,["project-relevant"],["user-002"],,false,2,eligible,All criteria met for User->Project
+UT-11,kb-002,0.45,["wip"],[],,,2,not_eligible,Low quality score
+UT-11,kb-001,0.85,["authentication"],["user-002"],,false,2,not_eligible,Missing project-relevant tag
+UT-11,kb-007,0.85,["project-relevant"],[],,,2,not_eligible,No peer review
+UT-12,kb-008,0.85,["architecture"],,["proj-frontend","proj-backend","proj-mobile"],false,3,eligible,Referenced by 3+ projects
+UT-12,kb-004,0.90,["best-practice"],,["proj-frontend"],false,3,eligible,Has best-practice tag
+UT-12,kb-004,0.90,["architecture"],,["proj-frontend"],true,3,eligible,Admin promoted flag
+UT-12,kb-005,0.88,["api"],,["proj-backend"],false,3,not_eligible,Only 1 project ref no tag no admin
+IT-11,kb-001,0.85,["authentication","project-relevant"],["user-002"],,false,2,promoted,Manual promotion via API
+E2E-API-08,kb-001,0.85,[],[],,false,2,promoted,E2E manual promotion test

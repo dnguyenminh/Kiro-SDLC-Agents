@@ -1,0 +1,19 @@
+test_id,request_type,request_payload,expected_response_type,expected_data_shape,timeout_ms
+E2E-API-01,getWorkspaceFileTree,,workspaceFileTree,FileTreeNode[] (non-empty),3000
+E2E-API-02,getSpecList,,specList,string[] with spec names,1000
+E2E-API-03,resolveSpecContent,specName:"chatbox-ui",specContent,{requirements:string|design:string|tasks:string},2000
+E2E-API-04,getWorkspaceFolderTree,,workspaceFolderTree,FolderTreeNode[],3000
+E2E-API-05,getSteeringFiles,,steeringFiles,string[] (>=1 items),1000
+E2E-API-06,resolveGitDiff,,gitDiff,string (diff output),3000
+E2E-API-07,resolveTerminalOutput,lines:100,terminalOutput,string,1000
+E2E-API-08,resolveDiagnostics,,diagnostics,DiagnosticItem[],500
+E2E-API-09,resolveFileContent,paths:["src/index.ts"],fileContent,[{path:string|content:string}],3000
+E2E-API-10,resolveSteeringContent,fileName:"sm-core",steeringContent,string (non-empty markdown),1000
+E2E-API-11,resolveFolderListing,folderPath:"src",folderListing,string[] (file paths),3000
+E2E-API-12,getMcpResources,,mcpResources,McpResourceItem[],5000
+E2E-API-13,resolveMcpResource,server:"test"|resource:"tool1",mcpResourceContent,string,5000
+E2E-API-14,resolveGitDiff,(no .git/ workspace),error,message contains "git",3000
+E2E-API-15,resolveTerminalOutput,(no active terminal),error,message contains "terminal",1000
+E2E-API-16,getMcpResources,(no mcp.json),mcpResources,[] (empty array),5000
+E2E-API-17,resolveFileContent,paths:["nonexist.ts"],error,message contains "not found",3000
+E2E-API-18,getActiveFileName,(no open file),activeFileName,null,100

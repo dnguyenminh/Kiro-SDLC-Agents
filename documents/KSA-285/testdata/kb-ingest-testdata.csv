@@ -1,0 +1,9 @@
+﻿test_case_id,tier,project_id,content,tags,actor_role,actor_projects,expected_http_code,expected_error_code,description
+IT-06,1,,JWT auth pattern for testing tier isolation,["authentication"],user,["proj-frontend"],200,,Default tier 1 ingest
+IT-07,2,proj-frontend,Architecture decision for frontend,["architecture"],user,["proj-frontend"],200,,Project ingest as member
+IT-07,2,proj-backend,Attempt to ingest to non-member project,["api"],user,["proj-frontend"],403,KB_PROJECT_NOT_MEMBER,Non-member project rejection
+IT-08,3,,Best practice entry by admin,["best-practice"],admin,["proj-frontend"],200,,Admin tier 3 ingest
+IT-08,3,,Attempt tier 3 by regular user,["best-practice"],user,["proj-frontend"],403,KB_ACCESS_DENIED,Non-admin tier 3 rejection
+E2E-API-12,1,,short,["test"],user,["proj-frontend"],422,KB_CONTENT_TOO_SHORT,Content < 10 chars
+E2E-API-12,1,,This is valid content for KB,["test"],user,["proj-frontend"],200,,Content >= 10 chars
+E2E-API-13,1,,Entry exceeding capacity,["test"],user,["proj-frontend"],507,KB_CAPACITY_EXCEEDED,User at 10000 entry limit

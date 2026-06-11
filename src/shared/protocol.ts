@@ -1,6 +1,8 @@
 /**
- * Shared types for webview ↔ extension host communication
+ * Shared types for webview <-> extension host communication
  * KSA-252: Context Menu ("#" Trigger)
+ * KSA-255: Spinner + Working Indicator
+ * KSA-259: Interactive Options
  */
 
 export type ContextSourceType =
@@ -69,7 +71,28 @@ export interface DiagnosticItem {
   source?: string;
 }
 
-// Webview → Extension Host (Requests)
+// KSA-255: Processing state signal (Extension Host -> Webview)
+export interface ChatProcessingSignal {
+  type: 'chat:processing';
+  state: 'start' | 'stop';
+  reason?: 'complete' | 'cancelled' | 'error' | 'timeout';
+}
+
+// KSA-259: Interactive Options signal (Extension Host -> Webview)
+export interface ChatOptionsSignal {
+  type: 'chat:options';
+  options: string[];
+  question?: string;
+}
+
+// KSA-259: Chat response (Webview -> Extension Host)
+export interface ChatResponseMessage {
+  type: 'chat:response';
+  text: string;
+  source: 'option-click' | 'text-input';
+}
+
+// Webview -> Extension Host (Requests)
 export type ContextRequest =
   | { type: 'getWorkspaceFileTree'; requestId?: string }
   | { type: 'getSpecList'; requestId?: string }
@@ -86,7 +109,7 @@ export type ContextRequest =
   | { type: 'resolveMcpResource'; server: string; resource: string; requestId?: string }
   | { type: 'resolveFolderListing'; folderPath: string; requestId?: string };
 
-// Extension Host → Webview (Responses)
+// Extension Host -> Webview (Responses)
 export type ContextResponse =
   | { type: 'workspaceFileTree'; data: FileTreeNode[]; requestId: string }
   | { type: 'specList'; data: string[]; requestId: string }

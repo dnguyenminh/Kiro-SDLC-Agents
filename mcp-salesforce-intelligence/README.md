@@ -134,6 +134,13 @@ Test coverage includes:
 
 ---
 
+
+## Trademarks
+
+- "Kiro" is a trademark of Amazon Web Services, Inc. This project is designed to work with the Kiro IDE but is not affiliated with, endorsed by, or sponsored by Amazon.
+- "Salesforce", "Apex", "SFDX", and "Lightning Web Components" are trademarks of Salesforce, Inc.
+- All other trademarks are the property of their respective owners.
+
 ## License
 
 MIT

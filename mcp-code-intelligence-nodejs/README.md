@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge" alt="Node.js">
   <img src="https://img.shields.io/badge/transport-stdio-orange?style=for-the-badge" alt="Transport">
   <img src="https://img.shields.io/badge/MCP_Tools-60+-teal?style=for-the-badge" alt="Tools">
-  <img src="https://img.shields.io/badge/Salesforce-supported-00A1E0?style=for-the-badge" alt="Salesforce">
+  <img src="https://img.shields.io/badge/Salesforce-compatible-00A1E0?style=for-the-badge" alt="Salesforce Compatible">
 </p>
 
 Standalone MCP server providing local code intelligence via SQLite FTS5 full-text search, ONNX embeddings, Tree-sitter AST parsing, call graph analysis, **Salesforce Intelligence** (Apex/Flow/Object/LWC), and 30+ memory/KB tools.
@@ -149,6 +149,13 @@ TypeScript, JavaScript, Kotlin, Java, Python, Go, Rust, C/C++, C#, Ruby, PHP, Sw
 SQLite database stored at `{workspace}/.code-intel/index.db` with WAL mode. Schema is cross-compatible with the Python and Kotlin variants - all three can read/write the same database.
 
 ---
+
+
+## Trademarks
+
+- "Kiro" is a trademark of Amazon Web Services, Inc. This project is designed to work with the Kiro IDE but is not affiliated with, endorsed by, or sponsored by Amazon.
+- "Salesforce" and "Apex" are trademarks of Salesforce, Inc.
+- All other trademarks are the property of their respective owners.
 
 ## License
 

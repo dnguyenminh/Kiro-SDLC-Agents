@@ -1,0 +1,13 @@
+{
+  "ticket": "KSA-260",
+  "summary": "Chuyển MCP server từ child process (spawn) sang in-process trong extension host",
+  "currentPhase": "implementation",
+  "architecturePattern": "plugin",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-06-10T00:00:00Z" },
+    "specification": { "status": "skipped", "reason": "Technical refactor - clear scope" },
+    "design": { "status": "skipped", "reason": "Technical refactor - clear scope" },
+    "implementation": { "status": "in_progress", "startedAt": "2026-06-10T00:00:00Z" }
+  },
+  "lastUpdated": "2026-06-10T00:00:00Z"
+}

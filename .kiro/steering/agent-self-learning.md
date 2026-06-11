@@ -1,4 +1,5 @@
 ---
+name: agent-self-learning
 description: Quy tắc self-learning cho tất cả agents. Agents phải search KB trước khi làm task, và ingest kinh nghiệm mới vào KB sau khi hoàn thành.
 inclusion: auto
 ---

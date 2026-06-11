@@ -1,0 +1,195 @@
+<mxGraphModel dx="1400" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1200">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence Diagram — MCP Tool Proxy Call (3 File Patterns)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_agent" value="&lt;b&gt;IDE Agent&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_ext" value="&lt;b&gt;Extension&lt;br&gt;(Proxy + File Gateway)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="50" width="160" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_fs" value="&lt;b&gt;Workspace&lt;br&gt;File System&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="530" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_backend" value="&lt;b&gt;Backend&lt;br&gt;MCP Server&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="740" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="life_agent" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="90" as="sourcePoint"/>
+        <mxPoint x="120" y="1150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="life_ext" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="90" as="sourcePoint"/>
+        <mxPoint x="360" y="1150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="life_fs" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="90" as="sourcePoint"/>
+        <mxPoint x="590" y="1150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="life_backend" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="800" y="90" as="sourcePoint"/>
+        <mxPoint x="800" y="1150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="sep1" value="&lt;b&gt;PATTERN 1: File Input&lt;/b&gt; (mem_ingest_file, drawio_auto_layout)" style="text;html=1;align=left;verticalAlign=middle;fillColor=#e1d5e7;strokeColor=#9673a6;rounded=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="110" width="400" height="25" as="geometry"/>
+    </mxCell>
+    <mxCell id="p1_m1" value="1. call mem_ingest_file(file_path=&quot;docs/BRD.md&quot;)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="155" as="sourcePoint"/>
+        <mxPoint x="360" y="155" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m2" value="2. detect file_path param, read file" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#9673a6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="185" as="sourcePoint"/>
+        <mxPoint x="590" y="185" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m3" value="3. file content (UTF-8 or Base64)" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#9673a6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="215" as="sourcePoint"/>
+        <mxPoint x="360" y="215" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m4" value="4. validate size &lt; 10MB" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="365" y="240" as="sourcePoint"/>
+        <mxPoint x="420" y="240" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m5" value="5. POST /mcp/tools/call {file_path, __file_content, __file_encoding}" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="270" as="sourcePoint"/>
+        <mxPoint x="800" y="270" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m6" value="6. process content (no FS access)" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="805" y="295" as="sourcePoint"/>
+        <mxPoint x="860" y="295" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m7" value="7. HTTP 200 {content, isError: false}" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="800" y="325" as="sourcePoint"/>
+        <mxPoint x="360" y="325" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p1_m8" value="8. return result" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="355" as="sourcePoint"/>
+        <mxPoint x="120" y="355" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="sep2" value="&lt;b&gt;PATTERN 2: File Output&lt;/b&gt; (stream_write_file, drawio_export_png)" style="text;html=1;align=left;verticalAlign=middle;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="390" width="400" height="25" as="geometry"/>
+    </mxCell>
+    <mxCell id="p2_m1" value="1. call drawio_export_png(file_path=&quot;diag/arch.drawio&quot;, output=&quot;diag/arch.png&quot;)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="435" as="sourcePoint"/>
+        <mxPoint x="360" y="435" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m2" value="2. read input file (if needed)" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#9673a6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="465" as="sourcePoint"/>
+        <mxPoint x="590" y="465" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m3" value="3. file content (base64)" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#9673a6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="495" as="sourcePoint"/>
+        <mxPoint x="360" y="495" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m4" value="4. POST /mcp/tools/call {file_path, __file_content, output_path}" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="525" as="sourcePoint"/>
+        <mxPoint x="800" y="525" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m5" value="5. generate output (e.g. PNG)" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="805" y="555" as="sourcePoint"/>
+        <mxPoint x="860" y="555" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m6" value="6. HTTP 200 {content, __file_output: {path, data(base64), encoding}}" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="800" y="590" as="sourcePoint"/>
+        <mxPoint x="360" y="590" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m7" value="7. write output file to workspace" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="625" as="sourcePoint"/>
+        <mxPoint x="590" y="625" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m8" value="8. write OK" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="590" y="655" as="sourcePoint"/>
+        <mxPoint x="360" y="655" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p2_m9" value="9. return result (success + path)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="685" as="sourcePoint"/>
+        <mxPoint x="120" y="685" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="sep3" value="&lt;b&gt;PATTERN 3: Text Only&lt;/b&gt; (mem_search, code_search, find_tools — majority)" style="text;html=1;align=left;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="720" width="430" height="25" as="geometry"/>
+    </mxCell>
+    <mxCell id="p3_m1" value="1. call mem_search(query=&quot;auth flow&quot;, limit=5)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="770" as="sourcePoint"/>
+        <mxPoint x="360" y="770" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p3_m2" value="2. POST /mcp/tools/call {tool_name, arguments} (forward as-is)" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="805" as="sourcePoint"/>
+        <mxPoint x="800" y="805" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p3_m3" value="3. execute tool handler" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="805" y="835" as="sourcePoint"/>
+        <mxPoint x="860" y="835" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p3_m4" value="4. HTTP 200 {content: [...], isError: false}" style="html=1;endArrow=classic;endSize=6;fontSize=10;strokeWidth=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="800" y="870" as="sourcePoint"/>
+        <mxPoint x="360" y="870" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="p3_m5" value="5. return result (unchanged)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="905" as="sourcePoint"/>
+        <mxPoint x="120" y="905" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note_rules" value="&lt;b&gt;Design Rules:&lt;/b&gt;&lt;br&gt;- All paths RELATIVE from workspace root&lt;br&gt;- Binary files: Base64 in JSON (MCP compatible)&lt;br&gt;- Text files: UTF-8 string&lt;br&gt;- Size limit: 10MB max (reject with error)&lt;br&gt;- Extension resolves relative path to absolute&lt;br&gt;- Backend NEVER accesses filesystem directly" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="920" y="110" width="280" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_tools" value="&lt;b&gt;Tool Classification:&lt;/b&gt;&lt;br&gt;Pattern 1 (Input): mem_ingest_file, drawio_auto_layout&lt;br&gt;Pattern 2 (Output): stream_write_file&lt;br&gt;Pattern 1+2 (Both): drawio_export_png, export_docx&lt;br&gt;Pattern 3 (Text): 44+ remaining tools" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="920" y="260" width="280" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_error" value="&lt;b&gt;Error Cases:&lt;/b&gt;&lt;br&gt;- File not found: return isError immediately&lt;br&gt;- File &gt; 10MB: ERR-011 Size limit exceeded&lt;br&gt;- Write fails: return isError with details&lt;br&gt;- Binary detect: check file extension" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="920" y="390" width="280" height="100" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

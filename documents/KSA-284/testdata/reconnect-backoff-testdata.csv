@@ -1,0 +1,13 @@
+﻿test_case_id,attempt_number,expected_delay_ms,expected_state,description
+PBT-03,1,1000,CONNECTING,First retry - 1s
+PBT-03,2,2000,CONNECTING,Second retry - 2s
+PBT-03,3,4000,CONNECTING,Third retry - 4s
+PBT-03,4,8000,CONNECTING,Fourth retry - 8s
+PBT-03,5,16000,CONNECTING,Fifth retry - 16s
+PBT-03,6,30000,CONNECTING,Sixth retry - capped at 30s
+PBT-03,7,30000,CONNECTING,Seventh retry - stays at 30s
+PBT-03,100,30000,DISCONNECTED,100th attempt - max reached stop
+UT-03,1,1000,DISCONNECTED,Health fail triggers reconnect
+E2E-UI-08,1,1000,CONNECTING,First reconnect attempt
+E2E-UI-08,2,2000,CONNECTING,Second reconnect attempt
+E2E-API-11,1,500,CONNECTING,Poll every 500ms during startup

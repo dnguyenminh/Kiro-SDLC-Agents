@@ -1,0 +1,169 @@
+<mxfile host="65bd71144e">
+    <diagram id="iAXrLZuk5zTsAOBlvsBb" name="Page-1">
+        <mxGraphModel dx="1095" dy="843" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="KSA-284: Split Architecture — Extension + Backend" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="400" y="20" width="500" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Developer Machine" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#666666;fontSize=14;fontStyle=1;verticalAlign=top;align=left;spacingLeft=10;arcSize=5" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="1520" height="1080" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="VS Code / Kiro IDE Process" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;verticalAlign=top;align=center" parent="1" vertex="1">
+                    <mxGeometry x="80" y="120" width="620" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Extension Host (Lightweight Proxy &lt;5MB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;verticalAlign=top" parent="1" vertex="1">
+                    <mxGeometry x="120" y="170" width="540" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="ConnectionManager&#10;- Health check polling (5s)&#10;- Exponential backoff reconnect&#10;- Backend process spawn" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="400" y="220" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="ToolProxy&#10;- Register 52 MCP tools&#10;- Serialize → HTTP POST&#10;- Forward response as-is" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="400" y="530" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="WebviewManager&#10;- Dashboard, KB Graph&#10;- Analytics, Tags, Quality&#10;- HTML/CSS/JS bundled locally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="400" y="380" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="StatusBarManager&#10;- Connected (green)&#10;- Disconnected (red)&#10;- Connecting (yellow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="140" y="530" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="ConfigurationManager&#10;- Port, host, autoStart&#10;- Health interval, timeout&#10;- Compat version range" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="140" y="380" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="HttpClient&#10;- fetch() to localhost&#10;- Timeout handling&#10;- JSON serialization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="130" y="220" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="Backend MCP Server Process (standalone, ~250MB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;verticalAlign=top;align=center" parent="1" vertex="1">
+                    <mxGeometry x="800" y="120" width="740" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="HTTP Server (Hono)&#10;Port 48721 — 127.0.0.1 only&#10;&#10;GET  /health&#10;GET  /mcp/tools/list&#10;POST /mcp/tools/call&#10;GET  /api/* (webview data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="840" y="170" width="300" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="ToolRouter&#10;Route tool_name → Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=center" parent="1" vertex="1">
+                    <mxGeometry x="1180" y="200" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="MemoryModule&#10;- SQLite + better-sqlite3&#10;- ONNX embeddings&#10;- mem_* (17 tools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="840" y="340" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="CodeIntelModule&#10;- AST indexing&#10;- Symbol search&#10;- code_* (25 tools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="340" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="OrchestrationModule&#10;- Child server management&#10;- stdio JSON-RPC&#10;- orchestration_* (6 tools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="1320" y="340" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="AnalyticsModule&#10;- Quality scoring&#10;- Timeline data&#10;- analytics/quality endpoints" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="840" y="460" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="KBGraphModule&#10;- Knowledge graph&#10;- Node/edge queries&#10;- kb graph endpoints" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="1080" y="460" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="UtilityModule&#10;- agent_log&#10;- stream_write_file&#10;- drawio_* (4 tools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10" parent="1" vertex="1">
+                    <mxGeometry x="1320" y="460" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="SQLite DB&#10;(.code-intel/index.db)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11" parent="1" vertex="1">
+                    <mxGeometry x="880" y="600" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="ONNX Model&#10;(models/model.onnx)" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=0.1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11" parent="1" vertex="1">
+                    <mxGeometry x="1060" y="600" width="140" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="Child MCP Servers (stdio)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;fontStyle=1;verticalAlign=top" parent="1" vertex="1">
+                    <mxGeometry x="840" y="720" width="540" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="Atlassian&#10;(Jira)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#d79b00;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="870" y="760" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="Markdown&#10;Exporter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#d79b00;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="990" y="760" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="Stitch&#10;(Firebase)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#d79b00;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="1110" y="760" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="Chrome&#10;DevTools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#d79b00;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="1230" y="760" width="100" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="HTTP POST /mcp/tools/call" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0000FF;strokeWidth=2;fontSize=10;fontColor=#0000FF" parent="1" source="7" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="770" y="575"/>
+                            <mxPoint x="770" y="270"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="41" value="HTTP GET /health" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#009900;strokeWidth=2;fontSize=10;fontColor=#009900" parent="1" source="6" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="710" y="265"/>
+                            <mxPoint x="710" y="190"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="42" value="HTTP GET /api/*" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#CC6600;strokeWidth=2;fontSize=10;fontColor=#CC6600;exitX=1;exitY=0.5;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="8" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="740" y="425"/>
+                            <mxPoint x="740" y="235"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="43" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333" parent="1" source="21" target="22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333" parent="1" source="22" target="23" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1210" y="310"/>
+                            <mxPoint x="940" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="45" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333" parent="1" source="22" target="24" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1280" y="300"/>
+                            <mxPoint x="1240" y="300"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="46" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333" parent="1" source="22" target="25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="47" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666666;dashed=1" parent="1" source="23" target="30" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1050" y="385"/>
+                            <mxPoint x="1050" y="580"/>
+                            <mxPoint x="950" y="580"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="48" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666666;dashed=1" parent="1" source="23" target="31" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1070" y="385"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="49" value="stdio JSON-RPC" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#CC6600;dashed=1;fontSize=10" parent="1" source="25" target="32" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1300" y="385"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="50" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11" parent="1" vertex="1">
+                    <mxGeometry x="60" y="970" width="30" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" value="IDE Agent (AI)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11" parent="1" vertex="1">
+                    <mxGeometry x="200" y="970" width="30" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;entryX=0.3;entryY=1" parent="1" source="50" target="4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="53" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;entryX=0.5;entryY=1" parent="1" source="51" target="4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

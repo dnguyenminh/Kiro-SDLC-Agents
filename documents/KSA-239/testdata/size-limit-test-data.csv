@@ -1,0 +1,15 @@
+format,size_bytes,size_description,expected_too_large,boundary_type,test_case_ref
+pdf,52428800,50MB exact,false,at_limit,UT-017
+pdf,52428801,50MB + 1 byte,true,over_limit,UT-017
+pdf,51380224,49MB,false,under_limit,UT-017
+pdf,0,0 bytes,false,minimum,PBT-004
+pdf,104857600,100MB,true,well_over,IT-007
+png,20971520,20MB exact,false,at_limit,UT-018
+png,20971521,20MB + 1 byte,true,over_limit,UT-018
+png,19922944,19MB,false,under_limit,UT-018
+jpg,20971520,20MB exact,false,at_limit,UT-018
+jpg,20971521,20MB + 1 byte,true,over_limit,UT-018
+docx,52428800,50MB exact (default limit),false,at_limit,general
+docx,52428801,50MB + 1 byte,true,over_limit,general
+txt,52428800,50MB text file,false,at_limit,general
+xlsx,52428800,50MB excel,false,at_limit,general

@@ -1,0 +1,72 @@
+{
+  "name": "code-intel-extension",
+  "displayName": "Code Intelligence",
+  "description": "Lightweight proxy extension for Code Intelligence Backend MCP Server",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.85.0" },
+  "main": "./dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "configuration": {
+      "title": "Code Intelligence Backend",
+      "properties": {
+        "codeIntel.backend.port": {
+          "type": "number",
+          "default": 48721,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port for Backend MCP Server"
+        },
+        "codeIntel.backend.host": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host for Backend MCP Server (localhost only)"
+        },
+        "codeIntel.backend.backendPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Backend server entry point"
+        },
+        "codeIntel.backend.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-start Backend on activation"
+        },
+        "codeIntel.backend.healthCheckInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Health check polling interval (ms)"
+        },
+        "codeIntel.backend.startupTimeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 120000,
+          "description": "Max time to wait for Backend startup (ms)"
+        }
+      }
+    },
+    "commands": [
+      { "command": "codeIntel.reconnect", "title": "Code Intel: Reconnect to Backend" },
+      { "command": "codeIntel.disconnect", "title": "Code Intel: Disconnect from Backend" },
+      { "command": "codeIntel.showConnectionStatus", "title": "Code Intel: Show Connection Status" },
+      { "command": "codeIntel.openDashboard", "title": "Code Intel: Open Dashboard" },
+      { "command": "codeIntel.openKbGraph", "title": "Code Intel: Open KB Graph" },
+      { "command": "codeIntel.openAnalytics", "title": "Code Intel: Open Analytics" },
+      { "command": "codeIntel.openTags", "title": "Code Intel: Open Tags" },
+      { "command": "codeIntel.openQuality", "title": "Code Intel: Open Quality" }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run build -- --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.5.0"
+  }
+}

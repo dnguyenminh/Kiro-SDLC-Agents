@@ -1,0 +1,33 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="2" value="Test Coverage Overview — KSA-252 Context Menu" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="150" y="20" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="10" value="PBT&#xa;12 Cases&#xa;100% Auto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="80" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="11" value="Unit Test&#xa;45 Cases&#xa;100% Auto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="12" value="Integration&#xa;30 Cases&#xa;100% Auto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="360" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="13" value="E2E-API&#xa;18 Cases&#xa;100% Auto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="500" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="14" value="E2E-UI&#xa;24 Cases&#xa;90% Auto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="640" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="15" value="SIT&#xa;8 Cases&#xa;90% Manual" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="780" y="80" width="120" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="16" value="Total: 137 Cases | 92% Automated | 8% Manual" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="170" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="40" value="RTM Coverage: 33/33 AC + 5 NFRs = 100%" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="250" y="210" width="400" height="40" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

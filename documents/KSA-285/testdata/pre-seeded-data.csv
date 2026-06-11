@@ -1,0 +1,9 @@
+﻿id,tier,owner_id,project_id,content,tags,quality_score,ttl_days,promoted,description
+kb-001,1,user-001,,JWT auth pattern for VS Code extensions,["authentication","pattern"],0.85,7,false,User KB entry for search tests
+kb-002,1,user-001,,WIP draft notes on KB architecture,["wip","draft"],0.45,7,false,Low quality entry (not promotable)
+kb-003,1,user-002,,Another user private entry,["private"],0.60,7,false,User B entry for isolation tests
+kb-004,2,user-001,proj-frontend,Architecture decision: event sourcing for KB,["architecture","decision","project-relevant"],0.90,,false,Project KB entry
+kb-005,2,user-002,proj-backend,API design patterns for Hono framework,["api","pattern"],0.88,,false,Different project entry
+kb-006,3,admin-001,,Best practice: always use parameterized queries,["best-practice","security"],0.95,,false,Shared KB entry visible to all
+kb-007,1,user-001,,High quality reviewed entry for promotion test,["project-relevant"],0.92,7,false,Promotion candidate (needs reviewed_by)
+kb-008,2,user-001,proj-frontend,Entry referenced by multiple projects,["architecture"],0.85,,false,Cross-project reference candidate

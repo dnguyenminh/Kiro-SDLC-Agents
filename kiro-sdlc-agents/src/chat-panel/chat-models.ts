@@ -19,6 +19,7 @@ export type ChatProvider = "anthropic" | "openai" | "ollama" | "onnx";
 /** Default model id per provider (used when no override is configured). */
 export const DEFAULT_MODELS: Record<string, string> = {
   anthropic: "claude-sonnet-4-20250514",
+  kiro: "auto",
   openai: "gpt-4o",
   ollama: "llama3.1",
   onnx: "phi-3-mini",
@@ -26,6 +27,17 @@ export const DEFAULT_MODELS: Record<string, string> = {
 
 /** Available models per provider — static catalog (fallback when gateway is unreachable). */
 export const AVAILABLE_MODELS: Record<string, ChatModelEntry[]> = {
+  kiro: [
+    { id: "auto", name: "Auto" },
+    { id: "claude-opus-4-8", name: "Claude Opus 4.8", rateMultiplier: 2.2 },
+    { id: "claude-opus-4-7", name: "Claude Opus 4.7", rateMultiplier: 2.2 },
+    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", rateMultiplier: 1.3 },
+    { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5", rateMultiplier: 1.3 },
+    { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", rateMultiplier: 1.3 },
+    { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", rateMultiplier: 0.4 },
+    { id: "deepseek-v3-2", name: "Deepseek v3.2", rateMultiplier: 0.25 },
+    { id: "minimax-m2-5", name: "MiniMax M2.5", rateMultiplier: 0.25 },
+  ],
   anthropic: [
     { id: "claude-opus-4-8", name: "Claude Opus 4.8", rateMultiplier: 2.2 },
     { id: "claude-opus-4-7", name: "Claude Opus 4.7", rateMultiplier: 2.2 },

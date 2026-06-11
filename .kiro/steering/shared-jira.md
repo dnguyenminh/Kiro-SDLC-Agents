@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Jira integration rules for SDLC pipeline. Activate when working with Jira tickets.
----
-
 # Shared: Jira Integration Rules
 
 ## Transition Timing

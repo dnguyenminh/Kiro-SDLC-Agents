@@ -1,0 +1,21 @@
+scenario_id,action,badge_type,badge_label,metadata,expected_count,notes
+BS-01,insert,files,"#File: src/app.ts",filePaths:["src/app.ts"],1,Single file badge
+BS-02,insert,spec,"#Spec: chatbox-ui",specName:"chatbox-ui",1,Spec badge
+BS-03,insert,git-diff,"#Git Diff",,1,Instant git diff
+BS-04,insert,terminal,"#Terminal",,1,Instant terminal
+BS-05,insert,problems,"#Problems",,1,Instant problems
+BS-06,insert,folder,"#Folder: src/components",folderPath:"src/components",1,Folder badge
+BS-07,insert,current-file,"#Current File: index.ts",activeFileName:"index.ts",1,Current file
+BS-08,insert,steering,"#Steering: sm-core",steeringFile:"sm-core",1,Steering badge
+BS-09,insert,mcp,"#MCP: code_search",mcpServer:"local"|mcpResource:"code_search",1,MCP badge
+BS-10,insert_multi,files,"#File: a.ts|#File: b.ts",filePaths:["a.ts"|"b.ts"],2,Multi-file
+BS-11,remove,git-diff,"#Git Diff",,0,Remove by ID
+BS-12,remove_backspace,terminal,"#Terminal",,0,Remove via backspace
+BS-13,remove_click_x,problems,"#Problems",,0,Remove via X button
+BS-14,insert_then_remove,files,"#File: test.ts",filePaths:["test.ts"],0,Insert then remove
+BS-15,clear_all,,,,,Clear all badges
+BS-16,max_limit,files,20x "#File: file{n}.ts",,20,20 badges max
+BS-17,over_max,files,25x "#File: file{n}.ts",,20,Capped at 20
+BS-18,duplicate_type,files,"#File: a.ts|#File: b.ts",,2,Same type different paths OK
+BS-19,submit_with_badges,git-diff|terminal|problems,,3,All contexts included on submit
+BS-20,remove_middle,files|git-diff|terminal,,2,Remove middle badge keeps others

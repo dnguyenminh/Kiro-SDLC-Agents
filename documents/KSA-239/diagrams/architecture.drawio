@@ -1,0 +1,60 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="KSA-239 Architecture — Multi-format Indexing Pipeline" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="cmd" value="Command Handler&#xa;(VS Code)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="50" y="80" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="disc" value="File Discovery&#xa;(discoverDocuments)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="80" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="router" value="Format Router" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="450" y="70" width="120" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="md_path" value="Markdown&#xa;(pass-through)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="200" width="110" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="txt_path" value="Text Formats&#xa;(read UTF-8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="480" y="200" width="110" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="bin_path" value="Binary Formats&#xa;(filetomarkdown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="610" y="200" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="ingest" value="HTTP Ingest&#xa;(MCP Server API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="450" y="310" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="kb" value="Knowledge Base&#xa;(Semantic Search)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="450" y="420" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="cmd" target="disc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" edge="1" parent="1" source="disc" target="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value=".md" edge="1" parent="1" source="router" target="md_path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value=".txt/.csv/.json" edge="1" parent="1" source="router" target="txt_path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value=".docx/.pdf/.png" edge="1" parent="1" source="router" target="bin_path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="md_path" target="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="txt_path" target="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" edge="1" parent="1" source="bin_path" target="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" edge="1" parent="1" source="ingest" target="kb" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

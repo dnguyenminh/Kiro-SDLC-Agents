@@ -1,0 +1,1 @@
+{"version":3,"file":"CurrentFileProvider.d.ts","sourceRoot":"","sources":["../../../extension/providers/CurrentFileProvider.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,UAAU,gBAAgB;IACxB,mBAAmB,IAAI,MAAM,GAAG,IAAI,CAAC;CACtC;AAED,qBAAa,mBAAmB;IAC9B,OAAO,CAAC,OAAO,CAAmB;gBAEtB,OAAO,EAAE,gBAAgB;IAIrC,WAAW,IAAI,MAAM,GAAG,IAAI;CAO7B"}

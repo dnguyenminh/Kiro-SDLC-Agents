@@ -1,0 +1,69 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="sys" value="Kiro SDLC Agents — Multi-format Document Indexing" style="swimlane;startSize=30;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=13;" parent="1" vertex="1">
+      <mxGeometry x="180" y="30" width="520" height="480" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc1" value="Index All Documents&#10;(Multi-format)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="20" y="50" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc2" value="Convert Office Files&#10;(docx/xlsx/pptx)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="20" y="150" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc3" value="Convert PDF Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="20" y="250" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc4" value="Convert Image Files&#10;(OCR/Description)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="20" y="350" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc5" value="View Indexing&#10;Progress" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="300" y="50" width="190" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc6" value="Ingest Markdown&#10;into KB" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="300" y="200" width="190" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="uc7" value="Search KB&#10;(All Formats)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="sys" vertex="1">
+      <mxGeometry x="300" y="350" width="190" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc1" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc1" target="uc5" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc2" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc2" target="uc6" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc3" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc3" target="uc6" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inc4" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="html=1;dashed=1;endArrow=open;endSize=8;strokeColor=#666666;fontSize=9;" parent="sys" source="uc4" target="uc6" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor1" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="60" y="160" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor2" value="AI Agent" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="60" y="350" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor3" value="MCP Server" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" parent="1" vertex="1">
+      <mxGeometry x="790" y="220" width="40" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea1" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc1" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea2" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc2" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea3" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc3" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea4" style="html=1;endArrow=none;" parent="1" source="actor1" target="uc4" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea5" style="html=1;endArrow=none;" parent="1" source="actor2" target="uc7" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="ea6" style="html=1;endArrow=none;" parent="1" source="uc6" target="actor3" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Plugin/Extension architecture pattern. Activate when SM detects plugin pattern.
----
-
 # Pattern: Plugin / Extension
 
 ## Description

@@ -1,0 +1,14 @@
+﻿test_case_id,endpoint,method,expected_http_code,expected_data_fields,description
+IT-10,/api/dashboard/summary,GET,200,"totalEntries,recentCount,topCategories",Dashboard summary
+IT-11,/api/kb/graph,GET,200,"nodes,edges",KB graph data
+IT-12,/api/tags,POST,201,"id,name,createdAt",Create tag
+IT-13,/api/tags/{id},PUT,200,"id,name",Update tag
+IT-14,/api/tags/{id},DELETE,200,,Delete tag
+E2E-API-06,/api/dashboard/summary,GET,200,"totalEntries,recentCount",E2E dashboard
+E2E-API-06,/api/kb/graph,GET,200,"nodes,edges",E2E KB graph
+E2E-API-06,/api/analytics/overview,GET,200,"summary",E2E analytics
+E2E-API-06,/api/quality/summary,GET,200,"overallScore",E2E quality
+E2E-API-07,/api/tags,POST,201,"id,name",E2E create tag
+E2E-API-07,/api/tags/list,GET,200,"tags",E2E list tags
+E2E-API-07,/api/tags/{id},PUT,200,"id,name",E2E update tag
+E2E-API-07,/api/tags/{id},DELETE,200,,E2E delete tag

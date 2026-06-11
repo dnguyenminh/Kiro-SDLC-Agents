@@ -1,0 +1,57 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="Developer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;participant=umlActor;" vertex="1" parent="1">
+      <mxGeometry x="80" y="40" width="20" height="350" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Webview" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="220" y="40" width="100" height="350" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="ConversationManager" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="440" y="40" width="140" height="350" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="click '+' button" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="110" as="sourcePoint" />
+        <mxPoint x="270" y="110" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="6" value="postMessage({type:createTab})" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="140" as="sourcePoint" />
+        <mxPoint x="510" y="140" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="7" value="tabsUpdated(tabs, activeId)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="180" as="sourcePoint" />
+        <mxPoint x="270" y="180" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="8" value="render new tab + switch" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="210" as="sourcePoint" />
+        <mxPoint x="90" y="210" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="9" value="click tab label" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="260" as="sourcePoint" />
+        <mxPoint x="270" y="260" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="10" value="postMessage({type:switchTab, tabId})" style="html=1;verticalAlign=bottom;endArrow=block;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="270" y="290" as="sourcePoint" />
+        <mxPoint x="510" y="290" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="11" value="tabsUpdated + contextUpdate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="510" y="320" as="sourcePoint" />
+        <mxPoint x="270" y="320" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

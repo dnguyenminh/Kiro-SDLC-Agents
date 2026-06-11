@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Quality gate checklists for SDLC phases. Activate after sub-agent completes a phase.
----
-
 # Shared: Document Quality Gates — Post-Phase Verification
 
 ## Principle

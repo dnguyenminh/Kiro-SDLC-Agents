@@ -61,7 +61,7 @@ export class MessageHandler {
         break;
       case "chat:userMessage":
         debugLog(` MessageHandler: userMessage="${(msg as any).text?.slice(0, 80)}"`);
-        await this.handleUserMessage((msg as any).text);
+        await this.handleUserMessage((msg as any).text, (msg as any).context);
         break;
       case "chat:approvalAction":
         await this.handleApproval(msg.decision, msg.feedback);
@@ -69,6 +69,8 @@ export class MessageHandler {
       case "chat:cancelStream":
         this.getEngine().cancel();
         this.sendToWebview({ type: "chat:workingStatus", working: false });
+        // KSA-283: Emit streamComplete to close any pending tool blocks in UI
+        this.sendToWebview({ type: "chat:streamComplete", streamId: "cancelled", nodeId: "user", finalContent: "Cancelled by user", metadata: {} } as any);
         break;
       case "chat:clearHistory":
         break;
@@ -149,21 +151,59 @@ export class MessageHandler {
     this.sendToWebview({ type: "chat:graphUpdate", nodes });
   }
 
-  private async handleUserMessage(text: string): Promise<void> {
-    const trimmed = text.trim().toLowerCase();
-    debugLog(` handleUserMessage: "${text.slice(0, 80)}" (trimmed: "${trimmed.slice(0, 40)}")`);
+  private async handleUserMessage(text: string, context?: Array<{ type: string; label: string; path?: string; content?: string }>): Promise<void> {
+    // Build enriched input with context content
+    let enrichedText = text;
+    if (context && context.length > 0) {
+      const contextSections: string[] = [];
+      for (const item of context) {
+        if (item.content) {
+          contextSections.push(`<${item.type} name="${item.label}">\n${item.content}\n</${item.type}>`);
+        } else if (item.path) {
+          contextSections.push(`<${item.type} name="${item.label}" path="${item.path}" />`);
+        }
+      }
+      if (contextSections.length > 0) {
+        enrichedText = `<context>\n${contextSections.join("\n")}\n</context>\n\n${text}`;
+      }
+    }
+
+    const trimmed = enrichedText.trim().toLowerCase();
+    debugLog(` handleUserMessage: "${text.slice(0, 80)}" (trimmed: "${trimmed.slice(0, 40)}", context: ${context?.length || 0} items)`);
 
     // Emit working status
     this.sendToWebview({ type: "chat:workingStatus", working: true, label: "Working..." });
 
-    // Check direct commands
-    if (DIRECT_COMMANDS[trimmed]) {
-      debugLog(` handleUserMessage: routed to DIRECT COMMAND "${trimmed}"`);
-      await this.handleDirectCommand(DIRECT_COMMANDS[trimmed]);
+    // KSA-280: Fire promptSubmit hooks (non-blocking, errors don't affect main flow)
+    try {
+      const engine = this.getEngine();
+      const hookEngine = engine.hookEngine;
+      const streamHandler = engine.getStreamHandler();
+      await hookEngine.firePromptSubmit(text, streamHandler);
+    } catch { /* hooks must never break main execution */ }
+
+    // Check direct commands (use original text for command matching)
+    const textTrimmed = text.trim().toLowerCase();
+    if (DIRECT_COMMANDS[textTrimmed]) {
+      debugLog(` handleUserMessage: routed to DIRECT COMMAND "${textTrimmed}"`);
+      await this.handleDirectCommand(DIRECT_COMMANDS[textTrimmed]);
+      this.sendToWebview({ type: "chat:workingStatus", working: false });
       return;
     }
 
-    // Check ticket pattern
+    // KSA-278: Check for agent command prefix (e.g., "/qa-agent some task")
+    const agentMatch = text.trim().match(/^\/([a-z][-a-z]*)\s+(.+)$/i);
+    if (agentMatch) {
+      const agentName = agentMatch[1];
+      const agentTask = agentMatch[2];
+      debugLog(` handleUserMessage: routed to AGENT "${agentName}"`);
+      this.sendToWebview({ type: "chat:workingStatus", working: true, label: `${agentName} — working...` });
+      await this.getEngine().invokeChat(`[Agent: ${agentName}] ${agentTask}`);
+      this.sendToWebview({ type: "chat:workingStatus", working: false });
+      return;
+    }
+
+    // Check ticket pattern (use original text)
     const match = text.trim().match(TICKET_PATTERN);
     if (match) {
       const ticketKey = match[1];
@@ -171,14 +211,23 @@ export class MessageHandler {
       const phase = this.parsePhase(action);
       debugLog(` handleUserMessage: routed to SDLC PIPELINE ticket=${ticketKey} phase=${phase}`);
       this.sendToWebview({ type: "chat:workingStatus", working: true, label: `${ticketKey} — ${phase}` });
-      await this.getEngine().invoke(ticketKey, phase, text);
+      await this.getEngine().invoke(ticketKey, phase, enrichedText);
+      this.sendToWebview({ type: "chat:workingStatus", working: false });
       return;
     }
 
     // All other messages go through router graph (intent auto-classified)
     debugLog(` handleUserMessage: routed to CHAT (invokeChat)`);
-    await this.getEngine().invokeChat(text);
+    await this.getEngine().invokeChat(enrichedText);
     debugLog(` handleUserMessage: invokeChat RETURNED`);
+
+    // KSA-280: Fire agentStop hooks after chat completion
+    try {
+      const engine = this.getEngine();
+      await engine.hookEngine.fireAgentStop(engine.getStreamHandler());
+    } catch { /* hooks must never break main execution */ }
+
+    this.sendToWebview({ type: "chat:workingStatus", working: false });
   }
 
   private async handleApproval(decision: string, feedback?: string): Promise<void> {

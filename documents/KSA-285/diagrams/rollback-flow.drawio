@@ -1,0 +1,93 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;KSA-285 Rollback Decision &amp;amp; Execution Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="440" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="issue_detected" value="Issue&#10;Detected" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="340" y="60" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="assess_severity" value="Assess&#10;Severity" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="330" y="150" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="critical_path" value="Critical&#10;(Immediate Rollback)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="170" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="minor_path" value="Minor&#10;(Hotfix Possible)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="580" y="170" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="stop_service" value="1. Stop Backend&#10;Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="280" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="rollback_db" value="2. Restore Database&#10;from Backup" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="380" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="deploy_prev" value="3. Deploy Previous&#10;Version (v1.18.0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="480" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="restore_config" value="4. Restore&#10;Configuration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="580" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="verify_rollback" value="Verify&#10;Rollback?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="330" y="480" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="rollback_success" value="Rollback&#10;Success" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="340" y="610" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="rollback_fail" value="Escalate to&#10;Manual Recovery" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="530" y="490" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="attempt_hotfix" value="Attempt&#10;Hotfix" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="580" y="280" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="hotfix_works" value="Hotfix&#10;Works?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="590" y="380" width="140" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="hotfix_success" value="Issue&#10;Resolved" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="600" y="510" width="120" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" edge="1" parent="1" source="issue_detected" target="assess_severity" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="Critical" edge="1" parent="1" source="assess_severity" target="critical_path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="Minor" edge="1" parent="1" source="assess_severity" target="minor_path" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#d6b656;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" edge="1" parent="1" source="critical_path" target="stop_service" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" edge="1" parent="1" source="stop_service" target="rollback_db" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" edge="1" parent="1" source="rollback_db" target="deploy_prev" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" edge="1" parent="1" source="deploy_prev" target="restore_config" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" edge="1" parent="1" source="restore_config" target="verify_rollback" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" value="Pass" edge="1" parent="1" source="verify_rollback" target="rollback_success" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#388e3c;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e10" value="Fail" edge="1" parent="1" source="verify_rollback" target="rollback_fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#c62828;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e11" edge="1" parent="1" source="minor_path" target="attempt_hotfix" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e12" edge="1" parent="1" source="attempt_hotfix" target="hotfix_works" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e13" value="Yes" edge="1" parent="1" source="hotfix_works" target="hotfix_success" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#388e3c;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e14" value="No" edge="1" parent="1" source="hotfix_works" target="stop_service" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;fontColor=#c62828;dashed=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

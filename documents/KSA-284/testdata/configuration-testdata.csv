@@ -1,0 +1,14 @@
+﻿test_case_id,port,auto_start,health_interval,startup_timeout,backend_path,expected_result,description
+PBT-04,48721,true,5000,30000,/usr/local/bin/backend,valid,Default valid config
+PBT-04,1024,true,5000,30000,/usr/local/bin/backend,valid,Minimum valid port
+PBT-04,65535,true,5000,30000,/usr/local/bin/backend,valid,Maximum valid port
+PBT-04,1023,true,5000,30000,/usr/local/bin/backend,invalid,Below minimum port
+PBT-04,65536,true,5000,30000,/usr/local/bin/backend,invalid,Above maximum port
+PBT-04,0,true,5000,30000,/usr/local/bin/backend,invalid,Zero port
+PBT-04,-1,true,5000,30000,/usr/local/bin/backend,invalid,Negative port
+PBT-08,48721,true,1000,30000,/path,valid,Minimum health interval
+PBT-08,48721,true,60000,30000,/path,valid,Maximum health interval
+PBT-08,48721,true,999,30000,/path,invalid,Below min interval
+PBT-08,48721,true,60001,30000,/path,invalid,Above max interval
+UT-15,48721,true,5000,30000,/usr/local/bin/backend,valid,Standard config load
+UT-15,999,true,5000,30000,/path,invalid,Invalid port in settings

@@ -1,0 +1,7 @@
+﻿id,username,email,display_name,role,password_hash,projects,status,description
+admin-001,admin.user,admin@company.com,Admin User,admin,[scrypt_hash],["proj-frontend","proj-backend"],ACTIVE,Admin with full permissions - actor for admin tests
+user-001,john.doe,john.doe@company.com,John Doe,user,[scrypt_hash],["proj-frontend"],ACTIVE,Standard user for auth and KB tests
+user-002,jane.smith,jane.smith@company.com,Jane Smith,user,[scrypt_hash],["proj-frontend","proj-backend"],ACTIVE,Multi-project user for cross-project tests
+user-003,bob.wilson,bob.wilson@company.com,Bob Wilson,user,[scrypt_hash],["proj-backend"],ACTIVE,User for tier isolation tests (different project)
+user-004,locked.user,locked@company.com,Locked User,user,[scrypt_hash],["proj-frontend"],LOCKED,Pre-locked user for lockout tests (failed_attempts=5)
+user-005,sso.user,sso@external.com,SSO User,user,NULL,["proj-frontend"],ACTIVE,SSO-only user (no password_hash)

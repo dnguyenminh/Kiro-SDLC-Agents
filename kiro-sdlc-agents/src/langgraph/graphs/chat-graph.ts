@@ -19,6 +19,7 @@ import type { McpToolDefinition } from "../tool-registry";
 import type { LlmProvider, LlmMessage, LlmToolCall } from "../llm-provider";
 import { VSCODE_TOOL_DEFINITIONS, isVscodeTool, executeVscodeTool } from "../vscode-tools";
 import { loadSteeringRules, injectSteering } from "../steering-loader";
+import { HookEngine } from "../hook-engine";
 import { debugLog, debugError } from "../../debug-logger";
 
 /** Maximum ReAct iterations — generous cap; on hit we force a final answer */
@@ -113,7 +114,8 @@ export async function buildChatSubgraph(
   streamHandler: StreamHandler,
   llmProvider?: LlmProvider,
   mcpBridge?: McpBridge,
-  workspaceRoot?: string
+  workspaceRoot?: string,
+  hookEngine?: HookEngine
 ) {
   const toolRegistry = mcpBridge ? new ToolRegistry(mcpBridge) : null;
   const wsRoot = workspaceRoot || require("vscode").workspace.workspaceFolders?.[0]?.uri.fsPath || "";
@@ -124,6 +126,21 @@ export async function buildChatSubgraph(
     if (wsRoot) {
       const rules = await loadSteeringRules(wsRoot, "langgraph");
       enrichedSystemPrompt = injectSteering(AGENT_SYSTEM_PROMPT, rules);
+      // KSA-280: Emit steering injection as visible action block in chat
+      if (rules.length > 0 && streamHandler) {
+        const ruleNames = rules.map(r => r.meta.title || r.filePath).join(", ");
+        streamHandler.emitDirect({
+          type: "chat:toolCall",
+          toolCall: {
+            id: `steering-${Date.now()}`,
+            name: "steering_rules_loaded",
+            args: { count: rules.length, rules: ruleNames.slice(0, 200) },
+            status: "completed",
+            result: `${rules.length} steering rules injected into context`,
+            duration: 0,
+          },
+        } as any);
+      }
     }
   } catch {
     // Fallback to base prompt if steering load fails
@@ -301,6 +318,20 @@ export async function buildChatSubgraph(
         const argsStr = JSON.stringify(call.arguments || {});
         debugLog(`[graph] execute_tools: TOOL "${call.name}" args=${argsStr.length > 300 ? argsStr.slice(0, 300) + "...(truncated)" : argsStr}`);
 
+        // KSA-280: Fire preToolUse hooks
+        if (hookEngine) {
+          try {
+            const preResult = await hookEngine.firePreToolUse(call.name, call.arguments || {}, streamHandler, streamId);
+            if (preResult.denied) {
+              debugLog(`[graph] execute_tools: HOOK DENIED "${call.name}" by "${preResult.hookName}": ${preResult.reason}`);
+              results.push({ toolCallId: call.id, name: call.name, content: `Denied by hook "${preResult.hookName}": ${preResult.reason}` });
+              continue;
+            }
+          } catch (hookErr) {
+            debugError(`[graph] execute_tools: preToolUse hook error for "${call.name}"`, hookErr as Error);
+          }
+        }
+
         // KSA-247: Emit structured tool call block (collapsible UI)
         streamHandler.emitDirect({
           type: "chat:toolCall",
@@ -311,8 +342,11 @@ export async function buildChatSubgraph(
         try {
           let result: string;
 
-          // Route: VS Code tools execute locally, MCP tools via bridge
-          if (isVscodeTool(call.name)) {
+          // KSA-282: Validate required params for write-type tools
+          if (call.name === "stream_write_file" && (!call.arguments?.file_path && !call.arguments?.path)) {
+            result = "Error: 'file_path' is required for stream_write_file";
+          } else if (isVscodeTool(call.name)) {
+            // Route: VS Code tools execute locally, MCP tools via bridge
             result = await executeVscodeTool(call.name, call.arguments, wsRoot);
           } else if (mcpBridge) {
             result = await mcpBridge.callTool(call.name, call.arguments);
@@ -329,6 +363,15 @@ export async function buildChatSubgraph(
             type: "chat:toolCallUpdate",
             id: tcId, status: "completed", result: displayResult, duration
           } as any);
+
+          // KSA-280: Fire postToolUse hooks
+          if (hookEngine) {
+            try {
+              await hookEngine.firePostToolUse(call.name, call.arguments || {}, result, streamHandler, streamId);
+            } catch (hookErr) {
+              debugError(`[graph] execute_tools: postToolUse hook error for "${call.name}"`, hookErr as Error);
+            }
+          }
 
           results.push({
             toolCallId: call.id,

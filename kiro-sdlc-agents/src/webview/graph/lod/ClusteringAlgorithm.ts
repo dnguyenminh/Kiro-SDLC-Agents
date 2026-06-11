@@ -22,7 +22,7 @@ export class ClusteringAlgorithm {
     const startTime = performance.now();
 
     // Skip clustering for small graphs
-    if (graphData.nodes.length < 100) {
+    if (graphData.nodes.length < 50) {
       return this.createTrivialHierarchy(graphData, startTime);
     }
 

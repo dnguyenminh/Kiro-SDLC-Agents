@@ -1,0 +1,76 @@
+<mxfile>
+<diagram name="State - Connection" id="state-conn">
+<mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;State Machine - Connection Lifecycle&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="340" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="195" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="disconnected" value="&lt;b&gt;DISCONNECTED&lt;/b&gt;&lt;br&gt;Backend unavailable&lt;br&gt;Tools return errors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="160" y="170" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="starting" value="&lt;b&gt;STARTING&lt;/b&gt;&lt;br&gt;Spawning Backend process&lt;br&gt;Waiting for health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="160" y="370" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="connecting" value="&lt;b&gt;CONNECTING&lt;/b&gt;&lt;br&gt;Polling health endpoint&lt;br&gt;Exponential backoff" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="480" y="170" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="connected" value="&lt;b&gt;CONNECTED&lt;/b&gt;&lt;br&gt;All tools functional&lt;br&gt;Health checks active" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="480" y="370" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init" value="activate()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="initial" target="disconnected">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_disc_conn" value="reconnect timer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="disconnected" target="connecting">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_disc_start" value="autoStart=true" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="disconnected" target="starting">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_start_conn" value="process spawned" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1" source="starting" target="connecting">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="420" y="405"/>
+          <mxPoint x="420" y="205"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_start_disc" value="start timeout" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#c62828;" edge="1" parent="1" source="starting" target="disconnected">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="120" y="405"/>
+          <mxPoint x="120" y="205"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_conn_ok" value="health OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#388e3c;" edge="1" parent="1" source="connecting" target="connected">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_conn_fail" value="health fail (backoff++)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#c62828;" edge="1" parent="1" source="connecting" target="disconnected">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="570" y="140"/>
+          <mxPoint x="250" y="140"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_crash" value="crash / health fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#c62828;" edge="1" parent="1" source="connected" target="disconnected">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="740" y="405"/>
+          <mxPoint x="740" y="80"/>
+          <mxPoint x="250" y="80"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note_colors" value="Status Bar Colors:&lt;br&gt;DISCONNECTED = Red&lt;br&gt;STARTING = Yellow&lt;br&gt;CONNECTING = Orange&lt;br&gt;CONNECTED = Green" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="580" y="470" width="160" height="80" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram>
+</mxfile>
