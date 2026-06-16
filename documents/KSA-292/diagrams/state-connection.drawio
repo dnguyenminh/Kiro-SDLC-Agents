@@ -1,0 +1,54 @@
+<mxfile>
+  <diagram name="Connection State" id="state_conn">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="600">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;Connection State Machine — KSA-292&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="250" y="10" width="320" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="60" y="255" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="disconnected" value="&lt;b&gt;DISCONNECTED&lt;/b&gt;&#10;No connection&#10;May be retrying" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="150" y="230" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="connecting" value="&lt;b&gt;CONNECTING&lt;/b&gt;&#10;Health check in progress" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="400" y="230" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="connected" value="&lt;b&gt;CONNECTED&lt;/b&gt;&#10;Active connection&#10;Health polling active" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="650" y="230" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="disconnected" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_disc_conn" value="connect()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="disconnected" target="connecting" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" y="-15"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_conning_conned" value="health OK" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="connecting" target="connected" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" y="-15"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_conning_disc" value="health fail" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="connecting" target="disconnected" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="350"/>
+              <mxPoint x="230" y="350"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_conned_disc" value="health poll fail /&#10;disconnect()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="connected" target="disconnected" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="730" y="400"/>
+              <mxPoint x="230" y="400"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

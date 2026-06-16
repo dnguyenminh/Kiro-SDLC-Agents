@@ -1,5 +1,6 @@
 /**
  * HealthChecker — periodic GET /health poller with exponential backoff.
+ * KSA-292: Updated to use ConnectionConfig with URL.
  * Implements TDD §5.5 State Machine and FSD BR-13, BR-17.
  */
 

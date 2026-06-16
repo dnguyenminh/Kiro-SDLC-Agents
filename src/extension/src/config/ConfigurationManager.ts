@@ -1,5 +1,6 @@
 /**
- * ConfigurationManager — reads VS Code settings for backend connection.
+ * ConfigurationManager — reads VS Code settings for remote backend connection.
+ * KSA-292: Refactored to URL-based config (removed host/port/backendPath/autoStart).
  * Implements TDD §5.1 ConfigurationManager.
  */
 
@@ -13,13 +14,12 @@ export class ConfigurationManager {
     const vsConfig = vscode.workspace.getConfiguration(ConfigurationManager.SECTION);
 
     return {
-      port: vsConfig.get<number>('port', DEFAULT_BACKEND_CONFIG.port),
-      host: vsConfig.get<string>('host', DEFAULT_BACKEND_CONFIG.host),
-      backendPath: vsConfig.get<string>('backendPath', DEFAULT_BACKEND_CONFIG.backendPath),
-      autoStart: vsConfig.get<boolean>('autoStart', DEFAULT_BACKEND_CONFIG.autoStart),
+      url: vsConfig.get<string>('url', DEFAULT_BACKEND_CONFIG.url),
+      ssoEnabled: vsConfig.get<boolean>('ssoEnabled', DEFAULT_BACKEND_CONFIG.ssoEnabled),
+      ssoProviderUrl: vsConfig.get<string>('ssoProviderUrl', DEFAULT_BACKEND_CONFIG.ssoProviderUrl),
       healthCheckInterval: vsConfig.get<number>('healthCheckInterval', DEFAULT_BACKEND_CONFIG.healthCheckInterval),
-      startupTimeout: vsConfig.get<number>('startupTimeout', DEFAULT_BACKEND_CONFIG.startupTimeout),
-      compatRange: vsConfig.get<string>('compatRange', DEFAULT_BACKEND_CONFIG.compatRange),
+      toolCallTimeout: vsConfig.get<number>('toolCallTimeout', DEFAULT_BACKEND_CONFIG.toolCallTimeout),
+      chatTimeout: vsConfig.get<number>('chatTimeout', DEFAULT_BACKEND_CONFIG.chatTimeout),
     };
   }
 
@@ -29,5 +29,23 @@ export class ConfigurationManager {
         listener(this.getConfiguration());
       }
     });
+  }
+
+  /**
+   * Migrate legacy host+port settings to URL format (TDD §12.2).
+   */
+  async migrateIfNeeded(): Promise<void> {
+    const vsConfig = vscode.workspace.getConfiguration(ConfigurationManager.SECTION);
+    const hasLegacyHost = vsConfig.inspect<string>('host')?.workspaceValue !== undefined
+      || vsConfig.inspect<string>('host')?.globalValue !== undefined;
+    const hasNewUrl = vsConfig.inspect<string>('url')?.workspaceValue !== undefined
+      || vsConfig.inspect<string>('url')?.globalValue !== undefined;
+
+    if (hasLegacyHost && !hasNewUrl) {
+      const host = vsConfig.get<string>('host', '127.0.0.1');
+      const port = vsConfig.get<number>('port', 48721);
+      const url = 'http://' + host + ':' + port;
+      await vsConfig.update('url', url, vscode.ConfigurationTarget.Global);
+    }
   }
 }

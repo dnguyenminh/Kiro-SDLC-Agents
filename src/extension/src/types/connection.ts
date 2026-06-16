@@ -1,9 +1,10 @@
 /**
- * Connection state types for Extension ↔ Backend communication.
- * Implements TDD §4.1 ConnectionState and §5.5 State Machine.
+ * Connection state types for Extension ↔ Remote Backend communication.
+ * KSA-292: Removed STARTING state and process-related fields.
+ * Implements TDD §4.1 ConnectionState.
  */
 
-export type ConnectionStateValue = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'STARTING';
+export type ConnectionStateValue = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED';
 
 export interface ConnectionState {
   state: ConnectionStateValue;
@@ -11,7 +12,6 @@ export interface ConnectionState {
   lastHealthCheck: number;
   reconnectAttempts: number;
   reconnectDelay: number;
-  backendPid: number | null;
   connectedAt: number | null;
 }
 
@@ -24,20 +24,16 @@ export interface HealthResponse {
 }
 
 export interface ConnectionConfig {
-  host: string;
-  port: number;
+  url: string;
   healthCheckInterval: number;
-  startupTimeout: number;
   maxReconnectAttempts: number;
   initialReconnectDelay: number;
   maxReconnectDelay: number;
 }
 
 export const DEFAULT_CONNECTION_CONFIG: ConnectionConfig = {
-  host: '127.0.0.1',
-  port: 48721,
+  url: 'http://127.0.0.1:48721',
   healthCheckInterval: 5000,
-  startupTimeout: 30000,
   maxReconnectAttempts: 100,
   initialReconnectDelay: 1000,
   maxReconnectDelay: 30000,
@@ -50,7 +46,6 @@ export function createInitialState(): ConnectionState {
     lastHealthCheck: 0,
     reconnectAttempts: 0,
     reconnectDelay: DEFAULT_CONNECTION_CONFIG.initialReconnectDelay,
-    backendPid: null,
     connectedAt: null,
   };
 }

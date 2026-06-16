@@ -6,8 +6,7 @@
  * Manages camera distance checks, budget enforcement, state machine.
  */
 
-import { LODClustering } from './lod-clustering.js';
-import { LODAnimation } from './lod-animation.js';
+// LODClustering and LODAnimation loaded via separate <script> tags (global)
 
 const COLORS = {
   CONTEXT: '#38bdf8', DECISION: '#f472b6', ERROR_PATTERN: '#fb923c',
@@ -15,7 +14,7 @@ const COLORS = {
   LESSON_LEARNED: '#f87171', CODE_ENTITY: '#e2e8f0', API_DESIGN: '#2dd4bf',
 };
 
-export class LODManager {
+class LODManager {
   constructor(graph3dInstance, config = {}) {
     this._graph = graph3dInstance;
     this._config = {
@@ -68,6 +67,49 @@ export class LODManager {
       if (!this._freeBudget(cluster.childNodeIds.length)) return false;
     }
     cluster.state = 'EXPANDING';
+
+    // Progressive loading: fetch children from API if not already loaded
+    if (!cluster.__childrenLoaded) {
+      const token = localStorage.getItem('admin_token') || '';
+      fetch('/api/admin/kb/graph/cluster/' + clusterId, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.nodes) {
+            // Add fetched nodes to allNodes
+            const existingIds = new Set(this._allNodes.map(n => n.id));
+            for (const node of data.nodes) {
+              if (!existingIds.has(node.id)) {
+                // Position around cluster center
+                node.x = cluster.center.x + (Math.random() - 0.5) * 60;
+                node.y = cluster.center.y + (Math.random() - 0.5) * 60;
+                node.z = cluster.center.z + (Math.random() - 0.5) * 60;
+                this._allNodes.push(node);
+              }
+            }
+            // Update childNodeIds with fetched node IDs
+            cluster.childNodeIds = data.nodes.map(n => n.id);
+            // Add edges
+            if (data.edges) {
+              for (const e of data.edges) this._allEdges.push(e);
+            }
+            cluster.__childrenLoaded = true;
+            // Now do the expand animation
+            this._doExpand(cluster, clusterId);
+          }
+        })
+        .catch(() => {
+          // Fallback: expand with existing data
+          this._doExpand(cluster, clusterId);
+        });
+    } else {
+      this._doExpand(cluster, clusterId);
+    }
+    return true;
+  }
+
+  _doExpand(cluster, clusterId) {
     const childNodes = this._getChildNodes(cluster);
     for (const node of childNodes) {
       node.__lodCenterX = cluster.center.x;
@@ -83,7 +125,6 @@ export class LODManager {
         this._updateGraphData();
       }
     });
-    return true;
   }
 
   collapseCluster(clusterId) {
@@ -126,9 +167,15 @@ export class LODManager {
   // --- Private methods ---
 
   _startTick() {
+    let lastCheckTime = 0;
+    const CHECK_INTERVAL = 500; // Only check every 500ms to avoid interfering with zoom
     const tick = () => {
       if (!this._initialized) return;
-      this._checkDistances();
+      const now = performance.now();
+      if (now - lastCheckTime >= CHECK_INTERVAL) {
+        lastCheckTime = now;
+        this._checkDistances();
+      }
       this._rafId = requestAnimationFrame(tick);
     };
     this._rafId = requestAnimationFrame(tick);
@@ -138,11 +185,18 @@ export class LODManager {
     const cam = this._graph.camera().position;
     for (const [id, cluster] of this._clusters) {
       if (this._animation.isAnimating(id)) continue;
-      const dist = this._distance(cam, cluster.center);
-      if (cluster.state === 'COLLAPSED' && dist < this._config.expandThreshold) {
-        if (this._budgetAllows(cluster)) this.expandCluster(id);
-      } else if (cluster.state === 'EXPANDED' && dist > this._config.collapseThreshold) {
-        if (!cluster.interacting) this.collapseCluster(id);
+
+      if (cluster.state === 'COLLAPSED') {
+        const dist = this._distance(cam, cluster.center);
+        if (dist < this._config.expandThreshold) {
+          if (this._budgetAllows(cluster)) this.expandCluster(id);
+        }
+      } else if (cluster.state === 'EXPANDED') {
+        const centroid = this._getExpandedCentroid(cluster);
+        const dist = this._distance(cam, centroid);
+        if (dist > this._config.collapseThreshold) {
+          if (!cluster.interacting) this.collapseCluster(id);
+        }
       }
     }
   }
@@ -155,7 +209,11 @@ export class LODManager {
     const cam = this._graph.camera().position;
     const expanded = Array.from(this._clusters.values())
       .filter(c => c.state === 'EXPANDED' && !c.interacting)
-      .sort((a, b) => this._distance(cam, b.center) - this._distance(cam, a.center));
+      .sort((a, b) => {
+        const distA = this._distance(cam, this._getExpandedCentroid(a));
+        const distB = this._distance(cam, this._getExpandedCentroid(b));
+        return distB - distA;
+      });
     for (const cluster of expanded) {
       this.collapseCluster(cluster.id);
       if (this._visibleNodes.size - 1 + needed <= this._config.maxVisibleNodes) return true;
@@ -165,6 +223,8 @@ export class LODManager {
 
   _showSuperNodes() {
     const superNodes = [];
+    // Build node→cluster map for edge aggregation
+    const nodeToCluster = new Map();
     for (const [id, cluster] of this._clusters) {
       superNodes.push({
         id: cluster.id, name: cluster.label, type: cluster.dominantType,
@@ -172,12 +232,30 @@ export class LODManager {
         __isSuper: true, __childCount: cluster.childNodeIds.length, __cluster: cluster
       });
       this._visibleNodes.add(cluster.id);
+      for (const nid of cluster.childNodeIds) nodeToCluster.set(nid, cluster.id);
     }
-    const visibleEdges = this._getVisibleEdges(superNodes);
-    this._graph.graphData({ nodes: superNodes, links: visibleEdges });
+    // Create inter-cluster edges (deduplicated)
+    const edgeSet = new Set();
+    const interClusterEdges = [];
+    for (const e of this._allEdges) {
+      const s = typeof e.source === 'object' ? e.source.id : e.source;
+      const t = typeof e.target === 'object' ? e.target.id : e.target;
+      const sc = nodeToCluster.get(s);
+      const tc = nodeToCluster.get(t);
+      if (sc && tc && sc !== tc) {
+        const key = sc < tc ? `${sc}|${tc}` : `${tc}|${sc}`;
+        if (!edgeSet.has(key)) {
+          edgeSet.add(key);
+          interClusterEdges.push({ source: sc, target: tc });
+        }
+      }
+    }
+    this._graph.graphData({ nodes: superNodes, links: interClusterEdges });
     this._graph.nodeVal(n => n.__isSuper ? 2 + Math.log(n.__childCount) * 2 : 4);
     this._graph.nodeColor(n => COLORS[n.type] || '#38bdf8');
     this._graph.nodeLabel(n => n.__isSuper ? `${n.name} (${n.__childCount} nodes)` : `[${n.type}] ${n.name}`);
+    // Auto fit view after LOD initializes
+    setTimeout(() => { try { this._graph.zoomToFit(400, 50); } catch(e){} }, 1000);
   }
 
   _getChildNodes(cluster) {
@@ -212,7 +290,22 @@ export class LODManager {
       }
     }
     const links = this._getVisibleEdges(nodes);
+    // Preserve camera position across graph data updates
+    let camPos = null;
+    let camLookAt = null;
+    try {
+      const cam = this._graph.camera();
+      camPos = { x: cam.position.x, y: cam.position.y, z: cam.position.z };
+      const controls = this._graph.controls();
+      if (controls && controls.target) {
+        camLookAt = { x: controls.target.x, y: controls.target.y, z: controls.target.z };
+      }
+    } catch(e) {}
     this._graph.graphData({ nodes, links });
+    // Restore camera position after graphData update
+    if (camPos) {
+      this._graph.cameraPosition(camPos, camLookAt, 0);
+    }
   }
 
   _disableLOD() {
@@ -220,8 +313,24 @@ export class LODManager {
     this._graph.graphData({ nodes: this._allNodes, links: this._allEdges });
   }
 
+  _getExpandedCentroid(cluster) {
+    const childNodes = this._getChildNodes(cluster);
+    if (childNodes.length === 0) return cluster.center;
+    let sumX = 0, sumY = 0, sumZ = 0;
+    const len = childNodes.length;
+    for (let i = 0; i < len; i++) {
+      sumX += childNodes[i].x || 0;
+      sumY += childNodes[i].y || 0;
+      sumZ += childNodes[i].z || 0;
+    }
+    return { x: sumX / len, y: sumY / len, z: sumZ / len };
+  }
+
   _distance(a, b) {
     const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 }
+
+// Expose globally for non-module script loading
+window.LODManager = LODManager;

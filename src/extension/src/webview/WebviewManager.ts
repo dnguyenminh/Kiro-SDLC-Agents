@@ -1,5 +1,6 @@
 /**
  * WebviewManager — manages Webview panel lifecycle and data loading.
+ * KSA-292: Added 'chat' to PanelType support.
  * Implements TDD §5.3 IWebviewManager, FSD BR-22, BR-23, BR-24, BR-25.
  */
 
@@ -26,6 +27,7 @@ const PANEL_CONFIGS: Record<PanelType, PanelConfig> = {
   analytics: { title: 'Analytics', viewType: 'codeIntel.analytics', dataEndpoint: '/api/analytics/overview' },
   tags: { title: 'Tags', viewType: 'codeIntel.tags', dataEndpoint: '/api/tags/list' },
   quality: { title: 'Quality', viewType: 'codeIntel.quality', dataEndpoint: '/api/quality/summary' },
+  chat: { title: 'Chat', viewType: 'codeIntel.chat', dataEndpoint: '/api/chat/history' },
 };
 
 export class WebviewManager implements IWebviewManager, vscode.Disposable {
@@ -51,6 +53,9 @@ export class WebviewManager implements IWebviewManager, vscode.Disposable {
   }
 
   openPanel(panelId: PanelType): void {
+    // Chat panel managed separately by ChatPanel class
+    if (panelId === 'chat') return;
+
     const existing = this.panels.get(panelId);
     if (existing) {
       existing.reveal();

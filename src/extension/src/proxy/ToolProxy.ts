@@ -1,12 +1,13 @@
 /**
  * ToolProxy — registers MCP tools with IDE, forwards calls to Backend.
- * Implements TDD §5.3 IToolProxy, §5.4 Proxy pattern.
- * Handles BR-6 (52 tools), BR-7 (identical schemas), BR-8 (<50ms overhead), BR-9 (error forwarding).
+ * KSA-292: Added local/remote tool routing (TDD §4.3).
+ * Local tools (embed_images) execute via FileProxyHandler.
+ * Remote tools forward via HttpClient with auth.
  */
 
 import * as vscode from 'vscode';
 import { ToolDefinition, ToolResult } from '../types/proxy';
-import { HttpError } from './HttpClient';
+import { HttpError, AuthenticationRequiredError, RateLimitedError } from './HttpClient';
 import { ToolRegistry } from './ToolRegistry';
 import { ConnectionManager } from '../connection/ConnectionManager';
 import { FileProxyHandler, FileProxyError, ToolResultWithFile } from './FileProxyHandler';
@@ -16,6 +17,9 @@ export interface IToolProxy {
   callTool(name: string, args: Record<string, unknown>): Promise<ToolResult>;
   getRegisteredTools(): ToolDefinition[];
 }
+
+/** Tools that execute entirely in the extension (no backend call) */
+const LOCAL_TOOLS = new Set(['embed_images']);
 
 export class ToolProxy implements IToolProxy, vscode.Disposable {
   private readonly registry: ToolRegistry;
@@ -68,6 +72,12 @@ export class ToolProxy implements IToolProxy, vscode.Disposable {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    // Local tool routing (TDD §4.3)
+    if (LOCAL_TOOLS.has(name)) {
+      return this.executeLocalTool(name, args);
+    }
+
+    // Remote tool: requires connection
     if (!this.connectionManager.isConnected()) {
       return this.errorResult('BACKEND_UNAVAILABLE', 'Backend is not connected');
     }
@@ -77,24 +87,30 @@ export class ToolProxy implements IToolProxy, vscode.Disposable {
     }
 
     try {
-      // File Proxy: enrich args with file content if needed (Pattern 1 and Both)
+      // File Proxy: enrich args with file content if needed
       const enrichedArgs = await this.fileProxy.enrichWithFileContent(name, args);
 
       const client = this.connectionManager.getHttpClient();
       const result = await client.callTool({ tool_name: name, arguments: enrichedArgs }) as ToolResultWithFile;
 
-      // File Proxy: write output file if Backend returned __file_output (Pattern 2 and Both)
+      // File Proxy: write output file if Backend returned __file_output
       await this.fileProxy.handleFileOutput(result);
 
-      // Remove __file_output from result before returning to caller (transparent)
+      // Remove __file_output from result before returning to caller
       if (result.__file_output) {
-        delete (result as Record<string, unknown>).__file_output;
+        delete (result as unknown as Record<string, unknown>).__file_output;
       }
 
-      return result;
+      return result as ToolResult;
     } catch (error) {
       if (error instanceof FileProxyError) {
         return this.errorResult(error.code, error.message);
+      }
+      if (error instanceof AuthenticationRequiredError) {
+        return this.errorResult('AUTH_REQUIRED', 'Authentication required — please login');
+      }
+      if (error instanceof RateLimitedError) {
+        return this.errorResult('RATE_LIMITED', 'Rate limited — retry after ' + error.retryAfterSeconds + 's');
       }
       if (error instanceof HttpError) {
         return this.errorResult('INTERNAL_ERROR', 'Tool execution failed: ' + error.body);
@@ -130,6 +146,25 @@ export class ToolProxy implements IToolProxy, vscode.Disposable {
     this.registry.clear();
   }
 
+  private async executeLocalTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+    try {
+      if (name === 'embed_images') {
+        // Execute embed_images locally via FileProxyHandler
+        const result = await this.fileProxy.enrichWithFileContent(name, args);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result) }],
+          isError: false,
+        };
+      }
+      return this.errorResult('TOOL_NOT_FOUND', "Local tool '" + name + "' not implemented");
+    } catch (error) {
+      if (error instanceof FileProxyError) {
+        return this.errorResult(error.code, error.message);
+      }
+      return this.errorResult('LOCAL_TOOL_ERROR', (error as Error).message);
+    }
+  }
+
   private errorResult(code: string, message: string): ToolResult {
     return {
       content: [{ type: 'text', text: 'Error [' + code + ']: ' + message }],
@@ -141,3 +176,4 @@ export class ToolProxy implements IToolProxy, vscode.Disposable {
     this.outputChannel.appendLine('[ToolProxy] ' + message);
   }
 }
+

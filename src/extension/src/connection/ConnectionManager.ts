@@ -1,6 +1,7 @@
 /**
- * ConnectionManager — manages Backend connection lifecycle.
- * Implements TDD §5.3 IConnectionManager and §5.5 State Machine.
+ * ConnectionManager — manages Remote Backend connection lifecycle.
+ * KSA-292: Removed BackendProcess dependency, URL-based, no STARTING state.
+ * Implements TDD §4.1 ConnectionManager.
  */
 
 import * as vscode from 'vscode';
@@ -14,8 +15,8 @@ import {
 } from '../types/connection';
 import { BackendConfiguration } from '../types/config';
 import { HttpClient } from '../proxy/HttpClient';
+import { AuthManager } from '../auth/AuthManager';
 import { HealthChecker } from './HealthChecker';
-import { BackendProcess } from './BackendProcess';
 
 export interface IConnectionManager {
   readonly state: ConnectionState;
@@ -28,9 +29,7 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
   private _state: ConnectionState;
   private readonly stateChangeEmitter = new vscode.EventEmitter<ConnectionState>();
   private readonly healthChecker: HealthChecker;
-  private readonly backendProcess: BackendProcess;
   private readonly client: HttpClient;
-  private readonly config: BackendConfiguration;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly outputChannel: vscode.OutputChannel;
 
@@ -38,41 +37,28 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
     return { ...this._state };
   }
 
-  constructor(config: BackendConfiguration, outputChannel: vscode.OutputChannel) {
-    this.config = config;
+  constructor(config: BackendConfiguration, authManager: AuthManager, outputChannel: vscode.OutputChannel) {
     this.outputChannel = outputChannel;
     this._state = createInitialState();
 
-    const baseUrl = 'http://' + config.host + ':' + config.port;
     this.client = new HttpClient({
-      baseUrl,
+      baseUrl: config.url,
+      authManager,
       healthTimeout: 3000,
-      toolCallTimeout: 300000,
+      toolCallTimeout: config.toolCallTimeout,
       webviewTimeout: 10000,
+      chatTimeout: config.chatTimeout,
     });
 
     const connConfig: ConnectionConfig = {
-      host: config.host,
-      port: config.port,
+      url: config.url,
       healthCheckInterval: config.healthCheckInterval,
-      startupTimeout: config.startupTimeout,
       maxReconnectAttempts: DEFAULT_CONNECTION_CONFIG.maxReconnectAttempts,
       initialReconnectDelay: DEFAULT_CONNECTION_CONFIG.initialReconnectDelay,
       maxReconnectDelay: DEFAULT_CONNECTION_CONFIG.maxReconnectDelay,
     };
 
     this.healthChecker = new HealthChecker(this.client, connConfig);
-    this.backendProcess = new BackendProcess();
-
-    this.backendProcess.on('exit', () => {
-      this.log('Backend process exited');
-      this.transitionTo('DISCONNECTED');
-      this.scheduleReconnect();
-    });
-
-    this.backendProcess.on('error', (error: Error) => {
-      this.log('Backend process error: ' + error.message);
-    });
   }
 
   async connect(): Promise<void> {
@@ -82,18 +68,6 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
     if (result.success) {
       this.handleHealthSuccess(result.response);
       this.startHealthPolling();
-      return;
-    }
-
-    if (this.config.autoStart && this.config.backendPath) {
-      this.transitionTo('STARTING');
-      this.backendProcess.spawn({
-        backendPath: this.config.backendPath,
-        port: this.config.port,
-        host: this.config.host,
-      });
-      this._state.backendPid = this.backendProcess.pid;
-      await this.waitForHealthy();
     } else {
       this.transitionTo('DISCONNECTED');
       this.scheduleReconnect();
@@ -103,7 +77,6 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
   disconnect(): void {
     this.healthChecker.stopPolling();
     this.cancelReconnect();
-    this.backendProcess.kill();
     this.transitionTo('DISCONNECTED');
     this._state.reconnectAttempts = 0;
     this._state.reconnectDelay = DEFAULT_CONNECTION_CONFIG.initialReconnectDelay;
@@ -124,27 +97,7 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
   dispose(): void {
     this.disconnect();
     this.healthChecker.dispose();
-    this.backendProcess.dispose();
     this.stateChangeEmitter.dispose();
-  }
-
-  private async waitForHealthy(): Promise<void> {
-    const startTime = Date.now();
-    const pollInterval = 500;
-
-    while (Date.now() - startTime < this.config.startupTimeout) {
-      const result = await this.healthChecker.checkOnce();
-      if (result.success && result.response.status === 'healthy') {
-        this.handleHealthSuccess(result.response);
-        this.startHealthPolling();
-        return;
-      }
-      await this.sleep(pollInterval);
-    }
-
-    this.log('Backend startup timeout');
-    this.transitionTo('DISCONNECTED');
-    this.scheduleReconnect();
   }
 
   private startHealthPolling(): void {
@@ -223,9 +176,5 @@ export class ConnectionManager implements IConnectionManager, vscode.Disposable 
 
   private log(message: string): void {
     this.outputChannel.appendLine('[ConnectionManager] ' + message);
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

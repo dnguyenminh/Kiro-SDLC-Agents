@@ -8,7 +8,7 @@ const buildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
   outfile: 'out/extension.js',
-  external: ['vscode', 'onnxruntime-node'],
+  external: ['vscode'],
   format: 'cjs',
   platform: 'node',
   target: 'node18',
@@ -24,12 +24,13 @@ async function main() {
     await ctx.watch();
     console.log('[esbuild] watching...');
   } else {
-    await esbuild.build(buildOptions);
+    const result = await esbuild.build(buildOptions);
+    if (production && result.metafile) {
+      const analysis = await esbuild.analyzeMetafile(result.metafile);
+      console.log(analysis);
+    }
     console.log('[esbuild] build complete');
   }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch((e) => { console.error(e); process.exit(1); });

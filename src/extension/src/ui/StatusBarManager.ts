@@ -1,5 +1,6 @@
-/**
+﻿/**
  * StatusBarManager — shows connection state indicator.
+ * KSA-292: Removed STARTING state and backendPid.
  * Implements TDD §5.3 IStatusBarManager, FSD BR-15, BR-30.
  */
 
@@ -21,7 +22,6 @@ export class StatusBarManager implements vscode.Disposable {
       lastHealthCheck: 0,
       reconnectAttempts: 0,
       reconnectDelay: 1000,
-      backendPid: null,
       connectedAt: null,
     });
     this.statusBarItem.show();
@@ -38,11 +38,6 @@ export class StatusBarManager implements vscode.Disposable {
         this.statusBarItem.text = '$(sync~spin) Code Intel';
         this.statusBarItem.backgroundColor = undefined;
         this.statusBarItem.tooltip = 'Connecting to Backend...';
-        break;
-      case 'STARTING':
-        this.statusBarItem.text = '$(loading~spin) Code Intel';
-        this.statusBarItem.backgroundColor = undefined;
-        this.statusBarItem.tooltip = 'Starting Backend...';
         break;
       case 'DISCONNECTED':
         this.statusBarItem.text = '$(error) Code Intel';

@@ -1,8 +1,9 @@
 {
   "name": "code-intel-extension",
   "displayName": "Code Intelligence",
-  "description": "Lightweight proxy extension for Code Intelligence Backend MCP Server",
-  "version": "1.0.0",
+  "publisher": "code-intel",
+  "description": "Lightweight proxy extension for Code Intelligence Remote Backend",
+  "version": "2.0.0",
   "engines": { "vscode": "^1.85.0" },
   "main": "./dist/extension.js",
   "activationEvents": ["onStartupFinished"],
@@ -10,27 +11,20 @@
     "configuration": {
       "title": "Code Intelligence Backend",
       "properties": {
-        "codeIntel.backend.port": {
-          "type": "number",
-          "default": 48721,
-          "minimum": 1024,
-          "maximum": 65535,
-          "description": "Port for Backend MCP Server"
-        },
-        "codeIntel.backend.host": {
+        "codeIntel.backend.url": {
           "type": "string",
-          "default": "127.0.0.1",
-          "description": "Host for Backend MCP Server (localhost only)"
+          "default": "http://127.0.0.1:48721",
+          "description": "URL for the remote Backend server (e.g., https://backend.company.com)"
         },
-        "codeIntel.backend.backendPath": {
+        "codeIntel.backend.ssoEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable SSO authentication via PKCE flow"
+        },
+        "codeIntel.backend.ssoProviderUrl": {
           "type": "string",
           "default": "",
-          "description": "Path to Backend server entry point"
-        },
-        "codeIntel.backend.autoStart": {
-          "type": "boolean",
-          "default": true,
-          "description": "Auto-start Backend on activation"
+          "description": "SSO provider URL (required when ssoEnabled is true)"
         },
         "codeIntel.backend.healthCheckInterval": {
           "type": "number",
@@ -39,12 +33,19 @@
           "maximum": 60000,
           "description": "Health check polling interval (ms)"
         },
-        "codeIntel.backend.startupTimeout": {
+        "codeIntel.backend.toolCallTimeout": {
           "type": "number",
-          "default": 30000,
-          "minimum": 5000,
-          "maximum": 120000,
-          "description": "Max time to wait for Backend startup (ms)"
+          "default": 300000,
+          "minimum": 10000,
+          "maximum": 900000,
+          "description": "Timeout for tool calls (ms). Some tools take minutes."
+        },
+        "codeIntel.backend.chatTimeout": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 10000,
+          "maximum": 600000,
+          "description": "Timeout for AI chat responses (ms)"
         }
       }
     },
@@ -52,11 +53,18 @@
       { "command": "codeIntel.reconnect", "title": "Code Intel: Reconnect to Backend" },
       { "command": "codeIntel.disconnect", "title": "Code Intel: Disconnect from Backend" },
       { "command": "codeIntel.showConnectionStatus", "title": "Code Intel: Show Connection Status" },
+      { "command": "codeIntel.login", "title": "Code Intel: Login" },
+      { "command": "codeIntel.logout", "title": "Code Intel: Logout" },
+      { "command": "codeIntel.configureMcpServers", "title": "Code Intel: Configure MCP Servers" },
       { "command": "codeIntel.openDashboard", "title": "Code Intel: Open Dashboard" },
       { "command": "codeIntel.openKbGraph", "title": "Code Intel: Open KB Graph" },
       { "command": "codeIntel.openAnalytics", "title": "Code Intel: Open Analytics" },
       { "command": "codeIntel.openTags", "title": "Code Intel: Open Tags" },
-      { "command": "codeIntel.openQuality", "title": "Code Intel: Open Quality" }
+      { "command": "codeIntel.openQuality", "title": "Code Intel: Open Quality" },
+      { "command": "codeIntel.indexDocuments", "title": "Code Intel: Index Documents" },
+      { "command": "codeIntel.indexSource", "title": "Code Intel: Index Source Code" },
+      { "command": "codeIntel.openChat", "title": "Code Intel: Open Chat" },
+      { "command": "codeIntel.configureBackend", "title": "Code Intel: Configure Backend" }
     ]
   },
   "scripts": {

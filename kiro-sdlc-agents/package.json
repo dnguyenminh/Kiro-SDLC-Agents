@@ -1,8 +1,8 @@
 {
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
-  "description": "Inject multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security) with MCP Code Intelligence into any workspace for Kiro IDE",
-  "version": "1.26.0",
+  "description": "Thin client for Kiro SDLC multi-agent pipeline — connects to remote backend for KB, indexing, and AI features",
+  "version": "2.0.0",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -32,11 +32,7 @@
     "onView:kiroSdlcTree",
     "onView:kiroChatPanel",
     "onCommand:kiroSdlc.injectAll",
-    "onCommand:kiroSdlc.status",
-    "onCommand:kiroSdlc.indexWorkspace",
-    "onCommand:kiroSdlc.injectSelective",
-    "onCommand:kiroSdlc.update",
-    "onCommand:kiroSdlc.downloadModel"
+    "onCommand:kiroSdlc.status"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -52,20 +48,12 @@
       },
       {
         "command": "kiroSdlc.update",
-        "title": "Kiro SDLC: Update Agents (Keep Customizations)"
+        "title": "Kiro SDLC: Update Agents"
       },
       {
         "command": "kiroSdlc.status",
         "title": "Kiro SDLC: Show Status",
         "icon": "$(info)"
-      },
-      {
-        "command": "kiroSdlc.indexWorkspace",
-        "title": "Kiro SDLC: Index Workspace (Code + Documents)"
-      },
-      {
-        "command": "kiroSdlc.downloadModel",
-        "title": "Kiro SDLC: Download Embedding Model"
       },
       {
         "command": "kiroSdlc.openKbGraph",
@@ -88,32 +76,8 @@
         "title": "Kiro SDLC: Open KB Analytics"
       },
       {
-        "command": "kiroSdlc.restartMcpServer",
-        "title": "Kiro SDLC: Restart MCP Server"
-      },
-      {
-        "command": "kiroSdlc.stopMcpServer",
-        "title": "Kiro SDLC: Stop MCP Server"
-      },
-      {
-        "command": "kiroSdlc.openKbBrowser",
-        "title": "Kiro SDLC: Open KB in Browser"
-      },
-      {
-        "command": "kiroSdlc.changePort",
-        "title": "Kiro SDLC: Change MCP Server Port"
-      },
-      {
-        "command": "kiroSdlc.editConfig",
-        "title": "Kiro SDLC: Edit Orchestration Config"
-      },
-      {
-        "command": "kiroSdlc.changeConfig",
-        "title": "Kiro SDLC: Change Config File..."
-      },
-      {
-        "command": "kiroSdlc.openKbBrowser",
-        "title": "Kiro SDLC: Open KB in Browser"
+        "command": "kiroSdlc.openWorkflowGraph",
+        "title": "Kiro SDLC: Open Workflow Graph"
       },
       {
         "command": "kiroSdlc.symbolSearch",
@@ -121,7 +85,7 @@
       },
       {
         "command": "kiroSdlc.openSecurityPanel",
-        "title": "Kiro SDLC: Open Security Panel"
+        "title": "Kiro SDLC: Security Panel"
       },
       {
         "command": "kiroSdlc.impactAnalysis",
@@ -136,29 +100,41 @@
         "title": "Kiro SDLC: Get Edit Context for Symbol"
       },
       {
-        "command": "kiroSdlc.indexSalesforceProject",
-        "title": "Kiro SDLC: Index Salesforce Project"
-      },
-      {
-        "command": "kiroSdlc.testLanguageModels",
-        "title": "Kiro SDLC: Test Language Models (vscode.lm)"
-      },
-      {
-        "command": "kiroSdlc.setLlmApiKey",
-        "title": "Kiro SDLC: Set LLM API Key"
-      },
-      {
-        "command": "kiroSdlc.clearLlmApiKey",
-        "title": "Kiro SDLC: Clear LLM API Key"
-      },
-      {
         "command": "kiroSdlc.openSettings",
         "title": "Kiro SDLC: Settings",
         "icon": "$(gear)"
       },
       {
-        "command": "kiroSdlc.openWorkflowGraph",
-        "title": "Kiro SDLC: Open Workflow Graph"
+        "command": "kiroSdlc.openKbBrowser",
+        "title": "Kiro SDLC: Open KB in Browser"
+      },
+      {
+        "command": "kiroSdlc.login",
+        "title": "Kiro SDLC: Login to Backend"
+      },
+      {
+        "command": "kiroSdlc.logout",
+        "title": "Kiro SDLC: Logout"
+      },
+      {
+        "command": "kiroSdlc.reconnect",
+        "title": "Kiro SDLC: Reconnect to Backend"
+      },
+      {
+        "command": "kiroSdlc.disconnect",
+        "title": "Kiro SDLC: Disconnect"
+      },
+      {
+        "command": "kiroSdlc.indexDocuments",
+        "title": "Kiro SDLC: Index Documents"
+      },
+      {
+        "command": "kiroSdlc.indexSource",
+        "title": "Kiro SDLC: Index Source Code"
+      },
+      {
+        "command": "kiroSdlc.syncWorkspace",
+        "title": "Kiro SDLC: Sync Workspace"
       }
     ],
     "viewsContainers": {
@@ -186,61 +162,40 @@
     "configuration": {
       "title": "Kiro SDLC Agents",
       "properties": {
-        "kiroSdlc.enableMcpServer": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable bundled MCP Code Intelligence server. When disabled, the server will not start automatically."
+        "kiroSdlc.backend.url": {
+          "type": "string",
+          "default": "http://127.0.0.1:48721",
+          "description": "Remote Kiro backend server URL"
         },
-        "kiroSdlc.mcpServerPort": {
+        "kiroSdlc.backend.ssoEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable SSO/PKCE authentication"
+        },
+        "kiroSdlc.backend.ssoProviderUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OAuth2 SSO provider URL for PKCE flow"
+        },
+        "kiroSdlc.backend.toolCallTimeout": {
           "type": "number",
-          "default": 9181,
-          "description": "Port for the bundled MCP server. Change if port conflicts with another service."
+          "default": 300000,
+          "description": "Timeout for MCP tool calls (ms)"
+        },
+        "kiroSdlc.backend.chatTimeout": {
+          "type": "number",
+          "default": 120000,
+          "description": "Timeout for chat responses (ms)"
+        },
+        "kiroSdlc.backend.healthCheckInterval": {
+          "type": "number",
+          "default": 30000,
+          "description": "Health check interval (ms)"
         },
         "kiroSdlc.configPath": {
           "type": "string",
           "default": ".code-intel/orchestration.json",
-          "description": "Path to orchestration config file (relative to workspace root). Controls MCP server behavior, child servers, and model routing."
-        },
-        "kiroSdlc.llmProvider": {
-          "enum": [
-            "anthropic",
-            "openai",
-            "ollama",
-            "onnx"
-          ],
-          "type": "string",
-          "description": "LLM provider for direct agent calls. Anthropic (recommended — use gateway base URL for zero-config). OpenAI requires API key. Ollama runs locally. ONNX runs CPU-only local models.",
-          "default": "anthropic"
-        },
-        "kiroSdlc.kiroModel": {
-          "type": "string",
-          "default": "",
-          "description": "Selected Kiro model ID (auto-populated from API). Leave empty to use default."
-        },
-        "kiroSdlc.kiroRegion": {
-          "type": "string",
-          "default": "",
-          "description": "AWS region for Kiro API. Leave empty to auto-detect from SSO credentials."
-        },
-        "kiroSdlc.llmModel": {
-          "type": "string",
-          "description": "Override the default model for the selected LLM provider. Leave empty to use provider defaults (claude-sonnet-4-20250514, gpt-4o, llama3.1).",
-          "default": ""
-        },
-        "kiroSdlc.anthropicBaseUrl": {
-          "type": "string",
-          "description": "Custom base URL for Anthropic API. Default points to the standalone Kiro Gateway extension (http://127.0.0.1:8990/anthropic) which uses Kiro IDE credentials. Set your Anthropic key (or the gateway's API key) via Save key. Change to https://api.anthropic.com for direct Anthropic API access.",
-          "default": "http://127.0.0.1:8990/anthropic"
-        },
-        "kiroSdlc.openaiBaseUrl": {
-          "type": "string",
-          "description": "Custom base URL for OpenAI API. Use for Azure OpenAI, OpenRouter, vLLM, or any OpenAI-compatible endpoint. Leave empty for official API.",
-          "default": ""
-        },
-        "kiroSdlc.ollamaUrl": {
-          "type": "string",
-          "description": "Base URL for Ollama API when using the ollama provider.",
-          "default": "http://localhost:11434"
+          "description": "Path to orchestration config file (relative to workspace root)"
         }
       }
     },
@@ -292,13 +247,5 @@
     "typescript": "^5.4.0",
     "vitest": "^4.1.8"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.100.1",
-    "@langchain/core": "^0.3.80",
-    "@langchain/langgraph": "^0.2.74",
-    "3d-force-graph": "^1.80.0",
-    "chart.js": "^4.5.1",
-    "filetomarkdown": "^1.0.0",
-    "three": "^0.184.0"
-  }
+  "dependencies": {}
 }

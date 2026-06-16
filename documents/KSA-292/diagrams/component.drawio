@@ -1,0 +1,66 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — KSA-292: Module Dependencies&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="420" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_ts" value="&lt;b&gt;extension.ts&lt;/b&gt;&#10;(Entry Point)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="60" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="auth" value="&lt;b&gt;auth/&lt;/b&gt;&#10;AuthManager&#10;TokenRefreshTimer&#10;PkceService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="160" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="connection" value="&lt;b&gt;connection/&lt;/b&gt;&#10;ConnectionManager&#10;HealthChecker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="260" y="160" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="config" value="&lt;b&gt;config/&lt;/b&gt;&#10;ConfigurationManager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="460" y="160" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="proxy" value="&lt;b&gt;proxy/&lt;/b&gt;&#10;ToolProxy&#10;HttpClient&#10;ToolRegistry&#10;FileProxyHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="300" width="160" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="services" value="&lt;b&gt;services/&lt;/b&gt;&#10;WorkspaceSyncService&#10;IndexingService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="260" y="300" width="160" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="webview" value="&lt;b&gt;webview/&lt;/b&gt;&#10;WebviewManager&#10;ChatPanel&#10;LoginPanel&#10;McpConfigPanel&#10;RemoteConfigPanel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="460" y="300" width="160" height="120" as="geometry"/>
+    </mxCell>
+    <mxCell id="ui" value="&lt;b&gt;ui/&lt;/b&gt;&#10;StatusBarManager&#10;NotificationManager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="660" y="160" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="types" value="&lt;b&gt;types/&lt;/b&gt;&#10;config.ts&#10;connection.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="660" y="300" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="removed" value="&lt;b&gt;REMOVED&lt;/b&gt;&#10;BackendProcess.ts&#10;providers/ (9 files)&#10;message-handler/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=11;align=left;spacingLeft=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="300" y="470" width="200" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="auth" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="connection" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="config" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="connection" target="proxy" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="webview" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="ext_ts" target="ui" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="services" target="proxy" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="webview" target="proxy" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_removed" value="DELETED" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=none;dashed=1;strokeColor=#c62828;fontSize=10;fontColor=#c62828;" edge="1" source="connection" target="removed" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

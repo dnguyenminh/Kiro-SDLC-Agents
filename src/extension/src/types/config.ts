@@ -1,26 +1,25 @@
 /**
  * Configuration types for the Extension.
- * Implements TDD §5.1 ConfigurationManager and FSD §3.1.4.
+ * KSA-292: Refactored to URL-based remote backend (no local process).
+ * Implements TDD §5.1 ConfigurationManager.
  */
 
 export interface BackendConfiguration {
-  port: number;
-  host: string;
-  backendPath: string;
-  autoStart: boolean;
+  url: string;
+  ssoEnabled: boolean;
+  ssoProviderUrl: string;
   healthCheckInterval: number;
-  startupTimeout: number;
-  compatRange: string;
+  toolCallTimeout: number;
+  chatTimeout: number;
 }
 
 export const DEFAULT_BACKEND_CONFIG: BackendConfiguration = {
-  port: 48721,
-  host: '127.0.0.1',
-  backendPath: '',
-  autoStart: true,
+  url: 'http://127.0.0.1:48721',
+  ssoEnabled: false,
+  ssoProviderUrl: '',
   healthCheckInterval: 5000,
-  startupTimeout: 30000,
-  compatRange: '>=1.0.0',
+  toolCallTimeout: 300000,
+  chatTimeout: 120000,
 };
 
-export type PanelType = 'dashboard' | 'kbGraph' | 'analytics' | 'tags' | 'quality';
+export type PanelType = 'dashboard' | 'kbGraph' | 'analytics' | 'tags' | 'quality' | 'chat';
