@@ -1,7 +1,7 @@
-﻿id,username,email,display_name,role,password_hash,projects,status,description
-admin-001,admin.user,admin@company.com,Admin User,admin,[scrypt_hash],["proj-frontend","proj-backend"],ACTIVE,Admin with full permissions - actor for admin tests
-user-001,john.doe,john.doe@company.com,John Doe,user,[scrypt_hash],["proj-frontend"],ACTIVE,Standard user for auth and KB tests
-user-002,jane.smith,jane.smith@company.com,Jane Smith,user,[scrypt_hash],["proj-frontend","proj-backend"],ACTIVE,Multi-project user for cross-project tests
-user-003,bob.wilson,bob.wilson@company.com,Bob Wilson,user,[scrypt_hash],["proj-backend"],ACTIVE,User for tier isolation tests (different project)
-user-004,locked.user,locked@company.com,Locked User,user,[scrypt_hash],["proj-frontend"],LOCKED,Pre-locked user for lockout tests (failed_attempts=5)
-user-005,sso.user,sso@external.com,SSO User,user,NULL,["proj-frontend"],ACTIVE,SSO-only user (no password_hash)
+id,username,email,display_name,role,projects,password,failed_attempts,locked_until,description
+user-a-001,john.doe,john@company.com,John Doe,user,"[""proj-a""]",validPass123,0,,Standard user in project A — primary test actor
+user-b-002,jane.smith,jane@company.com,Jane Smith,user,"[""proj-b""]",janePass456,0,,Standard user in project B — isolation test
+admin-003,admin.user,admin@company.com,Admin User,admin,"[""proj-a"",""proj-b""]",adminPass789,0,,Admin with full permissions
+locked-004,locked.user,locked@company.com,Locked User,user,"[]",lockedPass,5,now+15min,Locked account — 5 failed attempts
+sso-005,sso.user,sso@company.com,SSO User,user,"[""proj-a""]",,0,,SSO-only user (no password)
+multiproj-006,multi.user,multi@company.com,Multi Project,user,"[""proj-a"",""proj-b"",""proj-c""]",multiPass123,0,,User in 3 projects — multi-tier search test

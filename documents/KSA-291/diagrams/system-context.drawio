@@ -1,0 +1,49 @@
+<mxfile>
+  <diagram name="System Context — KSA-291 LOD Manager" id="ctx_ksa291">
+    <mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-291 — System Context: LOD Manager&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="350" y="20" width="380" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="boundary" value="LOD System Boundary" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="120" width="560" height="550" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor_user" value="Graph User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="340" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="lod_manager" value="&lt;b&gt;LODManager&lt;/b&gt;&#10;_checkDistances()&#10;_freeBudget()&#10;_getExpandedCentroid()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="440" y="200" width="220" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="lod_clustering" value="&lt;b&gt;LODClustering&lt;/b&gt;&#10;compute()&#10;Louvain algorithm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="340" y="380" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="lod_animation" value="&lt;b&gt;LODAnimation&lt;/b&gt;&#10;expand() / collapse()&#10;orbital positions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="580" y="380" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="force_graph" value="&lt;b&gt;ForceGraph3D&lt;/b&gt;&#10;3D rendering&#10;Force simulation&#10;Camera API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="440" y="540" width="220" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="browser" value="&lt;b&gt;Browser&lt;/b&gt;&#10;requestAnimationFrame&#10;Canvas/WebGL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="960" y="340" width="160" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_lod" value="zoom in/out" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="actor_user" target="lod_manager" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_lod_cluster" value="compute clusters" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="lod_manager" target="lod_clustering" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_lod_anim" value="animate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="lod_manager" target="lod_animation" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_lod_graph" value="graphData() / camera() / node.xyz" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="lod_manager" target="force_graph" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_graph_browser" value="render loop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="force_graph" target="browser" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

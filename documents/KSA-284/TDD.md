@@ -11,7 +11,7 @@
 | Jira Ticket | KSA-284 |
 | Title | Split Extension: Lightweight Proxy + Backend MCP Server |
 | Author | SA Agent |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2025-07-11 |
 | Status | Draft |
 | Related BRD | BRD-v1-KSA-284.docx |
@@ -33,6 +33,7 @@
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-07-11 | SA Agent | Initiate document from BRD and FSD |
+| 1.1 | 2025-07-14 | SA Agent | Add §12 Native Dependencies & Auto-Download, update §1.3 Technology Stack, add standalone startup flow to §2.3 |
 
 ---
 
@@ -80,6 +81,9 @@ This TDD provides the technical blueprint for splitting the monolithic Code Inte
 | Package Manager | npm | >= 9.0 | Match existing workflow |
 | Logging | pino | ^9.2 | Already in codebase |
 | Schema Validation | zod | ^3.23 | Type-safe validation |
+| Native SQLite | better-sqlite3 | ^12.10.0 | Prebuilt binary auto-download for standalone mode |
+| ML Runtime (standalone) | onnxruntime-node | 1.22.0 | Prebuilt tar.gz auto-download for standalone mode |
+| Embedding Model | all-MiniLM-L6-v2 | latest | HuggingFace sentence-transformers, auto-download |
 
 ### 1.4 Design Principles
 
@@ -120,46 +124,8 @@ The system follows a **client-server split** pattern where the Extension acts as
 ![Architecture Diagram](diagrams/architecture.png)
 *[Edit in draw.io](diagrams/architecture.drawio)*
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        DEVELOPER MACHINE                         │
-├─────────────────────────┬───────────────────────────────────────┤
-│   VS Code / Kiro IDE    │         Backend Process               │
-│  ┌───────────────────┐  │  ┌─────────────────────────────────┐  │
-│  │  Extension Host   │  │  │   Backend MCP Server            │  │
-│  │  ┌─────────────┐  │  │  │  ┌─────────────────────────┐   │  │
-│  │  │ Tool Proxy  │──┼──┼──┼─→│ HTTP Server (Hono)      │   │  │
-│  │  │ (52 tools)  │  │  │  │  │ POST /mcp/tools/call    │   │  │
-│  │  └─────────────┘  │  │  │  │ GET  /mcp/tools/list    │   │  │
-│  │  ┌─────────────┐  │  │  │  │ GET  /health            │   │  │
-│  │  │ Connection  │──┼──┼──┼─→│ GET  /api/*             │   │  │
-│  │  │ Manager     │  │  │  │  └──────────┬──────────────┘   │  │
-│  │  └─────────────┘  │  │  │             │                   │  │
-│  │  ┌─────────────┐  │  │  │  ┌──────────▼──────────────┐   │  │
-│  │  │ Webview Mgr │  │  │  │  │ Tool Router             │   │  │
-│  │  └─────────────┘  │  │  │  └──────────┬──────────────┘   │  │
-│  │  ┌─────────────┐  │  │  │             │                   │  │
-│  │  │ Status Bar  │  │  │  │  ┌──────────▼──────────────┐   │  │
-│  │  └─────────────┘  │  │  │  │ Module Dispatcher       │   │  │
-│  └───────────────────┘  │  │  │ ┌────────┐ ┌──────────┐ │   │  │
-│                         │  │  │ │Memory  │ │Code Intel│ │   │  │
-│  ┌───────────────────┐  │  │  │ │Module  │ │Module    │ │   │  │
-│  │  Webview Panels   │  │  │  │ ├────────┤ ├──────────┤ │   │  │
-│  │  - Dashboard      │  │  │  │ │Orchest.│ │Analytics │ │   │  │
-│  │  - KB Graph       │  │  │  │ │Module  │ │Module    │ │   │  │
-│  │  - Analytics      │  │  │  │ ├────────┤ ├──────────┤ │   │  │
-│  │  - Tags           │  │  │  │ │KB Graph│ │Agent Log │ │   │  │
-│  │  - Quality        │  │  │  │ │Module  │ │Module    │ │   │  │
-│  └───────────────────┘  │  │  │ └────────┘ └──────────┘ │   │  │
-│                         │  │  └──────────────────────────────┘   │
-│                         │  │  ┌──────────────────────────────┐   │
-│                         │  │  │ Child MCP Servers (stdio)    │   │
-│                         │  │  │ - Atlassian (Jira)           │   │
-│                         │  │  │ - Markdown Exporter          │   │
-│                         │  │  │ - Draw.io                    │   │
-│                         │  │  └──────────────────────────────┘   │
-└─────────────────────────┴───────────────────────────────────────┘
-```
+![Architecture Split Detail](diagrams/architecture-split.png)
+*[Edit in draw.io](diagrams/architecture-split.drawio)*
 
 ### 2.2 Component Diagram
 
@@ -189,6 +155,61 @@ Both components run on the developer's local machine as separate OS processes:
 |---------|-----------|------|--------|------|
 | Extension (in VS Code Extension Host) | Starts with IDE, stops with IDE | N/A (inproc) | ~20MB | <5MB (.vsix) |
 | Backend MCP Server | Auto-started by Extension, or manual | 48721 (configurable) | ~300MB (ONNX) | ~220MB (installed) |
+
+
+### 2.3.1 Standalone Server Startup Flow
+
+When running as a standalone process (outside VS Code extension host), the Backend follows this deterministic initialization sequence:
+
+![Standalone Startup Flow](diagrams/startup-flow.png)
+
+*[Edit in draw.io](diagrams/startup-flow.drawio)*
+
+**Key Design Decisions:**
+- Steps 1-2 are **blocking** — the server cannot function without a database
+- Step 3 is **fire-and-forget** — embedding features degrade gracefully if unavailable
+- Step 4 begins immediately after migrations, without waiting for embedding
+- Total startup time: ~2-5s (first run with downloads: ~30-60s depending on network)
+
+### 2.3.2 Native Dependency Auto-Download Infrastructure
+
+The Backend is a **standalone server** that runs without requiring C++ build tools or pre-installed native modules. All native dependencies are resolved at runtime via self-download mechanisms.
+
+| Component | Module | Cache Location | Size | Source |
+|-----------|--------|---------------|------|--------|
+| better-sqlite3 (.node) | `src/db/native-addon-resolver.ts` | `~/.code-intel/native-addons/better-sqlite3/v12.10.0/{platform}/` | ~2 MB | GitHub Releases |
+| onnxruntime-node | `src/embedding/onnx-bootstrap.ts` | `~/.code-intel/native-addons/onnxruntime-node/v1.22.0/{platform}/` | ~92 MB | GitHub Releases |
+| Embedding model (all-MiniLM-L6-v2) | `src/embedding/model-downloader.ts` | `.code-intel/models/` | ~90 MB | HuggingFace |
+
+**Resolution Priority (all components):**
+1. Environment variable (injected by Extension host) → use directly
+2. Local cache (`~/.code-intel/native-addons/...`) → use if present + validated
+3. Auto-download from release URL → cache → use
+4. Fallback: npm-installed package (if available)
+
+**Platform Support (better-sqlite3):**
+
+| Node Version | Windows x64 | macOS x64 | macOS ARM64 | Linux x64 |
+|-------------|-------------|-----------|-------------|-----------|
+| v20 | ✅ | ✅ | ✅ | ✅ |
+| v22 | ✅ | ✅ | ✅ | ✅ |
+| v24 | ✅ | ✅ | ✅ | ✅ |
+| v25 | ✅ | ✅ | ✅ | ✅ |
+
+**Platform Support (ONNX Runtime):**
+
+| Platform | Architecture | Status |
+|----------|-------------|--------|
+| Windows | x64 | ✅ |
+| macOS | x64 | ✅ |
+| macOS | ARM64 | ✅ |
+| Linux | x64 | ✅ |
+
+**Security:**
+- All downloads verified via SHA-256 checksum (embedded in manifest)
+- 3 retry attempts with exponential backoff
+- Binary validation via `process.dlopen()` before use (catches NODE_MODULE_VERSION mismatch)
+- Path traversal protection in tar extraction
 
 ### 2.4 Communication Patterns
 
@@ -1011,7 +1032,7 @@ Total estimated:                  ~7ms (well within 50ms budget)
 
 ---
 
-## 12. Appendix
+## 13. Appendix
 
 ### Glossary
 
@@ -1038,9 +1059,10 @@ Total estimated:                  ~7ms (well within 50ms budget)
 | # | Diagram | Image | Source (editable) |
 |---|---------|-------|-------------------|
 | 1 | Architecture | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
-| 2 | Component | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
-| 3 | Class — Extension | [class-extension.png](diagrams/class-extension.png) | [class-extension.drawio](diagrams/class-extension.drawio) |
-| 4 | Class — Backend | [class-backend.png](diagrams/class-backend.png) | [class-backend.drawio](diagrams/class-backend.drawio) |
+| 2 | Architecture Split Detail | [architecture-split.png](diagrams/architecture-split.png) | [architecture-split.drawio](diagrams/architecture-split.drawio) |
+| 3 | Component | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
+| 4 | Class — Extension | [class-extension.png](diagrams/class-extension.png) | [class-extension.drawio](diagrams/class-extension.drawio) |
+| 5 | Class — Backend | [class-backend.png](diagrams/class-backend.png) | [class-backend.drawio](diagrams/class-backend.drawio) |
 
 ---
 
@@ -1049,6 +1071,7 @@ Total estimated:                  ~7ms (well within 50ms budget)
 | # | Diagram | File | Section | Status |
 |---|---------|------|---------|--------|
 | 1 | Architecture Overview | `diagrams/architecture.drawio` + `.png` | §2.1 | ✅ |
-| 2 | Component Diagram | `diagrams/component.drawio` + `.png` | §2.2 | ✅ |
-| 3 | Class — Extension | `diagrams/class-extension.drawio` + `.png` | §5.3 | ✅ |
-| 4 | Class — Backend | `diagrams/class-backend.drawio` + `.png` | §5.3 | ✅ |
+| 2 | Architecture Split Detail | `diagrams/architecture-split.drawio` + `.png` | §2.1 | ✅ |
+| 3 | Component Diagram | `diagrams/component.drawio` + `.png` | §2.2 | ✅ |
+| 4 | Class — Extension | `diagrams/class-extension.drawio` + `.png` | §5.3 | ✅ |
+| 5 | Class — Backend | `diagrams/class-backend.drawio` + `.png` | §5.3 | ✅ |

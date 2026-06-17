@@ -149,25 +149,9 @@ Open via Command Palette (`Ctrl+Shift+P`):
 
 ## 5. Architecture Overview
 
-```
-+-------------------+         HTTP (localhost:48721)         +-------------------+
-|                   |                                         |                   |
-|   VS Code IDE     |  --- Tool Call ----------------------> |  Backend MCP      |
-|                   |                                         |  Server           |
-|  +-----------+    |  <-- JSON Response ------------------- |                   |
-|  | Extension |    |                                         |  - Memory         |
-|  | (Proxy)   |    |  --- GET /health -------------------->  |  - Code Intel     |
-|  |  <5MB     |    |                                         |  - Orchestration  |
-|  +-----------+    |  --- GET /api/* --------------------->  |  - Analytics      |
-|                   |                                         |  - KB Graph       |
-|  +-----------+    |                                         |  - Utility        |
-|  | Webview   |    |                                         |                   |
-|  | Panels    |    |                                         |  ~300MB RAM       |
-|  +-----------+    |                                         |  Port 48721       |
-|                   |                                         |                   |
-+-------------------+                                         +-------------------+
-     ~20MB RAM                                                  Separate process
-```
+![Architecture Overview](diagrams/architecture-split.png)
+
+*[Edit in draw.io](diagrams/architecture-split.drawio)*
 
 **Key points:**
 - Extension is a thin proxy — zero business logic
@@ -295,7 +279,7 @@ A: Yes. Set `codeIntel.backend.autoStart: false` in settings. Then start Backend
 
 ---
 
-## 10. API Reference
+## 11. API Reference
 
 For developers building alternative frontends or debugging.
 

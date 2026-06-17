@@ -1,12 +1,24 @@
 {
   "ticket": "KSA-209",
   "type": "bug",
-  "currentPhase": "implementation",
+  "currentPhase": "done",
   "phases": {
-    "requirements": { "status": "skipped", "reason": "Bug fix - no BRD needed" },
-    "specification": { "status": "skipped", "reason": "Bug fix - no FSD needed" },
-    "design": { "status": "skipped", "reason": "Bug fix - no TDD needed" },
-    "test_planning": { "status": "skipped", "reason": "Bug fix - existing tests cover changes" },
+    "requirements": {
+      "status": "skipped",
+      "reason": "Bug fix - no BRD needed"
+    },
+    "specification": {
+      "status": "skipped",
+      "reason": "Bug fix - no FSD needed"
+    },
+    "design": {
+      "status": "skipped",
+      "reason": "Bug fix - no TDD needed"
+    },
+    "test_planning": {
+      "status": "skipped",
+      "reason": "Bug fix - existing tests cover changes"
+    },
     "implementation": {
       "status": "done",
       "branch": "KSA-209",
@@ -22,8 +34,17 @@
       ],
       "completedAt": "2026-06-03T12:50:00Z"
     },
-    "testing": { "status": "done", "result": "39/39 passed", "completedAt": "2026-06-03T12:49:00Z" },
-    "deployment": { "status": "pending_review", "note": "Awaiting Jira transition to IN REVIEW then merge" }
+    "testing": {
+      "status": "done",
+      "result": "39/39 passed",
+      "completedAt": "2026-06-03T12:49:00Z"
+    },
+    "deployment": {
+      "status": "pending_review",
+      "note": "Awaiting Jira transition to IN REVIEW then merge"
+    }
   },
-  "lastUpdated": "2026-06-03T12:50:00Z"
+  "lastUpdated": "2026-06-11T12:00:00Z",
+  "batchClosed": true,
+  "batchClosedReason": "Batch close by SM — all phases confirmed complete or legacy"
 }

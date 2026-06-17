@@ -1,6 +1,8 @@
 /**
- * Shared types for webview ↔ extension host communication
+ * Shared types for webview <-> extension host communication
  * KSA-252: Context Menu ("#" Trigger)
+ * KSA-255: Spinner + Working Indicator
+ * KSA-259: Interactive Options
  */
 export type ContextSourceType = 'files' | 'spec' | 'git-diff' | 'terminal' | 'problems' | 'folder' | 'current-file' | 'steering' | 'mcp';
 export interface ContextMetadata {
@@ -50,6 +52,21 @@ export interface DiagnosticItem {
     severity: 'error' | 'warning' | 'info';
     message: string;
     source?: string;
+}
+export interface ChatProcessingSignal {
+    type: 'chat:processing';
+    state: 'start' | 'stop';
+    reason?: 'complete' | 'cancelled' | 'error' | 'timeout';
+}
+export interface ChatOptionsSignal {
+    type: 'chat:options';
+    options: string[];
+    question?: string;
+}
+export interface ChatResponseMessage {
+    type: 'chat:response';
+    text: string;
+    source: 'option-click' | 'text-input';
 }
 export type ContextRequest = {
     type: 'getWorkspaceFileTree';

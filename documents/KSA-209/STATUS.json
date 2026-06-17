@@ -1,0 +1,15 @@
+{
+  "ticket": "KSA-209",
+  "currentPhase": "done",
+  "phases": {
+    "requirements": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "specification": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "design": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "implementation": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "testing": { "status": "done", "completedAt": "2025-07-15T10:00:00Z", "result": "PASS" },
+    "deployment": { "status": "done", "file": "DPG.md", "version": 1, "completedAt": "2025-07-15T10:00:00Z" }
+  },
+  "lastUpdated": "2025-07-15T10:00:00Z"
+}

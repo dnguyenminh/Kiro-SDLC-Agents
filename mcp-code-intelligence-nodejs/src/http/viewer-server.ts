@@ -87,6 +87,17 @@ export class ViewerServer {
       } else {
         handleApiRoute(url, res, this.memoryEngine, this.knowledgeGraph);
       }
+    } else if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
+      // Serve Admin SPA
+      const spaPath = path.join(this.workspace, 'src', 'admin-ui', 'dist', 'index.html');
+      if (fs.existsSync(spaPath)) {
+        const content = fs.readFileSync(spaPath, 'utf-8');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(content);
+      } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Admin Portal not found. Check src/admin-ui/dist/index.html');
+      }
     } else {
       this.send404(res);
     }

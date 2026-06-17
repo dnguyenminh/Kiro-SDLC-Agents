@@ -11,7 +11,7 @@
 | Jira Ticket | KSA-286 |
 | Title | Web Admin Portal - User Guide |
 | Author | DEV Agent |
-| Version | 2.1 |
+| Version | 4.0 |
 | Date | 2025-07-15 |
 | Related BRD | BRD-v1-KSA-286.docx |
 | Related FSD | FSD-v1-KSA-286.docx |
@@ -31,7 +31,7 @@ This is a **production-ready implementation** with 44 API endpoints:
 - Persistent RBAC storage (SQLite) — access groups and permissions survive restart
 - Full User CRUD with create/delete/disable/force-logout/reset-password
 - KB Management with pagination, linking, tagging, promotion queue, import/export
-- D3.js force-directed graph visualization with real KB data
+- 3D force-directed graph visualization (ForceGraph3D/Three.js) with minimap, toolbar, detail panel
 - Analytics charts (quality distribution, usage over time, embedding space)
 - MCP Server management with tool toggle, logs viewer, restart
 - Configuration editor with hot-reload and change history
@@ -111,11 +111,61 @@ Simple read-only table showing KB entries from `GET /api/admin/kb/entries`.
 
 ### 3.3 KB Graph
 
-Placeholder page. Displays message:
+3D force-directed graph visualization using ForceGraph3D (Three.js/WebGL). Dark background (#0f172a).
 
-> "Graph visualization requires backend connection."
+**Components:**
 
-**Not present:** D3.js visualization, force-directed graph, node colors, zoom/pan, search, filters.
+| Component | Location | Description |
+|-----------|----------|-------------|
+| 3D Graph | Main area | ForceGraph3D WebGL canvas — nodes as spheres, edges as lines |
+| Toolbar | Above graph | Search combobox, "Fit View" button, "Filter Types" dropdown |
+| Detail Panel | Top-right overlay | Shows node details on click (✕ to close) |
+| Minimap | Bottom-right (180×140) | Scaled canvas copy of main graph |
+| Legend | Bottom-left | Color-coded node types |
+
+**Toolbar:**
+
+| Control | Behavior |
+|---------|----------|
+| Search combobox | Type node name → dropdown shows matches → select → camera focuses on node + detail panel opens |
+| "Fit View" button | Zooms camera to fit all visible nodes in viewport |
+| "Filter Types" dropdown | Checkboxes: document, code, config, api, module. Uncheck = hide nodes of that type |
+
+**Node Appearance:**
+
+| Type | Color | Example |
+|------|-------|---------|
+| document | Blue | Markdown files, specs |
+| code | Green | Source code modules |
+| config | Orange | Configuration files |
+| api | Purple | API endpoints |
+| module | Cyan | High-level modules |
+
+Node size = proportional to quality score. Labels on hover: "{name} ({type})".
+
+**Detail Panel (on node click):**
+
+Fetches from `GET /api/admin/kb/entries/:id`. Shows:
+- Node name (title)
+- Type badge (colored)
+- Tier badge (USER/PROJECT/SHARED)
+- Content preview (first 300 characters)
+- Tags list
+- Links count
+- Quality score
+- Created date
+- ✕ button to close
+
+**Minimap (bottom-right, 180×140 canvas overlay):**
+
+Draws a scaled copy of the main graph WebGL canvas via `drawImage`. Interactive controls:
+- **Scroll** on minimap = zoom main graph
+- **Drag** on minimap = rotate main graph
+- **Right-drag** on minimap = pan main graph
+
+**Legend (bottom-left):**
+
+Always visible panel showing color-coded node types (document=blue, code=green, config=orange, api=purple, module=cyan).
 
 ---
 
@@ -339,23 +389,86 @@ Simple display table from `GET /api/admin/profile`.
 
 ## 4. Navigation
 
-Left sidebar with 11 navigation items:
+Left sidebar with 13 navigation items:
 
-| Icon | Label | Page ID |
-|------|-------|---------|
-| 📊 | Dashboard | dashboard |
-| 📚 | KB Management | kb |
-| 🕸️ | KB Graph | graph |
-| 📈 | Analytics | analytics |
-| 🖥️ | MCP Servers | mcp |
-| 👥 | Users | users |
-| 🔒 | RBAC | rbac |
-| ⚙️ | Configuration | config |
-| 🔍 | Search Explorer | search |
-| 📋 | Audit Trail | audit |
-| 👤 | Profile | profile |
+| Icon | Label | Page ID | Required Permission |
+|------|-------|---------|-------------------|
+| 📊 | Dashboard | dashboard | DASHBOARD_VIEW |
+| 📚 | KB Management | kb | KB_READ |
+| 🕸️ | KB Graph | graph | GRAPH_VIEW |
+| ⭐ | KB Quality | quality | KB_READ |
+| 🏷️ | KB Tags | tags | KB_READ |
+| 📈 | Analytics | analytics | ANALYTICS_VIEW |
+| 🖥️ | MCP Servers | mcp | MCP_ACCESS |
+| 👥 | Users | users | USER_MANAGE |
+| 🔒 | RBAC | rbac | RBAC_MANAGE |
+| ⚙️ | Configuration | config | CONFIG_EDIT |
+| 🔍 | Search Explorer | search | SEARCH_EXPLORE |
+| 📋 | Audit Trail | audit | AUDIT_VIEW |
+| 👤 | Profile | profile | (none — always visible) |
+
+**Permission-based filtering:** Sidebar only shows pages the logged-in user has permission to access. Hidden pages cannot be navigated to.
+
+**Sidebar info display:** Shows "Logged in as {username}" and "{N} permissions" count below the logo.
+
+**Force password change:** If `forcePasswordChange=true` in user profile, a full-screen password change form is shown before accessing any portal page.
+
+**403 error handling:** If any API call returns 403, a brief "Access Denied" message appears for 3 seconds.
 
 Active page is highlighted in blue. Click to switch pages. Logout button at bottom of sidebar.
+
+### 4.1 Multi-tab Tenant Comparison View
+
+For admins with **RBAC_MANAGE** permission, a "+" button appears in the tab bar at the top of the portal. This opens a multi-tab comparison mode using independent **PortalInstance** components:
+
+1. Click "+" in the tab bar → user list dropdown appears
+2. Select a user → a new PortalInstance is created for that user
+3. Each PortalInstance has its own sidebar (200px) showing only pages the target user can access
+4. Each PortalInstance has its own content area with independent page state, graph instance, and camera position
+5. The tab bar (dark background, always visible) shows all open tabs: "Admin (14) | editor1 (7) | +"
+6. Click a tab to switch — this only toggles visibility (`display:none`/`display:flex`), no remount or data loss
+7. Each tab can be closed via the ✕ button in the tab bar
+
+**Architecture:** Each tab is a complete `PortalInstance` component rendered in parallel. Inactive tabs use `display:none` — their state (navigation, graph camera, scroll position) is fully preserved when switching back.
+
+**Use case:** Verify that RBAC permission configurations work correctly by visually comparing what different users can see, with independent navigation and graph state per tab.
+
+### 4.2 Impersonation
+
+Backend supports admin impersonation for permission verification:
+
+- **Endpoint:** `GET /api/admin/impersonate/:userId` — returns target user's permissions
+- **Header:** `X-Impersonate: {userId}` — any API call resolves as target user
+- **Requirement:** Caller must have RBAC_MANAGE permission
+
+### 4.3 KB Quality Page
+
+Dedicated page (⭐ icon) showing quality scores for KB entries:
+
+- **Distribution chart:** Bar chart showing count of entries per score range (0-20, 21-40, 41-60, 61-80, 81-100)
+- **Summary cards:** Average score, total entries, good/fair/poor counts
+- **Status indicators:**
+  - 🟢 Good: score >= 80
+  - 🟡 Fair: score 60-79
+  - 🔴 Poor: score < 60
+- **API:** `GET /api/admin/kb/quality`
+- **Permission:** KB_READ
+
+### 4.4 KB Tags Page
+
+Dedicated page (🏷️ icon) for managing KB tags:
+
+| Action | How | API |
+|--------|-----|-----|
+| List tags | View table with name, count, last used | GET /api/admin/kb/tags |
+| Create tag | Enter name in input, click Create | POST /api/admin/kb/tags |
+| Rename tag | Click Rename, enter new name | PUT /api/admin/kb/tags/:name |
+| Delete tag | Click Delete, confirm | DELETE /api/admin/kb/tags/:name |
+| Merge tags | Select source and target, confirm | POST /api/admin/kb/tags/merge |
+| View entries | Click tag name to see associated entries | GET /api/admin/kb/tags/:name/entries |
+
+- **View permission:** KB_READ
+- **Modify permission:** KB_WRITE (create/rename/delete/merge)
 
 ---
 
@@ -414,7 +527,7 @@ DASHBOARD_VIEW, KB_READ, KB_WRITE, KB_PROMOTE, KB_IMPORT_EXPORT, MCP_ACCESS, MCP
 | 4 | KB entries endpoint returns empty | KB Management table always empty |
 | 5 | Audit endpoint returns empty | Audit Trail always empty |
 | 6 | Search endpoint returns empty | Search Explorer shows no results |
-| 7 | KB Graph is placeholder text only | No visualization capability |
+| 7 | KB Graph requires WebGL-capable browser | 3D rendering won't work on old browsers without WebGL |
 | 8 | Analytics values are hardcoded in JSX | Not connected to real metrics |
 | 9 | Config is read-only display | Cannot edit configuration values |
 | 10 | No pagination on any table | May have performance issues with large datasets |
@@ -449,7 +562,7 @@ The following table maps BRD requirements to current implementation status. All 
 | Dashboard metrics | STORY 1 | ✅ Done | Real CPU/memory/uptime/KB count/users + SSE auto-push |
 | KB Management table | STORY 2 | ✅ Done | CRUD + pagination + linking + tagging + promotion queue |
 | KB Import/Export | STORY 12 | ✅ Done | JSON export all entries + import endpoint |
-| KB Graph (D3.js) | STORY 3 | ✅ Done | Force-directed graph with real KB data, types, tiers |
+| KB Graph (ForceGraph3D) | STORY 3 | ✅ Done | 3D force graph with minimap, toolbar (search/filter/fit), detail panel, legend, dark bg |
 | Analytics charts | STORY 4 | ⚠️ Partial | Charts render, data semi-realistic (no real KB instrumentation) |
 | MCP Servers expandable | STORY 5 | ✅ Done | Expand tools, filter, restart |
 | MCP Tool toggle | STORY 5 | ✅ Done | Enable/disable individual tools per server |

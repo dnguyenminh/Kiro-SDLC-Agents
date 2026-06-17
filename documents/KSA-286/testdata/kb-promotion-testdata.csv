@@ -1,0 +1,12 @@
+test_case_id,entry_id,decision,comment,target_tier,expected_http_code,expected_error,description
+IT-08,kb-pending-001,APPROVE,Excellent quality entry for team use,PROJECT,200,,Approve promotion - happy path
+IT-09,kb-pending-002,REJECT,Content needs more detail and examples,,200,,Reject with valid comment - sets cooldown
+IT-10,kb-pending-003,APPROVE,Bad,PROJECT,400,Comment must be at least 10 characters,Comment too short (3 chars)
+E2E-API-06,kb-promo-001,APPROVE,High quality entry suitable for project tier,PROJECT,200,,E2E approve and verify tier change
+E2E-API-07,kb-promo-002,REJECT,Low quality needs significant improvement,,200,,E2E reject with cooldown verification
+UT-11,kb-ut-001,APPROVE,Good quality entry,PROJECT,200,,Unit test approve flow
+UT-12,kb-ut-002,REJECT,Content needs improvement and more examples,,200,,Unit test reject with cooldown
+UT-13,kb-ut-003,APPROVE,Short,PROJECT,400,Comment must be at least 10 characters,Comment validation (5 chars)
+PBT-07,kb-pbt-001,APPROVE,x,PROJECT,400,Comment must be at least 10 characters,Property: string < 10 chars invalid
+E2E-UI-11,kb-ui-001,APPROVE,Approved for project tier use by admin,PROJECT,200,,UI approve via form
+E2E-UI-12,kb-ui-002,REJECT,Bad,,400,Comment must be at least 10 characters,UI reject short comment error

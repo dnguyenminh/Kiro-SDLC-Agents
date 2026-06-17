@@ -1,0 +1,8 @@
+id,username,email,role_group,status,password,description
+admin-001,admin,admin@codeintel.local,System Owner,ACTIVE,Admin1234,System Owner - actor for all admin tests
+oper-001,operator.user,operator@codeintel.local,Operator,ACTIVE,Oper1234,Operator role - MCP and KB read
+dev-001,dev.user,dev@codeintel.local,Developer,ACTIVE,Dev12345,Developer role - KB read/write and search
+viewer-001,viewer.user,viewer@codeintel.local,Viewer,ACTIVE,View1234,Viewer role - read-only access
+admin-002,admin2,admin2@codeintel.local,System Owner,ACTIVE,Admin2345,Second System Owner for deletion tests
+disable-target,target.user,target@codeintel.local,Developer,ACTIVE,Target12,Target for disable tests
+delete-target,delete.me,delete@codeintel.local,Viewer,ACTIVE,Delete12,Target for hard delete tests

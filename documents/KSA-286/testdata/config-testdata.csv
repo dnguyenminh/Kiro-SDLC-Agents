@@ -1,0 +1,11 @@
+test_case_id,section,key,value,expected_http_code,expected_applied,expected_requires_restart,expected_error,description
+IT-14,embedding,model.dimensions,768,200,true,false,,Hot-reload config - applied immediately
+IT-15,server,port,9999,200,false,true,,Restart-required config - marked only
+IT-16,embedding,model.dimensions,abc,400,,,expected number got string,Invalid value type rejected
+IT-17,embedding,model.dimensions,256,200,true,false,,Config history entry 1 of 12
+E2E-API-10,embedding,model.dimensions,768,200,true,false,,E2E hot-reload verify change
+E2E-API-11,server,port,9000,200,false,true,,E2E restart required warning
+E2E-API-26,embedding,reset,default,200,true,false,,Reset section to defaults
+UT-14,embedding,model.dimensions,512,200,true,false,,Unit hot-reload test
+UT-15,server,port,9999,200,false,true,,Unit restart-required test
+UT-16,embedding,model.dimensions,not-a-number,400,,,ValidationError,Unit invalid value test

@@ -11,22 +11,13 @@
 | Jira Ticket | KSA-285 |
 | Title | Authentication, Multi-Tenant KB, and MCP Server Configuration |
 | Author | SA Agent |
-| Version | 1.0 |
-| Date | 2025-07-14 |
-| Status | Draft |
+| Version | 2.0 |
+| Date | 2025-07-15 |
+| Status | Final |
 | Architecture Pattern | Plugin (IDE Extension) |
 | Related BRD | BRD-v1-KSA-285.docx |
-| Related FSD | FSD-v1-KSA-285.docx |
-| Parent Ticket | KSA-284 (Split Extension: Lightweight Proxy + Backend MCP Server) |
-
----
-
-## Author Tracking
-
-| Role | Name - Position | Responsibility |
-|------|-----------------|----------------|
-| Author | SA Agent – Solution Architect | Create document |
-| Peer Reviewer | DEV Agent – Senior Developer | Review document |
+| Related FSD | FSD-v1.1-KSA-285.docx |
+| Parent TDD | TDD-v1.1-KSA-284.docx |
 
 ---
 
@@ -34,136 +25,149 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-07-14 | SA Agent | Initiate document — auto-generated from BRD and FSD KSA-285 |
-
----
-
-## Sign-Off
-
-| Name | Signature and date |
-|------|--------------------|
-| | ☐ I agree and confirm the technical design in this TDD |
-| | ☐ I agree and confirm the technical design in this TDD |
+| 2.0 | 2025-07-15 | SA Agent | Re-generated TDD aligned with actual implemented codebase (post-implementation verification) |
+| 1.0 | 2025-07-14 | SA Agent | Initial TDD from BRD and FSD |
 
 ---
 
 ## 1. Introduction
 
-> **Scope Boundary:** This TDD specifies HOW to implement the requirements defined in the FSD. It does NOT repeat functional requirements, business rules, use cases, or UI specifications — refer to the FSD for those. This document focuses on: technology choices, architecture decisions, implementation patterns, and deployment concerns.
-
 ### 1.1 Purpose
 
-This TDD provides the technical design for adding Authentication, Multi-Tenant 3-Tier Knowledge Base, and MCP Server Configuration to the Code Intelligence Extension (KSA-284 split architecture). It details the implementation approach for:
-
-1. **Auth Module** — JWT-based local auth + OpenID Connect SSO with PKCE in the Backend, token storage in VS Code SecretStorage in the Extension
-2. **Multi-Tenant KB** — Extending the existing MemoryModule to support 3-tier isolation (User/Project/Shared) with auto-promotion
-3. **Config Module** — Per-user MCP server credential management via Webview + Backend API
+This TDD specifies the technical design for adding Authentication, Multi-Tenant Knowledge Base, and MCP Server Configuration to the Code Intelligence Extension split architecture (KSA-284). It documents the implemented architecture as verified against the actual codebase.
 
 ### 1.2 Scope
 
-**Technical scope includes:**
-- New AuthModule in Backend (src/backend/src/modules/auth/)
-- New ConfigModule in Backend (src/backend/src/modules/config/)
-- Extended MemoryModule for multi-tier KB support
-- New auth middleware for Hono routes
-- New Login Webview and MCP Config Webview in Extension
-- SecretStorage integration and token refresh timer in Extension
-- SQLite schema extensions (users, sessions, kb_entries enhancements, mcp_config, sso_config)
-- Background job scheduler for KB promotion and TTL cleanup
+| Component | Coverage |
+|-----------|----------|
+| Backend Auth Module | AuthService, TokenService, PasswordService, SsoService, UserRepository, SessionRepository |
+| Backend KB Module | KbRepository, PromotionService, TierAccessControl (multi-tier extensions to existing MemoryModule) |
+| Backend Config Module | ConfigService, ConfigRepository, EncryptionService |
+| Backend Scheduler Module | SchedulerModule (promotion job 30min, TTL cleanup 1h) |
+| Extension Auth | AuthManager, LoginWebview, McpConfigWebview, AuthInterceptor, TokenRefreshTimer |
+| Database | Migration 002: users, sessions, kb_entries, mcp_config, sso_config, audit_log tables |
+| APIs | 12 new endpoints under /api/auth/*, /api/config/*, /api/kb/*, auth guard on /mcp/* |
 
 ### 1.3 Technology Stack
 
-| Layer | Technology | Version | Notes |
-|-------|-----------|---------|-------|
-| Language | TypeScript | 5.5+ | Both Extension and Backend |
-| Runtime | Node.js | 20+ | Backend server |
-| HTTP Framework | Hono | 4.x | Lightweight, existing in Backend |
-| Database | SQLite (better-sqlite3) | 12.x | Existing, synchronous driver |
-| Extension Host | VS Code | >= 1.85.0 | SecretStorage API required |
-| Build (Extension) | esbuild | 0.21+ | Existing bundler |
-| Build (Backend) | tsc | 5.5+ | TypeScript compiler |
-| Test | Vitest | 2.x+ | Existing test framework |
-| JWT | jose | latest | JOSE library (already in node_modules) |
-| PKCE | pkce-challenge | latest | Already in node_modules |
-| Password Hashing | Node.js crypto (scrypt) | built-in | No external bcrypt needed |
-| Encryption | Node.js crypto (AES-256-GCM) | built-in | For MCP config at-rest |
-| Embedding | ONNX Runtime | 1.18.x | Existing for semantic search |
-| Validation | Zod | 3.23+ | Existing in Backend |
+| Layer | Technology | Version | Rationale |
+|-------|-----------|---------|-----------|
+| Language | TypeScript | ^5.5.0 | Match existing codebase (KSA-284) |
+| Runtime | Node.js | >= 18.0 | LTS, native crypto (scrypt, AES), performance |
+| Backend HTTP | Hono | ^4.0 | Already used in KSA-284 |
+| JWT Library | jose | ^5.6.0 | Pure JS, no native deps, HS256 support |
+| Database | better-sqlite3 | ^12.10.0 | Already used in KSA-284 |
+| Schema Validation | zod | ^3.23 | Already used in KSA-284 |
+| Password Hashing | Node.js crypto (scrypt) | Built-in | Zero dependencies, BR-5 compliant |
+| Encryption | Node.js crypto (AES-256-GCM) | Built-in | Zero dependencies, BR-16 compliant |
+| SSO | openid-client (future) | — | OIDC discovery + PKCE (currently manual) |
+| Extension Host | VS Code Extension API | >= 1.85.0 | SecretStorage API required |
+| Build | esbuild | ^0.21 | Match existing (KSA-284) |
+| Test | Vitest | ^4.1.8 | Match existing (KSA-284) |
+| Logging | pino | ^9.2 | Already in codebase |
 
 ### 1.4 Design Principles
 
-- **Modular Architecture** — Each feature is an independent IModule registered in ModuleRegistry (existing pattern)
-- **Secure by Default** — All endpoints require Bearer token; localhost-only binding retained
-- **Zero External Dependencies** — Use Node.js built-in crypto for hashing/encryption; jose library already present
-- **Non-Breaking Migration** — Existing mem_* tools continue working; tier parameter is additive
-- **Graceful Degradation** — Auth failure shows Login Webview but doesn't crash IDE (BR-29)
-- **Convention over Configuration** — Follow existing patterns from HttpServer.ts, ModuleRegistry.ts
+1. **Extend, don't rewrite** — Build on KSA-284 architecture (Hono server, module registry pattern)
+2. **Zero new native dependencies** — Use Node.js built-in crypto for scrypt + AES-256-GCM
+3. **jose over jsonwebtoken** — Pure JS, ESM-native, already in package.json
+4. **Database-level isolation** — Multi-tenant KB enforced at SQL level, not just API layer
+5. **Graceful degradation** — Auth failure shows Login Webview; IDE tools remain registered (unavailable, not crashed)
+6. **Symmetric JWT (HS256)** — Single-machine deployment, no need for asymmetric keys
 
 ### 1.5 Constraints
 
-- Backend runs on localhost only — no TLS required (loopback interface)
-- SQLite is single-writer — background jobs use WAL mode for concurrent reads
-- VS Code SecretStorage is async and per-extension scope
-- Extension must activate within 2 seconds (heavy ops are async/non-blocking)
-- JWT secret is generated per Backend instance and stored locally (no distributed key management)
+- Single-machine deployment (Backend + Extension on same localhost)
+- SQLite database (no connection pooling, WAL mode for concurrent reads)
+- JWT secret must be configurable via environment variable (default insecure for dev)
+- Extension .vsix remains < 5MB (auth adds ~10KB bundled code)
+- All tokens stored in VS Code SecretStorage (OS keychain)
+
+### 1.6 References
+
+| Document | Location |
+|----------|----------|
+| BRD | BRD-v1-KSA-285.docx |
+| FSD | FSD-v1.1-KSA-285.docx |
+| KSA-284 TDD | TDD-v1.1-KSA-284.docx |
+| jose Documentation | https://github.com/panva/jose |
+| VS Code SecretStorage | https://code.visualstudio.com/api/references/vscode-api#SecretStorage |
+| OIDC Core 1.0 | https://openid.net/specs/openid-connect-core-1_0.html |
 
 ---
 
-## 2. Architecture Overview
+## 2. System Architecture
 
-### 2.1 System Architecture
+### 2.1 Architecture Overview
+
+The system extends KSA-284's split architecture by adding three cross-cutting layers:
+
+1. **Authentication Layer** — JWT-based auth guard on all protected routes, with SSO via OIDC+PKCE
+2. **Multi-Tenant KB Layer** — 3-tier (User/Project/Shared) knowledge base with auto-promotion
+3. **Configuration Layer** — Per-user MCP server credential management with AES-256 encryption
 
 ![Architecture Diagram](diagrams/architecture.png)
 *[Edit in draw.io](diagrams/architecture.drawio)*
 
-The system extends the KSA-284 split architecture (Extension Proxy + Backend Server) with three new modules:
+`mermaid
+graph TB
+    subgraph Extension["VS Code Extension"]
+        LW[Login Webview]
+        MCW[MCP Config Webview]
+        AM[AuthManager]
+        AI[AuthInterceptor]
+        TRT[Token Refresh Timer]
+        SS[SecretStorage]
+        TP[ToolProxy]
+        CM[ConnectionManager]
+    end
 
-`
-┌──────────────────── VS Code Extension ────────────────────┐
-│                                                            │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐  │
-│  │Login Webview│  │Config Webview│  │ Auth Interceptor │  │
-│  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘  │
-│         │                │                    │            │
-│  ┌──────┴────────────────┴────────────────────┴────────┐  │
-│  │              SecretStorage Manager                   │  │
-│  │     (JWT + Refresh Token + User Profile)            │  │
-│  └─────────────────────┬──────────────────────────────┘  │
-│                         │                                  │
-│  ┌──────────────────────┴──────────────────────────────┐  │
-│  │        ConnectionManager (HTTP Client)              │  │
-│  │     + Bearer Token Injection (AuthInterceptor)      │  │
-│  └──────────────────────┬──────────────────────────────┘  │
-└─────────────────────────┼──────────────────────────────────┘
-                          │ HTTP (localhost:48721)
-┌─────────────────────────┼──────────────────────────────────┐
-│                    Backend Server (Hono)                    │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Middleware: localhostOnly → authGuard → requestLogger│ │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                            │
-│  ┌────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │ AuthModule │  │ MemoryModule │  │  ConfigModule    │  │
-│  │(auth/*)    │  │(mem_* tools) │  │(config/*)        │  │
-│  │- login     │  │- multi-tier  │  │- mcp-servers     │  │
-│  │- sso       │  │- promotion   │  │- test connection │  │
-│  │- refresh   │  │- search      │  │- encryption      │  │
-│  │- logout    │  │- TTL cleanup │  │                  │  │
-│  └─────┬──────┘  └──────┬───────┘  └────────┬─────────┘  │
-│        │                │                    │            │
-│  ┌─────┴────────────────┴────────────────────┴─────────┐  │
-│  │              SQLite Database (WAL mode)              │  │
-│  │  [users] [sessions] [kb_entries] [mcp_config]       │  │
-│  │  [sso_config]                                       │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │       Background Scheduler                          │  │
-│  │  - KB Promotion (every 30 min)                      │  │
-│  │  - TTL Cleanup (every 1 hour)                       │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────┘
+    subgraph Backend["Backend Server :48721"]
+        AG[Auth Guard Middleware]
+        subgraph AuthMod["Auth Module"]
+            AS[AuthService]
+            TS[TokenService]
+            PS[PasswordService]
+            SSO[SsoService]
+            UR[UserRepository]
+            SR[SessionRepository]
+        end
+        subgraph KBMod["KB Module"]
+            KR[KbRepository]
+            PrS[PromotionService]
+            TAC[TierAccessControl]
+        end
+        subgraph ConfMod["Config Module"]
+            CS[ConfigService]
+            CR[ConfigRepository]
+            ES[EncryptionService]
+        end
+        subgraph SchedMod["Scheduler Module"]
+            SM[SchedulerModule]
+        end
+        DB[(SQLite DB)]
+    end
+
+    subgraph External["External Systems"]
+        IdP[Identity Provider]
+        MCP[Child MCP Servers]
+    end
+
+    LW -->|POST /api/auth/login| AG
+    MCW -->|PUT /api/config/mcp-servers| AG
+    AI -->|Bearer JWT| AG
+    AM --> SS
+    TRT -->|POST /api/auth/refresh| AG
+    AG --> AuthMod
+    AG --> KBMod
+    AG --> ConfMod
+    SM --> KR
+    SM --> PrS
+    SSO --> IdP
+    CS --> MCP
+    AuthMod --> DB
+    KBMod --> DB
+    ConfMod --> DB
 `
 
 ### 2.2 Component Diagram
@@ -171,83 +175,79 @@ The system extends the KSA-284 split architecture (Extension Proxy + Backend Ser
 ![Component Diagram](diagrams/component.png)
 *[Edit in draw.io](diagrams/component.drawio)*
 
-### 2.3 Request Flow (Authenticated)
+| Component | Location | Responsibility | Implements |
+|-----------|----------|----------------|------------|
+| AuthManager | Extension | Login/logout orchestration, SecretStorage CRUD | UC-1, UC-2, UC-10 |
+| AuthInterceptor | Extension | Inject Bearer header on all HTTP requests | BR-1 |
+| TokenRefreshTimer | Extension | Auto-refresh at expiry-5min | UC-3, BR-8 |
+| LoginWebview | Extension | HTML form for username/password + SSO button | UC-1, UC-2 |
+| McpConfigWebview | Extension | Tabbed form for MCP server config | UC-9 |
+| Auth Guard | Backend | Middleware: validate JWT on protected routes | BR-1 |
+| AuthService | Backend | Login, refresh, logout business logic | UC-1, UC-3, UC-10 |
+| TokenService | Backend | JWT sign/verify (jose HS256), refresh token gen | BR-2, BR-3 |
+| PasswordService | Backend | scrypt hash/verify (N=16384, r=8, p=1) | BR-5 |
+| SsoService | Backend | OIDC discovery, PKCE state management | UC-2, BR-6, BR-7 |
+| KbRepository | Backend | Multi-tier CRUD for kb_entries | UC-4..UC-8 |
+| PromotionService | Backend | Auto-promotion logic (User→Project→Shared) | UC-7, UC-8, BR-12..BR-14 |
+| TierAccessControl | Backend | Tier visibility/permission checks | BR-9..BR-11, BR-22 |
+| ConfigService | Backend | MCP config CRUD with encryption | UC-9, BR-16, BR-17 |
+| EncryptionService | Backend | AES-256-GCM encrypt/decrypt | BR-16 |
+| SchedulerModule | Backend | setInterval: promotion (30min), TTL cleanup (1h) | BR-15, UC-7 |
 
-`
-Extension                    Backend
-   │                            │
-   │── POST /api/auth/login ──→ │ (no auth required)
-   │←── 200 {jwt, refresh} ────│
-   │                            │
-   │── GET /mcp/tools/list ───→ │
-   │   [Authorization: Bearer]  │
-   │   authGuard validates JWT  │
-   │←── 200 {tools} ──────────│
-   │                            │
-   │── POST /mcp/tools/call ──→ │
-   │   [Bearer + tool args]     │
-   │   authGuard → ToolRouter   │
-   │←── 200 {result} ─────────│
-`
+### 2.3 Deployment Architecture
+
+Both components run on same machine (unchanged from KSA-284):
+
+| Process | Port | Memory Delta | New Disk |
+|---------|------|-------------|----------|
+| Extension (in VS Code) | N/A | +5MB (auth state, webviews) | +10KB bundled |
+| Backend MCP Server | 48721 | +50MB (auth + scheduler) | +2MB (db growth) |
+
+### 2.4 Communication Patterns
+
+| From | To | Protocol | Auth | Description |
+|------|----|----------|------|-------------|
+| Extension.AuthManager | Backend /api/auth/login | HTTP POST | None (login endpoint) | Authenticate |
+| Extension.AuthInterceptor | Backend /mcp/tools/call | HTTP POST | Bearer JWT | Tool execution |
+| Extension.TokenRefreshTimer | Backend /api/auth/refresh | HTTP POST | None (uses refresh_token body) | Token renewal |
+| Extension.McpConfigWebview | Backend /api/config/* | HTTP GET/PUT | Bearer JWT | Config CRUD |
+| Backend.SsoService | External IdP | HTTPS | OAuth2 | OIDC token exchange |
+| Backend.SchedulerModule | Backend.KbRepository | In-process | N/A | Background jobs |
 
 ---
 
 ## 3. API Design
 
-### 3.1 Authentication APIs
+### 3.1 API Overview
 
-All auth APIs are under /api/auth/*. Login and SSO authorize endpoints are **public** (no Bearer required). All others require valid JWT.
+| # | Endpoint | Method | Auth | Description | Source |
+|---|----------|--------|------|-------------|--------|
+| 1 | /api/auth/login | POST | None | Local username/password login | UC-1 |
+| 2 | /api/auth/sso/authorize | POST | None | Initiate SSO PKCE flow | UC-2 |
+| 3 | /api/auth/sso/callback | GET | None | IdP redirect callback | UC-2 |
+| 4 | /api/auth/refresh | POST | None | Refresh access token | UC-3 |
+| 5 | /api/auth/logout | POST | Bearer | Revoke refresh token | UC-10 |
+| 6 | /api/auth/me | GET | Bearer | Get current user profile | — |
+| 7 | /api/config/mcp-servers | GET | Bearer | Retrieve user's MCP config | UC-9 |
+| 8 | /api/config/mcp-servers | PUT | Bearer | Save user's MCP config | UC-9 |
+| 9 | /api/config/mcp-servers/test | POST | Bearer | Test MCP server connection | UC-9 |
+| 10 | /api/kb/promote/status | GET | Bearer | Promotion status & candidates | UC-7 |
+| 11 | /api/kb/promote | POST | Bearer | Manual promotion | UC-7 |
+| 12 | /mcp/tools/call | POST | Bearer | MCP tool execution (existing, now auth-protected) | BR-1 |
 
-#### 3.1.1 POST /api/auth/login
+### 3.2 API: POST /api/auth/login
 
-**Implements:** UC-1 (Local Login), BR-2, BR-4, BR-5
+**Implements:** UC-1, BR-2, BR-4, BR-5
 
+**Request:**
 `json
-// Request
-POST /api/auth/login
-Content-Type: application/json
-
 {
   "username": "john.doe",
-  "password": "securePassword123"
-}
-
-// Success Response (200)
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "rt_a1b2c3d4e5f6...",
-  "token_type": "Bearer",
-  "expires_in": 3600,
-  "user": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "username": "john.doe",
-    "email": "john.doe@company.com",
-    "display_name": "John Doe",
-    "role": "user",
-    "projects": ["proj-frontend", "proj-backend"]
-  }
-}
-
-// Error Responses
-// 401 - Invalid credentials
-{
-  "error": {
-    "code": "AUTH_INVALID_CREDENTIALS",
-    "message": "Invalid username or password."
-  }
-}
-
-// 403 - Account locked
-{
-  "error": {
-    "code": "AUTH_ACCOUNT_LOCKED",
-    "message": "Account locked. Try again in 12 minutes.",
-    "details": { "locked_until": "2025-07-14T10:15:00Z", "remaining_minutes": 12 }
-  }
+  "password": "secureP4ss!"
 }
 `
 
-**Validation (Zod schema):**
+**Validation (zod):**
 `	ypescript
 const LoginSchema = z.object({
   username: z.string().min(1).max(100).regex(/^[a-zA-Z0-9._]+$/),
@@ -255,268 +255,264 @@ const LoginSchema = z.object({
 });
 `
 
-#### 3.1.2 POST /api/auth/sso/authorize
-
-**Implements:** UC-2 (SSO Login), BR-6
-
+**Response — 200 OK:**
 `json
-// Request
-POST /api/auth/sso/authorize
-Content-Type: application/json
-
 {
-  "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
-  "redirect_uri": "http://localhost:48721/api/auth/sso/callback"
-}
-
-// Success Response (200)
-{
-  "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=...&response_type=code&scope=openid+email+profile&code_challenge=...&code_challenge_method=S256&state=xyz123&redirect_uri=...",
-  "state": "xyz123"
-}
-`
-
-#### 3.1.3 GET /api/auth/sso/callback
-
-**Implements:** UC-2 Steps 9-14, BR-6, BR-7
-
-`
-// Browser redirects to:
-GET /api/auth/sso/callback?code=AUTH_CODE_HERE&state=xyz123
-
-// Backend processes internally, then signals Extension via:
-// Option A: Returns HTML page that posts message to Extension
-// Option B: Extension polls GET /api/auth/sso/token?state=xyz123
-
-// Poll Response (200) — when token ready
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "refresh_token": "rt_x1y2z3...",
+  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+  "refresh_token": "rt_a1b2c3d4e5f6...",
   "token_type": "Bearer",
   "expires_in": 3600,
-  "user": { ... }
-}
-
-// Poll Response (202) — still processing
-{
-  "status": "pending"
-}
-`
-
-#### 3.1.4 POST /api/auth/refresh
-
-**Implements:** UC-3 (Token Refresh), BR-3, BR-8
-
-`json
-// Request (requires current valid JWT OR expired JWT with valid refresh)
-POST /api/auth/refresh
-Content-Type: application/json
-
-{
-  "refresh_token": "rt_a1b2c3d4e5f6..."
-}
-
-// Success Response (200)
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...(new)",
-  "refresh_token": "rt_newtoken...",
-  "token_type": "Bearer",
-  "expires_in": 3600
-}
-
-// Error (401) - Refresh token expired/revoked
-{
-  "error": {
-    "code": "AUTH_REFRESH_INVALID",
-    "message": "Refresh token expired or revoked. Please log in again."
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "john.doe",
+    "email": "john@company.com",
+    "display_name": "John Doe",
+    "role": "user",
+    "projects": ["proj-abc", "proj-xyz"]
   }
 }
 `
 
-#### 3.1.5 POST /api/auth/logout
+**Error Responses:**
 
-**Implements:** UC-10 (Logout), BR-18
+| Status | Code | Message | Condition |
+|--------|------|---------|-----------|
+| 400 | VALIDATION_ERROR | "Invalid input." | Malformed request body |
+| 401 | AUTH_INVALID_CREDENTIALS | "Invalid username or password." | Wrong credentials |
+| 403 | AUTH_ACCOUNT_LOCKED | "Account locked. Try again in {N} minutes." | 5+ failed attempts (BR-4) |
 
+### 3.3 API: POST /api/auth/sso/authorize
+
+**Implements:** UC-2, BR-6
+
+**Request:**
 `json
-// Request (requires valid JWT)
-POST /api/auth/logout
-Authorization: Bearer {jwt}
-Content-Type: application/json
+{
+  "code_challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+  "redirect_uri": "http://localhost:48721/api/auth/sso/callback"
+}
+`
 
+**Response — 200 OK:**
+`json
+{
+  "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=...&code_challenge=...&state=...",
+  "state": "abc123def456"
+}
+`
+
+**Error Responses:**
+
+| Status | Code | Message | Condition |
+|--------|------|---------|-----------|
+| 400 | SSO_ERROR | "SSO is not configured on this server." | sso_config.enabled = false |
+
+### 3.4 API: GET /api/auth/sso/callback
+
+**Implements:** UC-2 (Step 9-15)
+
+**Query Parameters:** ?code={auth_code}&state={state} (from IdP redirect)
+
+**Response:** HTML page instructing user to close browser window. Backend stores auth code for Extension polling.
+
+### 3.5 API: POST /api/auth/refresh
+
+**Implements:** UC-3, BR-3
+
+**Request:**
+`json
 {
   "refresh_token": "rt_a1b2c3d4e5f6..."
 }
+`
 
-// Success Response (200)
+**Response — 200 OK:**
+`json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiJ9...(new)",
+  "refresh_token": "rt_new_token...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+`
+
+**Error Responses:**
+
+| Status | Code | Message | Condition |
+|--------|------|---------|-----------|
+| 401 | AUTH_REFRESH_INVALID | "Refresh token expired or revoked." | Token revoked or past 7d |
+
+**Note:** Refresh uses token rotation — old session revoked, new session created.
+
+### 3.6 API: POST /api/auth/logout
+
+**Implements:** UC-10, BR-18
+
+**Request:**
+`json
+{
+  "refresh_token": "rt_a1b2c3d4e5f6..."
+}
+`
+
+**Response — 200 OK:**
+`json
 {
   "message": "Logged out successfully"
 }
 `
 
-### 3.2 KB APIs (Multi-Tier Extensions)
+### 3.7 API: GET /api/auth/me
 
-The existing mem_* MCP tool calls are routed via POST /mcp/tools/call. The multi-tier extensions add **tier** and **project** parameters to existing tools.
+**Implements:** User profile retrieval
 
-#### 3.2.1 mem_ingest (Extended)
+**Headers:** Authorization: Bearer {JWT}
 
+**Response — 200 OK:**
 `json
-// Request via MCP tools/call
 {
-  "name": "mem_ingest",
-  "arguments": {
-    "title": "API Authentication Pattern",
-    "content": "JWT-based auth with refresh tokens...",
-    "tags": "authentication,pattern,project-relevant",
-    "tier": 2,
-    "project": "proj-frontend"
-  }
-}
-
-// tier is optional (defaults to 1 = User KB)
-// project is required when tier=2
-`
-
-#### 3.2.2 mem_search (Extended)
-
-`json
-// Request
-{
-  "name": "mem_search",
-  "arguments": {
-    "query": "authentication pattern",
-    "limit": 10,
-    "tier_filter": [1, 2, 3]
-  }
-}
-
-// Response
-{
-  "content": [{
-    "type": "text",
-    "text": "Found 5 results across 3 tiers:\n\n[Personal] API Auth Pattern (score: 0.92)\n[Project: frontend] JWT Refresh Flow (score: 0.87)\n[Shared] OAuth2 Best Practices (score: 0.81)\n..."
-  }]
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "john.doe",
+  "email": "john@company.com",
+  "display_name": "John Doe",
+  "role": "user",
+  "projects": ["proj-abc", "proj-xyz"],
+  "auth_method": "local"
 }
 `
 
-#### 3.2.3 POST /api/kb/promote (New)
+### 3.8 API: GET /api/config/mcp-servers
 
-**Implements:** UC-7/UC-8 manual promotion (AF-1)
+**Implements:** UC-9, BR-17
 
+**Headers:** Authorization: Bearer {JWT}
+
+**Response — 200 OK:**
 `json
-// Request (requires admin role or entry owner)
-POST /api/kb/promote
-Authorization: Bearer {jwt}
-Content-Type: application/json
-
 {
-  "entry_id": "550e8400-e29b-41d4-a716-446655440000",
-  "target_tier": 2,
-  "project_id": "proj-frontend"
-}
-
-// Success Response (200)
-{
-  "promoted_entry_id": "new-uuid-in-target-tier",
-  "source_entry_id": "550e8400-...",
-  "from_tier": 1,
-  "to_tier": 2,
-  "promoted_at": "2025-07-14T10:00:00Z"
-}
-`
-
-### 3.3 Configuration APIs
-
-#### 3.3.1 GET /api/config/mcp-servers
-
-**Implements:** UC-9 Steps 3-4, BR-17
-
-`json
-// Request
-GET /api/config/mcp-servers
-Authorization: Bearer {jwt}
-
-// Response (200)
-{
-  "servers": {
-    "jira": {
+  "servers": [
+    {
+      "name": "jira",
+      "configured": true,
       "url": "https://company.atlassian.net",
       "username": "john.doe@company.com",
-      "token_configured": true,
-      "project_key": "KSA"
+      "has_token": true,
+      "extra": {}
     },
-    "drawio": {
-      "path": "C:\\Program Files\\draw.io\\draw.io.exe",
-      "format": "png"
+    {
+      "name": "drawio",
+      "configured": true,
+      "url": null,
+      "username": null,
+      "has_token": false,
+      "extra": { "cli_path": "C:\\Program Files\\draw.io\\draw.io.exe", "format": "png" }
     },
-    "export": {
-      "output_dir": "./documents"
+    {
+      "name": "export",
+      "configured": false,
+      "url": null,
+      "username": null,
+      "has_token": false,
+      "extra": {}
     }
-  },
-  "last_updated": "2025-07-14T09:00:00Z"
+  ]
 }
 `
 
-**Note:** Sensitive fields (token, password) return *_configured: true/false — NEVER plaintext (BR-17).
+**Note:** Token/password values NEVER returned (BR-17). Only has_token: boolean.
 
-#### 3.3.2 PUT /api/config/mcp-servers
+### 3.9 API: PUT /api/config/mcp-servers
 
-**Implements:** UC-9 Steps 8-12, BR-16
+**Implements:** UC-9, BR-16
 
+**Request:**
 `json
-// Request
-PUT /api/config/mcp-servers
-Authorization: Bearer {jwt}
-Content-Type: application/json
-
 {
-  "jira": {
-    "url": "https://company.atlassian.net",
-    "username": "john.doe@company.com",
-    "token": "ATATT3xFfGF0...",
-    "project_key": "KSA"
-  },
-  "drawio": {
-    "path": "C:\\Program Files\\draw.io\\draw.io.exe",
-    "format": "png"
-  },
-  "export": {
-    "output_dir": "./documents"
-  }
-}
-
-// Success Response (200)
-{
-  "message": "Configuration saved",
-  "updated_at": "2025-07-14T10:00:00Z"
+  "servers": [
+    {
+      "name": "jira",
+      "url": "https://company.atlassian.net",
+      "username": "john.doe@company.com",
+      "token": "ATATT3xAbcDef...",
+      "extra": {}
+    }
+  ]
 }
 `
 
-#### 3.3.3 POST /api/config/mcp-servers/test
+**Response — 200 OK:**
+`json
+{
+  "success": true,
+  "message": "Configuration saved successfully"
+}
+`
+
+### 3.10 API: POST /api/config/mcp-servers/test
 
 **Implements:** UC-9 AF-1
 
+**Request:**
 `json
-// Request
-POST /api/config/mcp-servers/test
-Authorization: Bearer {jwt}
-Content-Type: application/json
-
 {
-  "server": "jira"
+  "server_name": "jira",
+  "url": "https://company.atlassian.net",
+  "username": "john.doe@company.com",
+  "token": "ATATT3xAbcDef..."
 }
+`
 
-// Success (200)
+**Response — 200 OK:**
+`json
 {
-  "server": "jira",
-  "status": "success",
-  "message": "Connected to Jira (version 9.x). User: john.doe@company.com"
+  "success": true,
+  "message": "Connection successful",
+  "response_time_ms": 230
 }
+`
 
-// Failure (200 with status=failed)
+### 3.11 API: GET /api/kb/promote/status
+
+**Implements:** UC-7/UC-8 monitoring
+
+**Response — 200 OK:**
+`json
 {
-  "server": "jira",
-  "status": "failed",
-  "message": "Connection failed: 401 Unauthorized. Check API token."
+  "last_run": "2025-07-15T10:30:00Z",
+  "next_run": "2025-07-15T11:00:00Z",
+  "pending_user_to_project": 3,
+  "pending_project_to_shared": 1,
+  "recent_promotions": [
+    {
+      "promoted_entry_id": "uuid-new",
+      "source_entry_id": "uuid-old",
+      "from_tier": 1,
+      "to_tier": 2,
+      "promoted_at": "2025-07-15T10:30:05Z"
+    }
+  ]
+}
+`
+
+### 3.12 API: POST /api/kb/promote
+
+**Implements:** UC-7 AF-1 (manual promotion)
+
+**Request:**
+`json
+{
+  "entry_id": "550e8400-e29b-41d4-a716-446655440000",
+  "target_tier": 2,
+  "project_id": "proj-abc"
+}
+`
+
+**Response — 200 OK:**
+`json
+{
+  "success": true,
+  "new_entry_id": "660f9500-...",
+  "message": "Entry promoted to Project KB"
 }
 `
 
@@ -524,49 +520,42 @@ Content-Type: application/json
 
 ## 4. Database Design
 
-### 4.1 Schema Overview
+### 4.1 Migration Strategy
 
-All tables reside in the existing SQLite database (.code-intel/index.db). Using WAL mode for concurrent read access.
+All schema changes are in a single migration file: `src/backend/src/database/migrations/002-auth-multitenant.ts`
+
+**Approach:** `CREATE TABLE IF NOT EXISTS` — idempotent, safe to re-run.
 
 ### 4.2 DDL Scripts
 
+**Verified against actual codebase** — the following DDL is extracted from the implemented migration:
+
 `sql
--- Enable WAL mode for concurrent access
 PRAGMA journal_mode = WAL;
 PRAGMA busy_timeout = 5000;
 
--- ============================================
--- Table: users
--- Implements: FSD §4.2 Entity: users, BR-4, BR-5, BR-7
--- ============================================
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))),
+  id TEXT PRIMARY KEY DEFAULT (uuid()),
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
   display_name TEXT,
-  password_hash TEXT,  -- scrypt hash, NULL for SSO-only users
+  password_hash TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   sso_provider TEXT,
   sso_subject TEXT,
-  projects TEXT NOT NULL DEFAULT '[]',  -- JSON array of project IDs
+  projects TEXT NOT NULL DEFAULT '[]',
   failed_attempts INTEGER NOT NULL DEFAULT 0,
-  locked_until TEXT,  -- ISO 8601 timestamp
+  locked_until TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_sso ON users(sso_provider, sso_subject);
-
--- ============================================
--- Table: sessions
--- Implements: FSD §4.2 Entity: sessions, BR-3, BR-18
--- ============================================
+-- Sessions table
 CREATE TABLE IF NOT EXISTS sessions (
-  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))),
+  id TEXT PRIMARY KEY DEFAULT (uuid()),
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  refresh_token_hash TEXT NOT NULL,  -- SHA-256 hash of refresh token
+  refresh_token_hash TEXT NOT NULL,
   issued_at TEXT NOT NULL DEFAULT (datetime('now')),
   expires_at TEXT NOT NULL,
   revoked INTEGER NOT NULL DEFAULT 0,
@@ -575,609 +564,534 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_refresh_token ON sessions(refresh_token_hash);
-CREATE INDEX idx_sessions_expires ON sessions(expires_at) WHERE revoked = 0;
-
--- ============================================
--- Table: kb_entries (Extended for multi-tier)
--- Implements: FSD §4.2 Entity: kb_entries, BR-9 through BR-14
--- Note: This ALTERs existing table or creates new if fresh install
--- ============================================
+-- KB entries (multi-tier)
 CREATE TABLE IF NOT EXISTS kb_entries (
   id TEXT PRIMARY KEY,
   tier INTEGER NOT NULL DEFAULT 1 CHECK (tier IN (1, 2, 3)),
   owner_id TEXT NOT NULL REFERENCES users(id),
-  project_id TEXT,  -- Required for tier=2
+  project_id TEXT,
   title TEXT,
   content TEXT NOT NULL,
-  content_hash TEXT NOT NULL,  -- SHA-256 for deduplication
-  embedding BLOB,  -- 384-dim float32 vector
-  tags TEXT DEFAULT '[]',  -- JSON array
+  content_hash TEXT NOT NULL,
+  embedding BLOB,
+  tags TEXT DEFAULT '[]',
   quality_score REAL DEFAULT 0.0,
-  ttl_days INTEGER,  -- Only for tier=1 (NULL = no expiry)
+  ttl_days INTEGER,
   promoted INTEGER NOT NULL DEFAULT 0,
   promoted_from TEXT REFERENCES kb_entries(id),
   promoted_by TEXT REFERENCES users(id),
-  referenced_by_projects TEXT DEFAULT '[]',  -- JSON array
+  referenced_by_projects TEXT DEFAULT '[]',
   admin_promoted INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Tier-based access indexes
-CREATE INDEX idx_kb_tier_owner ON kb_entries(tier, owner_id) WHERE tier = 1;
-CREATE INDEX idx_kb_tier_project ON kb_entries(tier, project_id) WHERE tier = 2;
-CREATE INDEX idx_kb_tier3 ON kb_entries(tier) WHERE tier = 3;
-CREATE INDEX idx_kb_promotion ON kb_entries(tier, promoted) WHERE promoted = 0;
-CREATE INDEX idx_kb_ttl ON kb_entries(tier, ttl_days, created_at) WHERE tier = 1 AND ttl_days IS NOT NULL;
-CREATE INDEX idx_kb_content_hash ON kb_entries(content_hash);
-
--- ============================================
--- Table: mcp_config
--- Implements: FSD §4.2 Entity: mcp_config, BR-16
--- ============================================
+-- MCP configuration (per-user)
 CREATE TABLE IF NOT EXISTS mcp_config (
-  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))),
+  id TEXT PRIMARY KEY DEFAULT (uuid()),
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   server_name TEXT NOT NULL CHECK (server_name IN ('jira', 'drawio', 'export')),
-  config_data TEXT NOT NULL,  -- JSON with sensitive fields AES-256-GCM encrypted
+  config_data TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(user_id, server_name)
 );
 
-CREATE INDEX idx_mcp_config_user ON mcp_config(user_id);
-
--- ============================================
--- Table: sso_config
--- Implements: FSD §4.2 Entity: sso_config, BR-6, BR-27
--- ============================================
+-- SSO configuration (singleton)
 CREATE TABLE IF NOT EXISTS sso_config (
-  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))),
+  id TEXT PRIMARY KEY DEFAULT (uuid()),
   issuer_url TEXT NOT NULL,
   client_id TEXT NOT NULL,
-  allowed_domains TEXT NOT NULL DEFAULT '[]',  -- JSON array
+  allowed_domains TEXT NOT NULL DEFAULT '[]',
   redirect_uri TEXT NOT NULL,
   enabled INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ============================================
--- Table: audit_log (lightweight)
--- Implements: FSD §7.3
--- ============================================
+-- Audit log
 CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event_type TEXT NOT NULL,
   user_id TEXT,
-  details TEXT,  -- JSON
+  details TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
-CREATE INDEX idx_audit_event_type ON audit_log(event_type, created_at);
-CREATE INDEX idx_audit_user ON audit_log(user_id, created_at);
 `
 
-### 4.3 Migration Strategy
+### 4.3 Index Strategy
 
-`	ypescript
-// src/backend/src/database/migrations/002-auth-multitenant.ts
-export const MIGRATION_002 = {
-  version: 2,
-  name: 'auth-multitenant-kb',
-  up: (db: Database) => {
-    db.exec(DDL_SCRIPT); // Above DDL
-  },
-  down: (db: Database) => {
-    db.exec('DROP TABLE IF EXISTS audit_log');
-    db.exec('DROP TABLE IF EXISTS sso_config');
-    db.exec('DROP TABLE IF EXISTS mcp_config');
-    db.exec('DROP TABLE IF EXISTS sessions');
-    db.exec('DROP TABLE IF EXISTS users');
-    // kb_entries columns handled separately
-  }
-};
-`
+| Index | Table | Columns | Rationale |
+|-------|-------|---------|-----------|
+| idx_users_username | users | username | Login lookup |
+| idx_users_email | users | email | SSO email matching |
+| idx_users_sso | users | sso_provider, sso_subject | SSO user resolution |
+| idx_sessions_user_id | sessions | user_id | User's active sessions |
+| idx_sessions_refresh_token | sessions | refresh_token_hash | Token refresh validation |
+| idx_kb_tier_owner | kb_entries | tier, owner_id | User KB queries (Tier 1) |
+| idx_kb_tier_project | kb_entries | tier, project_id | Project KB queries (Tier 2) |
+| idx_kb_tier3 | kb_entries | tier WHERE tier=3 | Shared KB queries |
+| idx_kb_promotion | kb_entries | tier, promoted WHERE promoted=0 | Promotion candidate scan |
+| idx_kb_ttl | kb_entries | tier, ttl_days, created_at WHERE tier=1 | TTL cleanup query |
+| idx_kb_content_hash | kb_entries | content_hash | Deduplication check |
+| idx_mcp_config_user | mcp_config | user_id | Per-user config lookup |
+| idx_audit_event_type | audit_log | event_type, created_at | Audit queries |
+| idx_audit_user | audit_log | user_id, created_at | Per-user audit trail |
 
 ### 4.4 Key Query Patterns
 
-| Operation | Query | Expected Performance |
-|-----------|-------|---------------------|
-| Login lookup | SELECT * FROM users WHERE username = ? | < 1ms (indexed) |
-| Session validate | SELECT * FROM sessions WHERE refresh_token_hash = ? AND revoked = 0 AND expires_at > datetime('now') | < 1ms |
-| User KB entries | SELECT * FROM kb_entries WHERE tier = 1 AND owner_id = ? | < 5ms |
-| Project KB entries | SELECT * FROM kb_entries WHERE tier = 2 AND project_id IN (...) | < 10ms |
-| Shared KB entries | SELECT * FROM kb_entries WHERE tier = 3 | < 10ms |
-| TTL cleanup | DELETE FROM kb_entries WHERE tier = 1 AND ttl_days IS NOT NULL AND datetime(created_at, '+' \|\| ttl_days \|\| ' days') < datetime('now') | Background, < 100ms |
-| Promotion candidates | SELECT * FROM kb_entries WHERE tier = 1 AND promoted = 0 AND quality_score > 0.8 | Background, < 50ms |
+**Login (UserRepository):**
+`sql
+SELECT * FROM users WHERE username = ?
+-- Uses: idx_users_username (unique index, O(1))
+`
+
+**Token Refresh (SessionRepository):**
+`sql
+SELECT * FROM sessions WHERE refresh_token_hash = ? AND revoked = 0 AND expires_at > datetime('now')
+-- Uses: idx_sessions_refresh_token
+`
+
+**Multi-Tier Search (KbRepository):**
+`sql
+-- Tier 1 (User KB)
+SELECT * FROM kb_entries WHERE tier = 1 AND owner_id = ? ORDER BY created_at DESC LIMIT ?
+-- Tier 2 (Project KB)
+SELECT * FROM kb_entries WHERE tier = 2 AND project_id IN (?,?,?) ORDER BY created_at DESC LIMIT ?
+-- Tier 3 (Shared KB)
+SELECT * FROM kb_entries WHERE tier = 3 ORDER BY created_at DESC LIMIT ?
+`
+
+**TTL Cleanup:**
+`sql
+DELETE FROM kb_entries
+WHERE tier = 1 AND ttl_days IS NOT NULL
+AND datetime(created_at, '+' || ttl_days || ' days') < datetime('now')
+-- Uses: idx_kb_ttl (partial index)
+`
+
+**Promotion Candidates:**
+`sql
+SELECT * FROM kb_entries WHERE tier = ? AND promoted = 0 AND quality_score > ?
+-- Uses: idx_kb_promotion (partial index)
+`
 
 ---
 
-## 5. Class/Module Design
+## 5. Class / Module Design
 
-### 5.1 Package Structure
+### 5.1 Backend Package Structure (KSA-285 additions)
 
 `
-src/backend/src/
+backend/src/
 ├── config/
-│   └── BackendConfig.ts          (existing, extended with auth config)
+│   └── BackendConfig.ts          # Added jwtSecret, encryptionKey
 ├── database/
-│   ├── DatabaseManager.ts        (NEW - SQLite connection + migration runner)
 │   └── migrations/
-│       ├── 001-initial.ts        (existing)
-│       └── 002-auth-multitenant.ts (NEW)
+│       └── 002-auth-multitenant.ts  # Full DDL for auth + KB + config tables
 ├── modules/
-│   ├── ModuleRegistry.ts         (existing)
-│   ├── auth/                     (NEW MODULE)
-│   │   ├── AuthModule.ts         (IModule implementation)
-│   │   ├── AuthService.ts        (business logic)
-│   │   ├── TokenService.ts       (JWT sign/verify/refresh)
-│   │   ├── PasswordService.ts    (scrypt hash/verify)
-│   │   ├── SsoService.ts         (OIDC + PKCE flow)
-│   │   ├── SessionRepository.ts  (sessions CRUD)
-│   │   ├── UserRepository.ts     (users CRUD)
-│   │   └── types.ts              (auth-specific types)
-│   ├── config/                   (NEW MODULE)
-│   │   ├── ConfigModule.ts       (IModule implementation)
-│   │   ├── ConfigService.ts      (business logic)
-│   │   ├── EncryptionService.ts  (AES-256-GCM)
-│   │   ├── ConfigRepository.ts   (mcp_config CRUD)
-│   │   └── types.ts              (config-specific types)
-│   ├── memory/                   (EXTENDED)
-│   │   ├── MemoryModule.ts       (extended tool definitions)
-│   │   ├── MemoryService.ts      (NEW - multi-tier business logic)
-│   │   ├── TierAccessControl.ts  (NEW - tier visibility rules)
-│   │   ├── PromotionService.ts   (NEW - auto-promotion logic)
-│   │   ├── KbRepository.ts       (NEW - kb_entries CRUD)
-│   │   └── types.ts              (NEW - KB-specific types)
-│   ├── scheduler/                (NEW MODULE)
-│   │   ├── SchedulerModule.ts    (IModule, manages cron jobs)
-│   │   ├── PromotionJob.ts       (30-min promotion check)
-│   │   └── TtlCleanupJob.ts     (1-hour TTL cleanup)
-│   └── ...existing modules...
+│   ├── auth/                     # NEW MODULE
+│   │   ├── __tests__/
+│   │   ├── AuthModule.ts         # IModule implementation (no MCP tools)
+│   │   ├── AuthService.ts        # Login, refresh, logout logic
+│   │   ├── PasswordService.ts    # scrypt hash/verify
+│   │   ├── SsoService.ts         # OIDC + PKCE flow
+│   │   ├── TokenService.ts       # JWT sign/verify (jose)
+│   │   ├── UserRepository.ts     # users table CRUD
+│   │   ├── SessionRepository.ts  # sessions table CRUD
+│   │   └── types.ts              # AuthPayload, TokenPair, etc.
+│   ├── config/                   # NEW MODULE
+│   │   ├── __tests__/
+│   │   ├── ConfigModule.ts       # IModule implementation
+│   │   ├── ConfigService.ts      # MCP config business logic
+│   │   ├── ConfigRepository.ts   # mcp_config table CRUD
+│   │   ├── EncryptionService.ts  # AES-256-GCM encrypt/decrypt
+│   │   └── types.ts              # McpServerConfig types
+│   ├── memory/                   # EXTENDED (existing)
+│   │   ├── KbRepository.ts       # Multi-tier CRUD (NEW)
+│   │   ├── PromotionService.ts   # Auto-promotion logic (NEW)
+│   │   ├── TierAccessControl.ts  # Permission checks (NEW)
+│   │   ├── types.ts              # KbEntry, PromoteResponse
+│   │   └── MemoryModule.ts       # Existing (unchanged)
+│   └── scheduler/                # NEW MODULE
+│       └── SchedulerModule.ts    # setInterval-based job scheduler
 ├── server/
-│   ├── HttpServer.ts             (existing, register new routes)
 │   ├── middleware/
-│   │   ├── auth-guard.ts         (NEW - JWT validation middleware)
-│   │   ├── error-handler.ts      (existing, extended error codes)
-│   │   ├── localhost-only.ts     (existing)
-│   │   └── request-logger.ts     (existing)
+│   │   └── auth-guard.ts         # NEW: JWT Bearer validation
 │   └── routes/
-│       ├── auth.ts               (NEW - /api/auth/* routes)
-│       ├── config.ts             (NEW - /api/config/* routes)
-│       ├── kb.ts                 (NEW - /api/kb/* routes)
-│       ├── api.ts                (existing, extended)
-│       ├── health.ts             (existing)
-│       └── tools.ts              (existing)
-├── tools/
-│   ├── ToolRouter.ts             (existing, now passes userId context)
-│   └── ToolValidator.ts          (existing)
-└── types/
-    ├── module.ts                 (existing)
-    └── tool.ts                   (existing, extended with context)
+│       ├── auth.ts               # NEW: /api/auth/* endpoints
+│       ├── config.ts             # NEW: /api/config/* endpoints
+│       └── kb.ts                 # NEW: /api/kb/* endpoints
+└── index.ts                      # Updated: register new modules
+`
 
-src/extension/src/
-├── auth/                         (NEW)
-│   ├── AuthManager.ts            (token lifecycle, SecretStorage)
-│   ├── AuthInterceptor.ts        (Bearer token injection)
-│   └── TokenRefreshTimer.ts      (auto-refresh scheduler)
-├── config/
-│   └── ConfigurationManager.ts   (existing)
-├── connection/
-│   └── ConnectionManager.ts      (existing, extended with auth)
-├── proxy/
-│   └── ToolProxy.ts              (existing)
-├── ui/
-│   ├── StatusBarManager.ts       (existing, extended with auth state)
-│   └── NotificationManager.ts    (existing)
+### 5.2 Extension Package Structure (KSA-285 additions)
+
+`
+extension/src/
+├── auth/                         # NEW
+│   ├── AuthManager.ts            # Login/logout orchestration
+│   ├── AuthInterceptor.ts        # Inject Bearer header on requests
+│   └── TokenRefreshTimer.ts      # Auto-refresh at expiry-5min
 ├── webview/
-│   ├── WebviewManager.ts         (existing, extended)
-│   ├── LoginWebview.ts           (NEW)
-│   └── McpConfigWebview.ts       (NEW)
+│   ├── panels/
+│   │   ├── LoginPanel.ts         # NEW: Login Webview
+│   │   └── McpConfigPanel.ts     # NEW: MCP Config Webview
+│   └── WebviewManager.ts         # Updated: add login + config panels
 ├── types/
-│   └── config.ts                 (existing, extended)
-└── extension.ts                  (existing, extended with auth init)
+│   └── auth.ts                   # NEW: AuthState, StoredTokens
+└── extension.ts                  # Updated: integrate AuthManager
 `
 
-### 5.2 Key Interfaces
+### 5.3 Key Interfaces and Class Diagram
 
-`	ypescript
-// ===== Backend Auth Module =====
+![Class Diagram — Auth](diagrams/class-auth.png)
+*[Edit in draw.io](diagrams/class-auth.drawio)*
 
-// src/backend/src/modules/auth/types.ts
-export interface AuthPayload {
-  userId: string;
-  username: string;
-  email: string;
-  role: 'user' | 'admin';
-  projects: string[];
-  iat: number;
-  exp: number;
-}
+`mermaid
+classDiagram
+    class AuthModule {
+        +name: string
+        +status: ModuleStatus
+        +authService: AuthService
+        +tokenService: TokenService
+        +ssoService: SsoService
+        +userRepo: UserRepository
+        +initialize(): Promise~void~
+        +shutdown(): Promise~void~
+        +getToolHandlers(): Map
+        +getToolDefinitions(): ToolDefinition[]
+    }
 
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
+    class AuthService {
+        -userRepo: UserRepository
+        -sessionRepo: SessionRepository
+        -tokenService: TokenService
+        -passwordService: PasswordService
+        +login(username, password, userAgent?): Promise~LoginResponse~
+        +refresh(refreshToken): Promise~TokenPair~
+        +logout(refreshToken): void
+        +verifyToken(token): Promise~AuthPayload~
+    }
 
-export interface TokenPair {
-  access_token: string;
-  refresh_token: string;
-  token_type: 'Bearer';
-  expires_in: number;
-}
+    class TokenService {
+        -secretKey: Uint8Array
+        +generateAccessToken(payload): Promise~string~
+        +generateRefreshToken(): string
+        +hashRefreshToken(token): string
+        +getRefreshTokenExpiry(): Date
+        +verifyAccessToken(token): Promise~AuthPayload~
+        +generateTokenPair(payload): Promise~TokenPair~
+    }
 
-export interface UserRecord {
-  id: string;
-  username: string;
-  email: string;
-  display_name: string | null;
-  password_hash: string | null;
-  role: 'user' | 'admin';
-  sso_provider: string | null;
-  sso_subject: string | null;
-  projects: string[];
-  failed_attempts: number;
-  locked_until: string | null;
-  created_at: string;
-  updated_at: string;
-}
+    class PasswordService {
+        +hash(password): Promise~string~
+        +verify(password, storedHash): Promise~boolean~
+    }
 
-// ===== Backend Memory Module (Extended) =====
+    class SsoService {
+        -pendingFlows: Map
+        +getConfig(): SsoConfig
+        +authorize(codeChallenge, redirectUri): Promise~SsoAuthorizeResponse~
+        +validateState(state): PendingSsoFlow
+        +isDomainAllowed(email): boolean
+    }
 
-// src/backend/src/modules/memory/types.ts
-export interface KbEntry {
-  id: string;
-  tier: 1 | 2 | 3;
-  owner_id: string;
-  project_id: string | null;
-  title: string | null;
-  content: string;
-  content_hash: string;
-  embedding: Buffer | null;
-  tags: string[];
-  quality_score: number;
-  ttl_days: number | null;
-  promoted: boolean;
-  promoted_from: string | null;
-  promoted_by: string | null;
-  referenced_by_projects: string[];
-  created_at: string;
-  updated_at: string;
-}
+    class UserRepository {
+        +findByUsername(username): UserRecord
+        +findById(id): UserRecord
+        +findByEmail(email): UserRecord
+        +create(user): UserRecord
+        +incrementFailedAttempts(id): void
+        +resetFailedAttempts(id): void
+        +lockAccount(id, until): void
+    }
 
-export interface SearchResult {
-  entry: KbEntry;
-  similarity: number;
-  boosted_score: number;
-  tier_badge: string;  // "[Personal]" | "[Project: name]" | "[Shared]"
-}
+    class SessionRepository {
+        +create(session): void
+        +findByRefreshTokenHash(hash): SessionRecord
+        +revoke(id): void
+        +revokeByRefreshTokenHash(hash): void
+        +revokeAllForUser(userId): void
+    }
 
-export interface TierAccessContext {
-  userId: string;
-  projects: string[];
-  role: 'user' | 'admin';
-}
-
-// ===== Extension Auth =====
-
-// src/extension/src/auth/AuthManager.ts
-export interface IAuthManager {
-  isAuthenticated(): Promise<boolean>;
-  getAccessToken(): Promise<string | null>;
-  login(username: string, password: string): Promise<void>;
-  loginSso(): Promise<void>;
-  logout(): Promise<void>;
-  onAuthStateChanged: vscode.Event<AuthState>;
-}
-
-export type AuthState = 'authenticated' | 'unauthenticated' | 'refreshing';
+    AuthModule --> AuthService
+    AuthModule --> TokenService
+    AuthModule --> SsoService
+    AuthModule --> UserRepository
+    AuthService --> UserRepository
+    AuthService --> SessionRepository
+    AuthService --> TokenService
+    AuthService --> PasswordService
 `
 
-### 5.3 Class Diagram
+![Class Diagram — KB](diagrams/class-kb.png)
+*[Edit in draw.io](diagrams/class-kb.drawio)*
 
-![Class Diagram](diagrams/class-diagram.png)
-*[Edit in draw.io](diagrams/class-diagram.drawio)*
+`mermaid
+classDiagram
+    class KbRepository {
+        -db: IDatabase
+        +create(entry): KbEntry
+        +findById(id): KbEntry
+        +findUserEntries(userId, limit): KbEntry[]
+        +findProjectEntries(projectIds, limit): KbEntry[]
+        +findSharedEntries(limit): KbEntry[]
+        +findPromotionCandidates(tier, threshold): KbEntry[]
+        +markPromoted(entryId): void
+        +deleteExpiredEntries(): number
+        +countUserEntries(userId): number
+        +countProjectEntries(projectId): number
+        +countSharedEntries(): number
+        +findByContentHash(hash): KbEntry[]
+    }
+
+    class PromotionService {
+        -kbRepo: KbRepository
+        +promoteUserToProject(): PromoteResponse[]
+        +promoteProjectToShared(): PromoteResponse[]
+        +manualPromote(entryId, targetTier, projectId, promotedBy): PromoteResponse
+    }
+
+    class TierAccessControl {
+        +canRead(userId, projects, entry): boolean
+        +canWrite(userId, role, tier, projectId): boolean
+        +canPromote(userId, role, entry, targetTier): boolean
+    }
+
+    class SchedulerModule {
+        -promotionTimer: Timer
+        -ttlCleanupTimer: Timer
+        +initialize(): Promise~void~
+        +shutdown(): Promise~void~
+        -runPromotionJob(): void
+        -runTtlCleanup(): void
+    }
+
+    PromotionService --> KbRepository
+    SchedulerModule --> PromotionService
+    SchedulerModule --> KbRepository
+`
 
 ### 5.4 Design Patterns
 
-| Pattern | Usage | Location |
-|---------|-------|----------|
-| **Module (Registry)** | Each feature is an IModule registered in ModuleRegistry | Existing pattern, new modules follow |
-| **Middleware Chain** | authGuard inserted in Hono middleware pipeline | server/middleware/auth-guard.ts |
-| **Repository** | Data access abstraction for each table | UserRepository, SessionRepository, KbRepository, ConfigRepository |
-| **Service Layer** | Business logic isolated from HTTP handlers | AuthService, MemoryService, ConfigService |
-| **Strategy** | Tier-based access control rules | TierAccessControl.ts |
-| **Observer** | Extension emits auth state changes, UI subscribes | AuthManager.onAuthStateChanged |
-| **Scheduler** | Background jobs for promotion/cleanup | SchedulerModule with setInterval |
+| Pattern | Where Used | Rationale |
+|---------|-----------|-----------|
+| **Module** | AuthModule, ConfigModule, SchedulerModule | IModule interface from KSA-284 — consistent lifecycle |
+| **Repository** | UserRepository, SessionRepository, KbRepository, ConfigRepository | Data access encapsulation, SQLite statements |
+| **Service** | AuthService, PromotionService, ConfigService | Business logic separation from data access |
+| **Guard** | auth-guard middleware | Cross-cutting auth concern, Hono middleware pattern |
+| **Observer** | Extension AuthManager → StatusBarManager | UI updates on auth state change |
+| **Strategy** | EncryptionService (AES-256-GCM) | Swappable encryption algorithm |
+| **Scheduler** | SchedulerModule (setInterval) | Simple periodic job execution |
+| **Token Rotation** | AuthService.refresh() | Revoke old + create new on each refresh (security) |
 
-### 5.5 Dependency Injection
+### 5.5 Authentication State Machine
 
-No DI framework — manual constructor injection (existing pattern):
-
-`	ypescript
-// In Backend index.ts (startup)
-const db = new DatabaseManager(config.dbPath);
-const userRepo = new UserRepository(db);
-const sessionRepo = new SessionRepository(db);
-const tokenService = new TokenService(config.jwtSecret);
-const passwordService = new PasswordService();
-const authService = new AuthService(userRepo, sessionRepo, tokenService, passwordService);
-const authModule = new AuthModule(authService);
-
-moduleRegistry.register(authModule);
+`mermaid
+stateDiagram-v2
+    [*] --> UNAUTHENTICATED: Extension activates, no stored token
+    UNAUTHENTICATED --> AUTHENTICATING: User submits credentials
+    AUTHENTICATING --> AUTHENTICATED: Login success (tokens stored)
+    AUTHENTICATING --> UNAUTHENTICATED: Login failed
+    AUTHENTICATED --> REFRESHING: Timer fires (expiry - 5min)
+    REFRESHING --> AUTHENTICATED: New token received
+    REFRESHING --> UNAUTHENTICATED: Refresh failed (revoked/expired)
+    AUTHENTICATED --> LOGGING_OUT: User triggers logout
+    LOGGING_OUT --> UNAUTHENTICATED: Tokens cleared
+    AUTHENTICATED --> UNAUTHENTICATED: 401 from any API call
+    
+    note right of AUTHENTICATED
+        Status bar: "Authenticated (username)" (green)
+        All requests include Bearer header
+    end note
+    
+    note right of UNAUTHENTICATED
+        Status bar: "Not Authenticated" (red)
+        Login Webview shown
+    end note
 `
 
 ---
 
 ## 6. Security Design
 
-### 6.1 Authentication Flow
+### 6.1 JWT Implementation
 
-**Local Auth:**
-1. Extension submits credentials over localhost HTTP (loopback — no network exposure)
-2. Backend validates password via scrypt (time-cost=2^14, blockSize=8, parallelism=1, keyLen=64)
-3. Backend checks lockout (failed_attempts >= 5 AND locked_until > now)
-4. On success: generate JWT (HS256, 1h) + refresh token (crypto.randomBytes(32).toString('hex'), 7d)
-5. Store refresh token hash (SHA-256) in sessions table
-6. Extension stores tokens in VS Code SecretStorage
+| Aspect | Design Decision | Rationale |
+|--------|----------------|-----------|
+| Algorithm | HS256 (symmetric) | Single-machine deployment, simple key management |
+| Library | jose (v5.6+) | Pure JS, ESM-native, maintained, no native deps |
+| Expiry | 1 hour (access token) | Balance security vs UX — frequent refresh OK on localhost |
+| Secret | Env var `JWT_SECRET` | Configurable, default for dev |
+| Claims | userId, username, email, role, projects[] | Minimum needed for auth + authorization |
+| Storage | VS Code SecretStorage (Extension) | OS-level encryption (Keychain/DPAPI/libsecret) |
 
-**SSO (OIDC + PKCE):**
-1. Extension generates code_verifier = crypto.randomBytes(32).toString('base64url')
-2. Extension computes code_challenge = SHA256(code_verifier).toString('base64url')
-3. Backend constructs IdP authorization URL with challenge
-4. Browser authenticates with IdP → callback to Backend
-5. Backend exchanges code + verifier for IdP tokens
-6. Backend validates IdP tokens, extracts claims, auto-provisions user
-7. Backend issues own JWT (decoupled from IdP token lifetime)
+### 6.2 Password Hashing
 
-### 6.2 JWT Structure
+| Aspect | Value | Rationale |
+|--------|-------|-----------|
+| Algorithm | scrypt | Node.js built-in, memory-hard, no native deps |
+| N (CPU/memory cost) | 16384 | OWASP recommended minimum |
+| r (block size) | 8 | Standard |
+| p (parallelization) | 1 | Single-threaded OK for localhost |
+| keyLen | 64 bytes | Sufficient entropy |
+| Salt | 32 bytes random | Per-password unique salt |
+| Storage format | `{salt_hex}:{hash_hex}` | Simple, parseable |
+| Timing attack protection | `crypto.timingSafeEqual` | Constant-time comparison |
 
-`json
-{
-  "alg": "HS256",
-  "typ": "JWT"
-}
-.
-{
-  "sub": "550e8400-e29b-41d4-a716-446655440000",
-  "username": "john.doe",
-  "email": "john.doe@company.com",
-  "role": "user",
-  "projects": ["proj-frontend", "proj-backend"],
-  "iat": 1720958400,
-  "exp": 1720962000
-}
+### 6.3 Encryption at Rest (MCP Config)
+
+| Aspect | Value | Rationale |
+|--------|-------|-----------|
+| Algorithm | AES-256-GCM | Authenticated encryption (integrity + confidentiality) |
+| Key | 32 bytes from env `ENCRYPTION_KEY` | Separate from JWT secret |
+| IV | 12 bytes random per encryption | GCM recommended IV length |
+| Auth tag | 16 bytes | Full 128-bit authentication |
+| Storage format | `{iv_hex}:{ciphertext_hex}:{tag_hex}` | Compact, parseable |
+
+### 6.4 PKCE Flow Security
+
+| Aspect | Value |
+|--------|-------|
+| code_verifier | 43-128 cryptographically random characters |
+| code_challenge | `base64url(SHA-256(code_verifier))` |
+| code_challenge_method | S256 (always) |
+| State parameter | 16 bytes random hex (CSRF protection) |
+| Flow timeout | 30 seconds (BR-26) |
+| Pending flow storage | In-memory Map (cleared on timeout) |
+
+### 6.5 Account Lockout (BR-4)
+
+| Aspect | Value |
+|--------|-------|
+| Max failed attempts | 5 |
+| Lockout duration | 15 minutes |
+| Reset condition | Successful login OR lockout expiry |
+| Storage | `users.failed_attempts` + `users.locked_until` |
+| Attack surface | Username not revealed (same error for wrong user/wrong password) |
+
+### 6.6 Token Lifecycle Security
+
+`mermaid
+sequenceDiagram
+    participant E as Extension
+    participant SS as SecretStorage
+    participant B as Backend
+    participant DB as SQLite
+
+    Note over E,DB: Login Flow
+    E->>B: POST /api/auth/login {username, password}
+    B->>DB: SELECT user WHERE username=?
+    B->>B: scrypt.verify(password, hash)
+    B->>B: jose.sign(JWT, HS256, 1h)
+    B->>B: crypto.randomBytes(32) → refresh_token
+    B->>DB: INSERT session (SHA256(refresh_token), expires_at=+7d)
+    B-->>E: {access_token, refresh_token, expires_in}
+    E->>SS: store("codeintel.accessToken", jwt)
+    E->>SS: store("codeintel.refreshToken", rt)
+    E->>E: schedule timer at (now + 55min)
+
+    Note over E,DB: Auto-Refresh Flow (at expiry - 5min)
+    E->>SS: read("codeintel.refreshToken")
+    E->>B: POST /api/auth/refresh {refresh_token}
+    B->>DB: SELECT session WHERE hash=SHA256(rt) AND !revoked
+    B->>DB: UPDATE session SET revoked=1
+    B->>B: generate new JWT + new refresh_token
+    B->>DB: INSERT new session
+    B-->>E: {new_access_token, new_refresh_token}
+    E->>SS: update tokens
+    E->>E: reschedule timer
+
+    Note over E,DB: Logout Flow
+    E->>B: POST /api/auth/logout {refresh_token}
+    B->>DB: UPDATE sessions SET revoked=1 WHERE hash=SHA256(rt)
+    B-->>E: 200 OK
+    E->>SS: delete("codeintel.accessToken")
+    E->>SS: delete("codeintel.refreshToken")
+    E->>E: cancel timer, show Login Webview
 `
-
-**JWT Secret Management:**
-- Generated on first Backend start: crypto.randomBytes(64).toString('hex')
-- Stored in .code-intel/jwt-secret.key (file permissions: owner-only)
-- Rotated manually by admin (restart required)
-
-### 6.3 Auth Guard Middleware
-
-`	ypescript
-// src/backend/src/server/middleware/auth-guard.ts
-import { Context, Next } from 'hono';
-import { TokenService } from '../../modules/auth/TokenService';
-
-const PUBLIC_PATHS = ['/health', '/api/auth/login', '/api/auth/sso/authorize', '/api/auth/sso/callback'];
-
-export function createAuthGuard(tokenService: TokenService) {
-  return async (c: Context, next: Next) => {
-    const path = c.req.path;
-
-    // Skip auth for public endpoints
-    if (PUBLIC_PATHS.some(p => path.startsWith(p))) {
-      return next();
-    }
-
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return c.json({ error: { code: 'AUTH_TOKEN_MISSING', message: 'Authorization header required' } }, 401);
-    }
-
-    const token = authHeader.slice(7);
-    const payload = tokenService.verify(token);
-
-    if (!payload) {
-      return c.json({ error: { code: 'AUTH_TOKEN_EXPIRED', message: 'Token expired or invalid' } }, 401);
-    }
-
-    // Attach user context for downstream handlers
-    c.set('user', payload);
-    return next();
-  };
-}
-`
-
-### 6.4 Encryption at Rest (MCP Config)
-
-`	ypescript
-// AES-256-GCM for sensitive config fields
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-
-const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 32; // 256 bits
-
-export class EncryptionService {
-  private key: Buffer;
-
-  constructor(encryptionKey: string) {
-    // Derive 32-byte key from config secret
-    this.key = crypto.scryptSync(encryptionKey, 'mcp-config-salt', KEY_LENGTH);
-  }
-
-  encrypt(plaintext: string): string {
-    const iv = randomBytes(16);
-    const cipher = createCipheriv(ALGORITHM, this.key, iv);
-    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-    // Format: base64(iv:authTag:ciphertext)
-    return Buffer.concat([iv, authTag, encrypted]).toString('base64');
-  }
-
-  decrypt(ciphertext: string): string {
-    const data = Buffer.from(ciphertext, 'base64');
-    const iv = data.subarray(0, 16);
-    const authTag = data.subarray(16, 32);
-    const encrypted = data.subarray(32);
-    const decipher = createDecipheriv(ALGORITHM, this.key, iv);
-    decipher.setAuthTag(authTag);
-    return decipher.update(encrypted) + decipher.final('utf8');
-  }
-}
-`
-
-### 6.5 Data Isolation Rules
-
-| Tier | Access Rule | Enforcement Layer |
-|------|------------|-------------------|
-| Tier 1 (User) | owner_id = JWT.sub | SQL WHERE clause + TierAccessControl |
-| Tier 2 (Project) | project_id IN JWT.projects[] | SQL WHERE clause + TierAccessControl |
-| Tier 3 (Shared) | All authenticated users | Auth guard ensures authentication |
 
 ---
 
-## 7. Error Handling
+## 7. Background Job Design
 
-### 7.1 Error Response Format
+### 7.1 Scheduler Architecture
 
-`	ypescript
-// Standard error response (extends existing error-handler.ts pattern)
-interface ErrorResponse {
-  error: {
-    code: string;       // Machine-readable error code
-    message: string;    // Human-readable message
-    details?: Record<string, unknown>; // Additional context
-  };
-}
+The `SchedulerModule` uses simple `setInterval` (no external scheduler library):
+
+| Job | Interval | Function | Error Handling |
+|-----|----------|----------|----------------|
+| Promotion | 30 min (BR-15) | `runPromotionJob()` | try/catch, log error, continue next cycle |
+| TTL Cleanup | 1 hour | `runTtlCleanup()` | try/catch, log error, continue next cycle |
+
+### 7.2 Promotion Job Logic
+
+**User→Project (BR-12) — ALL criteria:**
+1. `quality_score > 0.8`
+2. `tags` includes "project-relevant"
+3. `promoted_by IS NOT NULL` (at least 1 reviewer)
+4. `project_id IS NOT NULL` (has associated project)
+
+**Project→Shared (BR-13) — ANY criterion:**
+1. `referenced_by_projects.length >= 3`
+2. `tags` includes "best-practice"
+3. `admin_promoted = 1`
+
+**Promotion action:**
+- CREATE copy in target tier (new UUID, `promoted_from` = source ID)
+- UPDATE source: `promoted = 1`
+- Log result
+
+### 7.3 TTL Cleanup Logic
+
+`sql
+DELETE FROM kb_entries
+WHERE tier = 1
+  AND ttl_days IS NOT NULL
+  AND datetime(created_at, '+' || ttl_days || ' days') < datetime('now')
 `
 
-### 7.2 Error Codes Registry
-
-| Code | HTTP | Module | Recovery |
-|------|------|--------|----------|
-| AUTH_INVALID_CREDENTIALS | 401 | Auth | Re-enter credentials |
-| AUTH_ACCOUNT_LOCKED | 403 | Auth | Wait for lockout period |
-| AUTH_TOKEN_MISSING | 401 | Auth | Include Bearer token |
-| AUTH_TOKEN_EXPIRED | 401 | Auth | Refresh or re-login |
-| AUTH_REFRESH_INVALID | 401 | Auth | Re-login required |
-| AUTH_SSO_TIMEOUT | 408 | Auth | Retry SSO flow |
-| AUTH_SSO_DOMAIN_REJECTED | 403 | Auth | Contact admin |
-| AUTH_SSO_PROVIDER_ERROR | 502 | Auth | Try local login |
-| KB_CONTENT_TOO_SHORT | 422 | Memory | Provide longer content |
-| KB_CAPACITY_EXCEEDED | 507 | Memory | Delete entries or promote |
-| KB_ACCESS_DENIED | 403 | Memory | Use own KB or Shared |
-| KB_PROJECT_NOT_MEMBER | 403 | Memory | Join project or use correct project |
-| CONFIG_INVALID_URL | 422 | Config | Fix URL format |
-| CONFIG_TEST_FAILED | 502 | Config | Check credentials/URL |
-| CONFIG_SAVE_FAILED | 500 | Config | Retry later |
-| BACKEND_UNAVAILABLE | 503 | Server | Start Backend, retry |
-
-### 7.3 Exception Hierarchy
-
-`	ypescript
-// src/backend/src/types/errors.ts
-export class AppError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-    public readonly httpStatus: number = 500,
-    public readonly details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-export class AuthError extends AppError {
-  constructor(code: string, message: string, status: 401 | 403 = 401) {
-    super(code, message, status);
-    this.name = 'AuthError';
-  }
-}
-
-export class ValidationError extends AppError {
-  constructor(code: string, message: string, details?: Record<string, unknown>) {
-    super(code, message, 422, details);
-    this.name = 'ValidationError';
-  }
-}
-
-export class KbError extends AppError {
-  constructor(code: string, message: string, status: number = 403) {
-    super(code, message, status);
-    this.name = 'KbError';
-  }
-}
-`
-
-### 7.4 Updated Error Handler
-
-`	ypescript
-// Extended error-handler.ts
-export function errorHandler(err: Error, c: Context): Response {
-  console.error('[ErrorHandler]', err.message);
-
-  if (err instanceof AppError) {
-    return c.json({
-      error: { code: err.code, message: err.message, details: err.details }
-    }, err.httpStatus as any);
-  }
-
-  if (err instanceof HTTPException) {
-    return c.json({ error: { code: 'HTTP_ERROR', message: err.message } }, err.status);
-  }
-
-  return c.json({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } }, 500);
-}
-`
+Returns count of deleted entries for logging.
 
 ---
 
 ## 8. Performance & Scalability
 
-### 8.1 Caching Strategy
+### 8.1 Performance Targets
 
-| Cache | Location | TTL | Eviction | Purpose |
-|-------|----------|-----|----------|---------|
-| JWT payload (verified) | Backend in-memory Map | 5 min | LRU (max 200) | Avoid re-parsing JWT on every request |
-| User record | Backend in-memory Map | 5 min | LRU (max 100) | Reduce DB lookups for role/projects |
-| KB embedding model | Backend singleton | App lifetime | None | ONNX model loaded once |
-| Search results | None (real-time) | — | — | Always fresh results |
+| Operation | Target | Measured Approach |
+|-----------|--------|-------------------|
+| Local login | < 3s end-to-end | scrypt ~100ms + JWT sign ~5ms + DB write ~5ms |
+| Token refresh | < 500ms | DB read + JWT sign + DB write |
+| KB search (3 tiers) | < 500ms | Parallel SQLite queries + in-memory merge |
+| Config save | < 1s | AES encrypt + DB upsert |
+| Promotion job | < 10s per run | Batch scan with partial index |
 
-### 8.2 Connection Pooling
+### 8.2 Caching Strategy
 
-SQLite with better-sqlite3 is synchronous and uses a single connection. Concurrency is managed via:
-- **WAL mode**: Multiple concurrent readers, single writer
-- **busy_timeout = 5000ms**: Writer retries for 5s before failing
-- **No connection pool needed** (SQLite limitation/feature)
+| Data | Cache Location | TTL | Invalidation |
+|------|---------------|-----|--------------|
+| JWT payload (decoded) | Hono context per-request | Request lifetime | N/A |
+| SSO config | SsoService.getConfig() per-call | None (DB read) | Config change |
+| Pending SSO flows | In-memory Map | 30s (BR-26) | Auto-cleanup |
+| User permissions | From JWT claims | Token lifetime (1h) | Token refresh |
 
-### 8.3 Performance Targets
+### 8.3 SQLite Optimizations
 
-| Operation | Target | Approach |
-|-----------|--------|----------|
-| Login (local) | < 300ms | scrypt fast params + indexed lookup |
-| Token refresh | < 50ms | JWT verify + new sign (in-memory) |
-| KB ingest | < 100ms | Async embedding computation |
-| KB search (all tiers) | < 500ms | Parallel tier queries + vector cosine similarity |
-| MCP config save | < 100ms | Direct SQLite write |
-| Promotion job (30 min) | < 5s | Batch query + batch insert |
-| TTL cleanup (1 hour) | < 2s | Single DELETE with condition |
+- **WAL mode** — Concurrent readers don't block writer
+- **Busy timeout 5000ms** — Retry on lock instead of immediate fail
+- **Partial indexes** — `idx_kb_promotion` only indexes non-promoted entries
+- **Content hash** — Deduplication without comparing full text
 
 ### 8.4 Scalability Limits
 
-| Resource | Limit | Rationale |
-|----------|-------|-----------|
-| Concurrent users | 100 | SQLite single-writer, localhost only |
-| User KB entries | 10,000/user | Vector search performance |
-| Project KB entries | 100,000/project | SQLite row scan limits |
-| Shared KB entries | 50,000 | Company-wide ceiling |
-| Active sessions | Unlimited | Lightweight table rows |
-| Embedding dimensions | 384 | ONNX model constraint |
+| Dimension | Limit | Enforcement |
+|-----------|-------|-------------|
+| Concurrent users | 100 | SQLite WAL handles reads; write serialization OK for 100 users |
+| User KB entries | 10,000/user (BR-23) | Check count before insert |
+| Project KB entries | 100,000/project (BR-24) | Check count before insert |
+| Shared KB entries | 50,000 total (BR-25) | Check count before insert |
+| Sessions per user | Unlimited (old auto-revoked on refresh) | Token rotation cleans up |
 
 ---
 
@@ -1185,225 +1099,168 @@ SQLite with better-sqlite3 is synchronous and uses a single connection. Concurre
 
 ### 9.1 Logging Standards
 
-Using pino (existing dependency) with structured JSON logging:
+All logging uses pino (existing) with structured JSON:
 
 `	ypescript
-// Log levels by category
-// ERROR: Auth failures, DB errors, unhandled exceptions
-// WARN: Account lockouts, capacity nearing limits, slow queries
-// INFO: Login/logout events, promotion events, config changes
-// DEBUG: Request details, query plans, timer events
-
-logger.info({ userId, event: 'login_success', method: 'local' }, 'User authenticated');
-logger.warn({ username, attempts: 5, locked_until }, 'Account locked');
-logger.error({ code: 'DB_ERROR', table: 'kb_entries' }, 'Database write failed');
+logger.info({ userId, method: 'local' }, 'Login success');
+logger.warn({ username, attempts: 5 }, 'Account locked');
+logger.error({ err, entryId }, 'Promotion failed');
 `
 
-### 9.2 Health Check Extension
+### 9.2 Audit Log Events
 
-`	ypescript
-// Extended /health response
+| Event | Logged To | Fields |
+|-------|-----------|--------|
+| login_success | audit_log table | userId, method, timestamp |
+| login_failure | audit_log table | username, reason, timestamp |
+| account_locked | audit_log table | username, locked_until |
+| logout | audit_log table | userId, timestamp |
+| kb_promoted | audit_log table | entry_id, from_tier, to_tier, by |
+| kb_ttl_deleted | audit_log table | entry_id, owner_id, age |
+| config_changed | audit_log table | userId, server_name (no secrets) |
+
+### 9.3 Health Check Extension
+
+The existing `GET /health` endpoint now includes auth module status:
+
+`json
 {
   "status": "healthy",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "modules": {
-    "auth": "ready",
     "memory": "ready",
+    "codeIntel": "ready",
+    "orchestration": "ready",
+    "analytics": "ready",
+    "kbGraph": "ready",
+    "auth": "ready",
     "config": "ready",
     "scheduler": "ready"
-  },
-  "database": {
-    "status": "connected",
-    "wal_mode": true,
-    "users_count": 5,
-    "kb_entries_count": 12500,
-    "active_sessions": 3
-  },
-  "uptime_seconds": 3600
+  }
 }
 `
-
-### 9.3 Audit Events
-
-| Event | Fields Logged | Retention |
-|-------|--------------|-----------|
-| login_success | userId, method, timestamp | 90 days |
-| login_failure | username, reason, IP, timestamp | 90 days |
-| account_locked | username, failed_count, locked_until | 90 days |
-| logout | userId, timestamp | 30 days |
-| kb_promoted | entry_id, from_tier, to_tier, criteria | Permanent |
-| kb_ttl_deleted | entry_id, owner_id, age_days | 30 days |
-| config_changed | userId, server_name, timestamp | 90 days |
 
 ---
 
-## 10. Deployment & Configuration
+## 10. Deployment
 
-### 10.1 Configuration Extensions
-
-`	ypescript
-// Extended BackendConfig
-export interface BackendConfig {
-  // Existing
-  port: number;
-  host: string;
-  dbPath: string;
-  modelsPath: string;
-  orchestrationConfigPath: string;
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
-
-  // NEW: Auth config
-  jwtSecret: string;          // Auto-generated if not set
-  jwtExpirySeconds: number;   // Default: 3600 (1h)
-  refreshExpiryDays: number;  // Default: 7
-  lockoutAttempts: number;    // Default: 5
-  lockoutMinutes: number;     // Default: 15
-
-  // NEW: SSO config
-  ssoEnabled: boolean;        // Default: false
-  ssoIssuerUrl?: string;
-  ssoClientId?: string;
-  ssoAllowedDomains?: string[];
-
-  // NEW: Encryption
-  encryptionKey: string;      // Auto-generated if not set
-
-  // NEW: Scheduler
-  promotionIntervalMs: number;  // Default: 1800000 (30 min)
-  ttlCleanupIntervalMs: number; // Default: 3600000 (1 hour)
-}
-`
-
-### 10.2 Extension Commands (New)
-
-`json
-// package.json contributes.commands additions
-[
-  { "command": "codeIntel.login", "title": "Code Intel: Login" },
-  { "command": "codeIntel.logout", "title": "Code Intel: Logout" },
-  { "command": "codeIntel.loginSso", "title": "Code Intel: Login with SSO" },
-  { "command": "codeIntel.configureMcp", "title": "Code Intel: Configure MCP Servers" }
-]
-`
-
-### 10.3 Environment Variables
+### 10.1 Environment Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| JWT_SECRET | (auto-generated) | HS256 signing key |
-| JWT_EXPIRY | 3600 | Token lifetime in seconds |
-| REFRESH_EXPIRY_DAYS | 7 | Refresh token lifetime |
-| ENCRYPTION_KEY | (auto-generated) | AES-256 key for MCP config |
-| SSO_ENABLED | false | Enable OIDC SSO |
-| SSO_ISSUER_URL | — | OIDC provider URL |
-| SSO_CLIENT_ID | — | OAuth2 client ID |
-| SSO_ALLOWED_DOMAINS | [] | Comma-separated domains |
+| `JWT_SECRET` | `code-intel-default-jwt-secret-change-in-production` | HS256 signing key (MUST change for production) |
+| `ENCRYPTION_KEY` | `code-intel-default-enc-key-change-me` | AES-256 key for MCP config encryption |
+| `BACKEND_PORT` | 48721 | HTTP server port |
+| `BACKEND_HOST` | 127.0.0.1 | Bind address (localhost only) |
+| `DB_PATH` | .code-intel/index.db | SQLite database path |
 
-### 10.4 Migration Execution Plan
+### 10.2 Migration Execution
 
-1. Backend detects schema version on startup (migrations table)
-2. If version < 2, run migration 002-auth-multitenant
-3. Generate JWT secret if not exists (write to .code-intel/jwt-secret.key)
-4. Generate encryption key if not exists (write to .code-intel/encryption.key)
-5. Create default admin user if users table is empty
+Migration runs automatically on server start:
+`	ypescript
+MIGRATION_002.up(db); // Idempotent (CREATE TABLE IF NOT EXISTS)
+`
+
+No manual migration step required. Database schema is auto-created on first start.
+
+### 10.3 Rollback Strategy
+
+1. **Code rollback** — Revert to pre-KSA-285 branch (removes auth modules)
+2. **Database** — Migration 002 is additive (new tables). Old code ignores new tables.
+3. **Extension** — Revert to pre-KSA-285 .vsix (no auth code, no SecretStorage usage)
+4. **Data** — User/session/config data in new tables is non-critical (can be recreated)
+
+### 10.4 Feature Flags
+
+No feature flags needed — auth is always-on once deployed. The `/health` endpoint remains unauthenticated for connection checks.
 
 ---
 
 ## 11. Implementation Checklist
 
-### Phase 1: Foundation (Auth Module)
-- [ ] Create DatabaseManager with migration runner
-- [ ] Implement migration 002-auth-multitenant (DDL)
-- [ ] Implement PasswordService (scrypt hash/verify)
-- [ ] Implement TokenService (JWT sign/verify using jose)
-- [ ] Implement UserRepository (CRUD operations)
-- [ ] Implement SessionRepository (CRUD + revocation)
-- [ ] Implement AuthService (login/logout/refresh logic + lockout)
-- [ ] Implement AuthModule (IModule interface)
-- [ ] Create uth-guard.ts middleware
-- [ ] Create /api/auth/* routes
-- [ ] Register AuthModule in Backend startup
-- [ ] Write unit tests for AuthService, TokenService, PasswordService
-- [ ] Write integration tests for auth routes
+### Phase 1: Backend Auth Module
 
-### Phase 2: Extension Auth Integration
-- [ ] Implement AuthManager (SecretStorage read/write)
-- [ ] Implement AuthInterceptor (Bearer token injection on requests)
-- [ ] Implement TokenRefreshTimer (auto-refresh at expiry - 5min)
-- [ ] Implement LoginWebview (username/password form + SSO button)
-- [ ] Extend xtension.ts activate() with auth initialization
-- [ ] Extend StatusBarManager with auth state display
-- [ ] Register new commands (login, logout, loginSso)
-- [ ] Handle auth state transitions (authenticated ↔ unauthenticated)
-- [ ] Write tests for AuthManager, TokenRefreshTimer
+| # | Task | File(s) | Priority |
+|---|------|---------|----------|
+| 1.1 | Migration 002 DDL | `database/migrations/002-auth-multitenant.ts` | P0 |
+| 1.2 | AuthModule + types | `modules/auth/AuthModule.ts`, `types.ts` | P0 |
+| 1.3 | TokenService (jose HS256) | `modules/auth/TokenService.ts` | P0 |
+| 1.4 | PasswordService (scrypt) | `modules/auth/PasswordService.ts` | P0 |
+| 1.5 | UserRepository | `modules/auth/UserRepository.ts` | P0 |
+| 1.6 | SessionRepository | `modules/auth/SessionRepository.ts` | P0 |
+| 1.7 | AuthService (login, refresh, logout) | `modules/auth/AuthService.ts` | P0 |
+| 1.8 | Auth guard middleware | `server/middleware/auth-guard.ts` | P0 |
+| 1.9 | Auth routes (/api/auth/*) | `server/routes/auth.ts` | P0 |
+| 1.10 | SsoService (OIDC+PKCE) | `modules/auth/SsoService.ts` | P1 |
 
-### Phase 3: Multi-Tenant KB
-- [ ] Implement KbRepository (tier-aware CRUD)
-- [ ] Implement TierAccessControl (visibility rules from JWT context)
-- [ ] Implement MemoryService (multi-tier ingest, multi-tier search)
-- [ ] Extend MemoryModule tool definitions (add tier, project params)
-- [ ] Extend ToolRouter to pass user context to tool handlers
-- [ ] Implement deduplication logic (content_hash comparison)
-- [ ] Implement tier boost scoring (User×1.2, Project×1.0, Shared×0.9)
-- [ ] Write unit tests for TierAccessControl, MemoryService
-- [ ] Write integration tests for multi-tier search
+### Phase 2: Backend KB Multi-Tier
 
-### Phase 4: Auto-Promotion & Scheduler
-- [ ] Implement SchedulerModule (setInterval-based job runner)
-- [ ] Implement PromotionService (criteria evaluation + copy logic)
-- [ ] Implement PromotionJob (User→Project + Project→Shared)
-- [ ] Implement TtlCleanupJob (expired Tier 1 entry deletion)
-- [ ] Create /api/kb/promote route (manual promotion)
-- [ ] Write unit tests for PromotionService
-- [ ] Write integration tests for promotion flow
+| # | Task | File(s) | Priority |
+|---|------|---------|----------|
+| 2.1 | KbRepository (multi-tier CRUD) | `modules/memory/KbRepository.ts` | P0 |
+| 2.2 | TierAccessControl | `modules/memory/TierAccessControl.ts` | P0 |
+| 2.3 | PromotionService | `modules/memory/PromotionService.ts` | P1 |
+| 2.4 | SchedulerModule | `modules/scheduler/SchedulerModule.ts` | P1 |
+| 2.5 | KB routes (/api/kb/*) | `server/routes/kb.ts` | P1 |
 
-### Phase 5: MCP Server Configuration
-- [ ] Implement EncryptionService (AES-256-GCM)
-- [ ] Implement ConfigRepository (mcp_config CRUD)
-- [ ] Implement ConfigService (save/load/test logic)
-- [ ] Implement ConfigModule (IModule interface)
-- [ ] Create /api/config/* routes
-- [ ] Implement McpConfigWebview (tab-based form)
-- [ ] Wire config to child MCP server credential injection
-- [ ] Write unit tests for EncryptionService, ConfigService
-- [ ] Write integration tests for config routes
+### Phase 3: Backend Config Module
 
-### Phase 6: SSO (Optional, SHOULD HAVE)
-- [ ] Implement SsoService (OIDC discovery, PKCE, token exchange)
-- [ ] Create /api/auth/sso/* routes (authorize, callback, poll)
-- [ ] Implement user auto-provisioning from IdP claims
-- [ ] Handle domain validation (BR-27)
-- [ ] Write integration tests for SSO flow (mock IdP)
+| # | Task | File(s) | Priority |
+|---|------|---------|----------|
+| 3.1 | EncryptionService (AES-256-GCM) | `modules/config/EncryptionService.ts` | P0 |
+| 3.2 | ConfigRepository | `modules/config/ConfigRepository.ts` | P0 |
+| 3.3 | ConfigService + ConfigModule | `modules/config/ConfigService.ts`, `ConfigModule.ts` | P0 |
+| 3.4 | Config routes (/api/config/*) | `server/routes/config.ts` | P0 |
+
+### Phase 4: Extension Auth
+
+| # | Task | File(s) | Priority |
+|---|------|---------|----------|
+| 4.1 | AuthManager (SecretStorage CRUD) | `extension/src/auth/AuthManager.ts` | P0 |
+| 4.2 | AuthInterceptor (Bearer header) | `extension/src/auth/AuthInterceptor.ts` | P0 |
+| 4.3 | TokenRefreshTimer | `extension/src/auth/TokenRefreshTimer.ts` | P0 |
+| 4.4 | LoginPanel (Webview HTML/JS) | `extension/src/webview/panels/LoginPanel.ts` | P0 |
+| 4.5 | McpConfigPanel (Webview) | `extension/src/webview/panels/McpConfigPanel.ts` | P1 |
+| 4.6 | Extension.ts integration | `extension/src/extension.ts` | P0 |
+| 4.7 | package.json (new commands) | `extension/package.json` | P0 |
+
+### Phase 5: Integration & Testing
+
+| # | Task | Priority |
+|---|------|----------|
+| 5.1 | Unit tests for AuthService (login, lockout, refresh) | P0 |
+| 5.2 | Unit tests for PasswordService (hash, verify) | P0 |
+| 5.3 | Unit tests for TokenService (sign, verify, expiry) | P0 |
+| 5.4 | Unit tests for EncryptionService (encrypt, decrypt) | P0 |
+| 5.5 | Unit tests for KbRepository (CRUD, tier queries) | P0 |
+| 5.6 | Unit tests for PromotionService (both directions) | P1 |
+| 5.7 | Integration tests for auth routes (login → use → refresh → logout) | P0 |
+| 5.8 | Integration tests for auth guard (protected routes) | P0 |
+| 5.9 | Integration tests for KB tier isolation | P0 |
+| 5.10 | Integration tests for config encryption round-trip | P1 |
 
 ---
 
-## Appendix A: Diagram Index
+## 12. Discrepancy Notes
+
+**FSD vs Actual Implementation:**
+
+| # | Area | FSD Says | Actual Code | Resolution |
+|---|------|----------|-------------|------------|
+| 1 | Password hashing | BR-5 says "scrypt (N=16384, r=8, p=1, keyLen=64)" | PasswordService uses exactly these params | ✅ Consistent |
+| 2 | JWT library | FSD references "jsonwebtoken" | Code uses `jose` (pure JS, same HS256) | jose is superior (ESM, no native deps) |
+| 3 | Port | FSD §1.4 shows "http://localhost:9180" in redirect_uri | Backend runs on port 48721 | 48721 is correct (per KSA-284 TDD) |
+| 4 | kb_entries.reviewed_by | FSD §4.2 shows reviewed_by JSON column | Actual schema uses promoted_by (single user) | PromotionService checks promoted_by != null instead |
+| 5 | Refresh token storage | FSD says "hashed in DB" | SessionRepository stores SHA-256 hash | ✅ Consistent |
+
+---
+
+### Diagram Index
 
 | # | Diagram | Image | Source (editable) |
 |---|---------|-------|-------------------|
-| 1 | Architecture Diagram | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
-| 2 | Component Diagram | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
-| 3 | Class Diagram | [class-diagram.png](diagrams/class-diagram.png) | [class-diagram.drawio](diagrams/class-diagram.drawio) |
-
----
-
-## Appendix B: FSD → TDD Traceability
-
-| FSD Requirement | TDD Section | Implementation |
-|----------------|-------------|----------------|
-| UC-1 Local Login | §3.1.1, §6.1 | AuthService.login(), /api/auth/login route |
-| UC-2 SSO Login | §3.1.2-3.1.3, §6.1 | SsoService, /api/auth/sso/* routes |
-| UC-3 Token Refresh | §3.1.4, §6.1 | TokenService, AuthManager.TokenRefreshTimer |
-| UC-4 User KB Ingest | §3.2.1, §5.1 | MemoryService.ingest(tier=1) |
-| UC-5 Project KB Ingest | §3.2.1, §5.1 | MemoryService.ingest(tier=2) |
-| UC-6 Admin Shared KB | §3.2.1, §5.1 | MemoryService.ingest(tier=3) + role check |
-| UC-7/8 Auto-Promotion | §5.1 (Scheduler) | PromotionJob, PromotionService |
-| UC-9 MCP Config | §3.3.1-3.3.3 | ConfigService, McpConfigWebview |
-| UC-10 Logout | §3.1.5 | AuthService.logout(), AuthManager.logout() |
-| UC-11 Multi-Tier Search | §3.2.2, §8.3 | MemoryService.search(), TierAccessControl |
-| BR-1 Bearer required | §6.3 | auth-guard.ts middleware |
-| BR-4 Account lockout | §3.1.1, §5.2 | AuthService lockout logic |
-| BR-5 Password hashing | §6.1 | PasswordService (scrypt) |
-| BR-9-11 Tier rules | §6.5 | TierAccessControl |
-| BR-16 AES encryption | §6.4 | EncryptionService |
-| BR-19-20 Search boost | §3.2.2, §8.3 | MemoryService boost + dedup |
+| 1 | Architecture | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
+| 2 | Component | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
+| 3 | Class — Auth | [class-auth.png](diagrams/class-auth.png) | [class-auth.drawio](diagrams/class-auth.drawio) |
+| 4 | Class — KB | [class-kb.png](diagrams/class-kb.png) | [class-kb.drawio](diagrams/class-kb.drawio) |
+| 5 | Sequence — Token Lifecycle | [sequence-token-lifecycle.png](diagrams/sequence-token-lifecycle.png) | [sequence-token-lifecycle.drawio](diagrams/sequence-token-lifecycle.drawio) |

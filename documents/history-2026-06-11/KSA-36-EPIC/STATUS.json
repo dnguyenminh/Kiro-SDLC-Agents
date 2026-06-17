@@ -3,29 +3,96 @@
   "title": "SDLC Memory Engine",
   "status": "implementation_complete",
   "completedTickets": [
-    { "key": "KSA-37", "title": "Project Skeleton", "status": "DONE" },
-    { "key": "KSA-38", "title": "Storage Layer — SQLite + FTS5 schema", "status": "DONE" },
-    { "key": "KSA-39", "title": "Embedding Engine — ONNX all-MiniLM-L6-v2", "status": "DONE" },
-    { "key": "KSA-40", "title": "Knowledge Graph — In-memory + persistence", "status": "DONE" },
-    { "key": "KSA-41", "title": "Document Ingest Pipeline — Chunking", "status": "DONE" },
-    { "key": "KSA-42", "title": "Hybrid Search — RRF fusion", "status": "DONE" },
-    { "key": "KSA-43", "title": "4-Tier Consolidation", "status": "DONE" },
-    { "key": "KSA-44", "title": "MCP Tools Suite — 9 tools", "status": "DONE" },
-    { "key": "KSA-45", "title": "Decision Memory + Error Patterns", "status": "DONE" },
-    { "key": "KSA-46", "title": "Agent Handoff Memory", "status": "DONE" },
-    { "key": "KSA-47", "title": "Web Viewer — Knowledge Graph UI", "status": "DONE" },
-    { "key": "KSA-48", "title": "REST API + WebSocket", "status": "DONE" },
-    { "key": "KSA-49", "title": "Auto-Capture Hooks", "status": "DONE" },
-    { "key": "KSA-50", "title": "Integration — steering + agent prompts", "status": "PARTIAL" }
+    {
+      "key": "KSA-37",
+      "title": "Project Skeleton",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-38",
+      "title": "Storage Layer — SQLite + FTS5 schema",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-39",
+      "title": "Embedding Engine — ONNX all-MiniLM-L6-v2",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-40",
+      "title": "Knowledge Graph — In-memory + persistence",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-41",
+      "title": "Document Ingest Pipeline — Chunking",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-42",
+      "title": "Hybrid Search — RRF fusion",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-43",
+      "title": "4-Tier Consolidation",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-44",
+      "title": "MCP Tools Suite — 9 tools",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-45",
+      "title": "Decision Memory + Error Patterns",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-46",
+      "title": "Agent Handoff Memory",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-47",
+      "title": "Web Viewer — Knowledge Graph UI",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-48",
+      "title": "REST API + WebSocket",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-49",
+      "title": "Auto-Capture Hooks",
+      "status": "DONE"
+    },
+    {
+      "key": "KSA-50",
+      "title": "Integration — steering + agent prompts",
+      "status": "PARTIAL"
+    }
   ],
   "remainingTickets": [
-    { "key": "KSA-51", "title": "CI/CD + Publishing", "status": "NOT_STARTED" }
+    {
+      "key": "KSA-51",
+      "title": "CI/CD + Publishing",
+      "status": "NOT_STARTED"
+    }
   ],
   "buildVerified": true,
   "shadowJarSize": "112MB",
   "newMcpTools": [
-    "kb_search", "kb_ingest", "kb_ingest_doc", "kb_get",
-    "kb_delete", "kb_list", "kb_graph", "kb_status", "kb_consolidate"
+    "kb_search",
+    "kb_ingest",
+    "kb_ingest_doc",
+    "kb_get",
+    "kb_delete",
+    "kb_list",
+    "kb_graph",
+    "kb_status",
+    "kb_consolidate"
   ],
   "architecture": {
     "packages": [

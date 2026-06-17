@@ -36,7 +36,9 @@
       "status": "done"
     }
   },
-  "lastUpdated": "2026-05-25T06:16:50Z",
-  "currentPhase": "design",
-  "ticket": "KSA-154"
+  "lastUpdated": "2026-06-11T12:00:00Z",
+  "currentPhase": "done",
+  "ticket": "KSA-154",
+  "batchClosed": true,
+  "batchClosedReason": "Batch close by SM — all phases confirmed complete or legacy"
 }

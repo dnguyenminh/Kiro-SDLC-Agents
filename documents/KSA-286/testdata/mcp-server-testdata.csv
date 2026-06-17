@@ -1,0 +1,11 @@
+test_case_id,server_id,action,tool_name,expected_http_code,expected_status,expected_error,description
+IT-11,mock-server,restart,,200,RUNNING,,Restart stopped server - success
+IT-12,running-server,restart,,400,,Server is already running,Restart already running server
+IT-13,jira,toggle_tool,search,200,disabled,,Disable tool on running server
+E2E-API-08,test-server,restart,,200,RUNNING,,E2E restart stopped server
+E2E-API-09,jira,toggle_tool,search_code,200,disabled,,E2E disable tool and verify rejection
+E2E-API-09,jira,toggle_tool,search_code,200,enabled,,E2E re-enable tool
+UT-20,jira,toggle_tool,get_issue,200,disabled,,Unit toggle tool state
+UT-21,broken-server,restart,,408,,Restart timed out after 30s,Restart timeout after 30s
+E2E-UI-09,jira,toggle_tool,get_issue,200,disabled,,UI toggle tool via switch
+E2E-UI-10,test-server,restart,,200,RUNNING,,UI restart via button

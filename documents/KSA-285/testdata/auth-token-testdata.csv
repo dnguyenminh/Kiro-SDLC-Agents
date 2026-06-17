@@ -1,0 +1,6 @@
+test_case_id,action,refresh_token,expected_http_code,expected_error_code,description
+IT-04,refresh,{valid_refresh_token},200,,Valid refresh — token rotation
+IT-04,refresh,{old_revoked_refresh_token},401,AUTH_REFRESH_INVALID,Old token revoked after rotation
+UT-11,refresh,{revoked_token},401,AUTH_REFRESH_INVALID,Explicitly revoked token
+IT-05,logout,{valid_refresh_token},200,,Logout revokes session
+IT-05,refresh_after_logout,{same_token},401,AUTH_REFRESH_INVALID,Cannot refresh after logout

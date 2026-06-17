@@ -1,0 +1,7 @@
+token_type,exp_offset_minutes,expected_state,description
+valid,60,AUTHENTICATED,Token expires in 1 hour - valid
+near_expiry,3,NEEDS_REFRESH,Token expires in 3 min - needs refresh
+expired,-10,EXPIRED,Token expired 10 min ago
+far_future,1440,AUTHENTICATED,Token expires in 24 hours - very valid
+just_expired,0,EXPIRED,Token expires right now
+malformed,N/A,EXPIRED,Malformed JWT - treat as expired

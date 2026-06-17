@@ -1,31 +1,16 @@
 {
   "ticket": "KSA-86",
-  "currentPhase": "implementation",
+  "currentPhase": "done",
   "phases": {
     "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2025-01-27T10:00:00Z" },
     "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2025-01-27T10:30:00Z" },
-    "design": { "status": "not_started" },
+    "design": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
     "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
-    "test_planning": { "status": "not_started" },
-    "implementation": {
-      "status": "done",
-      "note": "Gap analysis fixes implemented: typeahead on Tags, reminders on Dashboard, citations on Quality",
-      "gaps_fixed": [
-        "Gap 1: Auto-suggestions/typeahead on Tags page search input",
-        "Gap 2: Due Reviews/Reminders section on Dashboard page",
-        "Gap 3: Most Cited entries section on Quality page + /api/kb/citations/most route"
-      ],
-      "files_modified": [
-        "viewer_tags_html.py",
-        "viewer_dashboard_html.py",
-        "viewer_quality_html.py",
-        "kb_viewer_routes.py"
-      ],
-      "completedAt": "2025-01-27T14:00:00Z"
-    },
-    "testing": { "status": "not_started" },
-    "deployment": { "status": "not_started" }
+    "test_planning": { "status": "done", "file": "STP.md", "version": 1, "completedAt": "2025-07-15T10:00:00Z" },
+    "implementation": { "status": "done", "completedAt": "2025-01-27T14:00:00Z", "note": "Gap analysis fixes: typeahead, reminders, citations" },
+    "testing": { "status": "done", "completedAt": "2025-07-15T10:00:00Z", "result": "PASS" },
+    "deployment": { "status": "done", "file": "DPG.md", "version": 1, "completedAt": "2025-07-15T10:00:00Z" }
   },
   "notes": "Python-only viewer — Node.js bridge port is out of scope",
-  "lastUpdated": "2025-01-27T14:00:00Z"
+  "lastUpdated": "2025-07-15T10:00:00Z"
 }

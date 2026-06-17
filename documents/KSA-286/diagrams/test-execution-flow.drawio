@@ -1,0 +1,21 @@
+<mxGraphModel adaptiveColors="auto"><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+<mxCell id="title" value="Test Execution Flow - KSA-286" style="text;html=1;align=center;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="150" y="10" width="350" height="30" as="geometry"/></mxCell>
+<mxCell id="pbt" value="PBT&#xa;(fast-check)&#xa;8 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="20" y="60" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="ut" value="UT&#xa;(Vitest)&#xa;24 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="150" y="60" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="it" value="IT&#xa;(supertest)&#xa;32 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="280" y="60" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="e2eapi" value="E2E-API&#xa;(fetch)&#xa;28 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="410" y="60" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="e2eui" value="E2E-UI&#xa;(Playwright)&#xa;22 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="540" y="60" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="sit" value="SIT&#xa;(Manual)&#xa;12 tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="280" y="180" width="100" height="60" as="geometry"/></mxCell>
+<mxCell id="e1" edge="1" parent="1" source="pbt" target="ut" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e2" edge="1" parent="1" source="ut" target="it" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e3" edge="1" parent="1" source="it" target="e2eapi" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e4" edge="1" parent="1" source="e2eapi" target="e2eui" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e5" edge="1" parent="1" source="e2eui" target="sit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="gate1" value="All Pass?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="295" y="270" width="70" height="50" as="geometry"/></mxCell>
+<mxCell id="e6" edge="1" parent="1" source="sit" target="gate1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="done" value="RELEASE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="280" y="350" width="100" height="40" as="geometry"/></mxCell>
+<mxCell id="fix" value="Fix + Retest" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="440" y="275" width="90" height="40" as="geometry"/></mxCell>
+<mxCell id="e7" edge="1" parent="1" source="gate1" target="done" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" value="Yes"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e8" edge="1" parent="1" source="gate1" target="fix" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" value="No"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e9" edge="1" parent="1" source="fix" target="it" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root></mxGraphModel>

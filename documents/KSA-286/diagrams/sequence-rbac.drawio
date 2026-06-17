@@ -1,0 +1,97 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="spa" value="&lt;b&gt;React SPA&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="60" y="40" width="120" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="api_router" value="&lt;b&gt;API Router&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="260" y="40" width="120" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="rbac_mw" value="&lt;b&gt;RBAC Middleware&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="460" y="40" width="140" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="jwt_validator" value="&lt;b&gt;JWT Validator&lt;/b&gt;&#10;(KSA-285)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="680" y="40" width="120" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="db" value="&lt;b&gt;SQLite&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="880" y="40" width="100" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="1. API Request + JWT" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="100" as="sourcePoint"/>
+        <mxPoint x="320" y="100" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" value="2. Forward to RBAC" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="320" y="130" as="sourcePoint"/>
+        <mxPoint x="530" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="3. Extract + validate JWT" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="160" as="sourcePoint"/>
+        <mxPoint x="740" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="4. {valid, userId, claims}" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="740" y="190" as="sourcePoint"/>
+        <mxPoint x="530" y="190" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="5. Fetch user permissions" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="220" as="sourcePoint"/>
+        <mxPoint x="930" y="220" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="6. {accessGroup, permissions, roleData}" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="930" y="250" as="sourcePoint"/>
+        <mxPoint x="530" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="7. Check required permission" style="html=1;endSize=6;fontSize=10;fontStyle=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="280" as="sourcePoint"/>
+        <mxPoint x="530" y="310" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="580" y="280"/>
+          <mxPoint x="580" y="310"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="8a. [OK] Allow request" style="html=1;endSize=6;dashed=1;fontSize=10;strokeColor=#388e3c;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="340" as="sourcePoint"/>
+        <mxPoint x="320" y="340" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="9. Execute handler + DB query" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="320" y="370" as="sourcePoint"/>
+        <mxPoint x="930" y="370" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="10. Result data" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="930" y="400" as="sourcePoint"/>
+        <mxPoint x="320" y="400" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e11" value="11. Response 200" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="320" y="430" as="sourcePoint"/>
+        <mxPoint x="120" y="430" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e12" value="8b. [DENIED] 403 Forbidden" style="html=1;endSize=6;dashed=1;fontSize=10;strokeColor=#c62828;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="480" as="sourcePoint"/>
+        <mxPoint x="120" y="480" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

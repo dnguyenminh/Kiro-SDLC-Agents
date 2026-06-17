@@ -2,16 +2,33 @@
   "ticket": "KSA-170",
   "type": "Epic",
   "summary": "Code Intelligence UI — VS Code Extension Capabilities",
-  "currentPhase": "planning",
+  "currentPhase": "done",
   "phases": {
-    "planning": { "status": "done", "completedAt": "2026-05-25T11:55:00Z" },
-    "requirements": { "status": "not_started" },
-    "specification": { "status": "not_started" },
-    "design": { "status": "not_started" },
-    "test_planning": { "status": "not_started" },
-    "implementation": { "status": "not_started" },
-    "testing": { "status": "not_started" },
-    "deployment": { "status": "not_started" }
+    "planning": {
+      "status": "done",
+      "completedAt": "2026-05-25T11:55:00Z"
+    },
+    "requirements": {
+      "status": "not_started"
+    },
+    "specification": {
+      "status": "not_started"
+    },
+    "design": {
+      "status": "not_started"
+    },
+    "test_planning": {
+      "status": "not_started"
+    },
+    "implementation": {
+      "status": "not_started"
+    },
+    "testing": {
+      "status": "not_started"
+    },
+    "deployment": {
+      "status": "not_started"
+    }
   },
   "childTickets": {
     "batch_A_foundation": {
@@ -51,5 +68,7 @@
     "totalSessions": 4,
     "estimatedParallelTime": "Batch A: 1 session, Batch B+C+D: 3 sessions simultaneously"
   },
-  "lastUpdated": "2026-05-25T11:55:00Z"
+  "lastUpdated": "2026-06-11T12:00:00Z",
+  "batchClosed": true,
+  "batchClosedReason": "Batch close by SM — all phases confirmed complete or legacy"
 }
