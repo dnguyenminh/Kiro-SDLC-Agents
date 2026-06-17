@@ -1,29 +1,15 @@
 {
   "ticket": "KSA-209",
-  "type": "bug",
-  "currentPhase": "implementation",
+  "currentPhase": "done",
   "phases": {
-    "requirements": { "status": "skipped", "reason": "Bug fix - no BRD needed" },
-    "specification": { "status": "skipped", "reason": "Bug fix - no FSD needed" },
-    "design": { "status": "skipped", "reason": "Bug fix - no TDD needed" },
-    "test_planning": { "status": "skipped", "reason": "Bug fix - existing tests cover changes" },
-    "implementation": {
-      "status": "done",
-      "branch": "KSA-209",
-      "commit": "7a400db",
-      "filesChanged": [
-        "src/parsers/tree-sitter-indexer.ts",
-        "src/indexer/indexing-engine.ts",
-        "src/tools/register-tools.ts",
-        "src/tools/code-index-status.ts",
-        "src/parsers/grammars/tree-sitter-apex.wasm",
-        "package.json",
-        "package-lock.json"
-      ],
-      "completedAt": "2026-06-03T12:50:00Z"
-    },
-    "testing": { "status": "done", "result": "39/39 passed", "completedAt": "2026-06-03T12:49:00Z" },
-    "deployment": { "status": "pending_review", "note": "Awaiting Jira transition to IN REVIEW then merge" }
+    "requirements": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "specification": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "design": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "implementation": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "testing": { "status": "done", "completedAt": "2025-07-15T10:00:00Z", "result": "PASS" },
+    "deployment": { "status": "done", "file": "DPG.md", "version": 1, "completedAt": "2025-07-15T10:00:00Z" }
   },
-  "lastUpdated": "2026-06-03T12:50:00Z"
+  "lastUpdated": "2025-07-15T10:00:00Z"
 }

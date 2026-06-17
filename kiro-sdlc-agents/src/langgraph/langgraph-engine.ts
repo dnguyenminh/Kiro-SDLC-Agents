@@ -13,6 +13,7 @@ import { McpBridge } from "./mcp-bridge";
 import { StreamHandler } from "./stream-handler";
 import { WorkspaceCheckpointer } from "./checkpointer";
 import { buildPipelineGraph } from "./graph-builder";
+import { HookEngine } from "./hook-engine";
 import type { LlmProvider } from "./llm-provider";
 import {
   PipelineState,
@@ -37,6 +38,7 @@ export class LangGraphEngine {
   private cancelled = false;
   private chatHistoryByTab: Map<string, ChatMessage[]> = new Map(); // KSA-240: Per-tab conversation history
   private activeTabId: string = ""; // KSA-240: Current active tab for context routing
+  readonly hookEngine: HookEngine; // KSA-280: Hook engine for pipeline integration
 
   constructor(
     private readonly mcpManager: McpServerManager,
@@ -48,6 +50,7 @@ export class LangGraphEngine {
     this.streamHandler = new StreamHandler(onEvent);
     this.mcpBridge = new McpBridge(mcpManager);
     this.llmProvider = llmProvider;
+    this.hookEngine = new HookEngine(workspaceRoot); // KSA-280
 
     // Run cleanup on construction (stale pipeline removal)
     this.checkpointer.cleanup();
@@ -58,6 +61,11 @@ export class LangGraphEngine {
     this.llmProvider = provider;
     // Force graph rebuild on next invocation so nodes get the new provider
     this.graph = null;
+  }
+
+  /** KSA-280: Get the stream handler for external hook integration. */
+  getStreamHandler(): StreamHandler {
+    return this.streamHandler;
   }
 
   /** KSA-240: Set chat history from persisted state (e.g., after reload) */
@@ -83,7 +91,7 @@ export class LangGraphEngine {
   /** Lazy-init: build graph on first invocation */
   private async ensureGraph(): Promise<CompiledGraph> {
     if (!this.graph) {
-      this.graph = await buildPipelineGraph(this.mcpBridge, this.streamHandler, this.checkpointer, this.llmProvider);
+      this.graph = await buildPipelineGraph(this.mcpBridge, this.streamHandler, this.checkpointer, this.llmProvider, this.hookEngine);
     }
     return this.graph;
   }
@@ -362,6 +370,7 @@ export class LangGraphEngine {
   /** Dispose resources */
   dispose(): void {
     this.streamHandler.dispose();
+    this.hookEngine.dispose(); // KSA-280
     this.activeThread = null;
   }
 }

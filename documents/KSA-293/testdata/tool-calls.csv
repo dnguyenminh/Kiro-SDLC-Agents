@@ -1,0 +1,9 @@
+tool_name,arguments_json,expected_routing,expected_status,description
+embed_images,"{""file_path"":""test.md"",""output_path"":""out.md""}",local,200,Local tool - executes via FileProxyHandler
+mem_search,"{""query"":""test query"",""detail"":true}",remote,200,Remote KB search tool
+mem_ingest,"{""title"":""Test"",""content"":""data""}",remote,200,Remote KB ingest
+code_search,"{""query"":""function"",""top_k"":5}",remote,200,Remote code search
+find_tools,"{""query"":""jira"",""threshold"":0.4}",remote,200,Remote tool discovery
+jira_get_issue,"{""issue_key"":""KSA-1""}",remote,200,Remote Jira tool
+unknown_tool_xyz,"{""arg"":""val""}",remote,404,Unknown tool returns error
+export_docx,"{""file_path"":""test.md""}",remote,200,Remote export tool

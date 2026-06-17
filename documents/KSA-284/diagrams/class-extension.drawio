@@ -1,0 +1,102 @@
+<mxfile host="65bd71144e">
+    <diagram id="-bEFJqZGWDrihDgJZXE8" name="Page-1">
+        <mxGraphModel dx="872" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="KSA-284: Extension Class Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="400" y="10" width="340" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;&lt;interface&gt;&gt;&#10;IConnectionManager" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="+ state: ConnectionState (readonly)&#10;&#10;+ connect(): Promise&lt;void&gt;&#10;+ disconnect(): void&#10;+ onStateChange(cb): Disposable&#10;+ getBackendVersion(): string | null&#10;+ isConnected(): boolean" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="10" vertex="1">
+                    <mxGeometry y="40" width="280" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="ConnectionManager" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="40" y="260" width="280" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="- state: ConnectionState&#10;- config: BackendConfiguration&#10;- healthChecker: HealthChecker&#10;- backendProcess: BackendProcess&#10;- listeners: Set&lt;StateListener&gt;&#10;&#10;+ connect(): Promise&lt;void&gt;&#10;+ disconnect(): void&#10;- handleHealthResult(ok: boolean)&#10;- transitionState(newState)&#10;- spawnBackend(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="12" vertex="1">
+                    <mxGeometry y="26" width="280" height="174" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="HealthChecker" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="400" y="690" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="- interval: number&#10;- timer: NodeJS.Timeout | null&#10;- httpClient: HttpClient&#10;&#10;+ start(): void&#10;+ stop(): void&#10;+ checkOnce(): Promise&lt;HealthResult&gt;&#10;- poll(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="14" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="BackendProcess" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="40" y="700" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="- process: ChildProcess | null&#10;- pid: number | null&#10;&#10;+ spawn(path, port): Promise&lt;void&gt;&#10;+ kill(): void&#10;+ isRunning(): boolean&#10;+ onExit(cb): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="16" vertex="1">
+                    <mxGeometry y="26" width="280" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="&lt;&lt;interface&gt;&gt;&#10;IToolProxy" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="400" y="60" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="+ registerTools(tools[]): Promise&lt;void&gt;&#10;+ callTool(name, args): Promise&lt;ToolResult&gt;&#10;+ getRegisteredTools(): ToolDefinition[]&#10;+ dispose(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="20" vertex="1">
+                    <mxGeometry y="40" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="ToolProxy" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="400" y="260" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="- registry: ToolRegistry&#10;- httpClient: HttpClient&#10;- connectionMgr: IConnectionManager&#10;&#10;+ registerTools(tools[]): Promise&lt;void&gt;&#10;+ callTool(name, args): Promise&lt;ToolResult&gt;&#10;- serializeRequest(name, args): JSON&#10;- deserializeResponse(body): ToolResult&#10;- handleError(err): ToolResult" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="22" vertex="1">
+                    <mxGeometry y="26" width="280" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="HttpClient" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="400" y="500" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="- baseUrl: string&#10;- defaultTimeout: number&#10;&#10;+ get(path, timeout?): Promise&lt;Response&gt;&#10;+ post(path, body, timeout?): Promise&lt;Response&gt;&#10;+ isJsonResponse(res): boolean" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="24" vertex="1">
+                    <mxGeometry y="26" width="280" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="WebviewManager" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="760" y="60" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="- panels: Map&lt;PanelType, WebviewPanel&gt;&#10;- dataFetcher: WebviewDataFetcher&#10;- extensionUri: Uri&#10;&#10;+ openPanel(type: PanelType): void&#10;+ closePanel(type: PanelType): void&#10;+ refreshPanel(type: PanelType): void&#10;+ refreshAll(): void&#10;+ dispose(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="30" vertex="1">
+                    <mxGeometry y="26" width="280" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="StatusBarManager" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="760" y="280" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="- item: StatusBarItem&#10;- currentState: ConnectionState&#10;&#10;+ updateState(state): void&#10;+ setVersion(version: string): void&#10;+ dispose(): void&#10;- getIcon(state): string&#10;- getTooltip(state): string" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="32" vertex="1">
+                    <mxGeometry y="26" width="280" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="ConfigurationManager" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="760" y="460" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="- config: BackendConfiguration&#10;&#10;+ getPort(): number&#10;+ getHost(): string&#10;+ getAutoStart(): boolean&#10;+ getHealthInterval(): number&#10;+ getStartupTimeout(): number&#10;+ getCompatRange(): string&#10;+ onConfigChange(cb): Disposable" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="34" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="12" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="22" target="20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="12" target="14" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="360" y="360"/>
+                            <mxPoint x="360" y="770"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="12" target="16" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="22" target="24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="55" value="uses" style="html=1;strokeColor=#333333;dashed=1;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;" parent="1" source="15" target="24" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="710" y="783"/>
+                            <mxPoint x="710" y="570"/>
+                        </Array>
+                        <mxPoint x="390" y="880" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

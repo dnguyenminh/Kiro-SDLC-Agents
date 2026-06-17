@@ -148,12 +148,15 @@ export function parseSteeringFile(raw: string, filePath: string): SteeringRule |
     return { filePath, meta, content: body };
   }
 
-  // No front-matter → defaults (always, all targets)
+  // KSA-279: No front-matter -> conservative default for pipeline.
+  // Files without explicit inclusion should NOT flood the pipeline context.
+  // Pipeline agents already receive role-specific prompts; only files that
+  // EXPLICITLY declare inclusion: always/auto should auto-inject.
   return {
     filePath,
     meta: {
       targets: "all",
-      inclusion: "always",
+      inclusion: "manual",
     },
     content: raw.trim(),
   };

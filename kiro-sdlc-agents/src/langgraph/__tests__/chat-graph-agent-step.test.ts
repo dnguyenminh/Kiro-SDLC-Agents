@@ -14,7 +14,7 @@ vi.mock("vscode", () => ({
   workspace: { workspaceFolders: [] },
   Uri: { file: (p: string) => ({ fsPath: p }) },
   FileType: { Directory: 2, File: 1 },
-  window: { tabGroups: { all: [] } },
+  window: { tabGroups: { all: [] }, createOutputChannel: () => ({ appendLine: () => {} }) },
   languages: { getDiagnostics: () => [] },
 }));
 
@@ -47,7 +47,7 @@ describe("chat-graph agent_step (KSA-237)", () => {
     const provider = providerWithToolsResponse({ type: "text", text: "Hello there!" });
 
     // No mcpBridge -> only VS Code built-in tools, ReAct text path is exercised.
-    const graph = await buildChatSubgraph(handler, provider, undefined, "");
+    const graph = await buildChatSubgraph(handler, provider, undefined, "/test-workspace");
 
     await graph.invoke({
       currentStreamId: "stream-test-1",
@@ -73,7 +73,7 @@ describe("chat-graph agent_step (KSA-237)", () => {
     const { handler, emitted } = captureHandler();
     const provider = providerWithToolsResponse({ type: "text", text: "" });
 
-    const graph = await buildChatSubgraph(handler, provider, undefined, "");
+    const graph = await buildChatSubgraph(handler, provider, undefined, "/test-workspace");
 
     await graph.invoke({
       currentStreamId: "stream-test-2",

@@ -1,0 +1,10 @@
+id,label,icon,type,subLabel
+files,Files,folder,picker,
+spec,Spec,document,picker,
+git-diff,Git Diff,plus,instant,
+terminal,Terminal,terminal,instant,
+problems,Problems,warning,instant,
+folder,Folder,folder,picker,
+current-file,Current File,document,instant,
+steering,Steering,steering-wheel,picker,
+mcp,MCP,gem,submenu,Model Context Protocol →

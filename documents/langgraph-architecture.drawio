@@ -1,0 +1,398 @@
+<mxGraphModel dx="1434" dy="844" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    
+    <!-- Title -->
+    <mxCell id="title" value="LangGraph Multi-Agent Workflow Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="284.5" y="40" width="600" height="40" as="geometry"/>
+    </mxCell>
+    
+    <!-- Router Graph Layer -->
+    <mxCell id="router-layer" value="ROUTER GRAPH (Entry Point)" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14" vertex="1" parent="1">
+      <mxGeometry x="80" y="120" width="1000" height="200" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="start" value="__start__" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="router-layer">
+      <mxGeometry x="40" y="60" width="100" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="classify" value="classify_intent&#xa;(Intent Classifier)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="router-layer">
+      <mxGeometry x="200" y="55" width="140" height="70" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="route-decision" value="Route by Intent" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="router-layer">
+      <mxGeometry x="410" y="50" width="120" height="80" as="geometry"/>
+    </mxCell>
+    
+    <!-- Subgraph nodes in router -->
+    <mxCell id="sdlc-ref" value="sdlc_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="600" y="40" width="120" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="chat-ref" value="chat_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="600" y="90" width="120" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="hotfix-ref" value="hotfix_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="740" y="40" width="120" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="review-ref" value="code_review_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="740" y="90" width="140" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="docs-ref" value="docs_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="740" y="140" width="120" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="security-ref" value="security_audit_subgraph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="router-layer">
+      <mxGeometry x="600" y="140" width="120" height="40" as="geometry"/>
+    </mxCell>
+    
+    <!-- Router edges -->
+    <mxCell edge="1" parent="router-layer" source="start" target="classify">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="router-layer" source="classify" target="route-decision">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="router-layer" source="route-decision" target="sdlc-ref" value="sdlc">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="router-layer" source="route-decision" target="chat-ref" value="chat">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="router-layer" source="route-decision" target="hotfix-ref" value="hotfix">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- SDLC Subgraph Detail -->
+    <mxCell id="sdlc-layer" value="SDLC SUBGRAPH (Full Pipeline)" style="swimlane;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=14" vertex="1" parent="1">
+      <mxGeometry x="80" y="360" width="1000" height="560" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 1: Requirements -->
+    <mxCell id="phase1-group" value="Phase 1: Requirements" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="20" y="40" width="300" height="140" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="sm-node" value="SM Node&#xa;(Orchestrator)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="phase1-group">
+      <mxGeometry x="20" y="40" width="100" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ba-brd" value="BA BRD&#xa;(Requirements)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase1-group">
+      <mxGeometry x="140" y="40" width="100" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="verify-brd" value="Verify BRD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="phase1-group">
+      <mxGeometry x="260" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase1-group" source="sm-node" target="ba-brd">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase1-group" source="ba-brd" target="verify-brd">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 2: Specification -->
+    <mxCell id="phase2-group" value="Phase 2: Specification" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="340" y="40" width="320" height="140" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ba-fsd" value="BA FSD&#xa;(Draft)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase2-group">
+      <mxGeometry x="20" y="40" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ta-enrich" value="TA Enrich&#xa;(API Specs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="phase2-group">
+      <mxGeometry x="130" y="40" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="verify-fsd" value="Verify FSD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="phase2-group">
+      <mxGeometry x="240" y="40" width="70" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase2-group" source="ba-fsd" target="ta-enrich">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase2-group" source="ta-enrich" target="verify-fsd">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 3: Design -->
+    <mxCell id="phase3-group" value="Phase 3: Design + Feedback Loop" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="680" y="40" width="300" height="200" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="sa-tdd" value="SA TDD&#xa;(Design)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="phase3-group">
+      <mxGeometry x="20" y="40" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feedback-check" value="Feedback&#xa;Check" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="phase3-group">
+      <mxGeometry x="130" y="35" width="80" height="70" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ba-fix-fsd" value="BA Fix FSD&#xa;(Loop)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1" vertex="1" parent="phase3-group">
+      <mxGeometry x="130" y="125" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="sa-review" value="SA Review&#xa;(Re-TDD)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;dashed=1" vertex="1" parent="phase3-group">
+      <mxGeometry x="20" y="125" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase3-group" source="sa-tdd" target="feedback-check">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase3-group" source="feedback-check" target="ba-fix-fsd" value="discrepancy">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase3-group" source="ba-fix-fsd" target="sa-review">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase3-group" source="sa-review" target="feedback-check" value="retry (max 5)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="55" y="110"/>
+          <mxPoint x="170" y="110"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    
+    <!-- Phase 4: Test Planning -->
+    <mxCell id="phase4-group" value="Phase 4: Test Planning" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="20" y="260" width="220" height="120" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="qa-plan" value="QA Plan&#xa;(STP/STC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase4-group">
+      <mxGeometry x="20" y="40" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="verify-stp" value="Verify&#xa;STP/STC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="phase4-group">
+      <mxGeometry x="130" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase4-group" source="qa-plan" target="verify-stp">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 5: Implementation -->
+    <mxCell id="phase5-group" value="Phase 5: Implementation + UG" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="260" y="260" width="420" height="140" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="dev-code" value="DEV Code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="phase5-group">
+      <mxGeometry x="20" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="dev-ug" value="DEV UG" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="phase5-group">
+      <mxGeometry x="120" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ba-review-ug" value="BA Review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase5-group">
+      <mxGeometry x="220" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="qa-verify-ug" value="QA Verify&#xa;(Hands-on)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase5-group">
+      <mxGeometry x="320" y="40" width="80" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase5-group" source="dev-code" target="dev-ug">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase5-group" source="dev-ug" target="ba-review-ug">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="phase5-group" source="ba-review-ug" target="qa-verify-ug">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 6: Testing -->
+    <mxCell id="phase6-group" value="Phase 6: Testing" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="700" y="260" width="260" height="120" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="qa-test" value="QA Test&#xa;(Execute)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase6-group">
+      <mxGeometry x="20" y="40" width="90" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="quality-gate" value="Quality Gate" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="phase6-group">
+      <mxGeometry x="140" y="35" width="100" height="70" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase6-group" source="qa-test" target="quality-gate">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Phase 7: Deployment -->
+    <mxCell id="phase7-group" value="Phase 7: Deployment" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="20" y="420" width="280" height="120" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="devops-deploy" value="DevOps Deploy&#xa;(DPG/RLN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="phase7-group">
+      <mxGeometry x="20" y="40" width="110" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="release" value="Release&#xa;Process" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="phase7-group">
+      <mxGeometry x="150" y="40" width="110" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell edge="1" parent="phase7-group" source="devops-deploy" target="release">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- End node -->
+    <mxCell id="end-node" value="END" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="sdlc-layer">
+      <mxGeometry x="710" y="450" width="100" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- Cross-phase edges -->
+    <mxCell edge="1" parent="sdlc-layer" source="phase1-group" target="phase2-group">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase2-group" target="phase3-group">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase3-group" target="phase4-group">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="780" y="250"/>
+          <mxPoint x="130" y="250"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase4-group" target="phase5-group">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase5-group" target="phase6-group">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase6-group" target="phase7-group">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="810" y="410"/>
+          <mxPoint x="160" y="410"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell edge="1" parent="sdlc-layer" source="phase7-group" target="end-node">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Chat Subgraph Detail -->
+    <mxCell id="chat-layer" value="CHAT SUBGRAPH (ReAct Agent Loop)" style="swimlane;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=14" vertex="1" parent="1">
+      <mxGeometry x="80" y="960" width="1000" height="280" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="fetch-tools" value="fetch_tools&#xa;(MCP + VSCode)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="chat-layer">
+      <mxGeometry x="40" y="60" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="agent-step" value="agent_step&#xa;(LLM Reasoning)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="chat-layer">
+      <mxGeometry x="200" y="60" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="route-agent" value="Has&#xa;tool_calls?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="chat-layer">
+      <mxGeometry x="360" y="50" width="100" height="80" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="execute-tools" value="execute_tools&#xa;(Call MCP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="chat-layer">
+      <mxGeometry x="510" y="60" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="check-iterations" value="iterations&#xa;&lt; MAX?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="chat-layer">
+      <mxGeometry x="680" y="50" width="100" height="80" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="synthesize" value="synthesize&#xa;(Force Answer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="chat-layer">
+      <mxGeometry x="510" y="180" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="chat-end" value="END" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="chat-layer">
+      <mxGeometry x="840" y="60" width="100" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- Chat edges -->
+    <mxCell edge="1" parent="chat-layer" source="fetch-tools" target="agent-step">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="agent-step" target="route-agent">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="route-agent" target="execute-tools" value="yes">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="route-agent" target="chat-end" value="no (text)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="410" y="30"/>
+          <mxPoint x="890" y="30"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="execute-tools" target="check-iterations">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="check-iterations" target="agent-step" value="yes (loop)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="730" y="30"/>
+          <mxPoint x="260" y="30"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="check-iterations" target="synthesize" value="no (force)">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="730" y="150"/>
+          <mxPoint x="570" y="150"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell edge="1" parent="chat-layer" source="synthesize" target="chat-end">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="890" y="210"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    
+    <!-- Legend -->
+    <mxCell id="legend" value="LEGEND" style="swimlane;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="80" y="1280" width="300" height="200" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-router" value="Router/Decision" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="legend">
+      <mxGeometry x="20" y="40" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-ba" value="BA Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="legend">
+      <mxGeometry x="140" y="40" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-sa" value="SA Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="legend">
+      <mxGeometry x="20" y="80" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-dev" value="DEV Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="legend">
+      <mxGeometry x="140" y="80" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-qa" value="QA Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="legend">
+      <mxGeometry x="20" y="120" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-verify" value="Verify Node" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="legend">
+      <mxGeometry x="140" y="120" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-devops" value="DevOps Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="legend">
+      <mxGeometry x="20" y="160" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="leg-loop" value="Feedback Loop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1" vertex="1" parent="legend">
+      <mxGeometry x="140" y="160" width="100" height="30" as="geometry"/>
+    </mxCell>
+    
+  </root>
+</mxGraphModel>

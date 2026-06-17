@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Draw.io diagram requirements for SDLC documents. Activate when creating diagrams.
----
-
 # Shared: Draw.io Diagram Requirements
 
 ## Rules

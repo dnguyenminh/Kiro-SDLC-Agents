@@ -1,0 +1,18 @@
+﻿test_case_id,tool_name,arguments_json,expected_http_code,expected_is_error,expected_error_code,description
+PBT-01,mem_search,"{""query"":""authentication""}",200,false,,Valid tool call - happy path
+PBT-01,code_search,"{""query"":""function""}",200,false,,Valid code search
+PBT-05,nonexistent_tool,"{}",404,true,TOOL_NOT_FOUND,Unknown tool name
+PBT-05,mem_search,"{""query"":""test""}",200,false,,Known tool name succeeds
+IT-04,mem_search,"{""query"":""test"",""limit"":5}",200,false,,Successful execution with limit
+IT-05,fake_tool_xyz,"{}",404,true,TOOL_NOT_FOUND,Tool not in registry
+IT-06,mem_search,"{}",422,true,VALIDATION_ERROR,Missing required field query
+IT-07,,"{}",400,true,INVALID_REQUEST,Missing tool_name field entirely
+IT-08,mem_search,"{""query"":""x""}",503,true,MODULE_UNAVAILABLE,Module still initializing
+E2E-API-01,mem_search,"{""query"":""hello world""}",200,false,,E2E happy path
+E2E-API-01,code_search,"{""query"":""main""}",200,false,,E2E code search
+E2E-API-01,find_tools,"{""query"":""search""}",200,false,,E2E orchestration tool
+E2E-API-05,nonexistent,"{""arg"":1}",404,true,TOOL_NOT_FOUND,E2E error forwarding - 404
+E2E-API-05,mem_search,"{}",422,true,VALIDATION_ERROR,E2E error forwarding - 422
+E2E-API-12,mem_search,"{""query"":""concurrent1""}",200,false,,Concurrent call 1
+E2E-API-12,code_search,"{""query"":""concurrent2""}",200,false,,Concurrent call 2
+E2E-API-12,find_tools,"{""query"":""concurrent3""}",200,false,,Concurrent call 3

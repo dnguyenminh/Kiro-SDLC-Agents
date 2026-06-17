@@ -1,0 +1,154 @@
+<mxGraphModel dx="1422" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="2" value="KSA-284: Component Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="450" y="20" width="300" height="30" as="geometry" />
+    </mxCell>
+    <!-- Extension Package -->
+    <mxCell id="10" value="&lt;&lt;package&gt;&gt;&#xa;extension/" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=60;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;verticalAlign=top;align=center" vertex="1" parent="1">
+      <mxGeometry x="40" y="80" width="540" height="780" as="geometry" />
+    </mxCell>
+    <!-- Extension sub-packages -->
+    <mxCell id="11" value="connection/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="60" y="140" width="240" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="ConnectionManager" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="180" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="BackendProcess" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="220" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="HealthChecker" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="260" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="BackoffStrategy" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="300" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- proxy/ -->
+    <mxCell id="20" value="proxy/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="320" y="140" width="240" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="ToolProxy" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="180" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="ToolRegistry" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="220" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="HttpClient" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="260" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- webview/ -->
+    <mxCell id="30" value="webview/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="60" y="370" width="240" height="240" as="geometry" />
+    </mxCell>
+    <mxCell id="31" value="WebviewManager" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="410" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="32" value="WebviewDataFetcher" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="450" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="33" value="DashboardPanel" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="490" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="34" value="KBGraphPanel" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="530" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="35" value="AnalyticsPanel / TagsPanel / QualityPanel" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="80" y="570" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- ui/ -->
+    <mxCell id="40" value="ui/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="320" y="370" width="240" height="140" as="geometry" />
+    </mxCell>
+    <mxCell id="41" value="StatusBarManager" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="410" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="42" value="NotificationManager" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="450" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- config/ -->
+    <mxCell id="45" value="config/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="320" y="540" width="240" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="46" value="ConfigurationManager" style="rounded=1;html=1;fillColor=#fff;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="340" y="575" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- Entry point -->
+    <mxCell id="48" value="extension.ts (activate/deactivate)" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="160" y="660" width="300" height="40" as="geometry" />
+    </mxCell>
+    <!-- Backend Package -->
+    <mxCell id="60" value="&lt;&lt;package&gt;&gt;&#xa;backend/" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=60;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;verticalAlign=top;align=center" vertex="1" parent="1">
+      <mxGeometry x="640" y="80" width="720" height="780" as="geometry" />
+    </mxCell>
+    <!-- server/ -->
+    <mxCell id="61" value="server/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="660" y="140" width="320" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="62" value="HttpServer (Hono)" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="680" y="180" width="280" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="63" value="routes/health.ts" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="680" y="220" width="130" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="64" value="routes/tools.ts" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="830" y="220" width="130" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="65" value="routes/api.ts" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="680" y="260" width="130" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="66" value="middleware/ (localhost, logger, error)" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="830" y="260" width="130" height="30" as="geometry" />
+    </mxCell>
+    <!-- tools/ -->
+    <mxCell id="70" value="tools/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="1000" y="140" width="240" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="71" value="ToolRouter" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="1020" y="180" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="72" value="ToolDefinitions" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="1020" y="220" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="73" value="ToolValidator (zod)" style="rounded=1;html=1;fillColor=#fff;strokeColor=#b85450;fontSize=10" vertex="1" parent="1">
+      <mxGeometry x="1020" y="260" width="200" height="30" as="geometry" />
+    </mxCell>
+    <!-- modules/ -->
+    <mxCell id="80" value="modules/" style="shape=folder;fontStyle=1;spacingTop=8;tabWidth=50;tabHeight=16;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#e6f7e6;strokeColor=#82b366;fontSize=11;verticalAlign=top" vertex="1" parent="1">
+      <mxGeometry x="660" y="380" width="680" height="320" as="geometry" />
+    </mxCell>
+    <mxCell id="81" value="ModuleRegistry" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="860" y="410" width="200" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="82" value="memory/&#xa;MemoryModule&#xa;EmbeddingService&#xa;SqliteStore" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="680" y="470" width="140" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="83" value="code-intel/&#xa;CodeIntelModule&#xa;Indexer&#xa;SymbolStore" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="840" y="470" width="140" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="84" value="orchestration/&#xa;OrchestrationModule&#xa;ChildServerManager&#xa;StdioTransport" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="1000" y="470" width="150" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="85" value="analytics/&#xa;AnalyticsModule&#xa;QualityScorer" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="680" y="580" width="140" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="86" value="kb-graph/&#xa;KBGraphModule&#xa;GraphStore" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="840" y="580" width="140" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="87" value="utility/&#xa;UtilityModule&#xa;FileWriter" style="rounded=1;html=1;fillColor=#fff;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=5" vertex="1" parent="1">
+      <mxGeometry x="1000" y="580" width="140" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="88" value="index.ts (Backend entry)" style="rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1" vertex="1" parent="1">
+      <mxGeometry x="860" y="730" width="240" height="40" as="geometry" />
+    </mxCell>
+    <!-- Dependency arrows -->
+    <mxCell id="90" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0000FF;strokeWidth=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.3" edge="1" parent="1" source="23" target="61">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="91" value="HTTP" style="text;html=1;fontSize=9;fillColor=none;strokeColor=none;fontColor=#0000FF" vertex="1" parent="1">
+      <mxGeometry x="585" y="260" width="40" height="20" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

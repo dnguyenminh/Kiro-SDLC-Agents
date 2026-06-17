@@ -1,0 +1,1 @@
+{"version":3,"file":"TerminalProvider.d.ts","sourceRoot":"","sources":["../../../extension/providers/TerminalProvider.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,UAAU,gBAAgB;IACxB,iBAAiB,CAAC,KAAK,CAAC,EAAE,MAAM,GAAG,MAAM,CAAC;CAC3C;AAED,qBAAa,gBAAgB;IAC3B,OAAO,CAAC,OAAO,CAAmB;gBAEtB,OAAO,EAAE,gBAAgB;IAIrC,SAAS,CAAC,KAAK,CAAC,EAAE,MAAM,GAAG,MAAM;CAOlC"}

@@ -172,5 +172,6 @@ export class LODManager {
     this.clusters.clear();
     this.eventHandlers.clear();
     this.hierarchy = null;
+    this.budgetManager.setCount(0);
   }
 }

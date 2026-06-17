@@ -1,0 +1,60 @@
+/**
+ * Slash Command Menu Styles — KSA-254
+ * Extends context-menu styles from KSA-252
+ * Dark theme with purple hover for agent items
+ */
+
+/* Slash menu popup — extends .context-menu */
+.slash-menu {
+  min-width: 260px;
+  max-width: 360px;
+  max-height: 400px;
+}
+
+/* Section headers — non-selectable dividers (BR-08) */
+.slash-menu__section-header {
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground, #8b8b8b);
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+  border-top: 1px solid var(--vscode-editorWidget-border, #454545);
+  margin-top: 4px;
+}
+
+.slash-menu__section-header:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Slash menu items — agent items with description */
+.slash-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.slash-menu__item .context-menu-item__sublabel {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #8b8b8b);
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Purple-tinted hover for highlighted agent items */
+.slash-menu__item.context-menu-item--highlighted {
+  background: var(--vscode-list-activeSelectionBackground, #094771);
+  color: var(--vscode-list-activeSelectionForeground, #ffffff);
+}
+
+.slash-menu__item.context-menu-item--highlighted .context-menu-item__sublabel {
+  color: var(--vscode-list-activeSelectionForeground, #ffffff);
+  opacity: 0.8;
+}

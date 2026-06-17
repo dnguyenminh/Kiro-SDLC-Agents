@@ -1,0 +1,17 @@
+file_format,file_size_bytes,conversion_method,expected_success,expected_error,test_case_ref
+txt,100,direct_read,true,,UT-001
+csv,200,direct_read,true,,UT-002
+json,150,direct_read,true,,UT-003
+xml,300,direct_read,true,,IT-011
+yaml,250,direct_read,true,,IT-005
+yml,250,direct_read,true,,IT-011
+docx,1048576,filetomarkdown,true,,IT-001
+xlsx,2097152,filetomarkdown,true,,IT-002
+pdf,5242880,filetomarkdown,true,,IT-003
+png,524288,filetomarkdown,true,,IT-004
+jpg,1048576,filetomarkdown,true,,IT-004
+docx,0,filetomarkdown,false,empty file,edge case
+docx,1024,filetomarkdown,false,corrupt file,IT-006
+pdf,57671680,filetomarkdown,false,exceeds size limit (>50MB),UT-004
+png,26214400,filetomarkdown,false,exceeds size limit (>20MB),UT-005
+docx,5242880,filetomarkdown,false,timeout (>30s),UT-006

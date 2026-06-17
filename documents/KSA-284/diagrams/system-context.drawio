@@ -1,0 +1,137 @@
+<mxfile host="65bd71144e">
+    <diagram name="System Context" id="sys-ctx">
+        <mxGraphModel dx="872" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;System Context - KSA-284 Split Extension Architecture&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="10" width="480" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_dev" value="Developer" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="330" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_agent" value="IDE Agent (AI)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="120" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="boundary_ext" value="&lt;b&gt;Lightweight Extension (Thin Proxy)&lt;/b&gt;  ~2MB .vsix" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;spacingTop=5;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="80" width="280" height="440" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_proxy" value="&lt;b&gt;Tool Proxy&lt;/b&gt;&lt;br&gt;Register + forward&lt;br&gt;52 MCP tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="140" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="ext_conn" target="ext_webview">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_conn" value="&lt;b&gt;Connection Manager&lt;/b&gt;&lt;br&gt;Health check, reconnect&lt;br&gt;Process spawn" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="240" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_webview" value="&lt;b&gt;Webview Manager&lt;/b&gt;&lt;br&gt;Dashboard, KB Graph&lt;br&gt;Analytics, Tags, Quality" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="340" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_status" value="&lt;b&gt;Status Bar&lt;/b&gt;&lt;br&gt;Connection indicator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="440" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="boundary_backend" value="&lt;b&gt;Backend MCP Server&lt;/b&gt;  ~200MB standalone" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#388e3c;verticalAlign=top;fontSize=12;arcSize=8;html=1;spacingTop=5;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="80" width="340" height="440" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_http" value="&lt;b&gt;HTTP Server&lt;/b&gt;&lt;br&gt;/mcp/tools/call&lt;br&gt;/health, /api/*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="140" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_memory" value="&lt;b&gt;Memory Module&lt;/b&gt;&lt;br&gt;SQLite + ONNX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="325" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_codeintel" value="&lt;b&gt;Code Intelligence&lt;/b&gt;&lt;br&gt;Index, symbols, search" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="230" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_orchestration" value="&lt;b&gt;Orchestration&lt;/b&gt;&lt;br&gt;Child server mgmt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="420" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_analytics" value="&lt;b&gt;Analytics/Quality&lt;/b&gt;&lt;br&gt;Scoring, metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="590" y="325" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="be_kbgraph" value="&lt;b&gt;KB Graph&lt;/b&gt;&lt;br&gt;Knowledge graph ops" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="585" y="420" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="db_sqlite" value="SQLite DB" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="220" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="onnx_model" value="ONNX Runtime" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="320" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="child_servers" value="&lt;b&gt;Child MCP Servers&lt;/b&gt;&lt;br&gt;Jira, Draw.io, Export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="420" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="filesystem" value="Workspace Files" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="120" width="80" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="MCP tools" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="actor_dev" target="ext_proxy" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="60" y="300"/>
+                            <mxPoint x="160" y="300"/>
+                            <mxPoint x="160" y="220"/>
+                            <mxPoint x="300" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e2" value="MCP tools" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="actor_agent" target="ext_proxy" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="120" y="170"/>
+                            <mxPoint x="120" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" value="Webview panels" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="actor_dev" target="ext_webview" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="100" y="370"/>
+                            <mxPoint x="100" y="370"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="HTTP POST /mcp/tools/call" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;strokeWidth=2;" parent="1" source="ext_proxy" target="be_http" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="GET /health" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=classic;endSize=6;" parent="1" source="ext_conn" target="be_http" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="630" y="240"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" value="GET /api/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="ext_webview" target="be_http" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="520" y="370"/>
+                            <mxPoint x="520" y="280"/>
+                            <mxPoint x="700" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="be_memory" target="db_sqlite" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="800" y="310"/>
+                            <mxPoint x="1000" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="be_memory" target="onnx_model" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" value="stdio JSON-RPC" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=classic;startSize=6;endArrow=classic;endSize=6;" parent="1" source="be_orchestration" target="child_servers" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="be_codeintel" target="filesystem" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="800" y="210"/>
+                            <mxPoint x="1000" y="210"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

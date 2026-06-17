@@ -1,0 +1,21 @@
+test_case_id,user_token_role,endpoint,method,expected_http_code,description
+IT-04,Viewer,/api/admin/dashboard/health,GET,200,Viewer can read dashboard
+IT-04,Viewer,/api/admin/users,POST,403,Viewer cannot create users
+IT-04,Viewer,/api/admin/mcp/servers/x/restart,POST,403,Viewer cannot restart MCP
+IT-04,Viewer,/api/admin/rbac/groups/x,PUT,403,Viewer cannot manage RBAC
+IT-04,Viewer,/api/admin/config/embedding/x,PUT,403,Viewer cannot edit config
+IT-05,None,/api/admin/dashboard/health,GET,401,No token - rejected
+IT-05,None,/api/admin/users,POST,401,No token - rejected
+IT-05,None,/api/admin/audit,GET,401,No token - rejected
+E2E-API-02,System Owner,/api/admin/dashboard/health,GET,200,Sys Owner full access
+E2E-API-02,System Owner,/api/admin/users,POST,201,Sys Owner full access
+E2E-API-02,System Owner,/api/admin/rbac/groups,POST,201,Sys Owner full access
+E2E-API-03,Viewer,/api/admin/users,POST,403,Viewer write blocked
+E2E-API-03,Viewer,/api/admin/users/x/status,PATCH,403,Viewer write blocked
+E2E-API-03,Viewer,/api/admin/kb/entries,GET,200,Viewer has KB_READ
+E2E-API-03,Viewer,/api/admin/kb/entries/x/links,POST,403,Viewer no KB_WRITE
+E2E-API-04,Operator,/api/admin/mcp/servers,GET,200,Operator MCP_ACCESS
+E2E-API-04,Operator,/api/admin/mcp/servers/x/restart,POST,200,Operator MCP_MANAGE
+E2E-API-04,Operator,/api/admin/users,POST,403,Operator no USER_MANAGE
+E2E-API-05,Developer (roleData jira only),/api/admin/mcp/servers/jira,GET,200,RoleData allows jira
+E2E-API-05,Developer (roleData jira only),/api/admin/mcp/servers/drawio,GET,403,RoleData blocks drawio

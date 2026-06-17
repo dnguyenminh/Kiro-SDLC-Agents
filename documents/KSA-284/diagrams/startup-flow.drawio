@@ -1,0 +1,39 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Standalone Server Startup Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="280" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="step1" value="&lt;b&gt;Step 1: resolveNativeBinding()&lt;/b&gt;&#10;Resolve better-sqlite3 prebuilt .node binary&#10;Open real Database instance&#10;(BLOCKING - server cannot start without DB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="120" y="60" width="420" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="step2" value="&lt;b&gt;Step 2: Run database migrations&lt;/b&gt;&#10;MIGRATION_002 auth-multitenant&#10;Future migrations auto-applied&#10;(BLOCKING - idempotent)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="120" y="180" width="420" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="step3" value="&lt;b&gt;Step 3: initEmbedding()&lt;/b&gt;&#10;ensureOnnxRuntime() (download if needed)&#10;ModelDownloader.downloadIfMissing()&#10;(NON-BLOCKING - server continues if fails)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="120" y="300" width="420" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="step4" value="&lt;b&gt;Step 4: Start HTTP server (Hono)&lt;/b&gt;&#10;Register modules, initialize tools&#10;Begin accepting requests&#10;Port: configured (default 48721)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+      <mxGeometry x="120" y="420" width="420" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step1" target="step2" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step2" target="step3" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="step3" target="step4" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_blocking" value="BLOCKING" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="550" y="90" width="80" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_blocking2" value="BLOCKING" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="550" y="210" width="80" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="note_async" value="ASYNC" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#388e3c;" vertex="1" parent="1">
+      <mxGeometry x="550" y="330" width="60" height="30" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

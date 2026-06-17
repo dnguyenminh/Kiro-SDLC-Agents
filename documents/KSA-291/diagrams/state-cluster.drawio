@@ -1,0 +1,49 @@
+<mxfile>
+  <diagram name="State Machine — Cluster LOD States" id="state_ksa291">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="&lt;b&gt;KSA-291 — Cluster State Machine&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="10" width="300" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="initial" value="" style="ellipse;shape=doubleCircle;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="260" width="30" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="collapsed" value="&lt;b&gt;COLLAPSED&lt;/b&gt;&#10;Shows super-node&#10;Distance uses cluster.center" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="160" y="240" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="expanding" value="&lt;b&gt;EXPANDING&lt;/b&gt;&#10;Animation: center to orbit&#10;Duration: 400ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="460" y="120" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="expanded" value="&lt;b&gt;EXPANDED&lt;/b&gt;&#10;Shows child nodes&#10;Distance uses DYNAMIC centroid" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="460" y="240" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="collapsing" value="&lt;b&gt;COLLAPSING&lt;/b&gt;&#10;Animation: orbit to center&#10;Duration: 400ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="460" y="370" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_init" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="initial" target="collapsed" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_expand_start" value="dist &lt; expandThreshold&#10;(camera to cluster.center)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="collapsed" target="expanding" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_expand_done" value="animation complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="expanding" target="expanded" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_collapse_start" value="dist &gt; collapseThreshold&#10;(camera to DYNAMIC centroid)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;strokeColor=#c62828;" edge="1" source="expanded" target="collapsing" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_collapse_done" value="animation complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="collapsing" target="collapsed" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="note_fix" value="&#10; FIX: This transition now uses&#10; dynamic centroid instead of&#10; fixed cluster.center &#10;" style="shape=note;size=14;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;html=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="700" y="280" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_note" style="dashed=1;html=1;endArrow=none;strokeColor=#c62828;" edge="1" source="note_fix" target="e_collapse_start" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

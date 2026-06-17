@@ -1,4 +1,5 @@
 ---
+name: file-writing
 description: Quy tắc viết file lớn cho tất cả agents. Áp dụng khi tạo documents (BRD, FSD, TDD, STP, STC, UG) hoặc bất kỳ file nào > 200 dòng.
 inclusion: auto
 ---

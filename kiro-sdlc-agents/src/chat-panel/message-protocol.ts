@@ -21,9 +21,10 @@ import { ContextUsagePayload } from "./context-usage-tracker";
 // === Context & Attachment Types ===
 
 export interface ContextItem {
-  type: "file" | "folder" | "problems" | "gitDiff" | "terminal";
+  type: "file" | "folder" | "problems" | "gitDiff" | "terminal" | "spec" | "currentFile" | "steering" | "mcp";
   label: string;
   path?: string;
+  content?: string;
 }
 
 export interface AttachmentItem {
@@ -65,7 +66,7 @@ export type ChatWebviewToExtMessage =
   | { type: "chat:clearHistory" }
   | { type: "chat:resumePipeline"; threadId: string }
   | { type: "chat:startFresh" }
-  | { type: "chat:pickContext"; contextType: "file" | "folder" | "problems" | "gitDiff" | "terminal" }
+  | { type: "chat:pickContext"; contextType: "file" | "folder" | "problems" | "gitDiff" | "terminal" | "spec" | "currentFile" | "steering" | "mcp" }
   | { type: "chat:pickAttachment" }
   | { type: "chat:setModel"; model: string }
   | { type: "chat:setMode"; mode: AutopilotMode }

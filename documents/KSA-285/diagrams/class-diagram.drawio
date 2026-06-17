@@ -1,0 +1,73 @@
+<mxGraphModel dx="630" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="t1" value="Class Diagram — KSA-285 Key Interfaces &amp; Classes" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;" parent="1" vertex="1">
+      <mxGeometry x="400" y="10" width="500" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="c1" value="&lt;&lt;interface&gt;&gt;&#10;IModule&#10;─────────────────&#10;+ name: string&#10;+ status: ModuleStatus&#10;─────────────────&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&#10;+ getToolDefinitions(): ToolDefinition[]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="530" y="60" width="240" height="170" as="geometry"/>
+    </mxCell>
+    <mxCell id="c2" value="AuthModule&#10;─────────────────&#10;- authService: AuthService&#10;- _status: ModuleStatus&#10;─────────────────&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&#10;+ getToolDefinitions(): ToolDefinition[]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="60" y="290" width="250" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="c3" value="MemoryModule (extended)&#10;─────────────────&#10;- memoryService: MemoryService&#10;- _status: ModuleStatus&#10;─────────────────&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&#10;+ getToolDefinitions(): ToolDefinition[]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="380" y="290" width="260" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="c4" value="ConfigModule&#10;─────────────────&#10;- configService: ConfigService&#10;- _status: ModuleStatus&#10;─────────────────&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&#10;+ getToolDefinitions(): ToolDefinition[]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="710" y="290" width="260" height="160" as="geometry"/>
+    </mxCell>
+    <mxCell id="c5" value="AuthService&#10;─────────────────&#10;- userRepo: UserRepository&#10;- sessionRepo: SessionRepository&#10;- tokenService: TokenService&#10;- passwordService: PasswordService&#10;─────────────────&#10;+ login(req: LoginRequest): Promise&lt;TokenPair&gt;&#10;+ refresh(token: string): Promise&lt;TokenPair&gt;&#10;+ logout(refreshToken: string): Promise&lt;void&gt;&#10;+ validateToken(jwt: string): AuthPayload | null" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="40" y="520" width="300" height="190" as="geometry"/>
+    </mxCell>
+    <mxCell id="c6" value="TokenService&#10;─────────────────&#10;- secret: string&#10;- expirySeconds: number&#10;─────────────────&#10;+ sign(payload: AuthPayload): string&#10;+ verify(token: string): AuthPayload | null&#10;+ generateRefreshToken(): string" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="40" y="750" width="280" height="140" as="geometry"/>
+    </mxCell>
+    <mxCell id="c7" value="MemoryService&#10;─────────────────&#10;- kbRepo: KbRepository&#10;- tierAccess: TierAccessControl&#10;─────────────────&#10;+ ingest(content, tier, ctx): Promise&lt;KbEntry&gt;&#10;+ search(query, ctx): Promise&lt;SearchResult[]&gt;&#10;+ promote(entryId, targetTier): Promise&lt;KbEntry&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="380" y="520" width="290" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="c8" value="TierAccessControl&#10;─────────────────&#10;─────────────────&#10;+ canRead(tier, ctx): boolean&#10;+ canWrite(tier, ctx): boolean&#10;+ buildWhereClause(ctx): string" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="380" y="710" width="240" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="c9" value="ConfigService&#10;─────────────────&#10;- configRepo: ConfigRepository&#10;- encryption: EncryptionService&#10;─────────────────&#10;+ getConfig(userId): Promise&lt;McpConfig&gt;&#10;+ saveConfig(userId, cfg): Promise&lt;void&gt;&#10;+ testConnection(server): Promise&lt;TestResult&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="710" y="520" width="280" height="150" as="geometry"/>
+    </mxCell>
+    <mxCell id="c10" value="EncryptionService&#10;─────────────────&#10;- key: Buffer&#10;─────────────────&#10;+ encrypt(plaintext: string): string&#10;+ decrypt(ciphertext: string): string" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="710" y="710" width="260" height="110" as="geometry"/>
+    </mxCell>
+    <mxCell id="c11" value="AuthManager (Extension)&#10;─────────────────&#10;- secretStorage: SecretStorage&#10;- refreshTimer: TokenRefreshTimer&#10;─────────────────&#10;+ isAuthenticated(): Promise&lt;boolean&gt;&#10;+ getAccessToken(): Promise&lt;string|null&gt;&#10;+ login(user, pass): Promise&lt;void&gt;&#10;+ logout(): Promise&lt;void&gt;&#10;+ onAuthStateChanged: Event" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;" parent="1" vertex="1">
+      <mxGeometry x="1050" y="290" width="280" height="180" as="geometry"/>
+    </mxCell>
+    <mxCell id="inh1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" parent="1" source="c2" target="c1" edge="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="185" y="160"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="inh2" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" parent="1" source="c3" target="c1" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="inh3" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=0;dashed=1;" parent="1" source="c4" target="c1" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp1" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c5" target="c2" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp2" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c7" target="c3" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp3" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c9" target="c4" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp4" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c6" target="c5" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp5" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c8" target="c7" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="comp6" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;" parent="1" source="c10" target="c9" edge="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,11 @@
+test_case_id,tier,owner_id,project_id,content,tags,quality_score,ttl_days,reviewed_by,expected_http_code,expected_error_code,description
+IT-08,1,{current_user},,test knowledge content here,"[""wip""]",0.5,7,,200,,Default tier 1 ingest — happy path
+IT-09,1,user-a-001,,UserA secret data xyz123,"[""wip""]",0.5,7,,200,,UserA private entry
+IT-09,1,user-b-002,,UserB secret data abc789,"[""wip""]",0.6,7,,200,,UserB private entry
+IT-11,2,user-a-001,proj-a,Project A docs,"[""architecture""]",0.8,,,200,,Member ingests to own project
+IT-11,2,user-b-002,proj-a,Unauthorized attempt,"[]",0.5,,,403,KB_PROJECT_NOT_MEMBER,Non-member rejected
+IT-12,3,user-a-001,,Shared attempt by user,"[]",0.5,,,403,KB_ACCESS_DENIED,Non-admin rejected from tier 3
+IT-12,3,admin-003,,Best practice content,"[""best-practice""]",0.9,,,200,,Admin ingests to shared
+E2E-API-14,1,{current_user},,Entry #10001 attempt,"[]",0.5,7,,507,KB_CAPACITY_EXCEEDED,User KB at capacity
+E2E-API-15,1,{current_user},,short,"[]",0.5,7,,422,KB_CONTENT_TOO_SHORT,Content < 10 chars
+E2E-API-15,1,{current_user},,exactly10c,"[]",0.5,7,,200,,Content = 10 chars (boundary)

@@ -1,0 +1,80 @@
+{
+  "name": "code-intel-extension",
+  "displayName": "Code Intelligence",
+  "publisher": "code-intel",
+  "description": "Lightweight proxy extension for Code Intelligence Remote Backend",
+  "version": "2.0.0",
+  "engines": { "vscode": "^1.85.0" },
+  "main": "./dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "configuration": {
+      "title": "Code Intelligence Backend",
+      "properties": {
+        "codeIntel.backend.url": {
+          "type": "string",
+          "default": "http://127.0.0.1:48721",
+          "description": "URL for the remote Backend server (e.g., https://backend.company.com)"
+        },
+        "codeIntel.backend.ssoEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable SSO authentication via PKCE flow"
+        },
+        "codeIntel.backend.ssoProviderUrl": {
+          "type": "string",
+          "default": "",
+          "description": "SSO provider URL (required when ssoEnabled is true)"
+        },
+        "codeIntel.backend.healthCheckInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Health check polling interval (ms)"
+        },
+        "codeIntel.backend.toolCallTimeout": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 10000,
+          "maximum": 900000,
+          "description": "Timeout for tool calls (ms). Some tools take minutes."
+        },
+        "codeIntel.backend.chatTimeout": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 10000,
+          "maximum": 600000,
+          "description": "Timeout for AI chat responses (ms)"
+        }
+      }
+    },
+    "commands": [
+      { "command": "codeIntel.reconnect", "title": "Code Intel: Reconnect to Backend" },
+      { "command": "codeIntel.disconnect", "title": "Code Intel: Disconnect from Backend" },
+      { "command": "codeIntel.showConnectionStatus", "title": "Code Intel: Show Connection Status" },
+      { "command": "codeIntel.login", "title": "Code Intel: Login" },
+      { "command": "codeIntel.logout", "title": "Code Intel: Logout" },
+      { "command": "codeIntel.configureMcpServers", "title": "Code Intel: Configure MCP Servers" },
+      { "command": "codeIntel.openDashboard", "title": "Code Intel: Open Dashboard" },
+      { "command": "codeIntel.openKbGraph", "title": "Code Intel: Open KB Graph" },
+      { "command": "codeIntel.openAnalytics", "title": "Code Intel: Open Analytics" },
+      { "command": "codeIntel.openTags", "title": "Code Intel: Open Tags" },
+      { "command": "codeIntel.openQuality", "title": "Code Intel: Open Quality" },
+      { "command": "codeIntel.indexDocuments", "title": "Code Intel: Index Documents" },
+      { "command": "codeIntel.indexSource", "title": "Code Intel: Index Source Code" },
+      { "command": "codeIntel.openChat", "title": "Code Intel: Open Chat" },
+      { "command": "codeIntel.configureBackend", "title": "Code Intel: Configure Backend" }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run build -- --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.5.0"
+  }
+}

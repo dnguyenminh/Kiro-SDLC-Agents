@@ -1,0 +1,91 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — KSA-292: Extension Light Client&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_boundary" value="VS Code Extension Process" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="520" height="560" as="geometry"/>
+    </mxCell>
+    <mxCell id="activate" value="&lt;b&gt;extension.ts&lt;/b&gt;&#10;activate() / deactivate()&#10;Entry point" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="90" width="180" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="auth_mgr" value="&lt;b&gt;AuthManager&lt;/b&gt;&#10;Login + SSO PKCE&#10;Token lifecycle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="190" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="conn_mgr" value="&lt;b&gt;ConnectionManager&lt;/b&gt;&#10;Remote connection&#10;State machine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="190" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="config_mgr" value="&lt;b&gt;ConfigurationManager&lt;/b&gt;&#10;URL, timeouts, SSO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="190" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="tool_proxy" value="&lt;b&gt;ToolProxy&lt;/b&gt;&#10;Route: local vs remote&#10;MCP tool forwarding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="300" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="http_client" value="&lt;b&gt;HttpClient&lt;/b&gt;&#10;Auth header injection&#10;Timeout management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="300" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="file_proxy" value="&lt;b&gt;FileProxyHandler&lt;/b&gt;&#10;embed_images&#10;Local execution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="300" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="workspace_sync" value="&lt;b&gt;WorkspaceSyncService&lt;/b&gt;&#10;Scan + upload file tree" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="410" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="indexing_svc" value="&lt;b&gt;IndexingService&lt;/b&gt;&#10;Upload docs/source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="410" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="webview_mgr" value="&lt;b&gt;WebviewManager&lt;/b&gt;&#10;Dashboard, Graph&#10;Quality, Tags, Analytics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="510" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="chat_panel" value="&lt;b&gt;ChatPanel&lt;/b&gt;&#10;AI Chat + SSE stream&#10;Context attachment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="510" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="status_bar" value="&lt;b&gt;StatusBar&lt;/b&gt;&#10;Connection indicator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="420" y="410" width="130" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="backend_server" value="&lt;b&gt;Remote Backend Server&lt;/b&gt;&#10;Hono HTTP | 52 MCP Tools&#10;KB + Code Intel + AI Chat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=0;" vertex="1" parent="1">
+      <mxGeometry x="660" y="300" width="220" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="sso_provider" value="&lt;b&gt;SSO Provider&lt;/b&gt;&#10;OAuth 2.0 PKCE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="140" width="140" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="secret_store" value="&lt;b&gt;VS Code SecretStorage&lt;/b&gt;&#10;OS Keychain" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="440" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="local_fs" value="&lt;b&gt;Local Filesystem&lt;/b&gt;&#10;Workspace files" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=10;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="550" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_http_backend" value="HTTP/HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;fontSize=10;" edge="1" source="http_client" target="backend_server" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_auth_sso" value="PKCE flow" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="auth_mgr" target="sso_provider" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_auth_secret" value="tokens" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;fontSize=10;" edge="1" source="auth_mgr" target="secret_store" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="140" y="480"/>
+          <mxPoint x="620" y="480"/>
+          <mxPoint x="620" y="475"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_proxy_http" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="tool_proxy" target="http_client" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_proxy_file" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="tool_proxy" target="file_proxy" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_file_fs" value="read files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="file_proxy" target="local_fs" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_sync_fs" value="scan" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="workspace_sync" target="local_fs" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="140" y="590"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,11 @@
+path,size_bytes,should_include,reason
+src/index.ts,500,true,Normal source file
+src/auth/AuthManager.ts,2000,true,New auth module
+node_modules/pkg/index.js,100,false,Excluded by pattern
+.git/config,50,false,Excluded by .gitignore
+docs/readme.md,2000,true,Normal documentation
+large-file.bin,2000000,false,Exceeds 1MB limit (BR-06)
+src/deep/nested/file.ts,300,true,Nested file OK
+build/output.js,1500,false,Excluded by pattern
+dist/extension.js,400000,false,Excluded by pattern
+.code-intel/index.db,50000,false,Excluded internal files

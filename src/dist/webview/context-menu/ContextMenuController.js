@@ -1,0 +1,258 @@
+"use strict";
+/**
+ * ContextMenuController — State machine + orchestration for Context Menu
+ * KSA-252
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ContextMenuController = void 0;
+const ContextMenuView_1 = require("./ContextMenuView");
+const ContextMenuItems_1 = require("./ContextMenuItems");
+const FuzzyFilter_1 = require("./FuzzyFilter");
+const BadgeManager_1 = require("../badges/BadgeManager");
+const BadgeRenderer_1 = require("../badges/BadgeRenderer");
+const FilePicker_1 = require("./FilePicker");
+const FolderPicker_1 = require("./FolderPicker");
+const ListPicker_1 = require("./ListPicker");
+const TRANSITIONS = [
+    { from: 'CLOSED', to: 'OPEN', trigger: 'HASH_TYPED' },
+    { from: 'OPEN', to: 'FILTERING', trigger: 'CHAR_TYPED' },
+    { from: 'OPEN', to: 'PICKER_OPEN', trigger: 'PICKER_SELECTED' },
+    { from: 'OPEN', to: 'BADGE_INSERTED', trigger: 'INSTANT_SELECTED' },
+    { from: 'OPEN', to: 'CLOSED', trigger: 'DISMISS' },
+    { from: 'FILTERING', to: 'PICKER_OPEN', trigger: 'PICKER_SELECTED' },
+    { from: 'FILTERING', to: 'BADGE_INSERTED', trigger: 'INSTANT_SELECTED' },
+    { from: 'FILTERING', to: 'OPEN', trigger: 'FILTER_CLEARED' },
+    { from: 'FILTERING', to: 'CLOSED', trigger: 'DISMISS' },
+    { from: 'PICKER_OPEN', to: 'BADGE_INSERTED', trigger: 'ITEM_SELECTED' },
+    { from: 'PICKER_OPEN', to: 'OPEN', trigger: 'BACK' },
+    { from: 'PICKER_OPEN', to: 'CLOSED', trigger: 'DISMISS' },
+    { from: 'BADGE_INSERTED', to: 'CLOSED', trigger: 'AUTO' },
+];
+class ContextMenuController {
+    state = 'CLOSED';
+    view;
+    badgeManager;
+    badgeRenderer;
+    bridge;
+    filterText = '';
+    visibleItems = [...ContextMenuItems_1.CONTEXT_MENU_ITEMS];
+    options;
+    // Active picker
+    filePicker = null;
+    folderPicker = null;
+    listPicker = null;
+    // Screen reader announcer
+    announcer = null;
+    constructor(options, bridge) {
+        this.options = options;
+        this.bridge = bridge;
+        this.view = new ContextMenuView_1.ContextMenuView(options.container);
+        this.badgeManager = new BadgeManager_1.BadgeManager(bridge);
+        this.badgeRenderer = new BadgeRenderer_1.BadgeRenderer((badgeId) => this.removeBadge(badgeId));
+        this.setupAnnouncer();
+    }
+    setupAnnouncer() {
+        this.announcer = document.getElementById('sr-announcer');
+        if (!this.announcer) {
+            this.announcer = document.createElement('div');
+            this.announcer.id = 'sr-announcer';
+            this.announcer.setAttribute('aria-live', 'polite');
+            this.announcer.setAttribute('aria-atomic', 'true');
+            this.announcer.className = 'sr-only';
+            document.body.appendChild(this.announcer);
+        }
+    }
+    announce(message) {
+        if (this.announcer) {
+            this.announcer.textContent = '';
+            requestAnimationFrame(() => {
+                if (this.announcer)
+                    this.announcer.textContent = message;
+            });
+        }
+    }
+    transition(trigger) {
+        const valid = TRANSITIONS.find(t => t.from === this.state && t.trigger === trigger);
+        if (!valid)
+            return false;
+        this.state = valid.to;
+        return true;
+    }
+    getState() {
+        return this.state;
+    }
+    open() {
+        if (!this.transition('HASH_TYPED'))
+            return;
+        this.filterText = '';
+        this.visibleItems = [...ContextMenuItems_1.CONTEXT_MENU_ITEMS];
+        const rect = this.options.inputElement.getBoundingClientRect();
+        this.view.render(this.visibleItems, rect);
+        this.announce('Context menu opened. 9 items available. Use arrow keys to navigate.');
+    }
+    close() {
+        this.transition('DISMISS');
+        this.view.destroy();
+        this.filePicker?.close();
+        this.folderPicker?.close();
+        this.listPicker?.close();
+        this.filePicker = null;
+        this.folderPicker = null;
+        this.listPicker = null;
+        this.filterText = '';
+        this.options.onClose();
+    }
+    filter(text) {
+        this.filterText = text;
+        if (!text) {
+            this.transition('FILTER_CLEARED');
+            this.visibleItems = [...ContextMenuItems_1.CONTEXT_MENU_ITEMS];
+        }
+        else {
+            if (this.state === 'OPEN')
+                this.transition('CHAR_TYPED');
+            const filtered = (0, FuzzyFilter_1.filterItems)(ContextMenuItems_1.CONTEXT_MENU_ITEMS, text);
+            this.visibleItems = filtered;
+        }
+        this.view.updateItems(this.visibleItems);
+        this.announce(`${this.visibleItems.length} items match.`);
+    }
+    handleKeyDown(event) {
+        // Delegate to active picker first
+        if (this.state === 'PICKER_OPEN') {
+            if (this.filePicker?.handleKeyDown(event))
+                return true;
+            if (this.folderPicker?.handleKeyDown(event))
+                return true;
+            if (this.listPicker?.handleKeyDown(event))
+                return true;
+        }
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                this.view.moveHighlight('down');
+                return true;
+            case 'ArrowUp':
+                event.preventDefault();
+                this.view.moveHighlight('up');
+                return true;
+            case 'Enter':
+                event.preventDefault();
+                this.selectHighlighted();
+                return true;
+            case 'Escape':
+                event.preventDefault();
+                this.close();
+                return true;
+            case 'Tab':
+                this.close();
+                return false; // Let tab propagate
+            default:
+                return false;
+        }
+    }
+    handleItemClick(index) {
+        const item = this.view.getItemAtIndex(index);
+        if (item)
+            this.selectItem(item);
+    }
+    selectHighlighted() {
+        const item = this.view.getHighlightedItem();
+        if (item)
+            this.selectItem(item);
+    }
+    selectItem(item) {
+        switch (item.type) {
+            case 'instant':
+                this.selectInstant(item);
+                break;
+            case 'picker':
+            case 'submenu':
+                this.openPicker(item);
+                break;
+        }
+    }
+    selectInstant(item) {
+        this.transition('INSTANT_SELECTED');
+        const badge = this.createInstantBadge(item);
+        this.insertBadge(badge);
+        this.transition('AUTO');
+        this.view.destroy();
+        this.options.onClose();
+    }
+    async openPicker(item) {
+        this.transition('PICKER_SELECTED');
+        this.view.destroy();
+        const container = this.options.container;
+        const handleBadge = (badge) => {
+            this.insertBadge(badge);
+            this.transition('ITEM_SELECTED');
+            this.transition('AUTO');
+            this.options.onClose();
+        };
+        const handleBack = () => {
+            this.transition('BACK');
+            const rect = this.options.inputElement.getBoundingClientRect();
+            this.view.render(this.visibleItems, rect);
+        };
+        const generateId = () => this.badgeManager.generateId();
+        switch (item.id) {
+            case 'files':
+                this.filePicker = new FilePicker_1.FilePicker({ bridge: this.bridge, container, onSelect: handleBadge, onBack: handleBack, generateId });
+                await this.filePicker.open();
+                break;
+            case 'folder':
+                this.folderPicker = new FolderPicker_1.FolderPicker({ bridge: this.bridge, container, onSelect: handleBadge, onBack: handleBack, generateId });
+                await this.folderPicker.open();
+                break;
+            case 'spec':
+            case 'steering':
+            case 'mcp':
+                this.listPicker = new ListPicker_1.ListPicker({ bridge: this.bridge, container, sourceType: item.id, onSelect: handleBadge, onBack: handleBack, generateId });
+                await this.listPicker.open();
+                break;
+        }
+    }
+    createInstantBadge(item) {
+        const id = this.badgeManager.generateId();
+        switch (item.id) {
+            case 'git-diff':
+                return { id, type: 'git-diff', label: 'Git Diff', icon: item.icon, metadata: {} };
+            case 'terminal':
+                return { id, type: 'terminal', label: 'Terminal', icon: item.icon, metadata: {} };
+            case 'problems':
+                return { id, type: 'problems', label: 'Problems', icon: item.icon, metadata: {} };
+            case 'current-file':
+                return { id, type: 'current-file', label: 'Current File', icon: item.icon, metadata: {} };
+            default:
+                return { id, type: item.id, label: item.label, icon: item.icon, metadata: {} };
+        }
+    }
+    insertBadge(badge) {
+        this.badgeManager.insert(badge);
+        this.options.onBadgeInsert(badge);
+        this.announce(`Context added: ${badge.label}`);
+    }
+    removeBadge(badgeId) {
+        const badge = this.badgeManager.get(badgeId);
+        this.badgeManager.remove(badgeId);
+        BadgeRenderer_1.BadgeRenderer.removeBadgeElement(this.options.container, badgeId);
+        if (badge)
+            this.announce(`Context removed: ${badge.label}`);
+    }
+    getBadgeManager() {
+        return this.badgeManager;
+    }
+    getBadgeRenderer() {
+        return this.badgeRenderer;
+    }
+    isOpen() {
+        return this.state !== 'CLOSED';
+    }
+    dispose() {
+        this.close();
+        this.bridge.dispose();
+    }
+}
+exports.ContextMenuController = ContextMenuController;
+//# sourceMappingURL=ContextMenuController.js.map

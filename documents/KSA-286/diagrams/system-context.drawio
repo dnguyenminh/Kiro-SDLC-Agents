@@ -1,0 +1,63 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="admin_user" value="&lt;b&gt;Admin User&lt;/b&gt;&#10;(Browser)" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="280" width="60" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="system_boundary" value="&lt;b&gt;Backend MCP Server (KSA-284)&lt;/b&gt;&#10;Port 48721" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="60" width="560" height="520" as="geometry"/>
+    </mxCell>
+    <mxCell id="react_spa" value="&lt;b&gt;React SPA&lt;/b&gt;&#10;/admin/*&#10;(Static Files)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="280" y="100" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="admin_api" value="&lt;b&gt;Admin REST API&lt;/b&gt;&#10;/api/admin/*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="520" y="100" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="rbac_middleware" value="&lt;b&gt;RBAC Middleware&lt;/b&gt;&#10;Permission Check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="520" y="220" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="audit_logger" value="&lt;b&gt;Audit Trail&lt;/b&gt;&#10;Logger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="520" y="340" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="jwt_auth" value="&lt;b&gt;JWT Auth Service&lt;/b&gt;&#10;(KSA-285)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="220" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="sqlite_db" value="&lt;b&gt;SQLite Database&lt;/b&gt;&#10;Users, Groups, Audit, Config" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="280" y="350" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="multi_tenant_kb" value="&lt;b&gt;Multi-Tenant KB&lt;/b&gt;&#10;(KSA-285)&#10;3-Tier: User/Project/Shared" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="280" y="480" width="160" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="mcp_orchestrator" value="&lt;b&gt;MCP Orchestrator&lt;/b&gt;&#10;Child Servers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="520" y="480" width="160" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="admin_user" target="react_spa" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="REST Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="react_spa" target="admin_api" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="Validate JWT + Permission" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="admin_api" target="rbac_middleware" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="Validate Token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="rbac_middleware" target="jwt_auth" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" value="Record Action" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="admin_api" target="audit_logger" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" value="CRUD" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="admin_api" target="sqlite_db" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e7" value="KB Operations" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="admin_api" target="multi_tenant_kb" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e8" value="Server Mgmt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="admin_api" target="mcp_orchestrator" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e9" value="Persist" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="audit_logger" target="sqlite_db" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

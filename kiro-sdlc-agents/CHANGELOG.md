@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.25.0] - 2025-07-29
+
+### Added
+- **KSA-254: Chat Panel: Slash Command Menu** — inline / trigger popup for agent selection and steering rule attachment:
+  - SlashMenuController — state machine (CLOSED/OPEN/FILTERING) with 6 triggers
+  - SlashMenuView — two-section popup (Agents + Steering Rules) with section headers
+  - SlashMenuItems — static 6-agent list + dynamic steering rules from chat:steeringLoaded
+  - Type-ahead filter (case-insensitive substring match across both sections)
+  - Keyboard navigation (ArrowUp/Down/Enter/Escape) crossing section boundaries
+  - Agent selection inserts /agent-name  prefix in textarea
+  - Steering selection adds context chip via existing ddContextChip()
+  - Full accessibility: ole=listbox, ria-activedescendant, screen reader announcements
+  - 57 automated tests (12 PBT + 30 UT + 15 IT) — all passing
+
+
 ## [1.18.0] - 2025-07-28
 
 ### Added
@@ -178,3 +193,4 @@
 - Code Intelligence Indexer in 5 languages: Python, Java, PowerShell, Bash, Node.js
 - Auto-detect runtime for indexer execution
 - Status bar indicator
+

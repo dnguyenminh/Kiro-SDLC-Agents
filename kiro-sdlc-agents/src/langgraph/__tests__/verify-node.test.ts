@@ -4,6 +4,16 @@
  * no criteria, and auto-fail on empty agent output.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock vscode module (unavailable outside extension host)
+vi.mock("vscode", () => ({
+  workspace: { workspaceFolders: [], getConfiguration: () => ({ get: () => undefined }) },
+  Uri: { file: (p: string) => ({ fsPath: p }) },
+  FileType: { Directory: 2, File: 1 },
+  window: { tabGroups: { all: [] } },
+  languages: { getDiagnostics: () => [] },
+}));
+
 import { VerifyNode } from "../nodes/verify-node";
 import { StreamHandler } from "../stream-handler";
 import { McpBridge } from "../mcp-bridge";

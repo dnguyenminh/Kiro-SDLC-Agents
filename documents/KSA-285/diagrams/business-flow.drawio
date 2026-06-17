@@ -1,0 +1,138 @@
+﻿<mxfile host="65bd71144e">
+    <diagram id="_KaHxwu5fVfMRnDG1tsq" name="Page-1">
+        <mxGraphModel dx="872" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;KSA-285 — Authentication, Multi-Tenant KB &amp; MCP Config Business Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="10" width="620" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="start" value="Extension Activates" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="60" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="check_token" value="Check JWT in&#10;SecretStorage" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="160" width="180" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="start" target="check_token" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="show_login" value="Show Login&#10;Webview" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="280" width="160" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="No / Expired" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="check_token" target="show_login" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="attach_token" value="Attach Bearer Token&#10;to All Requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="280" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="Valid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="check_token" target="attach_token" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth_choice" value="Auth Method?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="380" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="show_login" target="auth_choice" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="local_auth" value="POST /api/auth/login&#10;(username + password)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="500" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="Local" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="auth_choice" target="local_auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sso_auth" value="OpenID Connect&#10;+ PKCE Flow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="500" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="SSO" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" parent="1" source="auth_choice" target="sso_auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="issue_jwt" value="Backend Issues&#10;JWT (HS256) +&#10;Refresh Token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="610" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="local_auth" target="issue_jwt" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="sso_auth" target="issue_jwt" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="store_secret" value="Store in&#10;VS Code SecretStorage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="720" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="issue_jwt" target="store_secret" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="store_secret" target="attach_token" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="250" y="800"/>
+                            <mxPoint x="480" y="800"/>
+                            <mxPoint x="480" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="mcp_call" value="MCP Tool Call&#10;(mem_search, mem_ingest, etc.)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="590" y="400" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="attach_token" target="mcp_call" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="kb_tier" value="Backend Resolves&#10;KB Tier from JWT" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="590" y="510" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="mcp_call" target="kb_tier" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="user_kb" value="USER KB&#10;(Personal, TTL)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="650" width="120" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="project_kb" value="PROJECT KB&#10;(Team, Permanent)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="660" y="650" width="140" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="shared_kb" value="SHARED KB&#10;(Company, Permanent)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="830" y="650" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="kb_tier" target="user_kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="kb_tier" target="project_kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="kb_tier" target="shared_kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="promote_1_2" value="Auto-Promote&#10;(quality &gt; 0.8 + review)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;strokeColor=#388e3c;fontSize=9;fontStyle=2;" parent="1" source="user_kb" target="project_kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="promote_2_3" value="Auto-Promote&#10;(3+ projects ref)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;strokeColor=#7b1fa2;fontSize=9;fontStyle=2;" parent="1" source="project_kb" target="shared_kb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auto_refresh" value="Auto-Refresh Token&#10;(5 min before expiry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="160" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e16" value="expiry - 5min" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" parent="1" source="attach_token" target="auto_refresh" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp_config" value="MCP Config Page&#10;(Webview Form)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="400" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="config_db" value="Per-User Config&#10;(Encrypted in DB)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="890" y="510" width="140" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e17" value="GET/PUT&#10;/api/config/mcp-servers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;startArrow=classic;startSize=6;fontSize=9;" parent="1" source="mcp_config" target="config_db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end" value="User Authenticated&#10;&amp; Operating" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="590" y="760" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" parent="1" source="kb_tier" target="end" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="490" y="555"/>
+                            <mxPoint x="490" y="790"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

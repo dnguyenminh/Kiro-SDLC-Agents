@@ -3,6 +3,7 @@
  * KSA-143
  */
 
+import { describe, test, expect } from 'vitest';
 import { ClusteringAlgorithm } from '../ClusteringAlgorithm';
 import { DistanceChecker } from '../DistanceChecker';
 import { BudgetManager } from '../BudgetManager';

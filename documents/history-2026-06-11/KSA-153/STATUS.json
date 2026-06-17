@@ -1,0 +1,44 @@
+{
+  "phases": {
+    "implementation": {
+      "status": "not_started"
+    },
+    "test_planning": {
+      "status": "not_started"
+    },
+    "requirements": {
+      "file": "BRD.md",
+      "completedAt": "2026-05-25T06:16:50Z",
+      "version": 1,
+      "status": "done"
+    },
+    "deployment": {
+      "status": "not_started"
+    },
+    "specification": {
+      "file": "FSD.md",
+      "completedAt": "2026-05-25T06:16:50Z",
+      "version": 1,
+      "status": "done"
+    },
+    "testing": {
+      "status": "not_started"
+    },
+    "feedback_loop": {
+      "iterations": 0,
+      "maxIterations": 5,
+      "status": "not_started"
+    },
+    "design": {
+      "file": "TDD.md",
+      "completedAt": "2026-05-25T06:16:50Z",
+      "version": 1,
+      "status": "done"
+    }
+  },
+  "lastUpdated": "2026-06-11T12:00:00Z",
+  "currentPhase": "done",
+  "ticket": "KSA-153",
+  "batchClosed": true,
+  "batchClosedReason": "Batch close by SM — all phases confirmed complete or legacy"
+}

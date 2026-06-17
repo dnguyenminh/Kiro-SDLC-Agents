@@ -238,6 +238,12 @@ python tests/test_extractor.py
 
 ---
 
+
+## Trademarks
+
+- "Kiro" is a trademark of Amazon Web Services, Inc. This project is designed to work with the Kiro IDE but is not affiliated with, endorsed by, or sponsored by Amazon.
+- All other trademarks are the property of their respective owners.
+
 ## License
 
 MIT

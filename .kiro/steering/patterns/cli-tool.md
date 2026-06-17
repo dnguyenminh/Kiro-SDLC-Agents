@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: CLI Tool architecture pattern. Activate when SM detects cli-tool pattern.
----
-
 # Pattern: CLI Tool
 
 ## Description

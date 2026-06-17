@@ -1,0 +1,14 @@
+from_state,trigger,to_state,description
+CLOSED,HASH_TYPED,OPEN,User types # in input
+OPEN,CHAR_TYPED,FILTERING,User types character after #
+OPEN,PICKER_SELECTED,PICKER_OPEN,User selects a picker category
+OPEN,INSTANT_SELECTED,BADGE_INSERTED,User selects an instant category
+OPEN,DISMISS,CLOSED,Escape or click-outside
+FILTERING,PICKER_SELECTED,PICKER_OPEN,User selects from filtered list (picker)
+FILTERING,INSTANT_SELECTED,BADGE_INSERTED,User selects from filtered list (instant)
+FILTERING,FILTER_CLEARED,OPEN,User clears all filter text
+FILTERING,DISMISS,CLOSED,Escape or click-outside
+PICKER_OPEN,ITEM_SELECTED,BADGE_INSERTED,User selects item in picker
+PICKER_OPEN,BACK,OPEN,User presses back/Escape in picker
+PICKER_OPEN,DISMISS,CLOSED,Click-outside from picker
+BADGE_INSERTED,AUTO,CLOSED,Auto-transition after badge inserted

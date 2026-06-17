@@ -1,0 +1,1 @@
+{"version":3,"file":"api.d.ts","sourceRoot":"","sources":["../../../../../backend/src/server/routes/api.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,IAAI,EAAE,MAAM,MAAM,CAAC;AAC5B,OAAO,EAAE,cAAc,EAAE,MAAM,8BAA8B,CAAC;AAE9D,wBAAgB,cAAc,CAAC,cAAc,EAAE,cAAc,GAAG,IAAI,CAsGnE"}

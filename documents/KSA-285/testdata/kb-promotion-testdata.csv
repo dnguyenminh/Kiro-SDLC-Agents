@@ -1,0 +1,10 @@
+test_case_id,tier,owner_id,quality_score,tags,reviewed_by,referenced_by_projects,admin_promoted,should_promote,target_tier,description
+UT-19,1,user-a-001,0.85,"[""project-relevant""]","[""user-b-002""]",,false,true,2,All criteria met — promotes
+UT-19,1,user-a-001,0.50,"[""project-relevant""]","[""user-b-002""]",,false,false,,Quality too low
+UT-19,1,user-a-001,0.85,"[""wip""]","[""user-b-002""]",,false,false,,Wrong tag
+UT-19,1,user-a-001,0.85,"[""project-relevant""]","[]",,false,false,,No reviewer
+UT-20,2,user-a-001,0.80,"[]","","[""p1"",""p2"",""p3""]",false,true,3,3+ project refs — promotes
+UT-20,2,user-a-001,0.80,"[""best-practice""]","","[]",false,true,3,Best-practice tag — promotes
+UT-20,2,admin-003,0.80,"[]","","[]",true,true,3,Admin promoted — promotes
+UT-20,2,user-a-001,0.80,"[""normal""]","","[""p1""]",false,false,,No criteria met
+PBT-08,1,{random_user},{random_0_1},{random_tags},{random_reviewed_by},,false,{computed},2,Property test — random input

@@ -1,0 +1,67 @@
+/**
+ * Badge Styles — KSA-252
+ * Context tag badge chips in the input area
+ */
+
+.context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin: 0 2px;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #ffffff);
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 18px;
+  vertical-align: middle;
+  user-select: none;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.context-badge:hover {
+  background: var(--vscode-list-hoverBackground, #2a2d2e);
+}
+
+.badge-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground, #8b8b8b);
+  flex-shrink: 0;
+}
+
+.badge-remove:hover {
+  background: var(--vscode-errorForeground, #f48771);
+  color: #ffffff;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

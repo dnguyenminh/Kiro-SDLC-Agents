@@ -1,0 +1,146 @@
+<mxfile>
+<diagram name="Sequence - Reconnect" id="seq-reconn">
+<mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence Diagram - Auto-Reconnect Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_conn" value="&lt;b&gt;Connection Manager&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_be" value="&lt;b&gt;Backend (Process)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="300" y="50" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_status" value="&lt;b&gt;Status Bar&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="540" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="h_tools" value="&lt;b&gt;Tool Registry&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="740" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="l_conn" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="90" as="sourcePoint"/>
+        <mxPoint x="130" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_be" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="370" y="90" as="sourcePoint"/>
+        <mxPoint x="370" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_status" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="600" y="90" as="sourcePoint"/>
+        <mxPoint x="600" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="l_tools" value="" style="html=1;endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="800" y="90" as="sourcePoint"/>
+        <mxPoint x="800" y="620" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s1" value="1. Backend crashes (exit signal)" style="html=1;endArrow=classic;endSize=6;strokeColor=#c62828;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="370" y="120" as="sourcePoint"/>
+        <mxPoint x="130" y="120" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s2" value="2. show: Disconnected (red)" style="html=1;endArrow=classic;endSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="155" as="sourcePoint"/>
+        <mxPoint x="600" y="155" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s3" value="3. wait 1s (initial backoff)" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="135" y="190" as="sourcePoint"/>
+        <mxPoint x="185" y="190" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="185" y="190"/>
+          <mxPoint x="185" y="210"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s4" value="4. GET /health" style="html=1;endArrow=classic;endSize=6;strokeColor=#c62828;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="235" as="sourcePoint"/>
+        <mxPoint x="370" y="235" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s5" value="5. connection refused" style="html=1;endArrow=classic;endSize=6;strokeColor=#c62828;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="370" y="265" as="sourcePoint"/>
+        <mxPoint x="130" y="265" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s6" value="6. delay = min(delay*2, 30s), wait 2s" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="135" y="295" as="sourcePoint"/>
+        <mxPoint x="185" y="295" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="185" y="295"/>
+          <mxPoint x="185" y="320"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s7" value="--- Backend restarts ---" style="html=1;endArrow=none;fontSize=10;dashed=1;strokeColor=#388e3c;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="280" y="350" as="sourcePoint"/>
+        <mxPoint x="450" y="350" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s8" value="7. GET /health" style="html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="380" as="sourcePoint"/>
+        <mxPoint x="370" y="380" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s9" value="8. 200 OK {healthy, v1.2.3}" style="html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="370" y="415" as="sourcePoint"/>
+        <mxPoint x="130" y="415" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s10" value="9. check version compat" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="135" y="445" as="sourcePoint"/>
+        <mxPoint x="185" y="445" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="185" y="445"/>
+          <mxPoint x="185" y="460"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s11" value="10. re-register 52 tools" style="html=1;endArrow=classic;endSize=6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="490" as="sourcePoint"/>
+        <mxPoint x="800" y="490" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s12" value="11. show: Connected (green)" style="html=1;endArrow=classic;endSize=6;strokeColor=#388e3c;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="130" y="530" as="sourcePoint"/>
+        <mxPoint x="600" y="530" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s13" value="12. log: Reconnected to Backend v1.2.3" style="html=1;endArrow=classic;endSize=6;fontSize=10;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="135" y="565" as="sourcePoint"/>
+        <mxPoint x="185" y="565" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="185" y="565"/>
+          <mxPoint x="185" y="585"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note_backoff" value="Exponential Backoff:&lt;br&gt;1s, 2s, 4s, 8s, 16s, 30s (max)&lt;br&gt;Max 100 attempts" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="440" y="540" width="180" height="60" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+</diagram>
+</mxfile>

@@ -1,0 +1,16 @@
+﻿test_case_id,username,password,expected_http_code,expected_error_code,description
+UT-01,john.doe,validPass123,200,,Valid login - happy path
+UT-02,john.doe,wrongPassword,401,AUTH_INVALID_CREDENTIALS,Invalid password
+UT-03,john.doe,wrong1,401,AUTH_INVALID_CREDENTIALS,Failed attempt 1 of 5
+UT-03,john.doe,wrong2,401,AUTH_INVALID_CREDENTIALS,Failed attempt 2 of 5
+UT-03,john.doe,wrong3,401,AUTH_INVALID_CREDENTIALS,Failed attempt 3 of 5
+UT-03,john.doe,wrong4,401,AUTH_INVALID_CREDENTIALS,Failed attempt 4 of 5
+UT-03,john.doe,wrong5,403,AUTH_ACCOUNT_LOCKED,5th failure triggers lockout
+UT-04,john.doe,validPass123,200,,Login after lockout expired (16 min)
+E2E-API-02,john.doe,wrongPwd,401,AUTH_INVALID_CREDENTIALS,E2E login failure x5
+UT-23,john.doe,12345678,200,,Valid schema (username ok password 8+ chars)
+UT-23,,12345678,422,,Empty username validation fail
+UT-23,john@doe,12345678,422,,Invalid char @ in username
+UT-23,john.doe,short,422,,Password too short (< 8 chars)
+PBT-07,a]valid.user_123,password123,200,,Valid username with dots and underscore
+PBT-07,user with spaces,password123,422,,Spaces not allowed in username

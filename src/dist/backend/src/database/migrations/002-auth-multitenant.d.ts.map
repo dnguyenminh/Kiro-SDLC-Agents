@@ -1,0 +1,1 @@
+{"version":3,"file":"002-auth-multitenant.d.ts","sourceRoot":"","sources":["../../../../../backend/src/database/migrations/002-auth-multitenant.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,SAAS,EAAE,MAAM,mCAAmC,CAAC;AAgH9D,eAAO,MAAM,aAAa;;;aAGf,SAAS,KAAG,IAAI;eAGd,SAAS,KAAG,IAAI;CAG5B,CAAC"}

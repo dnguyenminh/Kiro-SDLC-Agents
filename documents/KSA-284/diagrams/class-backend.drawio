@@ -1,0 +1,345 @@
+<mxfile host="65bd71144e">
+    <diagram id="E2VrSFOehDca3Mo8PiLq" name="Page-1">
+        <mxGraphModel dx="1150" dy="721" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="KSA-284: Backend Class Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="400" y="10" width="320" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;&lt;interface&gt;&gt;&#10;IModule" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="480" y="280" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="+ name: string (readonly)&#10;+ status: ModuleStatus (readonly)&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;string, ToolHandler&gt;&#10;+ getApiRoutes(): HonoRoutes | null" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="10" vertex="1">
+                    <mxGeometry y="40" width="280" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;&lt;interface&gt;&gt;&#10;IToolRouter" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="40" y="300" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;+ hasToolHandler(name): boolean" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="12" vertex="1">
+                    <mxGeometry y="40" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="HttpServer" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450" parent="1" vertex="1">
+                    <mxGeometry x="900" y="60" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="- app: Hono&#10;- port: number&#10;- host: string&#10;- server: http.Server | null&#10;&#10;+ start(port, host): Promise&lt;void&gt;&#10;+ stop(): Promise&lt;void&gt;&#10;+ registerRoutes(router, modules): void&#10;- setupMiddleware(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="20" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="ToolRouter" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="- handlers: Map&lt;string, ToolHandler&gt;&#10;- definitions: Map&lt;string, ToolDefinition&gt;&#10;- validator: ToolValidator&#10;&#10;+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;- validateArgs(name, args): void&#10;- wrapError(err): ToolResult" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="22" vertex="1">
+                    <mxGeometry y="26" width="280" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="ModuleRegistry" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="480" y="560" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="- modules: Map&lt;string, IModule&gt;&#10;&#10;+ registerModule(module: IModule): void&#10;+ initializeAll(): Promise&lt;void&gt;&#10;+ shutdownAll(): Promise&lt;void&gt;&#10;+ getModule(name): IModule | null&#10;+ getStatus(): ModuleStatusMap&#10;+ getAllToolHandlers(): Map&lt;...&gt;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="24" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="MemoryModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="40" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="- db: Database (better-sqlite3)&#10;- embeddings: EmbeddingService&#10;- name = 'memory'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleMemSearch(args)&#10;- handleMemIngest(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="30" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="CodeIntelModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="30" y="680" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="- indexer: Indexer&#10;- symbolStore: SymbolStore&#10;- name = 'codeIntel'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleCodeSearch(args)&#10;- handleCodeSymbols(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="32" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="OrchestrationModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="940" y="550" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="- childMgr: ChildServerManager&#10;- config: OrchestrationConfig&#10;- name = 'orchestration'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleFindTools(args)&#10;- handleExecuteDynamic(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="34" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="AnalyticsModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="940" y="390" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="- db: Database&#10;- scorer: QualityScorer&#10;- name = 'analytics'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;+ getApiRoutes(): HonoRoutes" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="36" vertex="1">
+                    <mxGeometry y="26" width="240" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="ToolValidator" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="940" y="240" width="240" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="- schemas: Map&lt;string, ZodSchema&gt;&#10;&#10;+ validate(name, args): void&#10;+ loadSchemas(defs: ToolDef[]): void&#10;+ getSchema(name): ZodSchema" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="40" vertex="1">
+                    <mxGeometry y="26" width="240" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="22" target="12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="30" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="560"/>
+                            <mxPoint x="430" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="52" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="32" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="34" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="630"/>
+                            <mxPoint x="820" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="54" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="36" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="490"/>
+                            <mxPoint x="820" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="55" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="22" target="40" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="780" y="210"/>
+                            <mxPoint x="780" y="300"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="56" value="manages" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="24" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="57" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="20" target="22" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="610" y="90"/>
+                            <mxPoint x="610" y="90"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="tTTRTN6q8NFNREwByrVU" name="Page-1">
+        <mxGraphModel dx="1150" dy="721" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="KSA-284: Backend Class Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="400" y="10" width="320" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;&lt;interface&gt;&gt;&#10;IModule" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="480" y="50" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="+ name: string (readonly)&#10;+ status: ModuleStatus (readonly)&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;string, ToolHandler&gt;&#10;+ getApiRoutes(): HonoRoutes | null" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="10" vertex="1">
+                    <mxGeometry y="40" width="280" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;&lt;interface&gt;&gt;&#10;IToolRouter" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="100" y="50" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;+ hasToolHandler(name): boolean" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="12" vertex="1">
+                    <mxGeometry y="40" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="HttpServer" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450" parent="1" vertex="1">
+                    <mxGeometry x="860" y="50" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="- app: Hono&#10;- port: number&#10;- host: string&#10;- server: http.Server | null&#10;&#10;+ start(port, host): Promise&lt;void&gt;&#10;+ stop(): Promise&lt;void&gt;&#10;+ registerRoutes(router, modules): void&#10;- setupMiddleware(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="20" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="ToolRouter" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="100" y="240" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="- handlers: Map&lt;string, ToolHandler&gt;&#10;- definitions: Map&lt;string, ToolDefinition&gt;&#10;- validator: ToolValidator&#10;&#10;+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;- validateArgs(name, args): void&#10;- wrapError(err): ToolResult" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="22" vertex="1">
+                    <mxGeometry y="26" width="280" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="ModuleRegistry" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="480" y="260" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="- modules: Map&lt;string, IModule&gt;&#10;&#10;+ registerModule(module: IModule): void&#10;+ initializeAll(): Promise&lt;void&gt;&#10;+ shutdownAll(): Promise&lt;void&gt;&#10;+ getModule(name): IModule | null&#10;+ getStatus(): ModuleStatusMap&#10;+ getAllToolHandlers(): Map&lt;...&gt;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="24" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="MemoryModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="40" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="- db: Database (better-sqlite3)&#10;- embeddings: EmbeddingService&#10;- name = 'memory'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleMemSearch(args)&#10;- handleMemIngest(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="30" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="CodeIntelModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="310" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="- indexer: Indexer&#10;- symbolStore: SymbolStore&#10;- name = 'codeIntel'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleCodeSearch(args)&#10;- handleCodeSymbols(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="32" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="OrchestrationModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="580" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="- childMgr: ChildServerManager&#10;- config: OrchestrationConfig&#10;- name = 'orchestration'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleFindTools(args)&#10;- handleExecuteDynamic(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="34" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="AnalyticsModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="850" y="480" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="- db: Database&#10;- scorer: QualityScorer&#10;- name = 'analytics'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;+ getApiRoutes(): HonoRoutes" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="36" vertex="1">
+                    <mxGeometry y="26" width="240" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="ToolValidator" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="860" y="260" width="240" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="- schemas: Map&lt;string, ZodSchema&gt;&#10;&#10;+ validate(name, args): void&#10;+ loadSchemas(defs: ToolDef[]): void&#10;+ getSchema(name): ZodSchema" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="40" vertex="1">
+                    <mxGeometry y="26" width="240" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="22" target="12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="30" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="32" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="53" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="34" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="36" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="550"/>
+                            <mxPoint x="820" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="55" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="22" target="40" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" value="manages" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="24" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="57" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="20" target="22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="aWvoU4y4qt2UrnlaVtu0" name="Page-1">
+        <mxGraphModel dx="1150" dy="721" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="KSA-284: Backend Class Diagram" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="400" y="10" width="320" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;&lt;interface&gt;&gt;&#10;IModule" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="480" y="280" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="+ name: string (readonly)&#10;+ status: ModuleStatus (readonly)&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ shutdown(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;string, ToolHandler&gt;&#10;+ getApiRoutes(): HonoRoutes | null" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="10" vertex="1">
+                    <mxGeometry y="40" width="280" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;&lt;interface&gt;&gt;&#10;IToolRouter" style="swimlane;fontStyle=3;align=center;startSize=40;fontSize=11;fillColor=#e1d5e7;strokeColor=#9673a6" parent="1" vertex="1">
+                    <mxGeometry x="100" y="30" width="280" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;+ hasToolHandler(name): boolean" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="12" vertex="1">
+                    <mxGeometry y="40" width="280" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="HttpServer" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#f8cecc;strokeColor=#b85450" parent="1" vertex="1">
+                    <mxGeometry x="860" y="50" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="- app: Hono&#10;- port: number&#10;- host: string&#10;- server: http.Server | null&#10;&#10;+ start(port, host): Promise&lt;void&gt;&#10;+ stop(): Promise&lt;void&gt;&#10;+ registerRoutes(router, modules): void&#10;- setupMiddleware(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="20" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="ToolRouter" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="100" y="240" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" value="- handlers: Map&lt;string, ToolHandler&gt;&#10;- definitions: Map&lt;string, ToolDefinition&gt;&#10;- validator: ToolValidator&#10;&#10;+ register(module: IModule): void&#10;+ route(name, args): Promise&lt;ToolResult&gt;&#10;+ listTools(): ToolDefinition[]&#10;- validateArgs(name, args): void&#10;- wrapError(err): ToolResult" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="22" vertex="1">
+                    <mxGeometry y="26" width="280" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="ModuleRegistry" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="570" y="700" width="280" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="- modules: Map&lt;string, IModule&gt;&#10;&#10;+ registerModule(module: IModule): void&#10;+ initializeAll(): Promise&lt;void&gt;&#10;+ shutdownAll(): Promise&lt;void&gt;&#10;+ getModule(name): IModule | null&#10;+ getStatus(): ModuleStatusMap&#10;+ getAllToolHandlers(): Map&lt;...&gt;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="24" vertex="1">
+                    <mxGeometry y="26" width="280" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="MemoryModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="40" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="- db: Database (better-sqlite3)&#10;- embeddings: EmbeddingService&#10;- name = 'memory'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleMemSearch(args)&#10;- handleMemIngest(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="30" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="CodeIntelModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="310" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="- indexer: Indexer&#10;- symbolStore: SymbolStore&#10;- name = 'codeIntel'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleCodeSearch(args)&#10;- handleCodeSymbols(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="32" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="OrchestrationModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="580" y="480" width="240" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="- childMgr: ChildServerManager&#10;- config: OrchestrationConfig&#10;- name = 'orchestration'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;- handleFindTools(args)&#10;- handleExecuteDynamic(args)&#10;- handle...()" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="34" vertex="1">
+                    <mxGeometry y="26" width="240" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="AnalyticsModule" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366" parent="1" vertex="1">
+                    <mxGeometry x="850" y="480" width="240" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="- db: Database&#10;- scorer: QualityScorer&#10;- name = 'analytics'&#10;&#10;+ initialize(): Promise&lt;void&gt;&#10;+ getToolHandlers(): Map&lt;...&gt;&#10;+ getApiRoutes(): HonoRoutes" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="36" vertex="1">
+                    <mxGeometry y="26" width="240" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="ToolValidator" style="swimlane;fontStyle=1;align=center;startSize=26;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656" parent="1" vertex="1">
+                    <mxGeometry x="860" y="260" width="240" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="- schemas: Map&lt;string, ZodSchema&gt;&#10;&#10;+ validate(name, args): void&#10;+ loadSchemas(defs: ToolDef[]): void&#10;+ getSchema(name): ZodSchema" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=10" parent="40" vertex="1">
+                    <mxGeometry y="26" width="240" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="22" target="12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="30" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="440"/>
+                            <mxPoint x="430" y="440"/>
+                            <mxPoint x="430" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="52" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="32" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="34" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="800" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="54" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;dashed=1;endArrow=block;endFill=0" parent="1" source="36" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="970" y="420"/>
+                            <mxPoint x="820" y="420"/>
+                            <mxPoint x="820" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="55" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="22" target="40" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" value="manages" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="24" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="57" value="uses" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;dashed=1;fontSize=9" parent="1" source="20" target="22" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,16 @@
+/**
+ * Global error boundary middleware.
+ * Catches unhandled errors and returns structured error responses.
+ */
+export function createErrorHandler(logger) {
+    return (err, c) => {
+        logger.error({ err, path: c.req.path, method: c.req.method }, 'Unhandled error');
+        return c.json({
+            error: {
+                code: 'INTERNAL_ERROR',
+                message: `Internal server error: ${err.message}`,
+            },
+        }, 500);
+    };
+}
+//# sourceMappingURL=error-handler.js.map

@@ -1,31 +1,17 @@
 {
   "ticket": "KSA-7",
-  "currentPhase": "design_done",
+  "currentPhase": "done",
   "phases": {
-    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-05-10T10:30:00Z" },
-    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2026-05-10T10:45:00Z" },
-    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2026-05-10T11:00:00Z" },
-    "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
-    "test_planning": { "status": "not_started" },
-    "implementation": { "status": "not_started" },
-    "testing": { "status": "not_started" },
-    "deployment": { "status": "not_started" }
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-06-11T15:36:37Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2026-06-11T15:36:37Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2026-06-11T15:36:37Z" },
+    "feedback_loop": { "status": "done", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2026-06-11T15:36:37Z" },
+    "implementation": { "status": "done", "completedAt": "2026-06-11T15:36:37Z" },
+    "testing": { "status": "done", "completedAt": "2026-06-11T15:36:37Z" },
+    "deployment": { "status": "done", "completedAt": "2026-06-11T15:36:37Z" }
   },
-  "jiraStatus": "In Progress",
-  "attachments": {
-    "BRD": "BRD-v1-KSA-7.docx",
-    "FSD": "FSD-v1-KSA-7.docx",
-    "TDD": "TDD-v1-KSA-7.docx"
-  },
-  "diagrams": [
-    "diagrams/business-flow.drawio",
-    "diagrams/use-case.drawio",
-    "diagrams/system-context.drawio",
-    "diagrams/sequence-index.drawio",
-    "diagrams/state-file-processing.drawio",
-    "diagrams/architecture.drawio",
-    "diagrams/component.drawio",
-    "diagrams/class-diagram.drawio"
-  ],
-  "lastUpdated": "2026-05-10T11:00:00Z"
+  "lastUpdated": "2026-06-11T15:36:37Z",
+  "batchClosed": true,
+  "batchClosedReason": "Legacy backlog cleanup - all phases marked done per user approval"
 }

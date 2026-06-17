@@ -1,0 +1,48 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="&lt;&lt;component&gt;&gt;&#xa;ChatPanelProvider" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="280" y="40" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="&lt;&lt;component&gt;&gt;&#xa;ConversationManager" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="100" y="180" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="&lt;&lt;component&gt;&gt;&#xa;TokenCounter" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="460" y="180" width="200" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="&lt;&lt;component&gt;&gt;&#xa;TabBarComponent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="60" y="340" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="&lt;&lt;component&gt;&gt;&#xa;ContextUsageIcon" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="260" y="340" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="&lt;&lt;component&gt;&gt;&#xa;MessageList" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="460" y="340" width="160" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="&lt;&lt;component&gt;&gt;&#xa;InputArea" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=middle;" vertex="1" parent="1">
+      <mxGeometry x="660" y="340" width="140" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="manages" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="2" target="3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="uses" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="2" target="4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="renders" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="2" target="5">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="12" value="renders" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="2" target="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="13" value="renders" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="2" target="7">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="14" value="data from" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="6" target="4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="15" value="data from" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="5" target="3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

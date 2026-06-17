@@ -17,6 +17,7 @@ import { McpBridge } from "./mcp-bridge";
 import { StreamHandler } from "./stream-handler";
 import { WorkspaceCheckpointer } from "./checkpointer";
 import type { LlmProvider } from "./llm-provider";
+import type { HookEngine } from "./hook-engine";
 import { buildRouterGraph } from "./router/router-graph";
 
 /**
@@ -28,7 +29,8 @@ export async function buildPipelineGraph(
   mcpBridge: McpBridge,
   streamHandler: StreamHandler,
   checkpointer: WorkspaceCheckpointer,
-  llmProvider?: LlmProvider
+  llmProvider?: LlmProvider,
+  hookEngine?: HookEngine
 ) {
-  return buildRouterGraph(mcpBridge, streamHandler, checkpointer, llmProvider);
+  return buildRouterGraph(mcpBridge, streamHandler, checkpointer, llmProvider, hookEngine);
 }

@@ -1,0 +1,16 @@
+test_case_id,username,password,expected_http_code,expected_error_code,expected_message,description
+IT-01,john.doe,validPass123,200,,,Valid login — happy path
+IT-02,john.doe,wrongPassword,401,AUTH_INVALID_CREDENTIALS,Invalid username or password.,Wrong password
+IT-02,nonexistent,validPass123,401,AUTH_INVALID_CREDENTIALS,Invalid username or password.,User does not exist
+IT-03,john.doe,wrong1,401,AUTH_INVALID_CREDENTIALS,,Failure attempt 1/5
+IT-03,john.doe,wrong2,401,AUTH_INVALID_CREDENTIALS,,Failure attempt 2/5
+IT-03,john.doe,wrong3,401,AUTH_INVALID_CREDENTIALS,,Failure attempt 3/5
+IT-03,john.doe,wrong4,401,AUTH_INVALID_CREDENTIALS,,Failure attempt 4/5
+IT-03,john.doe,wrong5,401,AUTH_INVALID_CREDENTIALS,,Failure attempt 5/5 (triggers lockout)
+IT-03,john.doe,wrong6,403,AUTH_ACCOUNT_LOCKED,Account locked. Try again in 15 minutes.,6th attempt — locked
+IT-03,john.doe,validPass123,403,AUTH_ACCOUNT_LOCKED,,Correct password but still locked
+E2E-API-16,,validPass123,400,VALIDATION_ERROR,,Empty username
+E2E-API-16,john.doe,,400,VALIDATION_ERROR,,Empty password
+E2E-API-16,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,validPass123,400,VALIDATION_ERROR,,Username > 100 chars
+E2E-API-16,john.doe,short,400,VALIDATION_ERROR,,Password < 8 chars
+E2E-API-16,john@#$%,validPass123,400,VALIDATION_ERROR,,Invalid username characters

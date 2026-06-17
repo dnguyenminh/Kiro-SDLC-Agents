@@ -1,0 +1,69 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="&lt;b&gt;AuthModule&lt;/b&gt;&#xa;implements IModule" style="swimlane;fontStyle=0;align=center;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="200" height="150" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="+name: 'auth'&#xa;+status: ModuleStatus&#xa;+authService: AuthService&#xa;+tokenService: TokenService&#xa;+ssoService: SsoService&#xa;+userRepo: UserRepository&#xa;---&#xa;+initialize(): Promise&lt;void&gt;&#xa;+shutdown(): Promise&lt;void&gt;&#xa;+getToolHandlers(): Map&#xa;+getToolDefinitions(): []" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="2">
+      <mxGeometry y="30" width="200" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="10" value="&lt;b&gt;AuthService&lt;/b&gt;" style="swimlane;fontStyle=0;align=center;startSize=25;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="300" y="40" width="220" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="11" value="-userRepo: UserRepository&#xa;-sessionRepo: SessionRepository&#xa;-tokenService: TokenService&#xa;-passwordService: PasswordService&#xa;---&#xa;+login(username, password, userAgent?)&#xa;  : Promise&lt;LoginResponse&gt;&#xa;+refresh(refreshToken)&#xa;  : Promise&lt;TokenPair&gt;&#xa;+logout(refreshToken): void&#xa;+verifyToken(token)&#xa;  : Promise&lt;AuthPayload&gt;" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="10">
+      <mxGeometry y="25" width="220" height="135" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="&lt;b&gt;TokenService&lt;/b&gt;&#xa;(jose library)" style="swimlane;fontStyle=0;align=center;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="580" y="40" width="220" height="150" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="-secretKey: Uint8Array&#xa;---&#xa;+generateAccessToken(payload)&#xa;  : Promise&lt;string&gt; (HS256, 1h)&#xa;+generateRefreshToken(): string&#xa;  (rt_{randomBytes(32).hex})&#xa;+hashRefreshToken(token): string&#xa;  (SHA-256)&#xa;+getRefreshTokenExpiry(): Date (+7d)&#xa;+verifyAccessToken(token)&#xa;  : Promise&lt;AuthPayload&gt;&#xa;+generateTokenPair(payload)&#xa;  : Promise&lt;TokenPair&gt;" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="20">
+      <mxGeometry y="30" width="220" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="30" value="&lt;b&gt;PasswordService&lt;/b&gt;&#xa;(Node.js crypto)" style="swimlane;fontStyle=0;align=center;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="40" y="240" width="200" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="31" value="SCRYPT: N=16384, r=8, p=1&#xa;keyLen=64, saltLen=32&#xa;---&#xa;+hash(password): Promise&lt;string&gt;&#xa;  → salt_hex:hash_hex&#xa;+verify(password, stored)&#xa;  : Promise&lt;boolean&gt;&#xa;  (timingSafeEqual)" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="30">
+      <mxGeometry y="30" width="200" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="40" value="&lt;b&gt;SsoService&lt;/b&gt;&#xa;(OIDC + PKCE)" style="swimlane;fontStyle=0;align=center;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="300" y="240" width="220" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="41" value="-pendingFlows: Map&lt;state, Flow&gt;&#xa;SSO_TIMEOUT_MS = 30000&#xa;---&#xa;+getConfig(): SsoConfig | null&#xa;+authorize(codeChallenge, uri)&#xa;  : Promise&lt;SsoAuthorizeResponse&gt;&#xa;+validateState(state)&#xa;  : PendingSsoFlow | null&#xa;+isDomainAllowed(email): boolean" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="40">
+      <mxGeometry y="30" width="220" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="50" value="&lt;b&gt;UserRepository&lt;/b&gt;" style="swimlane;fontStyle=0;align=center;startSize=25;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="580" y="240" width="200" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="51" value="+findByUsername(u): UserRecord&#xa;+findById(id): UserRecord&#xa;+findByEmail(e): UserRecord&#xa;+create(user): UserRecord&#xa;+incrementFailedAttempts(id)&#xa;+resetFailedAttempts(id)&#xa;+lockAccount(id, until)" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="50">
+      <mxGeometry y="25" width="200" height="105" as="geometry" />
+    </mxCell>
+    <mxCell id="60" value="&lt;b&gt;SessionRepository&lt;/b&gt;" style="swimlane;fontStyle=0;align=center;startSize=25;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="40" y="400" width="220" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="61" value="+create(session): void&#xa;+findByRefreshTokenHash(hash)&#xa;  : SessionRecord | null&#xa;+revoke(id): void&#xa;+revokeByRefreshTokenHash(hash)&#xa;+revokeAllForUser(userId): void" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="60">
+      <mxGeometry y="25" width="220" height="85" as="geometry" />
+    </mxCell>
+    <mxCell id="70" value="&lt;b&gt;AuthError&lt;/b&gt;&#xa;extends Error" style="swimlane;fontStyle=0;align=center;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="300" y="400" width="180" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="71" value="+code: string&#xa;+statusCode: number&#xa;+details?: Record" style="text;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;html=0;fontSize=9;" vertex="1" parent="70">
+      <mxGeometry y="30" width="180" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="80" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=diamond;endFill=1;" edge="1" source="10" target="2" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="81" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;" edge="1" source="10" target="20" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="82" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;" edge="1" source="10" target="30" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="83" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;" edge="1" source="10" target="50" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="84" style="edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=open;endFill=0;" edge="1" source="10" target="60" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

@@ -1,0 +1,102 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="admin" value="&lt;b&gt;Admin (SPA)&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="60" y="40" width="120" height="560" as="geometry"/>
+    </mxCell>
+    <mxCell id="api" value="&lt;b&gt;Admin API&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="280" y="40" width="120" height="560" as="geometry"/>
+    </mxCell>
+    <mxCell id="kb_engine" value="&lt;b&gt;KB Engine&lt;/b&gt;&#10;(KSA-285)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="500" y="40" width="120" height="560" as="geometry"/>
+    </mxCell>
+    <mxCell id="db" value="&lt;b&gt;SQLite&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;size=16;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="700" y="40" width="100" height="560" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="1. GET /api/admin/kb/entries?page=1" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="100" as="sourcePoint"/>
+        <mxPoint x="340" y="100" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e2" value="2. Query entries" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="130" as="sourcePoint"/>
+        <mxPoint x="560" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e3" value="3. Paginated results" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="160" as="sourcePoint"/>
+        <mxPoint x="340" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e4" value="4. {entries, pagination}" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="190" as="sourcePoint"/>
+        <mxPoint x="120" y="190" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e5" value="5. POST /kb/entries/{id}/links" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="240" as="sourcePoint"/>
+        <mxPoint x="340" y="240" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e6" value="6. Check circular link" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="270" as="sourcePoint"/>
+        <mxPoint x="560" y="270" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e7" value="7. Create link" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="300" as="sourcePoint"/>
+        <mxPoint x="750" y="300" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e8" value="8. Link created" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="330" as="sourcePoint"/>
+        <mxPoint x="340" y="330" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e9" value="9. Success response" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="360" as="sourcePoint"/>
+        <mxPoint x="120" y="360" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e10" value="10. POST /kb/promotion/review&#10;{APPROVE, comment}" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="410" as="sourcePoint"/>
+        <mxPoint x="340" y="410" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e11" value="11. Move entry tier" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="440" as="sourcePoint"/>
+        <mxPoint x="560" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e12" value="12. Update DB" style="html=1;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="560" y="470" as="sourcePoint"/>
+        <mxPoint x="750" y="470" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e13" value="13. Promoted" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="750" y="500" as="sourcePoint"/>
+        <mxPoint x="340" y="500" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e14" value="14. Success" style="html=1;endSize=6;dashed=1;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="340" y="530" as="sourcePoint"/>
+        <mxPoint x="120" y="530" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

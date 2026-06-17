@@ -1,0 +1,7 @@
+test_case_id,user_id,server_name,url,username,token,extra,expected_http_code,expected_result,description
+IT-13,user-a-001,jira,https://company.atlassian.net,john@company.com,ATATT3xAbcDef_secret,"{}",200,saved,Save Jira config — happy path
+IT-13,user-a-001,jira,,,,,200,has_token:true,GET returns masked (no token value)
+IT-14,user-a-001,jira,https://a.atlassian.net,john@a.com,TOKEN_A,"{}",200,,UserA saves config
+IT-14,user-b-002,jira,https://b.atlassian.net,jane@b.com,TOKEN_B,"{}",200,,UserB saves config — isolated
+E2E-API-10,user-a-001,jira,https://company.atlassian.net,john@company.com,VALID_TOKEN,"{}",200,success:true,Test connection — reachable
+E2E-API-10,user-a-001,jira,https://bad.invalid.url,john@bad.com,BAD_TOKEN,"{}",200,success:false,Test connection — unreachable

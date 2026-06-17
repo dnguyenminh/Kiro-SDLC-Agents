@@ -1,0 +1,53 @@
+﻿id,tool_name,category,description
+tool-001,mem_search,memory,Search memory entries by semantic similarity
+tool-002,mem_ingest,memory,Ingest text into knowledge base
+tool-003,mem_ingest_file,memory,Ingest file content into knowledge base
+tool-004,mem_pin,memory,Pin a memory entry
+tool-005,mem_map,memory,Map memory relationships
+tool-006,mem_crud,memory,CRUD operations on memory entries
+tool-007,mem_graph,memory,Memory graph operations
+tool-008,mem_consolidate,memory,Consolidate duplicate entries
+tool-009,mem_lifecycle,memory,Manage entry lifecycle
+tool-010,mem_templates,memory,Template management
+tool-011,mem_attachments,memory,Attachment management
+tool-012,mem_discover,memory,Discover related entries
+tool-013,mem_tags,memory,Tag management for entries
+tool-014,mem_citations,memory,Citation management
+tool-015,mem_conversation,memory,Conversation memory
+tool-016,mem_scoring,memory,Entry quality scoring
+tool-017,mem_admin,memory,Admin operations
+tool-018,code_search,code,Search code across workspace
+tool-019,code_symbols,code,Find symbols in code
+tool-020,code_context,code,Get code context
+tool-021,code_modules,code,List modules
+tool-022,code_index_status,code,Index status
+tool-023,code_kb_export,code,Export KB from code
+tool-024,code_callers,code,Find callers of function
+tool-025,code_callees,code,Find callees of function
+tool-026,code_dependencies,code,Find dependencies
+tool-027,code_impact,code,Impact analysis
+tool-028,code_traverse,code,Traverse code graph
+tool-029,complexity_analysis,code,Analyze complexity
+tool-030,find_entry_points,code,Find entry points
+tool-031,find_circular_deps,code,Find circular dependencies
+tool-032,find_related_tests,code,Find related tests
+tool-033,find_hot_paths,code,Find hot code paths
+tool-034,find_dead_imports,code,Find dead imports
+tool-035,module_summary,code,Module summary
+tool-036,get_ai_context,code,Get AI context
+tool-037,get_edit_context,code,Get edit context
+tool-038,get_curated_context,code,Get curated context
+tool-039,find_duplicates,code,Find duplicate code
+tool-040,find_dead_code,code,Find dead code
+tool-041,git_search,code,Search git history
+tool-042,git_index,code,Index git repository
+tool-043,find_tools,orchestration,Find available tools
+tool-044,execute_dynamic_tool,orchestration,Execute dynamic tool
+tool-045,toggle_tool,orchestration,Toggle tool on/off
+tool-046,reset_tools,orchestration,Reset tools
+tool-047,manage_auto_approve,orchestration,Manage auto-approve
+tool-048,orchestration_status,orchestration,Get orchestration status
+tool-049,agent_log,utility,Log agent activity
+tool-050,stream_write_file,utility,Stream write to file
+tool-051,drawio_auto_layout,utility,Auto-layout draw.io
+tool-052,drawio_export_png,utility,Export draw.io to PNG

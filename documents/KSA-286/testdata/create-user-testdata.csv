@@ -1,0 +1,14 @@
+test_case_id,username,email,password,access_group_id,expected_http_code,expected_error,description
+IT-01,test.user,test@example.com,Test1234,grp-dev,201,,Valid creation - happy path
+IT-02,john.doe,new@example.com,Test1234,grp-dev,409,DUPLICATE_USERNAME,Username already exists
+IT-03,unique.user,john@test.com,Test1234,grp-dev,409,DUPLICATE_EMAIL,Email already in use
+E2E-API-01,e2e.testuser,e2e@test.com,E2eTest123,grp-dev,201,,E2E lifecycle create
+PBT-01,ab,short@test.com,Test1234,grp-dev,400,Username must be 3-50 characters,Username too short (2 chars)
+PBT-01,a]user,invalid@test.com,Test1234,grp-dev,400,Invalid username characters,Special chars in username
+PBT-02,valid.user,notanemail,Test1234,grp-dev,400,Invalid email format,Invalid email format
+PBT-03,valid.user,valid@test.com,short,grp-dev,400,Password requirements not met,Password too short
+PBT-03,valid.user,valid@test.com,nouppercase1,grp-dev,400,Password requirements not met,No uppercase letter
+PBT-03,valid.user,valid@test.com,NOLOWERCASE1,grp-dev,400,Password requirements not met,No lowercase letter
+PBT-03,valid.user,valid@test.com,NoNumbers,grp-dev,400,Password requirements not met,No number
+UT-07,new.valid,new.valid@test.com,ValidPass1,grp-dev,201,,Service-level valid creation
+E2E-UI-03,new.user,new@test.com,NewUser123,grp-dev,201,,UI form creation test

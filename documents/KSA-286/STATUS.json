@@ -1,0 +1,112 @@
+{
+  "ticket": "KSA-286",
+  "currentPhase": "implementation",
+  "architecturePattern": "plugin",
+  "phases": {
+    "requirements": {
+      "status": "done",
+      "file": "BRD.md",
+      "version": 3,
+      "startedAt": "2025-07-14T10:00:00Z",
+      "completedAt": "2025-07-22T10:00:00Z",
+      "note": "v3: Added STORY 13 (Multi-tab Comparison), STORY 14 (KB Quality), STORY 15 (KB Tags). Updated STORY 7 with impersonation. 15 stories total."
+    },
+    "specification": {
+      "status": "done",
+      "file": "FSD.md",
+      "version": 5,
+      "startedAt": "2025-07-14T11:00:00Z",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "note": "v5: UC-14 updated — PortalInstance architecture (independent components per tab, display:none pattern, own sidebar 200px + content). Replaces old TenantTab shared-content approach."
+    },
+    "design": {
+      "status": "done",
+      "file": "TDD.md",
+      "version": 5,
+      "startedAt": "2025-07-14T12:00:00Z",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "note": "v5 (2.1): PortalInstance component spec added (props: permissions, username, isActive, impersonateUserId). Removed old shared-content TenantTab architecture. Display:none pattern, independent graph instances per tab."
+    },
+    "feedback_loop": {
+      "status": "not_started",
+      "iterations": 0,
+      "maxIterations": 5
+    },
+    "test_planning": {
+      "status": "done",
+      "files": ["STP.md", "STC.md"],
+      "version": 4,
+      "startedAt": "2025-07-14T14:00:00Z",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "testCaseCount": 210,
+      "automationRate": "93%",
+      "note": "v4: Updated test counts — E2E-UI 59 (was 28), E2E-API 61 (was 43), IT 28, multi-tenant 34. Total 210 test cases. PortalInstance architecture validated."
+    },
+    "implementation": {
+      "status": "done",
+      "startedAt": "2025-07-14T15:00:00Z",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "note": "Final: PortalInstance architecture implemented. 59/59 E2E-UI, 61/61 E2E-API, 28/28 integration, 34/34 multi-tenant tests pass. Independent graph instances per tab, display:none switching."
+    },
+    "user_guide": {
+      "status": "done",
+      "version": 5,
+      "file": "UG.md",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "note": "v5: Updated multi-tab comparison section — PortalInstance architecture, display:none pattern, independent state per tab."
+    },
+    "testing": {
+      "status": "done",
+      "completedAt": "2025-07-23T10:00:00Z",
+      "note": "182 total tests pass: 59 E2E-UI + 61 E2E-API + 28 integration + 34 multi-tenant. All Playwright."
+    },
+    "deployment": {
+      "status": "done",
+      "files": ["DPG.md", "RLN.md"],
+      "version": 2,
+      "completedAt": "2025-07-18T10:44:00Z",
+      "note": "v2: Express->Hono, Vite->CDN SPA, src/admin/->routes/admin.ts in DPG+RLN"
+    }
+  },
+  "lastUpdated": "2025-07-24T10:15:00Z",
+  "story4_story9_completion": {
+    "date": "2025-07-24",
+    "changes": [
+      "STORY 4 (Analytics): Fixed table reference entries→knowledge_entries (71,982 real entries). Embedding viz uses real 384-dim vectors from knowledge_vectors (32,391 vectors).",
+      "STORY 9 (Search): Replaced LIKE matching with TF-IDF scoring. Score breakdown: similarity (TF-IDF normalized), keyword (title/source bonus), recency (7d/30d boost), quality (entry quality_score).",
+      "All functions updated: searchKbEntries, getKbEmbeddings, getKbEntryById, getKbEntryCount, getKbEntries",
+      "Route updated: admin.ts search endpoint uses real score breakdown from searchKbEntries"
+    ],
+    "coverage": "100% AC (85/85)"
+  },
+  "cascadeUpdate": {
+    "trigger": "Architecture migration: Express->Hono, dual-port->single-port, Vite SPA->Babel CDN SPA",
+    "date": "2025-07-18",
+    "documentsUpdated": ["FSD.md", "TDD.md", "STP.md", "STC.md", "DPG.md", "RLN.md"],
+    "documentsAlreadyCurrent": ["BRD.md", "UG.md"],
+    "changes": [
+      "HTTP framework: Express -> Hono (single port 48721)",
+      "SPA: Vite build -> React 18 + Babel standalone CDN (single HTML file)",
+      "Admin module: src/admin/ -> backend/src/server/routes/admin.ts",
+      "Testing: supertest -> Hono app.request() native testing",
+      "Frontend deps: Axios/React Query/Zustand -> fetch()/useState (no build)",
+      "Test file created: backend/src/server/routes/__tests__/admin.test.ts"
+    ]
+  },
+  "finalImplementation": {
+    "date": "2025-07-23",
+    "summary": "PortalInstance architecture for multi-tab comparison. Each tab = independent component with own sidebar (200px) + content area, display:none when inactive. 182 tests pass.",
+    "architectureChange": {
+      "old": "TenantTab shared content area, switch tabs = switch props, shared graph state, shared camera (broken)",
+      "new": "PortalInstance independent component with own sidebar + content, rendered in parallel, display:none when inactive",
+      "benefits": ["Independent graph instances per tab", "No shared state", "Camera preserved on tab switch", "No remount/data loss"]
+    },
+    "testResults": {
+      "e2e-ui": "59/59 pass (Playwright)",
+      "e2e-api": "61/61 pass",
+      "integration": "28/28 pass",
+      "multi-tenant": "34/34 pass",
+      "total": "182/182 pass"
+    }
+  }
+}

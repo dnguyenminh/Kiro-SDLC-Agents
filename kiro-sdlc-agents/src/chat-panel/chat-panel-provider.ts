@@ -5,6 +5,7 @@
  */
 
 import * as vscode from "vscode";
+import * as path from "path";
 import { getNonce } from "../mcp-server-manager";
 import { debugLog, debugError } from "../debug-logger";
 import { McpServerManager } from "../mcp-server-manager";
@@ -203,14 +204,10 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
         type: "tab:updated",
         payload: { tabs: state.tabs as any, activeTabId: state.activeTabId, messageHistory: state.messageHistory } as any,
       });
-      // Also send chat history for active tab and restore LLM context
+      // Restore LLM conversation context in engine for active tab
+      // (Webview handles rendering via switchToTab in handleTabsUpdated)
       const activeTab = (state.tabs as any[]).find((t: any) => t.id === state.activeTabId);
       if (activeTab && activeTab.messages && activeTab.messages.length > 0) {
-        this.sendToWebview({
-          type: "chat:chatHistory",
-          messages: activeTab.messages,
-        });
-        // KSA-240: Restore LLM conversation context in engine
         try {
           const engine = this.getEngine();
           const chatMsgs = (activeTab.messages as any[])
@@ -231,19 +228,44 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
     }
   }
 
-  /** Send steering files and hooks info to webview */
+  /** Send steering files and hooks info to webview.
+   * KSA-279: Only sends rules with inclusion "always" or "auto" (not "manual" or "fileMatch")
+   * to reduce noise — webview only shows actively-loaded rules.
+   */
   private sendSteeringInfo(): void {
     try {
       const fs = require("fs");
       const path = require("path");
       const steeringDir = path.join(this.workspaceRoot, ".kiro", "steering");
       const rules: Array<{ name: string; file: string }> = [];
+      const autoInjectInclusions = new Set(["always", "auto"]);
 
       if (fs.existsSync(steeringDir)) {
         const files = this.getSteeringFilesRecursive(steeringDir, steeringDir);
         for (const file of files) {
-          const name = path.basename(file, ".md").replace(/-/g, " ");
-          rules.push({ name, file });
+          // Read file and check front-matter inclusion field
+          const fullPath = path.join(steeringDir, file);
+          let shouldInclude = false; // KSA-279: no front-matter = manual (NOT auto-loaded)
+          try {
+            const content: string = fs.readFileSync(fullPath, "utf-8");
+            const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+            if (fmMatch) {
+              const fm = fmMatch[1];
+              const inclusionMatch = fm.match(/^inclusion\s*:\s*["']?(\w+)["']?\s*$/m);
+              if (inclusionMatch) {
+                const inclusion = inclusionMatch[1].toLowerCase();
+                shouldInclude = autoInjectInclusions.has(inclusion);
+              }
+              // front-matter present but no inclusion field -> default manual (exclude)
+            }
+          } catch {
+            // If read fails, exclude by default
+          }
+
+          if (shouldInclude) {
+            const name = path.basename(file, ".md").replace(/-/g, " ");
+            rules.push({ name, file });
+          }
         }
       }
 
@@ -326,47 +348,276 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 
   /** Handle context picker — show VS Code file/folder picker */
   private async handlePickContext(contextType: string): Promise<void> {
-    let item: { type: string; label: string; path?: string } | undefined;
+    let item: { type: string; label: string; path?: string; content?: string } | undefined;
 
     switch (contextType) {
       case "file": {
-        const uris = await vscode.window.showOpenDialog({
-          canSelectFiles: true,
-          canSelectFolders: false,
-          canSelectMany: false,
-          title: "Select File for Context",
+        // Show workspace file picker (like Kiro native) — QuickPick with fuzzy search
+        const workspaceFiles = await vscode.workspace.findFiles(
+          "**/*",
+          "{**/node_modules/**,**/.git/**,**/out/**,**/dist/**}",
+          500
+        );
+        if (workspaceFiles.length === 0) break;
+        const fileItems = workspaceFiles.map(f => ({
+          label: path.basename(f.fsPath),
+          description: vscode.workspace.asRelativePath(f),
+          uri: f,
+        })).sort((a, b) => a.label.localeCompare(b.label));
+
+        const picked = await vscode.window.showQuickPick(fileItems, {
+          title: "Select File",
+          placeHolder: "Type to search (supports line ranges: file.ts:42 or file.ts:42-64)",
+          matchOnDescription: true,
         });
-        if (uris && uris.length > 0) {
-          const relativePath = vscode.workspace.asRelativePath(uris[0]);
-          item = { type: "file", label: relativePath, path: uris[0].fsPath };
+        if (picked) {
+          const relativePath = vscode.workspace.asRelativePath(picked.uri);
+          const doc = await vscode.workspace.openTextDocument(picked.uri);
+          const content = doc.getText().slice(0, 50000);
+          item = { type: "file", label: relativePath, path: picked.uri.fsPath, content };
         }
         break;
       }
       case "folder": {
-        const uris = await vscode.window.showOpenDialog({
-          canSelectFiles: false,
-          canSelectFolders: true,
-          canSelectMany: false,
-          title: "Select Folder for Context",
+        // Show workspace folder picker (QuickPick)
+        const allFiles = await vscode.workspace.findFiles(
+          "**/*",
+          "{**/node_modules/**,**/.git/**,**/out/**,**/dist/**}",
+          1000
+        );
+        // Extract unique folder paths
+        const folderSet = new Set<string>();
+        for (const f of allFiles) {
+          const rel = vscode.workspace.asRelativePath(f);
+          const dir = path.dirname(rel);
+          if (dir && dir !== ".") {
+            folderSet.add(dir);
+            // Also add parent folders
+            const parts = dir.split(/[/\\]/);
+            for (let i = 1; i < parts.length; i++) {
+              folderSet.add(parts.slice(0, i).join("/"));
+            }
+          }
+        }
+        const folderItems = Array.from(folderSet).sort().map(f => ({
+          label: path.basename(f),
+          description: f,
+          folderPath: f,
+        }));
+
+        const pickedFolder = await vscode.window.showQuickPick(folderItems, {
+          title: "Select Folder",
+          placeHolder: "Type to search folders...",
+          matchOnDescription: true,
         });
-        if (uris && uris.length > 0) {
-          const relativePath = vscode.workspace.asRelativePath(uris[0]);
-          item = { type: "folder", label: relativePath, path: uris[0].fsPath };
+        if (pickedFolder) {
+          const folderUri = vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, pickedFolder.folderPath);
+          const filesInFolder = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(folderUri, "**/*"),
+            "**/node_modules/**",
+            100
+          );
+          const listing = filesInFolder.map(f => vscode.workspace.asRelativePath(f)).sort().join("\n");
+          item = { type: "folder", label: pickedFolder.folderPath, path: folderUri.fsPath, content: listing };
         }
         break;
       }
       case "problems": {
         const diagnostics = vscode.languages.getDiagnostics();
-        const problemCount = diagnostics.reduce((sum, [, diags]) => sum + diags.length, 0);
-        item = { type: "problems", label: `Problems (${problemCount})` };
+        const lines: string[] = [];
+        let totalCount = 0;
+        for (const [uri, diags] of diagnostics) {
+          if (diags.length === 0) continue;
+          const relPath = vscode.workspace.asRelativePath(uri);
+          for (const d of diags) {
+            const severity = d.severity === vscode.DiagnosticSeverity.Error ? "ERROR"
+              : d.severity === vscode.DiagnosticSeverity.Warning ? "WARN"
+              : d.severity === vscode.DiagnosticSeverity.Information ? "INFO" : "HINT";
+            lines.push(`[${severity}] ${relPath}:${d.range.start.line + 1}: ${d.message}`);
+            totalCount++;
+          }
+        }
+        const content = lines.length > 0 ? lines.join("\n") : "No problems found.";
+        item = { type: "problems", label: `Problems (${totalCount})`, content };
         break;
       }
       case "gitDiff": {
-        item = { type: "gitDiff", label: "Git Diff" };
+        try {
+          const gitExt = vscode.extensions.getExtension("vscode.git");
+          let diffContent = "";
+          if (gitExt) {
+            const git = gitExt.exports.getAPI(1);
+            if (git && git.repositories.length > 0) {
+              const repo = git.repositories[0];
+              diffContent = await repo.diff(true) || await repo.diff() || "";
+            }
+          }
+          if (!diffContent) {
+            // Fallback: use terminal command
+            const cp = require("child_process");
+            diffContent = cp.execSync("git diff --stat && echo --- && git diff", {
+              cwd: this.workspaceRoot,
+              encoding: "utf-8",
+              timeout: 10000,
+            }).toString().slice(0, 50000);
+          }
+          item = { type: "gitDiff", label: "Git Diff", content: diffContent || "No changes detected." };
+        } catch (e) {
+          item = { type: "gitDiff", label: "Git Diff", content: `Error getting git diff: ${(e as Error).message}` };
+        }
         break;
       }
       case "terminal": {
-        item = { type: "terminal", label: "Terminal" };
+        // Read recent terminal output from active terminal
+        let terminalContent = "";
+        const activeTerminal = vscode.window.activeTerminal;
+        if (activeTerminal) {
+          // VS Code doesn't expose terminal buffer directly.
+          // Use shell integration or clipboard workaround.
+          try {
+            await vscode.commands.executeCommand("workbench.action.terminal.selectAll");
+            await vscode.commands.executeCommand("workbench.action.terminal.copySelection");
+            const clipboard = await vscode.env.clipboard.readText();
+            terminalContent = clipboard.slice(-20000); // Last 20KB
+            await vscode.commands.executeCommand("workbench.action.terminal.clearSelection");
+          } catch {
+            terminalContent = `Terminal "${activeTerminal.name}" is active but content could not be read. VS Code API does not expose terminal buffer directly.`;
+          }
+        } else {
+          terminalContent = "No active terminal.";
+        }
+        item = { type: "terminal", label: "Terminal", content: terminalContent };
+        break;
+      }
+      case "spec": {
+        const specFiles = await vscode.workspace.findFiles(".kiro/specs/**/*.md");
+        if (specFiles.length === 0) break;
+        const specItems = specFiles.map(f => ({
+          label: vscode.workspace.asRelativePath(f),
+          uri: f
+        }));
+        const pickedSpec = await vscode.window.showQuickPick(specItems, { title: "Select Spec" });
+        if (pickedSpec) {
+          const doc = await vscode.workspace.openTextDocument(pickedSpec.uri);
+          const content = doc.getText().slice(0, 50000);
+          item = { type: "spec", label: path.basename(pickedSpec.label), path: pickedSpec.uri.fsPath, content };
+        }
+        break;
+      }
+      case "currentFile": {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+          const relativePath = vscode.workspace.asRelativePath(editor.document.uri);
+          const content = editor.document.getText().slice(0, 50000);
+          item = { type: "currentFile", label: relativePath, path: editor.document.uri.fsPath, content };
+        }
+        break;
+      }
+      case "steering": {
+        const steeringFiles = await vscode.workspace.findFiles(".kiro/steering/**/*.md");
+        if (steeringFiles.length === 0) break;
+        const steeringItems = steeringFiles.map(f => ({
+          label: path.basename(f.fsPath, ".md"),
+          description: vscode.workspace.asRelativePath(f),
+          uri: f
+        }));
+        const pickedSteering = await vscode.window.showQuickPick(steeringItems, { title: "Select Steering Rule" });
+        if (pickedSteering) {
+          const doc = await vscode.workspace.openTextDocument(pickedSteering.uri);
+          const content = doc.getText().slice(0, 50000);
+          item = { type: "steering", label: pickedSteering.label, path: pickedSteering.uri.fsPath, content };
+        }
+        break;
+      }
+      case "mcp": {
+        // Show MCP servers → tools as tree QuickPick
+        try {
+          const fs = require("fs");
+          const http = require("http");
+          const mcpConfigPath = path.join(this.workspaceRoot, ".kiro", "settings", "mcp.json");
+          if (!fs.existsSync(mcpConfigPath)) {
+            vscode.window.showWarningMessage("No MCP configuration found at .kiro/settings/mcp.json");
+            break;
+          }
+          const config = JSON.parse(fs.readFileSync(mcpConfigPath, "utf-8"));
+          const servers = config.mcpServers || {};
+          const serverNames = Object.keys(servers).filter(k => !servers[k].disabled);
+
+          if (serverNames.length === 0) {
+            vscode.window.showWarningMessage("No active MCP servers found.");
+            break;
+          }
+
+          // Fetch tools from each server
+          const quickPickItems: Array<{ label: string; description?: string; detail?: string; kind?: vscode.QuickPickItemKind; toolName?: string; serverName?: string }> = [];
+
+          for (const serverName of serverNames) {
+            const serverConf = servers[serverName];
+            const url = serverConf.url;
+            if (!url) continue;
+
+            // Add server as separator
+            quickPickItems.push({ label: serverName, kind: vscode.QuickPickItemKind.Separator });
+
+            // Fetch tool list
+            try {
+              const tools = await new Promise<Array<{ name: string; description?: string }>>((resolve) => {
+                const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
+                const parsedUrl = new URL(url);
+                const req = http.request({
+                  hostname: parsedUrl.hostname,
+                  port: parsedUrl.port,
+                  path: parsedUrl.pathname,
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+                  timeout: 5000,
+                }, (res: any) => {
+                  let data = "";
+                  res.on("data", (chunk: string) => data += chunk);
+                  res.on("end", () => {
+                    try {
+                      const json = JSON.parse(data);
+                      resolve(json.result?.tools || []);
+                    } catch { resolve([]); }
+                  });
+                });
+                req.on("error", () => resolve([]));
+                req.on("timeout", () => { req.destroy(); resolve([]); });
+                req.write(body);
+                req.end();
+              });
+
+              for (const tool of tools.sort((a: any, b: any) => a.name.localeCompare(b.name))) {
+                quickPickItems.push({
+                  label: `  $(symbol-method) ${tool.name}`,
+                  description: tool.description?.slice(0, 80) || "",
+                  toolName: tool.name,
+                  serverName,
+                });
+              }
+            } catch {
+              quickPickItems.push({ label: `  $(warning) Error loading tools`, description: serverName });
+            }
+          }
+
+          const picked = await vscode.window.showQuickPick(quickPickItems, {
+            title: "Select MCP Tool",
+            placeHolder: "Choose a tool to include as context...",
+            matchOnDescription: true,
+          });
+
+          if (picked && (picked as any).toolName) {
+            const toolName = (picked as any).toolName;
+            const sName = (picked as any).serverName;
+            item = {
+              type: "mcp",
+              label: `${sName}/${toolName}`,
+              content: `MCP Tool: ${toolName} (server: ${sName})\nUser wants to reference this MCP tool in the conversation.`,
+            };
+          }
+        } catch (e) {
+          vscode.window.showErrorMessage(`MCP error: ${(e as Error).message}`);
+        }
         break;
       }
     }
@@ -545,7 +796,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
         <div id="chat-input-area">
             <div id="input-context-chips"></div>
             <div class="input-wrapper">
-                <textarea id="chat-input" placeholder="Ask a question or describe a task..." rows="1"></textarea>
+                <div id="chat-input" contenteditable="true" role="textbox" aria-multiline="true" aria-placeholder="Ask a question or describe a task..."></div>
                 <div id="input-attachments"></div>
                 <div class="input-toolbar">
                     <div class="input-toolbar-left">
@@ -569,11 +820,31 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
                         <button data-model="auto" class="active">Auto</button>
                     </div>
                     <div class="context-menu hidden" id="context-menu">
-                        <button data-ctx="file"><span class="ctx-icon">&#x1F4C4;</span> File</button>
-                        <button data-ctx="folder"><span class="ctx-icon">&#x1F4C1;</span> Folder</button>
-                        <button data-ctx="problems"><span class="ctx-icon">&#x26A0;</span> Problems</button>
+                        <button data-ctx="file"><span class="ctx-icon">&#x1F4C4;</span> Files</button>
+                        <button data-ctx="spec"><span class="ctx-icon">&#x1F4CB;</span> Spec</button>
                         <button data-ctx="gitDiff"><span class="ctx-icon">&#x1F500;</span> Git Diff</button>
                         <button data-ctx="terminal"><span class="ctx-icon">&#x1F4BB;</span> Terminal</button>
+                        <button data-ctx="problems"><span class="ctx-icon">&#x26A0;</span> Problems</button>
+                        <button data-ctx="folder"><span class="ctx-icon">&#x1F4C1;</span> Folder</button>
+                        <button data-ctx="currentFile"><span class="ctx-icon">&#x1F4DD;</span> Current File</button>
+                        <button data-ctx="steering"><span class="ctx-icon">&#x1F9ED;</span> Steering</button>
+                        <button data-ctx="mcp"><span class="ctx-icon">&#x1F50C;</span> MCP</button>
+                    </div>
+                    <!-- Slash Command Popup -->
+                    <div class="slash-popup hidden" id="slash-popup" role="listbox" aria-label="Slash commands">
+                        <div class="slash-section">
+                            <div class="slash-section-title">Agents</div>
+                            <button type="button" class="slash-item" data-slash="/qa-agent" role="option"><span class="slash-icon">&#x1F9EA;</span><span class="slash-label">qa-agent</span><span class="slash-desc">QA Engineer</span></button>
+                            <button type="button" class="slash-item" data-slash="/sa-agent" role="option"><span class="slash-icon">&#x1F3D7;</span><span class="slash-label">sa-agent</span><span class="slash-desc">Solution Architect</span></button>
+                            <button type="button" class="slash-item" data-slash="/sm-agent" role="option"><span class="slash-icon">&#x1F4CB;</span><span class="slash-label">sm-agent</span><span class="slash-desc">Scrum Master</span></button>
+                            <button type="button" class="slash-item" data-slash="/ta-agent" role="option"><span class="slash-icon">&#x1F527;</span><span class="slash-label">ta-agent</span><span class="slash-desc">Technical Architect</span></button>
+                            <button type="button" class="slash-item" data-slash="/ui-agent" role="option"><span class="slash-icon">&#x1F3A8;</span><span class="slash-label">ui-agent</span><span class="slash-desc">UI/UX Designer</span></button>
+                            <button type="button" class="slash-item" data-slash="/security-agent" role="option"><span class="slash-icon">&#x1F6E1;</span><span class="slash-label">security-agent</span><span class="slash-desc">Security Expert</span></button>
+                        </div>
+                        <div class="slash-section">
+                            <div class="slash-section-title">Steering Rules</div>
+                            <div id="slash-steering-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,175 @@
+<mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="0" adaptiveColors="auto">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <mxCell id="title" value="&lt;b&gt;Hooks &amp;amp; Steering Integration in LangGraph Pipeline&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="500" y="10" width="460" height="30" as="geometry" />
+    </mxCell>
+
+    <mxCell id="overview_boundary" value="&lt;b&gt;Node Execution Lifecycle (BaseNode.run)&lt;/b&gt;" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="1700" height="420" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_start" value="Pipeline&#10;invokes&#10;node.run()" style="ellipse;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;html=1;whiteSpace=wrap;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="220" width="110" height="60" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_steering" value="&lt;b&gt;Load Steering Rules&lt;/b&gt;&#10;.kiro/steering/*.md&#10;(recursive scan)&#10;&#10;Filter: targets=langgraph&#10;inclusion=always|auto&#10;Sort by priority" style="rounded=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="220" y="100" width="200" height="120" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_load_hooks" value="&lt;b&gt;Load Hooks&lt;/b&gt;&#10;.kiro/hooks/*.json&#10;.kiro/hooks/*.kiro.hook&#10;&#10;Validate schema&#10;Cache for pipeline" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="220" y="260" width="200" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_inject" value="&lt;b&gt;injectSteering()&lt;/b&gt;&#10;&#10;basePrompt + rules&#10;= enriched system prompt" style="rounded=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;html=1;whiteSpace=wrap;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="480" y="120" width="180" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_execute" value="&lt;b&gt;execute(state)&lt;/b&gt;&#10;Agent core logic&#10;(LLM call with&#10;enriched prompt)" style="rounded=1;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;whiteSpace=wrap;fontSize=10;fontStyle=0;" vertex="1" parent="1">
+      <mxGeometry x="720" y="200" width="160" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_pre_tool" value="&lt;b&gt;preToolUse Hook&lt;/b&gt;&#10;&#10;Before MCP tool call:&#10;- Match toolTypes (regex)&#10;- Execute askAgent/runCmd&#10;- Check DENY = block tool&#10;- Circular detection (max 3)" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="950" y="90" width="220" height="130" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_tool_call" value="&lt;b&gt;callMcp()&lt;/b&gt;&#10;MCP tool execution" style="rounded=1;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;whiteSpace=wrap;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="980" y="250" width="160" height="50" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_post_tool" value="&lt;b&gt;postToolUse Hook&lt;/b&gt;&#10;&#10;After tool returns:&#10;- Match toolTypes&#10;- Fire askAgent/runCmd&#10;- Non-blocking" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="950" y="320" width="220" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_write_file" value="&lt;b&gt;writeWorkspaceFile()&lt;/b&gt;" style="rounded=1;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;whiteSpace=wrap;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1240" y="200" width="170" height="40" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_file_hook" value="&lt;b&gt;fileEdited/fileCreated Hook&lt;/b&gt;&#10;&#10;Match file patterns (glob)&#10;- *.ts = lint&#10;- *.drawio = auto-layout&#10;- *.md = ingest KB" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="1240" y="260" width="220" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_agent_stop" value="&lt;b&gt;agentStop Hook&lt;/b&gt;&#10;&#10;After node completes:&#10;- mem_ingest (log to KB)&#10;- runCommand (index)&#10;- Non-blocking" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="1480" y="90" width="200" height="110" as="geometry" />
+    </mxCell>
+
+    <mxCell id="n_complete" value="Return&#10;result" style="ellipse;fillColor=#e8f5e9;strokeColor=#388e3c;fontStyle=1;html=1;whiteSpace=wrap;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1530" y="240" width="90" height="50" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_start" target="n_steering" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_start" target="n_load_hooks" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_steering" target="n_inject" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" value="enriched prompt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="n_inject" target="n_execute" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" value="tool call" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="n_execute" target="n_pre_tool" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e6" value="allowed" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="n_pre_tool" target="n_tool_call" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_tool_call" target="n_post_tool" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e8" value="writes file" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="n_execute" target="n_write_file" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_write_file" target="n_file_hook" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e10" value="node done" style="rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" source="n_execute" target="n_agent_stop" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="800" y="160" />
+          <mxPoint x="1580" y="160" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="n_agent_stop" target="n_complete" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_deny" value="DENIED" style="rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;dashed=1;strokeColor=#c62828;" edge="1" source="n_pre_tool" target="n_execute" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="900" y="155" />
+          <mxPoint x="800" y="155" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <mxCell id="steering_detail" value="&lt;b&gt;Steering Rules System (steering-loader.ts)&lt;/b&gt;" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#7b1fa2;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="40" y="520" width="800" height="400" as="geometry" />
+    </mxCell>
+
+    <mxCell id="st_dir" value="&lt;b&gt;.kiro/steering/&lt;/b&gt;&#10;&#10;sm-core.md&#10;shared-quality-gates.md&#10;shared-jira.md&#10;shared-diagrams.md&#10;phase-1-requirements.md&#10;phase-2-specification.md&#10;phase-3-design.md&#10;tool-usage-dynamic.md&#10;concise-responses.md&#10;patterns/catalog.md&#10;patterns/ai-agent.md&#10;patterns/microservice.md&#10;patterns/monolith.md&#10;..." style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="60" y="550" width="220" height="340" as="geometry" />
+    </mxCell>
+
+    <mxCell id="st_parse" value="&lt;b&gt;parseSteeringFile()&lt;/b&gt;&#10;&#10;Front-matter YAML:&#10;---&#10;targets: langgraph | kiro | all&#10;inclusion: always | auto | manual&#10;priority: number (higher=first)&#10;title: display name&#10;---" style="rounded=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="340" y="560" width="230" height="150" as="geometry" />
+    </mxCell>
+
+    <mxCell id="st_filter" value="&lt;b&gt;Filter Pipeline:&lt;/b&gt;&#10;&#10;1. Recursive scan .kiro/steering/**&#10;2. Parse front-matter&#10;3. Filter: targets = langgraph | all&#10;4. Filter: inclusion = always | auto&#10;5. Sort by priority (desc)&#10;6. injectSteering() appends to&#10;   LLM system prompt" style="rounded=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="340" y="740" width="260" height="150" as="geometry" />
+    </mxCell>
+
+    <mxCell id="st_inject_detail" value="&lt;b&gt;Injection Points&lt;/b&gt;&#10;&#10;Chat Subgraph:&#10;  buildChatSubgraph() loads&#10;  rules at graph build time&#10;  = enrichedSystemPrompt&#10;&#10;SDLC Nodes:&#10;  BaseNode.loadAgentPrompt()&#10;  reads .kiro/agents/{name}.md&#10;  + steering rules injected&#10;  before each LLM call" style="rounded=1;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="640" y="560" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_st1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="st_dir" target="st_parse" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_st2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="st_parse" target="st_filter" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_st3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="st_filter" target="st_inject_detail" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="hooks_detail" value="&lt;b&gt;Hooks System (hook-loader.ts + hook-events.ts + hook-executor.ts)&lt;/b&gt;" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#f57c00;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="880" y="520" width="860" height="400" as="geometry" />
+    </mxCell>
+
+    <mxCell id="hk_dir" value="&lt;b&gt;.kiro/hooks/&lt;/b&gt;&#10;&#10;log-prompt.json&#10;drawio-check.json&#10;lint-on-save.json&#10;..." style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="900" y="560" width="160" height="120" as="geometry" />
+    </mxCell>
+
+    <mxCell id="hk_schema" value="&lt;b&gt;Hook Schema:&lt;/b&gt;&#10;&#10;{&#10;  name, version,&#10;  when: {&#10;    type: preToolUse |&#10;      postToolUse | agentStop |&#10;      promptSubmit |&#10;      fileEdited | fileCreated |&#10;      preTaskExecution |&#10;      postTaskExecution |&#10;      userTriggered&#10;    toolTypes: [write, .*sql.*]&#10;    patterns: [*.ts, *.drawio]&#10;  },&#10;  then: {&#10;    type: askAgent | runCommand&#10;    prompt: ...&#10;    command: ...&#10;  }&#10;}" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="1100" y="545" width="240" height="330" as="geometry" />
+    </mxCell>
+
+    <mxCell id="hk_events" value="&lt;b&gt;HookEventsManager&lt;/b&gt;&#10;&#10;Event Dispatch:&#10;promptSubmit = log to KB&#10;preToolUse = validate/deny&#10;postToolUse = process result&#10;agentStop = ingest output&#10;fileEdited = lint / index&#10;fileCreated = ingest / layout&#10;userTriggered = VS Code cmd&#10;&#10;Features:&#10;Circular detection (max 3)&#10;Denial pattern matching&#10;Placeholder substitution&#10;  {{toolName}} {{toolArgs}}&#10;  {{toolResult}} {{nodeName}}&#10;Timeout + kill (SIGTERM)" style="rounded=1;fillColor=#fff3e0;strokeColor=#f57c00;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="1380" y="545" width="220" height="330" as="geometry" />
+    </mxCell>
+
+    <mxCell id="hk_commands" value="&lt;b&gt;HookCommands&lt;/b&gt;&#10;&#10;userTriggered hooks =&#10;VS Code commands:&#10;kiro-sdlc.hook.{name}" style="rounded=1;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="900" y="720" width="170" height="90" as="geometry" />
+    </mxCell>
+
+    <mxCell id="e_hk1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="hk_dir" target="hk_schema" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_hk2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="hk_schema" target="hk_events" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_hk3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="hk_dir" target="hk_commands" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <mxCell id="legend" value="&lt;b&gt;Summary&lt;/b&gt;&#10;&#10;- Steering: enriches LLM system prompt (build-time for Chat, per-call for SDLC nodes)&#10;- preToolUse: intercepts before EVERY MCP call, can DENY (blocks tool execution)&#10;- postToolUse: fires after tool returns, non-blocking (log results)&#10;- agentStop: fires after each node completes (ingest output to KB)&#10;- fileEdited/Created: fires when node writes files (auto-layout drawio, lint TS)&#10;- promptSubmit: fires when pipeline receives user input (log to KB)&#10;- userTriggered: registered as VS Code commands, user clicks to execute" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666;html=1;whiteSpace=wrap;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=5;" vertex="1" parent="1">
+      <mxGeometry x="40" y="950" width="700" height="160" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

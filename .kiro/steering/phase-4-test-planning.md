@@ -1,8 +1,3 @@
----
-inclusion: manual
-description: Phase 4 Test Planning workflow. Activate when SM runs Phase 4 (QA creates STP/STC).
----
-
 # Phase 4: Test Planning (QA → STP/STC → SM Review)
 
 ## Prerequisites

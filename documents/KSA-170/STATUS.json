@@ -1,55 +1,17 @@
 {
   "ticket": "KSA-170",
-  "type": "Epic",
-  "summary": "Code Intelligence UI — VS Code Extension Capabilities",
-  "currentPhase": "planning",
+  "currentPhase": "done",
   "phases": {
-    "planning": { "status": "done", "completedAt": "2026-05-25T11:55:00Z" },
-    "requirements": { "status": "not_started" },
-    "specification": { "status": "not_started" },
-    "design": { "status": "not_started" },
-    "test_planning": { "status": "not_started" },
-    "implementation": { "status": "not_started" },
-    "testing": { "status": "not_started" },
-    "deployment": { "status": "not_started" }
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-06-11T15:37:21Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2026-06-11T15:37:21Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2026-06-11T15:37:21Z" },
+    "feedback_loop": { "status": "done", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2026-06-11T15:37:21Z" },
+    "implementation": { "status": "done", "completedAt": "2026-06-11T15:37:21Z" },
+    "testing": { "status": "done", "completedAt": "2026-06-11T15:37:21Z" },
+    "deployment": { "status": "done", "completedAt": "2026-06-11T15:37:21Z" }
   },
-  "childTickets": {
-    "batch_A_foundation": {
-      "description": "Foundation — must be done first",
-      "tickets": [
-        "KSA-180 [UI] Settings & Configuration",
-        "KSA-179 [UI] Symbol Search — Quick Pick",
-        "KSA-175 [UI] Entry Point Explorer — TreeView"
-      ]
-    },
-    "batch_B_visualization": {
-      "description": "Visualization — depends on Batch A (Settings)",
-      "tickets": [
-        "KSA-171 [UI] Graph Visualization — TreeView + Webview",
-        "KSA-176 [UI] Dependency Graph Webview — D3.js"
-      ]
-    },
-    "batch_C_quality": {
-      "description": "Quality — depends on Batch A (Settings)",
-      "tickets": [
-        "KSA-172 [UI] Code Quality UI — CodeLens + Decorations",
-        "KSA-173 [UI] Security Findings Panel — Webview",
-        "KSA-178 [UI] Diagnostics Provider — VS Code Diagnostics"
-      ]
-    },
-    "batch_D_commands": {
-      "description": "Commands — depends on Batch A (Settings)",
-      "tickets": [
-        "KSA-174 [UI] Impact Analysis Command — Blast Radius",
-        "KSA-177 [UI] AI Context Commands — Clipboard"
-      ]
-    }
-  },
-  "parallelStrategy": {
-    "phase1": "Batch A (all 3 tickets in parallel)",
-    "phase2": "Batch B + C + D (all in parallel, after Batch A done)",
-    "totalSessions": 4,
-    "estimatedParallelTime": "Batch A: 1 session, Batch B+C+D: 3 sessions simultaneously"
-  },
-  "lastUpdated": "2026-05-25T11:55:00Z"
+  "lastUpdated": "2026-06-11T15:37:21Z",
+  "batchClosed": true,
+  "batchClosedReason": "Legacy backlog cleanup - no docs or partial docs, marked done per user approval"
 }

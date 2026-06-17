@@ -1,0 +1,1 @@
+{"version":3,"file":"SteeringProvider.d.ts","sourceRoot":"","sources":["../../../extension/providers/SteeringProvider.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAKH,qBAAa,gBAAgB;IAC3B,OAAO,CAAC,WAAW,CAAS;gBAEhB,aAAa,EAAE,MAAM;IAI3B,OAAO,IAAI,OAAO,CAAC,MAAM,EAAE,CAAC;IAS5B,UAAU,CAAC,QAAQ,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,CAAC;CAQpD"}
