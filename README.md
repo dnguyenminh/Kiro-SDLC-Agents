@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.18.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/agents-9-purple?style=for-the-badge" alt="Agents">
   <img src="https://img.shields.io/badge/MCP_Servers-3-teal?style=for-the-badge" alt="MCP Servers">
   <img src="https://img.shields.io/badge/Salesforce-compatible-00A1E0?style=for-the-badge" alt="Salesforce Compatible">
@@ -19,7 +19,21 @@
 
 ---
 
-## What's New in v1.18.0
+## What's New in v2.0.0
+
+- **🏗️ Light Client Architecture** (KSA-293) — Complete refactor from monolithic extension to thin client. Extension connects to remote backend for all heavy computation (indexing, KB, tool execution, LLM inference)
+- **🔐 Authentication Manager** — JWT + SSO/PKCE login with VS Code SecretStorage, auto token refresh
+- **🔌 Remote Backend Connection** — Configurable URL, health check polling, auto-reconnect with exponential backoff, status bar indicator
+- **📤 Remote Indexing** — Upload-based indexing (documents + source code) via multipart/form-data with progress
+- **🔄 Workspace Sync** — Automatic file tree sync on connection, re-sync on folder changes
+- **📡 MCP Tool Forwarding** — 52+ backend tools accessible via HTTP forwarding with auth
+- **🖥️ Remote Webview Panels** — All 7 panels fetch from remote `/api/*` with loading/error states
+- **💬 Remote Chat (SSE)** — Messages streamed from remote LLM, no local SDK dependencies
+- **📦 Bundle Size: ~150MB → < 500KB** — Zero native dependencies, zero local databases
+- **⚡ Activation: 5-10s → < 2s** — No process spawn on startup
+
+<details>
+<summary>Previous: v1.18.0</summary>
 
 - **📊 Context Usage Graph** (KSA-249) — Real-time visualization of token consumption per source (steering, code-intel, KB, user messages) with percentage breakdown
 - **🪝 Full Hook System** — Lifecycle hooks for pre/post agent execution, tool calls, and streaming events (`hook-loader`, `hook-executor`, `hook-events`, `hook-commands`)
@@ -27,14 +41,6 @@
 - **🔢 Token Counter** — Accurate token estimation for messages, tool calls, and system prompts
 - **🔄 Workflow Executor** — Multi-agent workflow orchestration with state transitions and hook integration
 - **📈 Workflow Graph Visualization** — Interactive workflow state diagram in chat panel
-
-<details>
-<summary>Previous: v1.16.0</summary>
-
-- **📡 SSE Real-time Panel Updates** — Tags, Quality, and Analytics panels now receive live updates via Server-Sent Events (no manual refresh needed)
-- **🌳 Tree-sitter Parser Integration** — Kotlin and Python AST parsing via tree-sitter for accurate symbol extraction
-- **🐛 Apex Indexing Fix (KSA-209)** — Wasm + regex fallback ensures reliable Apex parsing across all environments
-- **21 tickets closed** — Full sprint completion across code intelligence, KB UI, and Salesforce modules
 </details>
 
 <details>
