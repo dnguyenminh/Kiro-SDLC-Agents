@@ -43,26 +43,26 @@ const INDEXABLE_EXTENSIONS = new Set([
 /**
  * Show prompt after injection asking if user wants to index.
  */
-export async function promptIndexAfterInject(root: string): Promise<void> {
+export async function promptIndexAfterInject(root: string, token?: string): Promise<void> {
     const action = await vscode.window.showInformationMessage(
         "🔍 Injection complete. Index your workspace now? (Code symbols + documents will be searchable by agents)",
         "Index Now", "Later"
     );
     if (action === "Index Now") {
-        await runIndexWorkspace(root);
+        await runIndexWorkspace(root, token);
     }
 }
 
 /**
  * Standalone command handler — index workspace code + documents.
  */
-export async function handleIndexWorkspace(): Promise<void> {
+export async function handleIndexWorkspace(token?: string): Promise<void> {
     const root = getWorkspaceRoot();
     if (!root) { return; }
-    await runIndexWorkspace(root);
+    await runIndexWorkspace(root, token);
 }
 
-async function runIndexWorkspace(root: string): Promise<void> {
+async function runIndexWorkspace(root: string, token?: string): Promise<void> {
     const options = await showIndexOptions();
     if (!options || options.length === 0) { return; }
 
@@ -122,7 +122,7 @@ async function runIndexWorkspace(root: string): Promise<void> {
                     ];
 
                     report.report({ message: `Indexing ${allDocsForIngest.length} files...` });
-                    const apiResult = await ingestDocumentsViaHttp(allDocsForIngest, report);
+                    const apiResult = await ingestDocumentsViaHttp(allDocsForIngest, report, token);
 
                     // Summary
                     const summary = [
@@ -306,58 +306,72 @@ function resolveViewerPort(root: string): number {
     return 3200; // default
 }
 
-/** Call MCP server HTTP API to ingest documents. */
+/** Call Backend MCP server to ingest documents via mem_ingest_file tool. */
 async function ingestDocumentsViaHttp(
     docs: Array<{ path: string; type: string; ticket: string; content?: string }>,
-    report: vscode.Progress<{ message?: string }>
+    report: vscode.Progress<{ message?: string }>,
+    token?: string
 ): Promise<string> {
-    const root = getWorkspaceRoot();
-    if (!root) { return "❌ No workspace root"; }
+    const backendUrl = vscode.workspace.getConfiguration("kiroSdlc").get<string>("backend.url");
+    if (!backendUrl) { return "❌ Backend URL not configured in settings."; }
 
-    const port = resolveViewerPort(root);
-    const url = `http://localhost:${port}/api/memory/ingest-file`;
-
-    const payload = {
-        files: docs.map(d => ({
-            file_path: d.path,
-            type: d.type,
-            format: "markdown",
-            ...(d.content ? { content: d.content } : {})
-        }))
-    };
+    const url = `${backendUrl}/mcp/tools/call`;
+    let ingested = 0;
+    let errors = 0;
 
     try {
         const http = await import("http");
-        const body = JSON.stringify(payload);
+        
+        for (let i = 0; i < docs.length; i++) {
+            const d = docs[i];
+            if (i % 10 === 0) {
+                report.report({ message: `Ingesting ${i + 1}/${docs.length} files...` });
+            }
 
-        const result = await new Promise<string>((resolve, reject) => {
-            const req = http.request(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
-            }, (res) => {
-                let data = "";
-                res.on("data", chunk => { data += chunk; });
-                res.on("end", () => {
-                    if (res.statusCode === 200) {
-                        try {
-                            const json = JSON.parse(data);
-                            resolve(`✅ Indexed: ${json.ingested} files, skipped: ${json.skipped} (unchanged)`);
-                        } catch {
-                            resolve(`✅ Server responded: ${data.substring(0, 200)}`);
+            const payload = {
+                tool_name: "mem_ingest_file",
+                arguments: {
+                    file_path: d.path,
+                    type: d.type,
+                    format: "markdown",
+                    ...(d.content ? { content: d.content } : {})
+                }
+            };
+
+            const body = JSON.stringify(payload);
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(body).toString()
+            };
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const result = await new Promise<boolean>((resolve) => {
+                const req = http.request(url, {
+                    method: "POST",
+                    headers
+                }, (res) => {
+                    let data = "";
+                    res.on("data", chunk => { data += chunk; });
+                    res.on("end", () => {
+                        if (res.statusCode === 200) {
+                            resolve(true);
+                        } else {
+                            resolve(false);
                         }
-                    } else {
-                        resolve(`⚠️ Server returned ${res.statusCode}: ${data.substring(0, 200)}`);
-                    }
+                    });
                 });
+                req.on("error", () => resolve(false));
+                req.write(body);
+                req.end();
             });
-            req.on("error", (err) => {
-                resolve(`❌ Cannot reach MCP server at port ${port}: ${err.message}\n   Ensure server is running. Fallback: ask agent "Index all documents"`);
-            });
-            req.write(body);
-            req.end();
-        });
 
-        return result;
+            if (result) ingested++;
+            else errors++;
+        }
+
+        return `✅ Indexed: ${ingested} files` + (errors > 0 ? `, ⚠️ Failed: ${errors}` : ``);
     } catch (err: any) {
         return `❌ HTTP request failed: ${err.message}`;
     }

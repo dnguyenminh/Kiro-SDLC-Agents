@@ -105,3 +105,12 @@ export declare function getKbEntries(page?: number, pageSize?: number, sortBy?: 
     total: number;
 };
 export declare function getRecentActivity(limit?: number): AuditEntry[];
+export declare function getAllKbTags(): Record<string, {
+    count: number;
+    lastUsed: string;
+}>;
+export declare function updateKbEntryTags(entryId: string, tags: string[]): void;
+export declare function renameKbTag(oldName: string, newName: string): number;
+export declare function deleteKbTag(tagName: string): number;
+export declare function mergeKbTags(sourceTag: string, targetTag: string): number;
+export declare function getKbEntriesByTag(tagName: string): any[];

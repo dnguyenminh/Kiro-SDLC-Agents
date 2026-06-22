@@ -147,13 +147,19 @@ export class WorkspaceCheckpointer extends BaseCheckpointSaver {
     }
   }
 
-  async delete(config: RunnableConfig): Promise<void> {
-    const threadId = config.configurable?.thread_id as string | undefined;
+  async deleteThread(threadId: string): Promise<void> {
     if (!threadId) { return; }
 
     const filePath = path.join(this.stateDir, `${threadId}.json`);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+    }
+  }
+
+  async delete(config: RunnableConfig): Promise<void> {
+    const threadId = config.configurable?.thread_id as string | undefined;
+    if (threadId) {
+      return this.deleteThread(threadId);
     }
   }
 
@@ -188,11 +194,23 @@ export class WorkspaceCheckpointer extends BaseCheckpointSaver {
     if (!fs.existsSync(this.stateDir)) { return; }
 
     const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
-    const files = fs.readdirSync(this.stateDir).filter(f => f.endsWith(".json") && !f.endsWith(".tmp"));
+    const tmpCutoff = Date.now() - 24 * 60 * 60 * 1000; // 1 day for orphaned tmp files
+    const allFiles = fs.readdirSync(this.stateDir);
 
-    for (const file of files) {
+    for (const file of allFiles) {
       try {
         const filePath = path.join(this.stateDir, file);
+        
+        if (file.endsWith(".tmp")) {
+          const stats = fs.statSync(filePath);
+          if (stats.mtimeMs < tmpCutoff) {
+            fs.unlinkSync(filePath);
+          }
+          continue;
+        }
+
+        if (!file.endsWith(".json")) continue;
+
         const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
         const modified = new Date(data.lastModified || 0).getTime();
         if (data.state?.pipelineStatus === "completed" && modified < cutoff) {

@@ -47,6 +47,12 @@ import {
   searchKbEntries,
   getKbEmbeddings,
   getKbEntryById,
+  getAllKbTags,
+  updateKbEntryTags,
+  renameKbTag,
+  deleteKbTag,
+  mergeKbTags,
+  getKbEntriesByTag,
 } from '../../admin/admin-db.js';
 import { loadConfig } from '../../config/BackendConfig.js';
 
@@ -796,7 +802,7 @@ export function createAdminRoute(logger: Logger): Hono {
     const cfg = loadConfig();
     const base: Record<string, Record<string, any>> = {
       server: { port: cfg.port, host: cfg.host, logLevel: cfg.logLevel },
-      embedding: { model: 'all-MiniLM-L6-v2', dimensions: 384, onnxModelPath: cfg.onnxModelPath },
+      embedding: { model: 'paraphrase-multilingual-MiniLM-L12-v2', dimensions: 384, onnxModelPath: cfg.onnxModelPath },
       kb: { maxEntries: 100000, sqliteDbPath: cfg.sqliteDbPath, dataDir: cfg.dataDir },
       mcp: { orchestrationConfigPath: cfg.orchestrationConfigPath },
     };
@@ -1527,6 +1533,7 @@ export function createAdminRoute(logger: Logger): Hono {
     const { tags } = await c.req.json();
     if (!Array.isArray(tags)) return c.json({ error: 'tags must be an array' }, 400);
     kbTags[entryId] = tags;
+    updateKbEntryTags(entryId, tags);
     recordAudit(user.userId, user.username, 'TAG_ENTRY', 'kb', entryId, JSON.stringify({ tags }));
     return c.json({ success: true, entryId, tags: kbTags[entryId] });
   });
@@ -1538,7 +1545,17 @@ export function createAdminRoute(logger: Logger): Hono {
     const permCheck = requirePermission(c, user.userId, 'KB_READ');
     if (permCheck instanceof Response) return permCheck;
 
-    return c.json({ entryId: c.req.param('id'), tags: kbTags[c.req.param('id')] || [] });
+    const entryId = c.req.param('id');
+    let tags = kbTags[entryId] || [];
+    if (tags.length === 0) {
+      const entry = getKbEntryById(entryId);
+      if (entry && entry.tags) {
+        tags = entry.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+        kbTags[entryId] = tags;
+      }
+    }
+
+    return c.json({ entryId, tags });
   });
 
   // KB Promotion Queue
@@ -1782,16 +1799,8 @@ export function createAdminRoute(logger: Logger): Hono {
     const permCheck = requirePermission(c, user.userId, 'KB_READ');
     if (permCheck instanceof Response) return permCheck;
 
-    const tagCounts: Record<string, { count: number; lastUsed: string }> = {};
-    for (const [entryId, tags] of Object.entries(kbTags)) {
-      if (entryId === '__tag_registry__') continue;
-      for (const tag of tags) {
-        if (!tagCounts[tag]) {
-          tagCounts[tag] = { count: 0, lastUsed: new Date().toISOString() };
-        }
-        tagCounts[tag].count++;
-      }
-    }
+    const tagCounts = getAllKbTags();
+
     // Include registered tags with 0 count
     if (kbTags['__tag_registry__']) {
       for (const tag of kbTags['__tag_registry__']) {
@@ -1853,9 +1862,12 @@ export function createAdminRoute(logger: Logger): Hono {
         renamed++;
       }
     }
+    
+    const dbRenamed = renameKbTag(oldName, newName.trim());
+    const totalRenamed = renamed + dbRenamed;
 
-    recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: renamed }));
-    return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: renamed });
+    recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: totalRenamed }));
+    return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: totalRenamed });
   });
 
   app.delete('/api/admin/kb/tags/:name', (c) => {
@@ -1875,8 +1887,11 @@ export function createAdminRoute(logger: Logger): Hono {
       }
     }
 
-    recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: removed }));
-    return c.json({ success: true, tag: tagName, entriesAffected: removed });
+    const dbRemoved = deleteKbTag(tagName);
+    const totalRemoved = removed + dbRemoved;
+
+    recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: totalRemoved }));
+    return c.json({ success: true, tag: tagName, entriesAffected: totalRemoved });
   });
 
   app.post('/api/admin/kb/tags/merge', async (c) => {
@@ -1906,8 +1921,11 @@ export function createAdminRoute(logger: Logger): Hono {
       }
     }
 
-    recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: merged }));
-    return c.json({ success: true, sourceTag, targetTag, entriesAffected: merged });
+    const dbMerged = mergeKbTags(sourceTag, targetTag);
+    const totalMerged = merged + dbMerged;
+
+    recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: totalMerged }));
+    return c.json({ success: true, sourceTag, targetTag, entriesAffected: totalMerged });
   });
 
   app.get('/api/admin/kb/tags/:name/entries', (c) => {
@@ -1919,11 +1937,13 @@ export function createAdminRoute(logger: Logger): Hono {
     const allowedTiers = (permCheck.roleData as any)?.allowedTiers;
 
     const tagName = decodeURIComponent(c.req.param('name'));
-    const entryIds = Object.entries(kbTags)
+    
+    // Memory entries
+    const memEntryIds = Object.entries(kbTags)
       .filter(([id, tags]) => id !== '__tag_registry__' && tags.includes(tagName))
       .map(([entryId]) => entryId);
-
-    const entries = entryIds.map(id => {
+    
+    const memEntries = memEntryIds.map(id => {
       const entry = getKbEntryById(id);
       if (!entry) return null;
       return {
@@ -1934,6 +1954,24 @@ export function createAdminRoute(logger: Logger): Hono {
         createdAt: entry.created_at || null,
       };
     }).filter(Boolean);
+
+    // DB entries
+    const dbRows = getKbEntriesByTag(tagName);
+    const dbEntries = dbRows.map((entry: any) => ({
+      id: entry.id || entry.entry_id,
+      source: entry.source || entry.title || 'Untitled',
+      tier: entry.tier || entry.scope || 'SHARED',
+      type: entry.content_type || entry.type || 'document',
+      createdAt: entry.created_at || null,
+    }));
+
+    // Merge and deduplicate
+    const allEntries = [...memEntries, ...dbEntries];
+    const uniqueEntriesMap = new Map();
+    allEntries.forEach((e: any) => {
+      if (e && !uniqueEntriesMap.has(e.id)) uniqueEntriesMap.set(e.id, e);
+    });
+    const entries = Array.from(uniqueEntriesMap.values());
 
     let filtered = entries;
     if (Array.isArray(allowedTiers)) {

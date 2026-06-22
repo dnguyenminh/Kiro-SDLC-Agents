@@ -8,6 +8,7 @@ export declare class UtilityModule implements IModule {
     readonly name = "utility";
     private _status;
     private logger;
+    private workspace;
     constructor(logger: Logger);
     get status(): ModuleStatus;
     initialize(): Promise<void>;

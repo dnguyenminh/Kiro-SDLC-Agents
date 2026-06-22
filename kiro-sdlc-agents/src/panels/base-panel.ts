@@ -13,8 +13,10 @@ import {
   PANEL_TITLES,
 } from "../types";
 import { McpServerManager, getNonce } from "../mcp-server-manager";
+export { getNonce };
 
 export abstract class BasePanel implements IKbPanel, vscode.Disposable {
+  public static authTokenProvider?: () => string;
   protected _panel: vscode.WebviewPanel | undefined;
   private _disposables: vscode.Disposable[] = [];
   private _onDisposeEmitter = new vscode.EventEmitter<void>();
@@ -69,7 +71,19 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
 
     // Handle messages from webview
     this._panel.webview.onDidReceiveMessage(
-      (msg: WebviewToExtMessage) => this.handleMessage(msg),
+      (msg: WebviewToExtMessage | { type: 'auth_error' }) => {
+        if (msg.type === 'auth_error') {
+          // Trigger a token refresh command (which AuthManager handles)
+          vscode.commands.executeCommand('kiroSdlc.refreshToken').then(() => {
+            // Once refreshed, reload the panel to get the new token
+            if (this._panel) {
+              this._panel.webview.html = this.getHtml(this._panel.webview);
+            }
+          });
+          return;
+        }
+        this.handleMessage(msg as WebviewToExtMessage);
+      },
       undefined,
       this._disposables
     );
@@ -123,6 +137,58 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
   protected getWebviewUri(webview: vscode.Webview, ...pathSegments: string[]): vscode.Uri {
     return webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, ...pathSegments));
   }
+
+    /**
+     * Generates an iframe that embeds the backend server's UI for this panel.
+     */
+    protected getIframeHtml(): string {
+      const config = vscode.workspace.getConfiguration("kiroSdlc");
+      const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
+      
+      const token = BasePanel.authTokenProvider ? BasePanel.authTokenProvider() : "";
+      
+      const pageMapping: Record<string, string> = {
+        dashboard: "dashboard",
+        graph: "graph",
+        tags: "tags",
+        quality: "quality",
+        analytics: "analytics",
+        workflow: "workflow",
+      };
+      
+      const page = pageMapping[this.panelType] || "dashboard";
+      const src = `${backendUrl}/admin?embed=true&page=${page}&token=${token}`;
+      
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src * http://127.0.0.1:* http://localhost:* https://*; style-src 'unsafe-inline';">
+    <title>${PANEL_TITLES[this.panelType]}</title>
+    <style>
+      body { padding: 0; margin: 0; height: 100vh; width: 100vw; overflow: hidden; background-color: var(--vscode-editor-background); }
+      iframe { border: none; width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--vscode-descriptionForeground); text-align: center; z-index: -1;">
+        <p>Loading Dashboard UI from backend...</p>
+        <p style="font-size: 0.8em; opacity: 0.7;">If this message persists, the backend server may be down or your security settings may be blocking the iframe.</p>
+    </div>
+    <iframe src="${src}" allow="clipboard-read; clipboard-write"></iframe>
+    <script>
+      const vscode = acquireVsCodeApi();
+      window.addEventListener('message', (event) => {
+        // Forward auth errors from the iframe to the extension
+        if (event.data && (event.data.type === 'auth_error' || event.data.status === 401)) {
+          vscode.postMessage({ type: 'auth_error' });
+        }
+      });
+    </script>
+</body>
+</html>`;
+    }
 
   /**
    * Generate the base HTML wrapper with CSP headers.

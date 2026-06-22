@@ -19,6 +19,8 @@ import { createRequestLogger } from './middleware/request-logger.js';
 import { createErrorHandler } from './middleware/error-handler.js';
 import { localhostOnly } from './middleware/localhost-only.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
+import { getMcpServer, registerTransport } from './mcpServer.js';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 
 export interface HttpServerOptions {
   port: number;
@@ -63,6 +65,17 @@ export class HttpServer {
     app.route('/', toolsRoute);
     app.route('/', apiRoute);
     app.route('/', adminRoute);
+
+    // MCP Streamable HTTP endpoint
+    app.all('/mcp', async (c) => {
+      const transport = new WebStandardStreamableHTTPServerTransport();
+      registerTransport(transport);
+      
+      const server = getMcpServer(this.options.registry, this.logger);
+      await server.connect(transport);
+      
+      return transport.handleRequest(c.req.raw);
+    });
 
     return app;
   }

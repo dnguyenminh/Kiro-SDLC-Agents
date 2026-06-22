@@ -77,7 +77,7 @@ export class HttpClient {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post<ToolResult>("/mcp/tools/call", { name, arguments: args }, 300000);
+    return this.post<ToolResult>("/mcp/tools/call", { tool_name: name, arguments: args }, 300000);
   }
 
   async stream(path: string, body: unknown, timeout?: number): Promise<ReadableStream<Uint8Array>> {

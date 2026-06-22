@@ -1,16 +1,20 @@
 /**
  * Utility Module — agent_log, stream_write_file, drawio_* tools.
  */
+import { loadConfig } from '../../engine/config.js';
 export class UtilityModule {
     name = 'utility';
     _status = 'initializing';
     logger;
+    workspace;
     constructor(logger) {
         this.logger = logger.child({ module: this.name });
     }
     get status() { return this._status; }
     async initialize() {
         this.logger.info('Initializing utility module');
+        const config = loadConfig();
+        this.workspace = config.workspace;
         this._status = 'ready';
     }
     async shutdown() { this._status = 'stopped'; }

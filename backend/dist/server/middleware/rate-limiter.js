@@ -13,7 +13,7 @@ setInterval(() => {
             store.delete(ip);
     }
 }, 300000).unref();
-const MAX_REQUESTS = 100;
+const MAX_REQUESTS = process.env.NODE_ENV === 'production' ? 100 : 10000;
 const WINDOW_MS = 60000; // 1 minute
 /**
  * Rate limiting middleware — 100 requests/minute per IP.

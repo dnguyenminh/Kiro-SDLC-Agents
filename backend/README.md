@@ -85,7 +85,7 @@ Environment variables (all optional, sensible defaults):
 - **Runtime:** Node.js >= 18
 - **HTTP:** Hono (14KB, TypeScript-first)
 - **Database:** better-sqlite3 (WAL mode)
-- **ML:** onnxruntime-node (all-MiniLM-L6-v2 embeddings)
+- **ML:** onnxruntime-node (paraphrase-multilingual-MiniLM-L12-v2 embeddings)
 - **Validation:** Zod
 - **Logging:** Pino (structured JSON)
 - **Testing:** Vitest

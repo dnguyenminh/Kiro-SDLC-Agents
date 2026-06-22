@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS knowledge_vectors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   entry_id INTEGER NOT NULL UNIQUE,
   vector BLOB NOT NULL,
-  model TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2',
+  model TEXT NOT NULL DEFAULT 'paraphrase-multilingual-MiniLM-L12-v2',
   dimensions INTEGER NOT NULL DEFAULT 384,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (entry_id) REFERENCES knowledge_entries(id) ON DELETE CASCADE

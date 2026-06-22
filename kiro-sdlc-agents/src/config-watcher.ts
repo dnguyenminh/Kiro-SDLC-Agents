@@ -99,8 +99,8 @@ export class ConfigWatcher implements vscode.Disposable {
     if (!config) {
       // code-intelligence entry removed or invalid
       this.outputChannel.appendLine("[ConfigWatcher] code-intelligence config removed or invalid. Stopping server.");
-      this.mcpManager.kill().catch((err) => {
-        this.outputChannel.appendLine(`[ConfigWatcher] Stop failed: ${(err as Error).message}`);
+      this.mcpManager.disconnect().catch((err) => {
+        this.outputChannel.appendLine(`[ConfigWatcher] Disconnect failed: ${(err as Error).message}`);
       });
       return;
     }
@@ -108,24 +108,24 @@ export class ConfigWatcher implements vscode.Disposable {
     // If server is disabled, do NOT restart — just ensure it's stopped
     if (config.disabled === true) {
       this.outputChannel.appendLine("[ConfigWatcher] code-intelligence is disabled. Ensuring server is stopped.");
-      this.mcpManager.kill().catch((err) => {
-        this.outputChannel.appendLine(`[ConfigWatcher] Stop failed: ${(err as Error).message}`);
+      this.mcpManager.disconnect().catch((err) => {
+        this.outputChannel.appendLine(`[ConfigWatcher] Disconnect failed: ${(err as Error).message}`);
       });
       return;
     }
 
     // Config changed — restart server with new config
     this.outputChannel.appendLine("[ConfigWatcher] code-intelligence config changed. Restarting server...");
-    this.mcpManager.restart().catch((err) => {
-      this.outputChannel.appendLine(`[ConfigWatcher] Restart failed: ${(err as Error).message}`);
+    this.mcpManager.reconnect().catch((err) => {
+      this.outputChannel.appendLine(`[ConfigWatcher] Reconnect failed: ${(err as Error).message}`);
     });
   }
 
   private handleConfigDeleted(): void {
     this.outputChannel.appendLine("[ConfigWatcher] mcp.json deleted. Stopping server.");
     this.lastConfigHash = "";
-    this.mcpManager.kill().catch((err) => {
-      this.outputChannel.appendLine(`[ConfigWatcher] Stop failed: ${(err as Error).message}`);
+    this.mcpManager.disconnect().catch((err) => {
+      this.outputChannel.appendLine(`[ConfigWatcher] Disconnect failed: ${(err as Error).message}`);
     });
   }
 

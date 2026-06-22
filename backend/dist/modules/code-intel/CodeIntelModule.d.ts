@@ -9,6 +9,9 @@ export declare class CodeIntelModule implements IModule {
     readonly name = "codeIntel";
     private _status;
     private logger;
+    private dbManager;
+    private indexer;
+    private workspace;
     constructor(logger: Logger);
     get status(): ModuleStatus;
     initialize(): Promise<void>;

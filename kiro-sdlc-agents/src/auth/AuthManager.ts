@@ -25,6 +25,7 @@ export class AuthManager implements vscode.Disposable {
   private state: AuthState = "UNAUTHENTICATED";
   private refreshTimer: TokenRefreshTimer;
   private tokenExpiresAt: number | null = null;
+  private cachedToken: string | null = null;
   private _onStateChange = new vscode.EventEmitter<AuthState>();
   readonly onStateChange: vscode.Event<AuthState> = this._onStateChange.event;
 
@@ -49,9 +50,17 @@ export class AuthManager implements vscode.Disposable {
   async initialize(): Promise<void> {
     const token = await this.secrets.get(SECRET_ACCESS_TOKEN);
     if (token && !this.isExpired()) {
+      this.cachedToken = token;
       this.transitionTo("AUTHENTICATED");
       this.refreshTimer.start();
     }
+  }
+
+  /**
+   * Get current access token synchronously from memory cache.
+   */
+  getTokenSync(): string {
+    return this.cachedToken || "";
   }
 
   /**
@@ -67,8 +76,10 @@ export class AuthManager implements vscode.Disposable {
     if (this.isExpired()) {
       await this.refreshToken();
       const refreshed = await this.secrets.get(SECRET_ACCESS_TOKEN);
+      this.cachedToken = refreshed ?? null;
       return refreshed ?? null;
     }
+    this.cachedToken = token;
     return token;
   }
 
@@ -91,6 +102,7 @@ export class AuthManager implements vscode.Disposable {
       }
       const data = await response.json() as { token: string; user: unknown; expiresAt: string };
       await this.secrets.store(SECRET_ACCESS_TOKEN, data.token);
+      this.cachedToken = data.token;
       // expiresAt is ISO string — store as epoch ms
       this.tokenExpiresAt = new Date(data.expiresAt).getTime();
       this.transitionTo("AUTHENTICATED");
@@ -123,6 +135,7 @@ export class AuthManager implements vscode.Disposable {
       }
       const data = await response.json() as { token: string; expiresAt?: string };
       await this.secrets.store(SECRET_ACCESS_TOKEN, data.token);
+      this.cachedToken = data.token;
       if (data.expiresAt) {
         this.tokenExpiresAt = new Date(data.expiresAt).getTime();
       }
@@ -135,8 +148,30 @@ export class AuthManager implements vscode.Disposable {
    * Logout — clear all stored tokens.
    */
   async logout(): Promise<void> {
+    // Retrieve refresh token before clearing it so we can inform the backend.
+    const refreshToken = await this.secrets.get(SECRET_REFRESH_TOKEN);
+
+    // Attempt to notify backend about logout. Errors are logged but do not block local cleanup.
+    if (refreshToken) {
+      try {
+        const response = await fetch(`${this.baseUrl}/api/auth/logout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!response.ok) {
+          const body = await response.text();
+          console.error(`Logout request failed (${response.status}): ${body}`);
+        }
+      } catch (err) {
+        console.error(`Logout request error: ${(err as Error).message}`);
+      }
+    }
+
+    // Perform local cleanup regardless of backend response.
     await this.secrets.delete(SECRET_ACCESS_TOKEN);
     await this.secrets.delete(SECRET_REFRESH_TOKEN);
+    this.cachedToken = null;
     this.tokenExpiresAt = null;
     this.refreshTimer.stop();
     this.transitionTo("UNAUTHENTICATED");

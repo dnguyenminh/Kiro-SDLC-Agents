@@ -73,12 +73,24 @@ export class MemoryEngine {
     const ftsQuery = query.replace(/[^\w\s*":.]/g, ' ').trim() || '*';
     let sql: string;
     const params: unknown[] = [ftsQuery];
-    if (tier) {
+    if (tier && type) {
+      sql = `SELECT ke.*, rank FROM knowledge_fts
+        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
+        WHERE knowledge_fts MATCH ? AND ke.tier = ? AND ke.type = ? AND ke.archived = 0
+        ORDER BY rank LIMIT ?`;
+      params.push(tier, type, limit);
+    } else if (tier) {
       sql = `SELECT ke.*, rank FROM knowledge_fts
         JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
         WHERE knowledge_fts MATCH ? AND ke.tier = ? AND ke.archived = 0
         ORDER BY rank LIMIT ?`;
       params.push(tier, limit);
+    } else if (type) {
+      sql = `SELECT ke.*, rank FROM knowledge_fts
+        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
+        WHERE knowledge_fts MATCH ? AND ke.type = ? AND ke.archived = 0
+        ORDER BY rank LIMIT ?`;
+      params.push(type, limit);
     } else {
       sql = `SELECT ke.*, rank FROM knowledge_fts
         JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
@@ -159,3 +171,4 @@ export class MemoryEngine {
       'SELECT * FROM memory_audit ORDER BY created_at DESC LIMIT ?'
     ).all(limit) as any[];
   }
+}

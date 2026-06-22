@@ -10,12 +10,18 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import type { User, UserStatus, AccessGroup, GroupPermission, Session, AuditEntry } from './types/rbac.types.js';
+import { loadConfig } from '../config/BackendConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const config = loadConfig();
 
 // DB location: .code-intel/admin.db (separate from index-backend.db)
-const DB_PATH = path.resolve(__dirname, '../../../.code-intel/admin.db');
+const DB_PATH = path.resolve(process.cwd(), config.dataDir, 'admin.db');
+
+function getIndexDbPath(): string {
+  return path.resolve(process.cwd(), config.dataDir, config.sqliteDbPath);
+}
 
 let db: Database.Database | null = null;
 
@@ -609,7 +615,7 @@ export function checkPromotionCooldown(entryId: string): { onCooldown: boolean; 
 
 export function searchKbEntries(query: string): { items: any[]; total: number } {
   try {
-    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+    const indexDbPath = getIndexDbPath();
     if (!fs.existsSync(indexDbPath)) return { items: [], total: 0 };
     const indexDb = new Database(indexDbPath, { readonly: true });
 
@@ -729,7 +735,7 @@ export function searchKbEntries(query: string): { items: any[]; total: number } 
 
 export function getKbEmbeddings(limit = 100): { items: { id: string; label: string; x: number; y: number; type: string }[]; hasRealData: boolean } {
   try {
-    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+    const indexDbPath = getIndexDbPath();
     if (!fs.existsSync(indexDbPath)) return { items: [], hasRealData: false };
     const indexDb = new Database(indexDbPath, { readonly: true });
 
@@ -837,7 +843,7 @@ export function getKbEmbeddings(limit = 100): { items: { id: string; label: stri
 
 export function getKbEntryById(entryId: string): any | null {
   try {
-    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+    const indexDbPath = getIndexDbPath();
     if (!fs.existsSync(indexDbPath)) return null;
     const indexDb = new Database(indexDbPath, { readonly: true });
 
@@ -859,7 +865,7 @@ export function getKbEntryById(entryId: string): any | null {
 
 export function getKbEntryCount(): number {
   try {
-    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+    const indexDbPath = getIndexDbPath();
     if (!fs.existsSync(indexDbPath)) return 0;
     const indexDb = new Database(indexDbPath, { readonly: true });
     const result = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
@@ -877,7 +883,7 @@ export function getKbEntryCount(): number {
 
 export function getKbEntries(page = 1, pageSize = 20, sortBy = 'created_at', sortDir: 'asc' | 'desc' = 'desc'): { items: any[]; total: number } {
   try {
-    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+    const indexDbPath = getIndexDbPath();
     if (!fs.existsSync(indexDbPath)) return { items: [], total: 0 };
     const indexDb = new Database(indexDbPath, { readonly: true });
 
@@ -914,4 +920,165 @@ export function getRecentActivity(limit = 10): AuditEntry[] {
     action: r.action, resource: r.resource, resourceId: r.resource_id,
     changes: r.changes, timestamp: r.timestamp, ipAddress: r.ip_address,
   }));
+}
+
+// --- KB Tags Management ---
+
+export function getAllKbTags(): Record<string, { count: number; lastUsed: string }> {
+  const tagCounts: Record<string, { count: number; lastUsed: string }> = {};
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return tagCounts;
+    const indexDb = new Database(indexDbPath, { readonly: true });
+    
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const rows = indexDb.prepare("SELECT tags, created_at FROM knowledge_entries WHERE tags IS NOT NULL AND tags != ''").all() as any[];
+      for (const row of rows) {
+        if (!row.tags) continue;
+        const tags = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+        for (const tag of tags) {
+          if (!tagCounts[tag]) {
+            tagCounts[tag] = { count: 0, lastUsed: row.created_at || new Date().toISOString() };
+          }
+          tagCounts[tag].count++;
+          if (row.created_at && new Date(row.created_at) > new Date(tagCounts[tag].lastUsed)) {
+            tagCounts[tag].lastUsed = row.created_at;
+          }
+        }
+      }
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in getAllKbTags:', e);
+  }
+  return tagCounts;
+}
+
+export function updateKbEntryTags(entryId: string, tags: string[]): void {
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return;
+    const indexDb = new Database(indexDbPath);
+    
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const tagsStr = tags.join(',');
+      indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?').run(tagsStr, entryId);
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in updateKbEntryTags:', e);
+  }
+}
+
+export function renameKbTag(oldName: string, newName: string): number {
+  let renamed = 0;
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return 0;
+    const indexDb = new Database(indexDbPath);
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${oldName}%`) as any[];
+      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
+      for (const row of rows) {
+        if (!row.tags) continue;
+        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+        const idx = tagArr.indexOf(oldName);
+        if (idx !== -1) {
+          tagArr[idx] = newName.trim();
+          updateStmt.run(tagArr.join(','), row.id);
+          renamed++;
+        }
+      }
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in renameKbTag:', e);
+  }
+  return renamed;
+}
+
+export function deleteKbTag(tagName: string): number {
+  let removed = 0;
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return 0;
+    const indexDb = new Database(indexDbPath);
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${tagName}%`) as any[];
+      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
+      for (const row of rows) {
+        if (!row.tags) continue;
+        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+        const idx = tagArr.indexOf(tagName);
+        if (idx !== -1) {
+          tagArr.splice(idx, 1);
+          updateStmt.run(tagArr.join(','), row.id);
+          removed++;
+        }
+      }
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in deleteKbTag:', e);
+  }
+  return removed;
+}
+
+export function mergeKbTags(sourceTag: string, targetTag: string): number {
+  let merged = 0;
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return 0;
+    const indexDb = new Database(indexDbPath);
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${sourceTag}%`) as any[];
+      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
+      for (const row of rows) {
+        if (!row.tags) continue;
+        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+        const idx = tagArr.indexOf(sourceTag);
+        if (idx !== -1) {
+          tagArr.splice(idx, 1);
+          if (!tagArr.includes(targetTag)) {
+            tagArr.push(targetTag);
+          }
+          updateStmt.run(tagArr.join(','), row.id);
+          merged++;
+        }
+      }
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in mergeKbTags:', e);
+  }
+  return merged;
+}
+
+export function getKbEntriesByTag(tagName: string): any[] {
+  const entries: any[] = [];
+  try {
+    const indexDbPath = getIndexDbPath();
+    if (!fs.existsSync(indexDbPath)) return entries;
+    const indexDb = new Database(indexDbPath, { readonly: true });
+    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
+    if (tableExists && tableExists.cnt > 0) {
+      const rows = indexDb.prepare('SELECT * FROM knowledge_entries WHERE tags LIKE ?').all(`%${tagName}%`) as any[];
+      for (const row of rows) {
+        if (!row.tags) continue;
+        const tagArr = row.tags.split(',').map((t: string) => t.trim());
+        if (tagArr.includes(tagName)) {
+          entries.push(row);
+        }
+      }
+    }
+    indexDb.close();
+  } catch (e) {
+    console.error('Error in getKbEntriesByTag:', e);
+  }
+  return entries;
 }

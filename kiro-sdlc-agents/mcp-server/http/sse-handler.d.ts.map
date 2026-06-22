@@ -1,1 +1,0 @@
-{"version":3,"file":"sse-handler.d.ts","sourceRoot":"","sources":["../../src/http/sse-handler.ts"],"names":[],"mappings":"AAAA;;;;;;;;GAQG;AAEH,OAAO,KAAK,IAAI,MAAM,MAAM,CAAC;AAM7B;;;GAGG;AACH,wBAAgB,eAAe,CAAC,GAAG,EAAE,IAAI,CAAC,eAAe,EAAE,GAAG,EAAE,IAAI,CAAC,cAAc,GAAG,IAAI,CAyCzF;AAED,oEAAoE;AACpE,wBAAgB,mBAAmB,IAAI,IAAI,CAK1C;AAED,2CAA2C;AAC3C,wBAAgB,qBAAqB,IAAI,MAAM,CAE9C"}

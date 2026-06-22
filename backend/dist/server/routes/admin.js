@@ -7,7 +7,7 @@ import { Hono } from 'hono';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { getAdminDb, verifyPassword, createSession, validateSession, invalidateSession, invalidateUserSessions, getUsers, getUserById, getUserByUsername, createUser, updateUserStatus, deleteUser, resetUserPassword, changePassword, updateLastLogin, getGroups, getGroupById, createGroup, updateGroup, deleteGroup, getUserPermissions, getUserSessions, recordAudit, getAuditLogs, recordConfigChange, getConfigChanges, getKbEntryCount, getKbEntries, getRecentActivity, recordQueryLog, getQueryLogs, getQueryLogStats, setPromotionCooldown, checkPromotionCooldown, searchKbEntries, getKbEmbeddings, getKbEntryById, } from '../../admin/admin-db.js';
+import { getAdminDb, verifyPassword, createSession, validateSession, invalidateSession, invalidateUserSessions, getUsers, getUserById, getUserByUsername, createUser, updateUserStatus, deleteUser, resetUserPassword, changePassword, updateLastLogin, getGroups, getGroupById, createGroup, updateGroup, deleteGroup, getUserPermissions, getUserSessions, recordAudit, getAuditLogs, recordConfigChange, getConfigChanges, getKbEntryCount, getKbEntries, getRecentActivity, recordQueryLog, getQueryLogs, getQueryLogStats, setPromotionCooldown, checkPromotionCooldown, searchKbEntries, getKbEmbeddings, getKbEntryById, getAllKbTags, updateKbEntryTags, renameKbTag, deleteKbTag, mergeKbTags, getKbEntriesByTag, } from '../../admin/admin-db.js';
 import { loadConfig } from '../../config/BackendConfig.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,7 +38,20 @@ export function createAdminRoute(logger) {
     // Admin SPA
     app.get('/admin', (c) => {
         if (fs.existsSync(spaPath)) {
-            const html = fs.readFileSync(spaPath, 'utf-8');
+            let html = fs.readFileSync(spaPath, 'utf-8');
+            const token = c.req.query('token');
+            const page = c.req.query('page') || '';
+            const embed = c.req.query('embed');
+            if (embed) {
+                html = html.replace('</head>', '<style>.sidebar{display:none!important}.main{padding:0!important;height:100vh!important;width:100%!important}</style></head>');
+            }
+            if (token) {
+                const injectScript = '<script>localStorage.setItem("admin_token","' + token + '");</script>';
+                html = html.replace('</head>', injectScript + '</head>');
+                if (page) {
+                    html = html.replace("useState('dashboard')", "useState('" + page + "')");
+                }
+            }
             return new Response(html, { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' } });
         }
         return c.text('Admin Portal not found', 404);
@@ -691,7 +704,7 @@ export function createAdminRoute(logger) {
         const cfg = loadConfig();
         const base = {
             server: { port: cfg.port, host: cfg.host, logLevel: cfg.logLevel },
-            embedding: { model: 'all-MiniLM-L6-v2', dimensions: 384, onnxModelPath: cfg.onnxModelPath },
+            embedding: { model: 'paraphrase-multilingual-MiniLM-L12-v2', dimensions: 384, onnxModelPath: cfg.onnxModelPath },
             kb: { maxEntries: 100000, sqliteDbPath: cfg.sqliteDbPath, dataDir: cfg.dataDir },
             mcp: { orchestrationConfigPath: cfg.orchestrationConfigPath },
         };
@@ -1351,6 +1364,7 @@ export function createAdminRoute(logger) {
         if (!Array.isArray(tags))
             return c.json({ error: 'tags must be an array' }, 400);
         kbTags[entryId] = tags;
+        updateKbEntryTags(entryId, tags);
         recordAudit(user.userId, user.username, 'TAG_ENTRY', 'kb', entryId, JSON.stringify({ tags }));
         return c.json({ success: true, entryId, tags: kbTags[entryId] });
     });
@@ -1361,7 +1375,16 @@ export function createAdminRoute(logger) {
         const permCheck = requirePermission(c, user.userId, 'KB_READ');
         if (permCheck instanceof Response)
             return permCheck;
-        return c.json({ entryId: c.req.param('id'), tags: kbTags[c.req.param('id')] || [] });
+        const entryId = c.req.param('id');
+        let tags = kbTags[entryId] || [];
+        if (tags.length === 0) {
+            const entry = getKbEntryById(entryId);
+            if (entry && entry.tags) {
+                tags = entry.tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+                kbTags[entryId] = tags;
+            }
+        }
+        return c.json({ entryId, tags });
     });
     // KB Promotion Queue
     app.get('/api/admin/kb/promotions', (c) => {
@@ -1585,17 +1608,7 @@ export function createAdminRoute(logger) {
         const permCheck = requirePermission(c, user.userId, 'KB_READ');
         if (permCheck instanceof Response)
             return permCheck;
-        const tagCounts = {};
-        for (const [entryId, tags] of Object.entries(kbTags)) {
-            if (entryId === '__tag_registry__')
-                continue;
-            for (const tag of tags) {
-                if (!tagCounts[tag]) {
-                    tagCounts[tag] = { count: 0, lastUsed: new Date().toISOString() };
-                }
-                tagCounts[tag].count++;
-            }
-        }
+        const tagCounts = getAllKbTags();
         // Include registered tags with 0 count
         if (kbTags['__tag_registry__']) {
             for (const tag of kbTags['__tag_registry__']) {
@@ -1651,8 +1664,10 @@ export function createAdminRoute(logger) {
                 renamed++;
             }
         }
-        recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: renamed }));
-        return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: renamed });
+        const dbRenamed = renameKbTag(oldName, newName.trim());
+        const totalRenamed = renamed + dbRenamed;
+        recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: totalRenamed }));
+        return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: totalRenamed });
     });
     app.delete('/api/admin/kb/tags/:name', (c) => {
         const user = requireAuth(c);
@@ -1670,8 +1685,10 @@ export function createAdminRoute(logger) {
                 removed++;
             }
         }
-        recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: removed }));
-        return c.json({ success: true, tag: tagName, entriesAffected: removed });
+        const dbRemoved = deleteKbTag(tagName);
+        const totalRemoved = removed + dbRemoved;
+        recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: totalRemoved }));
+        return c.json({ success: true, tag: tagName, entriesAffected: totalRemoved });
     });
     app.post('/api/admin/kb/tags/merge', async (c) => {
         const user = requireAuth(c);
@@ -1698,8 +1715,10 @@ export function createAdminRoute(logger) {
                 merged++;
             }
         }
-        recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: merged }));
-        return c.json({ success: true, sourceTag, targetTag, entriesAffected: merged });
+        const dbMerged = mergeKbTags(sourceTag, targetTag);
+        const totalMerged = merged + dbMerged;
+        recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: totalMerged }));
+        return c.json({ success: true, sourceTag, targetTag, entriesAffected: totalMerged });
     });
     app.get('/api/admin/kb/tags/:name/entries', (c) => {
         const user = requireAuth(c);
@@ -1710,10 +1729,11 @@ export function createAdminRoute(logger) {
             return permCheck;
         const allowedTiers = permCheck.roleData?.allowedTiers;
         const tagName = decodeURIComponent(c.req.param('name'));
-        const entryIds = Object.entries(kbTags)
+        // Memory entries
+        const memEntryIds = Object.entries(kbTags)
             .filter(([id, tags]) => id !== '__tag_registry__' && tags.includes(tagName))
             .map(([entryId]) => entryId);
-        const entries = entryIds.map(id => {
+        const memEntries = memEntryIds.map(id => {
             const entry = getKbEntryById(id);
             if (!entry)
                 return null;
@@ -1725,6 +1745,23 @@ export function createAdminRoute(logger) {
                 createdAt: entry.created_at || null,
             };
         }).filter(Boolean);
+        // DB entries
+        const dbRows = getKbEntriesByTag(tagName);
+        const dbEntries = dbRows.map((entry) => ({
+            id: entry.id || entry.entry_id,
+            source: entry.source || entry.title || 'Untitled',
+            tier: entry.tier || entry.scope || 'SHARED',
+            type: entry.content_type || entry.type || 'document',
+            createdAt: entry.created_at || null,
+        }));
+        // Merge and deduplicate
+        const allEntries = [...memEntries, ...dbEntries];
+        const uniqueEntriesMap = new Map();
+        allEntries.forEach((e) => {
+            if (e && !uniqueEntriesMap.has(e.id))
+                uniqueEntriesMap.set(e.id, e);
+        });
+        const entries = Array.from(uniqueEntriesMap.values());
         let filtered = entries;
         if (Array.isArray(allowedTiers)) {
             filtered = entries.filter((e) => allowedTiers.includes(e.tier));

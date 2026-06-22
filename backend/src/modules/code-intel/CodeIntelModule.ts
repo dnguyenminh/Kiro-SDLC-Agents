@@ -6,11 +6,18 @@
 import type { IModule, ModuleStatus } from '../../types/module.js';
 import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
 import type { Logger } from 'pino';
+import { DatabaseManager } from '../../engine/db/database-manager.js';
+import { IndexingEngine } from '../../engine/indexer/indexing-engine.js';
+import { loadConfig } from '../../engine/config.js';
+import { CODE_INTEL_TOOL_DEFINITIONS, dispatchCodeIntelTool } from '../../engine/tools/register-tools.js';
 
 export class CodeIntelModule implements IModule {
   readonly name = 'codeIntel';
   private _status: ModuleStatus = 'initializing';
   private logger: Logger;
+  private dbManager!: DatabaseManager;
+  private indexer!: IndexingEngine;
+  private workspace!: string;
 
   constructor(logger: Logger) {
     this.logger = logger.child({ module: this.name });
@@ -20,37 +27,54 @@ export class CodeIntelModule implements IModule {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing code intelligence module');
-    this._status = 'ready';
+    try {
+      const config = loadConfig();
+      this.workspace = config.workspace;
+      this.dbManager = new DatabaseManager(config.dbPath);
+      this.dbManager.initialize();
+      this.indexer = new IndexingEngine(this.dbManager, config);
+      this.indexer.startBackgroundIndexing();
+      this._status = 'ready';
+    } catch (error) {
+      this.logger.error({ err: error }, 'Failed to initialize code intelligence module');
+      this._status = 'error';
+    }
   }
 
-  async shutdown(): Promise<void> { this._status = 'stopped'; }
+  async shutdown(): Promise<void> {
+    this.logger.info('Shutting down code intelligence module');
+    if (this.indexer) {
+      this.indexer.stop();
+    }
+    if (this.dbManager) {
+      this.dbManager.close();
+    }
+    this._status = 'stopped';
+  }
 
   getToolHandlers(): Map<string, ToolHandler> {
     const handlers = new Map<string, ToolHandler>();
 
-    handlers.set('code_search', async (args) => ({
-      content: [{ type: 'text', text: JSON.stringify({ results: [], query: args.query }) }],
-      isError: false,
-    }));
-
-    handlers.set('code_index', async (args) => ({
-      content: [{ type: 'text', text: `Indexed: ${args.path || 'workspace'}` }],
-      isError: false,
-    }));
-
-    handlers.set('code_symbols', async (args) => ({
-      content: [{ type: 'text', text: JSON.stringify({ symbols: [], file: args.file }) }],
-      isError: false,
-    }));
+    for (const def of CODE_INTEL_TOOL_DEFINITIONS) {
+      handlers.set(def.name, async (args) => {
+        try {
+          const result = await dispatchCodeIntelTool(def.name, args, this.dbManager, this.indexer, this.workspace);
+          return { content: [{ type: 'text', text: result }], isError: false };
+        } catch (error: any) {
+          return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+        }
+      });
+    }
 
     return handlers;
   }
 
   getToolDefinitions(): ToolDefinition[] {
-    return [
-      { name: 'code_search', description: 'Search code across indexed files', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] }, category: 'code' },
-      { name: 'code_index', description: 'Index workspace files for code intelligence', inputSchema: { type: 'object', properties: { path: { type: 'string' } } }, category: 'code' },
-      { name: 'code_symbols', description: 'Get symbols from a specific file', inputSchema: { type: 'object', properties: { file: { type: 'string' } }, required: ['file'] }, category: 'code' },
-    ];
+    return CODE_INTEL_TOOL_DEFINITIONS.map(def => ({
+      name: def.name,
+      description: def.description,
+      inputSchema: def.inputSchema as any,
+      category: 'code'
+    }));
   }
 }

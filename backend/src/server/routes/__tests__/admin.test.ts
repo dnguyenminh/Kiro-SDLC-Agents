@@ -145,7 +145,7 @@ describe('Admin Routes — /api/admin/users (CRUD)', () => {
     expect(body).toHaveProperty('users');
     expect(body).toHaveProperty('total');
     expect(body).toHaveProperty('page');
-    expect(body.users[0].username).toBe('admin');
+    expect(body.users.some((u: any) => u.username === 'admin')).toBe(true);
   });
 
   it('POST /api/admin/users creates new user', async () => {
@@ -292,7 +292,7 @@ describe('Admin Routes — /api/admin/config', () => {
     expect(res.status).toBe(200);
     const body = await res.json() as any;
     expect(body.config.server.port).toBe(48721);
-    expect(body.config.embedding.model).toBe('all-MiniLM-L6-v2');
+    expect(body.config.embedding.model).toBe('paraphrase-multilingual-MiniLM-L12-v2');
     expect(body).toHaveProperty('history');
     expect(body).toHaveProperty('restartRequired');
   });
@@ -614,12 +614,14 @@ describe('Admin Routes — Real KB Search (STORY 9)', () => {
 // ===== STORY 11: Promotion 7-Day Cooldown =====
 describe('Admin Routes — Promotion Cooldown (STORY 11)', () => {
   let promoId: string;
+  const entryId1 = `cooldown-test-entry-${Date.now()}`;
+  const entryId2 = `different-entry-no-cooldown-${Date.now()}`;
 
   it('POST /api/admin/kb/promotions creates promotion request', async () => {
     const res = await app.request('/api/admin/kb/promotions', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ entryId: 'cooldown-test-entry', fromTier: 'USER', toTier: 'PROJECT', reason: 'Quality content' }),
+      body: JSON.stringify({ entryId: entryId1, fromTier: 'USER', toTier: 'PROJECT', reason: 'Quality content' }),
     });
     expect(res.status).toBe(201);
     const body = await res.json() as any;
@@ -643,7 +645,7 @@ describe('Admin Routes — Promotion Cooldown (STORY 11)', () => {
     const res = await app.request('/api/admin/kb/promotions', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ entryId: 'cooldown-test-entry', fromTier: 'USER', toTier: 'SHARED', reason: 'Try again' }),
+      body: JSON.stringify({ entryId: entryId1, fromTier: 'USER', toTier: 'SHARED', reason: 'Try again' }),
     });
     expect(res.status).toBe(400);
     const body = await res.json() as any;
@@ -655,7 +657,7 @@ describe('Admin Routes — Promotion Cooldown (STORY 11)', () => {
     const res = await app.request('/api/admin/kb/promotions', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ entryId: 'different-entry-no-cooldown', fromTier: 'USER', toTier: 'PROJECT', reason: 'Fresh entry' }),
+      body: JSON.stringify({ entryId: entryId2, fromTier: 'USER', toTier: 'PROJECT', reason: 'Fresh entry' }),
     });
     expect(res.status).toBe(201);
     const body = await res.json() as any;

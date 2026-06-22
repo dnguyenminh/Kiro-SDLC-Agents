@@ -48,6 +48,9 @@ export class ModuleRegistry {
         }
         return handlers;
     }
+    getModule(name) {
+        return this.modules.get(name);
+    }
     getAllToolDefinitions() {
         const definitions = [];
         for (const module of this.modules.values()) {

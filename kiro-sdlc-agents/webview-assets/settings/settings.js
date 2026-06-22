@@ -9,7 +9,24 @@
   // Acquire VS Code API
   const vscode = acquireVsCodeApi();
 
-  // DOM elements
+  // ── Tab switching ──────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-pane').forEach(function(p) {
+        p.classList.remove('active');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      var paneId = btn.getAttribute('data-tab');
+      document.getElementById(paneId).classList.add('active');
+    });
+  });
+
+  // DOM elements - LLM Provider
   const providerSelect = document.getElementById("provider-select");
   const apiSection = document.getElementById("api-section");
   const ollamaSection = document.getElementById("ollama-section");
@@ -30,7 +47,19 @@
   const testLlmBtn = document.getElementById("test-llm-btn");
   const testResult = document.getElementById("test-result");
 
-  // State
+  // DOM elements - Server Settings
+  const backendUrlInput = document.getElementById("backend-url-input");
+  const saveBackendBtn = document.getElementById("save-backend-url-btn");
+  const testBackendBtn = document.getElementById("test-backend-btn");
+  const backendResult = document.getElementById("backend-test-result");
+
+  const mcpPortInput = document.getElementById("mcp-port-input");
+  const enableMcpChk = document.getElementById("enable-mcp-server-chk");
+  const saveWrapperBtn = document.getElementById("save-wrapper-btn");
+  const restartMcpBtn = document.getElementById("restart-mcp-btn");
+  const wrapperResult = document.getElementById("wrapper-result");
+
+  // Models list currentProvider = "anthropic";
   let currentProvider = "anthropic";
   let savedState = { hasAnthropicKey: false, hasOpenaiKey: false };
 
@@ -216,15 +245,49 @@
 
   // ─── Test LLM ─────────────────────────────────────────────────────────────
 
-  testLlmBtn.addEventListener("click", function () {
+  testLlmBtn.addEventListener("click", () => {
     testLlmBtn.classList.add("loading");
     testLlmBtn.disabled = true;
     testResult.style.display = "none";
-    testResult.className = "test-result";
-    vscode.postMessage({ type: "testLlm" });
+    vscode.postMessage({ type: "testLlmConnection" });
   });
 
-  // ─── Message Handler ──────────────────────────────────────────────────────
+  // ─── Server Settings Events ───────────────────────────────────────────────
+
+  function showStatus(el, msg, type) {
+    el.textContent = msg;
+    el.className = "status-indicator " + (type || "");
+  }
+
+  saveBackendBtn.addEventListener("click", () => {
+    vscode.postMessage({ type: "setBackendUrl", url: backendUrlInput.value.trim() });
+    showStatus(backendResult, "Saved \u2713", "success");
+  });
+
+  testBackendBtn.addEventListener("click", () => {
+    backendResult.textContent = "Testing...";
+    backendResult.className = "status-indicator";
+    vscode.postMessage({ type: "testBackendConnection", url: backendUrlInput.value.trim() });
+  });
+
+  saveWrapperBtn.addEventListener("click", () => {
+    const port = parseInt(mcpPortInput.value, 10);
+    if (isNaN(port) || port < 1 || port > 65535) {
+      showStatus(wrapperResult, "Invalid port (1\u201365535)", "error");
+      return;
+    }
+    vscode.postMessage({ type: "setMcpServerPort", port: port });
+    vscode.postMessage({ type: "setEnableMcpServer", enabled: enableMcpChk.checked });
+    showStatus(wrapperResult, "Saved \u2713", "success");
+  });
+
+  restartMcpBtn.addEventListener("click", () => {
+    wrapperResult.textContent = "Restarting...";
+    wrapperResult.className = "status-indicator";
+    vscode.postMessage({ type: "restartMcpServer" });
+  });
+
+  // ─── Post Message Handler ──────────────────────────────────────────────────────
 
   window.addEventListener("message", function (event) {
     var msg = event.data;
@@ -235,6 +298,13 @@
       case "keyCleared": handleKeyCleared(msg); break;
       case "ollamaTestResult": handleOllamaTestResult(msg); break;
       case "llmTestResult": handleLlmTestResult(msg); break;
+      case "backendTestResult":
+        const lat = msg.latencyMs ? " (" + msg.latencyMs + "ms)" : "";
+        showStatus(backendResult, (msg.success ? "\u2705 " : "\u274c ") + msg.message + lat, msg.success ? "success" : "error");
+        break;
+      case "mcpServerRestarted":
+        showStatus(wrapperResult, (msg.success ? "\u2705 " : "\u274c ") + msg.message, msg.success ? "success" : "error");
+        break;
     }
   });
 
@@ -252,6 +322,16 @@
     baseUrlInput.value = msg.baseUrl || "";
 
     ollamaUrlInput.value = msg.ollamaUrl || "http://localhost:11434";
+
+    if (msg.backendUrl !== undefined) {
+      backendUrlInput.value = msg.backendUrl;
+    }
+    if (msg.mcpServerPort !== undefined) {
+      mcpPortInput.value = String(msg.mcpServerPort);
+    }
+    if (msg.enableMcpServer !== undefined) {
+      enableMcpChk.checked = msg.enableMcpServer;
+    }
 
     updateSections(msg.provider);
   }

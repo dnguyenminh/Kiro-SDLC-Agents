@@ -5,11 +5,14 @@
 import type { IModule, ModuleStatus } from '../../types/module.js';
 import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
 import type { Logger } from 'pino';
+import type { ModuleRegistry } from '../ModuleRegistry.js';
 export declare class OrchestrationModule implements IModule {
     readonly name = "orchestration";
     private _status;
     private logger;
-    constructor(logger: Logger);
+    private registry?;
+    private clientManager;
+    constructor(logger: Logger, registry?: ModuleRegistry);
     get status(): ModuleStatus;
     initialize(): Promise<void>;
     shutdown(): Promise<void>;

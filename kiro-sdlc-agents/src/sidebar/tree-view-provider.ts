@@ -4,8 +4,6 @@
  */
 
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
 import { ServerStatus } from "../types";
 import { McpServerManager } from "../mcp-server-manager";
 
@@ -15,6 +13,9 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
 
   private serverStatus: ServerStatus = "stopped";
   private treeView: vscode.TreeView<KiroTreeItem> | undefined;
+
+  private isAuthenticated = false;
+  private username = "";
 
   constructor(private readonly mcpManager: McpServerManager) {
     mcpManager.onStatusChange((status) => {
@@ -48,6 +49,12 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
     return this.serverStatus === "stopped" || this.serverStatus === "crashed";
   }
 
+  setAuthenticated(isAuthenticated: boolean, username: string = ""): void {
+    this.isAuthenticated = isAuthenticated;
+    this.username = username;
+    this.refresh();
+  }
+
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
   }
@@ -64,10 +71,12 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
   private getRootItems(): KiroTreeItem[] {
     // Show warning banner when KB system is inactive
     const items: KiroTreeItem[] = [];
+    const config = vscode.workspace.getConfiguration("kiroSdlc");
+    const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
 
     if (this.isKbInactive()) {
       const warningItem = new KiroTreeItem(
-        "\u26A0\uFE0F KB System Inactive",
+        "⚠️ KB System Inactive",
         vscode.TreeItemCollapsibleState.None
       );
       warningItem.iconPath = new vscode.ThemeIcon("warning", new vscode.ThemeColor("problemsWarningIcon.foreground"));
@@ -75,13 +84,23 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
       warningItem.command = { command: "kiroSdlc.restartMcpServer", title: "Restart Server", arguments: [] };
       items.push(warningItem);
     } else {
-      const runningItem = new KiroTreeItem(
-        "\u2705 Running",
+      const backendRootItem = new KiroTreeItem("Backend Target", vscode.TreeItemCollapsibleState.Expanded);
+      backendRootItem.iconPath = new vscode.ThemeIcon("globe");
+      backendRootItem.description = backendUrl;
+
+      const authItem = new KiroTreeItem(
+        this.isAuthenticated ? `Logged in as ${this.username}` : "Login Required",
         vscode.TreeItemCollapsibleState.None
       );
-      runningItem.iconPath = new vscode.ThemeIcon("check", new vscode.ThemeColor("testing.iconPassed"));
-      runningItem.description = this.mcpManager.port ? `Port ${this.mcpManager.port}` : "";
-      items.push(runningItem);
+      authItem.iconPath = new vscode.ThemeIcon(this.isAuthenticated ? "account" : "key");
+      authItem.command = {
+        command: this.isAuthenticated ? "kiroSdlc.logout" : "kiroSdlc.login",
+        title: this.isAuthenticated ? "Logout" : "Login",
+        arguments: []
+      };
+      
+      backendRootItem.children = [authItem];
+      items.push(backendRootItem);
     }
 
     const kbSection = new KiroTreeItem("Knowledge Base", vscode.TreeItemCollapsibleState.Expanded);
@@ -94,26 +113,18 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
       this.createCommandItem("Workflow", "kiroSdlc.openWorkflowGraph", "circuit-board"),
     ];
 
-    const serverSection = new KiroTreeItem("MCP Server", vscode.TreeItemCollapsibleState.Expanded);
+    const serverSection = new KiroTreeItem("MCP Wrapper Server", vscode.TreeItemCollapsibleState.Expanded);
+    const serverChildren: KiroTreeItem[] = [];
     const statusItem = new KiroTreeItem(`Status: ${this.getStatusLabel()}`, vscode.TreeItemCollapsibleState.None);
     statusItem.iconPath = new vscode.ThemeIcon(this.getStatusIcon());
-    statusItem.description = this.mcpManager.port ? `Port ${this.mcpManager.port}` : "";
-    const restartItem = this.createCommandItem("Restart Server", "kiroSdlc.restartMcpServer", "debug-restart");
-    const serverChildren = [statusItem, restartItem];
-
-    // Show Start or Stop based on current state
-    if (this.isKbInactive()) {
-      serverChildren.push(this.createCommandItem("Start Server", "kiroSdlc.restartMcpServer", "play"));
-    } else {
-      serverChildren.push(this.createCommandItem("Stop Server", "kiroSdlc.stopMcpServer", "debug-stop"));
-    }
-    serverChildren.push(this.createCommandItem("Change Port...", "kiroSdlc.changePort", "settings-gear"));
+    
+    const mcpServerPort = config.get<number>("mcpServerPort", 9181);
+    statusItem.description = `Port ${mcpServerPort}`;
+    
+    serverChildren.push(statusItem);
     serverChildren.push(this.createCommandItem("Edit Config", "kiroSdlc.editConfig", "json"));
     serverChildren.push(this.createCommandItem("Change Config...", "kiroSdlc.changeConfig", "folder-opened"));
     serverSection.children = serverChildren;
-
-    const modelSection = new KiroTreeItem("Embedding Model", vscode.TreeItemCollapsibleState.Expanded);
-    modelSection.children = this.getModelItems();
 
     const actionsSection = new KiroTreeItem("Quick Actions", vscode.TreeItemCollapsibleState.Collapsed);
     actionsSection.children = [
@@ -123,7 +134,7 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
       this.createCommandItem("Open KB in Browser", "kiroSdlc.openKbBrowser", "globe"),
     ];
 
-    items.push(kbSection, serverSection, modelSection, actionsSection);
+    items.push(kbSection, serverSection, actionsSection);
     return items;
   }
 
@@ -151,45 +162,6 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
       case "crashed": return "Crashed";
       case "stopped": return "Stopped";
     }
-  }
-
-  private getModelItems(): KiroTreeItem[] {
-    const modelsDir = path.join(
-      process.env.HOME ?? process.env.USERPROFILE ?? "~", ".code-intel", "models"
-    );
-    const registryPath = path.join(modelsDir, "registry.json");
-    let activeModel = "none";
-    let hasModel = false;
-
-    try {
-      if (fs.existsSync(registryPath)) {
-        const reg = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
-        activeModel = reg.active_model ?? "none";
-      }
-      const modelFile = path.join(modelsDir, activeModel, "model.onnx");
-      hasModel = fs.existsSync(modelFile);
-    } catch { /* ignore */ }
-
-    const items: KiroTreeItem[] = [];
-
-    if (hasModel) {
-      const statusItem = new KiroTreeItem(
-        `\u2705 ${activeModel}`, vscode.TreeItemCollapsibleState.None
-      );
-      statusItem.iconPath = new vscode.ThemeIcon("check", new vscode.ThemeColor("testing.iconPassed"));
-      statusItem.description = "Active";
-      items.push(statusItem);
-    } else {
-      const missingItem = new KiroTreeItem(
-        "\u274C No model installed", vscode.TreeItemCollapsibleState.None
-      );
-      missingItem.iconPath = new vscode.ThemeIcon("warning", new vscode.ThemeColor("problemsWarningIcon.foreground"));
-      missingItem.description = "Semantic search disabled";
-      items.push(missingItem);
-    }
-
-    items.push(this.createCommandItem("Download / Switch Model...", "kiroSdlc.downloadModel", "cloud-download"));
-    return items;
   }
 }
 
