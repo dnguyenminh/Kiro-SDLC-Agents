@@ -7,7 +7,11 @@
 import Database from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { DatabaseManager } from '../db/database-manager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { AppConfig } from '../config.js';
 import { scanWorkspace, scanSingleFile, ScannedFile } from '../scanner/file-scanner.js';
 import { extractSymbols, ExtractedSymbol } from '../scanner/signature-extractor.js';
