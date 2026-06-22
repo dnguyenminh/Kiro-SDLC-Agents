@@ -11,6 +11,8 @@
  */
 
 import * as fs from "fs";
+import * as http from "http";
+import * as vscode from "vscode";
 
 // --- Types ---
 
@@ -79,19 +81,85 @@ export function wrapTextContent(content: string, format: string): string {
 }
 
 /**
+ * Call Remote Backend to convert document to markdown using markitdown/convert_to_markdown tool.
+ */
+async function convertRemote(filePath: string, token?: string): Promise<string | null> {
+    const config = vscode.workspace.getConfiguration("kiroSdlc");
+    const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
+    
+    // Normalize path to file:/// URI format
+    let fileUri = filePath.replace(/\\/g, "/");
+    if (!fileUri.startsWith("/")) {
+        fileUri = "/" + fileUri;
+    }
+    const uri = `file://${fileUri}`;
+
+    const payload = {
+        tool_name: "execute_dynamic_tool",
+        arguments: {
+            toolName: "convert_to_markdown",
+            arguments: { uri }
+        }
+    };
+
+    const body = JSON.stringify(payload);
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body).toString()
+    };
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return new Promise<string | null>((resolve) => {
+        const req = http.request(`${backendUrl}/mcp/tools/call`, {
+            method: "POST",
+            headers,
+            timeout: 30000 // 30s timeout
+        }, (res) => {
+            let data = "";
+            res.on("data", chunk => { data += chunk; });
+            res.on("end", () => {
+                if (res.statusCode === 200) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed && parsed.content && Array.isArray(parsed.content)) {
+                            const textObj = parsed.content.find((c: any) => c.type === "text");
+                            if (textObj && typeof textObj.text === "string") {
+                                resolve(textObj.text);
+                                return;
+                            }
+                        }
+                        resolve(null);
+                    } catch {
+                        resolve(null);
+                    }
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+        req.on("error", () => resolve(null));
+        req.write(body);
+        req.end();
+    });
+}
+
+/**
  * Convert a file to markdown text.
  *
  * Routing logic:
  * 1. Check file exists and get size
  * 2. Check size limit (skip if too large)
  * 3. If text format: read as UTF-8, wrap in code block
- * 4. If binary: convert via filetomarkdown with 30s timeout
+ * 4. If binary: try remote conversion first, then fallback to local filetomarkdown
  *
  * @param filePath Absolute path to the file
  * @param format File extension without dot (e.g., "docx", "pdf", "txt")
+ * @param token Optional authorization token
  * @returns ConversionResult with markdown content or error
  */
-export async function convertFileToMarkdown(filePath: string, format: string): Promise<ConversionResult> {
+export async function convertFileToMarkdown(filePath: string, format: string, token?: string): Promise<ConversionResult> {
     const startTime = Date.now();
 
     // Step 1: Check file exists and get size
@@ -144,7 +212,23 @@ export async function convertFileToMarkdown(filePath: string, format: string): P
         }
     }
 
-    // Step 4: Binary formats — convert via filetomarkdown with timeout
+    // Step 4: Remote Conversion via Backend MCP
+    try {
+        const remoteMarkdown = await convertRemote(filePath, token);
+        if (remoteMarkdown && remoteMarkdown.trim().length > 0) {
+            return {
+                markdown: remoteMarkdown,
+                success: true,
+                error: null,
+                bytesProcessed: fileSize,
+                conversionTime: Date.now() - startTime
+            };
+        }
+    } catch (err: any) {
+        // Proceed to local fallback on failure
+    }
+
+    // Step 5: Binary formats fallback — convert via filetomarkdown with timeout
     try {
         const ftm = loadFileToMarkdown();
         if (!ftm) {

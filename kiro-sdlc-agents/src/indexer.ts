@@ -102,7 +102,7 @@ async function runIndexWorkspace(root: string, token?: string): Promise<void> {
                         report.report({ message: `Converting ${i + 1}/${nonMdDocs.length} files...` });
 
                         const absPath = path.join(root, doc.path);
-                        const result = await convertFileToMarkdown(absPath, doc.format);
+                        const result = await convertFileToMarkdown(absPath, doc.format, token);
 
                         if (result.success) {
                             convertedDocs.push({ ...doc, content: result.markdown });
