@@ -8,7 +8,7 @@ const BackendConfigSchema = z.object({
     host: z.string().default('127.0.0.1'),
     dataDir: z.string().default('.code-intel'),
     onnxModelPath: z.string().default('models/model.onnx'),
-    sqliteDbPath: z.string().default('index-backend.db'),
+    sqliteDbPath: z.string().default('index.db'),
     orchestrationConfigPath: z.string().default('orchestration.json'),
     logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
@@ -18,7 +18,7 @@ export function loadConfig(overrides) {
         host: process.env.CODE_INTEL_HOST || '127.0.0.1',
         dataDir: process.env.CODE_INTEL_DATA_DIR || '.code-intel',
         onnxModelPath: process.env.CODE_INTEL_ONNX_MODEL || 'models/model.onnx',
-        sqliteDbPath: process.env.CODE_INTEL_DB || 'index-backend.db',
+        sqliteDbPath: process.env.CODE_INTEL_DB || 'index.db',
         orchestrationConfigPath: process.env.CODE_INTEL_ORCHESTRATION || 'orchestration.json',
         logLevel: process.env.CODE_INTEL_LOG_LEVEL || 'info',
         ...overrides,
