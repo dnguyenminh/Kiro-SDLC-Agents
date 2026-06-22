@@ -212,10 +212,12 @@ export async function convertFileToMarkdown(filePath: string, format: string, to
         }
     }
 
+
+
     // Step 4: Remote Conversion via Backend MCP
     try {
         const remoteMarkdown = await convertRemote(filePath, token);
-        if (remoteMarkdown && remoteMarkdown.trim().length > 0) {
+        if (remoteMarkdown !== null) {
             return {
                 markdown: remoteMarkdown,
                 success: true,

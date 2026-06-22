@@ -105,9 +105,14 @@ async function runIndexWorkspace(root: string, token?: string): Promise<void> {
                         const result = await convertFileToMarkdown(absPath, doc.format, token);
 
                         if (result.success) {
-                            convertedDocs.push({ ...doc, content: result.markdown });
-                            convertedCount++;
-                            channel.appendLine(`  ✅ Converted: ${doc.path} (${result.conversionTime}ms)`);
+                            if (result.markdown && result.markdown.trim().length > 0) {
+                                convertedDocs.push({ ...doc, content: result.markdown });
+                                convertedCount++;
+                                channel.appendLine(`  ✅ Converted: ${doc.path} (${result.conversionTime}ms)`);
+                            } else {
+                                skippedCount++;
+                                channel.appendLine(`  ⏭️ Skipped (empty content): ${doc.path} (${result.conversionTime}ms)`);
+                            }
                         } else {
                             skippedCount++;
                             errors.push({ file: doc.path, error: result.error || "unknown" });
