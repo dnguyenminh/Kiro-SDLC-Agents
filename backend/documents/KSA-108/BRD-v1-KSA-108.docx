@@ -1,0 +1,311 @@
+# Business Requirements Document (BRD)
+
+## KB Web Viewer — KSA-108: Add Mark Reviewed Button and Review Workflow on Dashboard
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-108 |
+| Title | KB Web Viewer: Add Mark Reviewed button and review workflow on Dashboard |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-05-22 |
+| Status | Draft |
+
+## Author Tracking
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name - Position | Responsibility |
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SA Agent – Solution Architect | Review document |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-22 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-108 and linked tickets |
+
+## Sign-Off
+
+|  |  |
+| --- | --- |
+| Name | Signature and date |
+|  | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+|  | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This change request adds a “Mark Reviewed” button to the KB Web Viewer Dashboard’s “Due Reviews” table and the Entry Detail view (Browser tab). Currently, users must use MCP tools (mem\_lifecycle action=mark\_reviewed) to mark entries as reviewed, which is not discoverable from the UI. This feature bridges the gap between the backend review capability and the frontend user experience.
+
+### 1.2 Out of Scope
+
+* Bulk “Mark All Reviewed” functionality
+* Review scheduling UI (setting review intervals)
+* Review assignment workflow (assigning reviewers to entries)
+* Changes to the MCP tool interface (mem\_lifecycle)
+* Backend API changes (POST /api/kb/entries/{id}/review already exists)
+* Review history/audit trail UI
+
+### 1.3 Preliminary Requirement
+
+* KSA-93 (UX Improvements) — provides the toast notification system and UX component library
+* KSA-86 (Frontend HTML Update) — provides the current dashboard HTML structure
+* Backend API POST /api/kb/entries/{id}/review must be operational (already implemented in Kotlin, Python, and Node.js variants)
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The review workflow allows KB administrators to maintain knowledge base quality by periodically reviewing entries that become stale over time. When an entry hasn’t been reviewed within its configured interval (default 90 days), it appears in the “Due Reviews” table on the Dashboard. The user can then mark it as reviewed directly from the UI, which resets the staleness score to 0 and removes it from the due reviews list.
+
+### 2.2 List of User Stories / Use Cases
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Story / Use Case | Priority | Source Ticket |
+| 1 | As a KB administrator, I want to mark entries as reviewed directly from the Dashboard’s Due Reviews table so that I don’t need to use MCP tools | MUST HAVE | KSA-108 |
+| 2 | As a KB administrator, I want to mark an entry as reviewed from the Entry Detail view so that I can review after reading the full content | MUST HAVE | KSA-108 |
+| 3 | As a KB administrator, I want visual feedback (toast notification) when I mark an entry as reviewed so that I know the action succeeded | MUST HAVE | KSA-108 |
+| 4 | As a KB administrator, I want the reviewed entry to disappear from the Due Reviews table so that I can track remaining reviews | MUST HAVE | KSA-108 |
+
+### 2.3 Details of User Stories
+
+#### Business Flow
+
+**Step 1:** User navigates to KB Dashboard page
+
+**Step 2:** System loads and displays the “Due Reviews” table with entries that are overdue for review
+
+**Step 3:** User identifies an entry to review and clicks the “Mark Reviewed” button on that row
+
+**Step 4:** System calls POST /api/kb/entries/{id}/review to mark the entry as reviewed
+
+**Step 5:** System shows a success toast notification (“Entry #{id} marked as reviewed”)
+
+**Step 6:** The entry row is removed from the Due Reviews table with a fade-out animation
+
+**Step 7:** The staleness score for that entry resets to 0
+
+**Note:** The same “Mark Reviewed” button is also available in the Entry Detail view (Browser tab) for users who want to read the full entry content before marking it as reviewed.
+
+#### STORY 1: Mark Reviewed from Dashboard Due Reviews Table
+
+As a KB administrator, I want to mark entries as reviewed directly from the Dashboard’s Due Reviews table so that I don’t need to use MCP tools.
+
+**Requirement Details:**
+
+1. Each row in the “Due Reviews” table must have a “Mark Reviewed” button in a new “Action” column
+2. The button must be visually consistent with the existing UX component library (ux-components.css)
+3. Clicking the button triggers a POST request to /api/kb/entries/{id}/review
+4. While the request is in-flight, the button shows a loading state (disabled + spinner)
+5. On success, the row is removed from the table with a smooth transition
+6. On error, the button returns to its normal state and an error toast is shown
+
+**Acceptance Criteria:**
+
+1. Due Reviews table has a “Mark Reviewed” button per row
+2. Clicking button calls POST /api/kb/entries/{id}/review
+3. Entry disappears from Due Reviews after marking
+4. Success toast notification shown
+5. Staleness score resets to 0 after review
+
+**UI Specifications:**
+
+|  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| No. | Name | Type | Required | Description | Note |
+| 1 | Mark Reviewed Button | Button | Yes | Primary action button per row | Style: small, green accent |
+| 2 | Action Column Header | Table Header | Yes | New column “Action” in Due Reviews table | Rightmost column |
+| 3 | Loading Spinner | Icon | Yes | Shown while API call is in-flight | Replaces button text |
+| 4 | Success Toast | Notification | Yes | “Entry #{id} marked as reviewed” | Auto-dismiss after 3s |
+| 5 | Error Toast | Notification | Yes | “Failed to mark entry as reviewed” | Auto-dismiss after 5s |
+
+**Validation Rules:**
+
+* Button must be disabled while API call is in-flight (prevent double-click)
+* Entry ID must be a valid positive integer before making API call
+
+**Error Handling:**
+
+* Network error: Show error toast “Network error — please try again”
+* API returns 404: Show error toast “Entry not found”
+* API returns 503: Show error toast “Service unavailable — please try again later”
+* API returns other error: Show error toast with status code
+
+#### STORY 2: Mark Reviewed from Entry Detail View
+
+As a KB administrator, I want to mark an entry as reviewed from the Entry Detail view so that I can review after reading the full content.
+
+**Requirement Details:**
+
+1. The Entry Detail panel (shown when clicking an entry in the Browser tab) must include a “Mark Reviewed” button
+2. The button should be placed in the detail panel header area, next to the close (✕) button
+3. Same API call and feedback behavior as the Dashboard button
+4. After marking as reviewed, the detail panel remains open (user may want to continue reading)
+5. A “Reviewed ✓” badge replaces the button after successful marking
+
+**Acceptance Criteria:**
+
+1. Entry Detail view has a “Mark Reviewed” button
+2. Clicking button calls POST /api/kb/entries/{id}/review
+3. Success toast notification shown
+4. Button changes to “Reviewed ✓” badge after success
+5. Staleness score resets to 0 after review
+
+**UI Specifications:**
+
+|  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| No. | Name | Type | Required | Description | Note |
+| 1 | Mark Reviewed Button | Button | Yes | In detail panel header | Style: small, outline |
+| 2 | Reviewed Badge | Badge | Yes | Replaces button after success | Green, non-interactive |
+| 3 | Success Toast | Notification | Yes | Same as Story 1 | Reuse toast component |
+
+**Error Handling:**
+
+* Same error handling as Story 1
+* On error, button remains clickable (user can retry)
+
+#### STORY 3: Visual Feedback — Toast Notifications
+
+As a KB administrator, I want visual feedback when I mark an entry as reviewed so that I know the action succeeded.
+
+**Requirement Details:**
+
+1. Toast notification system must be used (from KSA-93 UX improvements or new implementation)
+2. Success toast: green accent, auto-dismiss after 3 seconds
+3. Error toast: red accent, auto-dismiss after 5 seconds
+4. Toast appears at top-right of the viewport
+5. Multiple toasts stack vertically
+
+**Acceptance Criteria:**
+
+1. Success toast shows “Entry #{id} marked as reviewed” with green styling
+2. Error toast shows specific error message with red styling
+3. Toasts auto-dismiss after configured timeout
+4. Toasts don’t block user interaction with the page
+
+#### STORY 4: Row Removal Animation
+
+As a KB administrator, I want the reviewed entry to disappear from the Due Reviews table so that I can track remaining reviews.
+
+**Requirement Details:**
+
+1. After successful API call, the table row fades out over 300ms
+2. After fade-out completes, the row is removed from the DOM
+3. If the table becomes empty after removal, show “No due reviews” message
+4. The “Stale” metric card on the dashboard should decrement by 1
+
+**Acceptance Criteria:**
+
+1. Row fades out smoothly (300ms transition)
+2. Row is removed from DOM after animation
+3. Empty state message shown when no more due reviews
+4. Stale count metric updates (decrements by 1)
+
+## 3. Dependencies
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Dependency | Type | Related Ticket | Description |
+| Backend API | System | N/A | POST /api/kb/entries/{id}/review — already implemented |
+| UX Components | System | KSA-93 | Toast notification system, button styles |
+| Dashboard HTML | System | KSA-86 | Current dashboard structure with Due Reviews table |
+| Browser Tab | System | N/A | Entry detail view in browser.js |
+
+## 4. Stakeholders
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Role | Name / Team | Responsibility | Source |
+| Reporter | Duc Nguyen Minh | Define requirements, accept delivery | Jira reporter |
+| Developer | Unassigned | Implement frontend changes | Jira assignee |
+| QA | QA Agent | Verify acceptance criteria | Pipeline |
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Risk | Impact | Likelihood | Mitigation |
+| Toast notification system not yet implemented from KSA-93 | Medium | Low | Implement simple inline toast as fallback |
+| API endpoint may have different response format across variants (Kotlin/Python/Node.js) | Low | Medium | Verify response format is consistent; handle gracefully |
+| Concurrent users marking same entry | Low | Low | API is idempotent — marking already-reviewed entry is a no-op |
+
+### 5.2 Assumptions
+
+* The backend API POST /api/kb/entries/{id}/review is already deployed and functional
+* The response format returns success (200 OK) with entry data or minimal confirmation
+* The ui-tokens.css and ux-components.css provide sufficient styling primitives
+* The dashboard page is served from the same origin as the API (no CORS issues)
+* Users have appropriate permissions to mark entries as reviewed (no auth check needed at UI level — API handles authorization)
+
+## 6. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| Category | Requirement | Details |
+| Performance | API response time | Mark reviewed action must complete within 500ms |
+| Performance | UI responsiveness | Button click to visual feedback < 100ms (loading state) |
+| Accessibility | Keyboard navigation | Button must be focusable and activatable via Enter/Space |
+| Accessibility | Screen reader | Button must have aria-label “Mark entry {id} as reviewed” |
+| Accessibility | Color contrast | Toast notifications must meet WCAG AA contrast ratio |
+| Usability | Error recovery | User can retry on failure without page refresh |
+| Compatibility | Browser support | Chrome, Firefox, Edge (latest 2 versions) |
+
+## 7. Related Tickets
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Ticket Key | Summary | Status | Type | Relationship |
+| KSA-108 | KB Web Viewer: Add Mark Reviewed button and review workflow on Dashboard | In Progress | Task | Main ticket |
+| KSA-93 | UX Improvements | Done | Task | Provides toast/UX components |
+| KSA-86 | Frontend HTML Update | Done | Task | Provides current dashboard structure |
+
+## 8. Appendix
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| Due Reviews | KB entries that haven’t been reviewed within their configured review interval (default 90 days) |
+| Staleness Score | A 0-1 score indicating how stale an entry is (0 = freshly reviewed, 1 = very stale) |
+| Mark Reviewed | Action that resets an entry’s staleness score to 0 and updates last\_reviewed\_at timestamp |
+| MCP Tool | Model Context Protocol tool — programmatic interface for AI agents to interact with the KB |
+
+### Reference Documents
+
+|  |  |
+| --- | --- |
+| Document | Link / Location |
+| KSA-93 BRD | documents/KSA-93/BRD.md |
+| KSA-93 FSD | documents/KSA-93/FSD.md |
+| KSA-86 User Guide | documents/KSA-86/USER-GUIDE.md |
+| Dashboard HTML | shared/viewer/dashboard.html |
+| Dashboard JS | shared/viewer/dashboard.js |
+| Browser JS | shared/viewer/browser.js |
+| UX Routes (Kotlin) | mcp-code-intelligence-kotlin/src/main/kotlin/com/codeintel/http/UxRoutes.kt |
+
+### Existing API Reference
+
+**Endpoint:** POST /api/kb/entries/{id}/review
+
+**Behavior:** - Sets last\_reviewed\_at to current timestamp - Resets staleness\_score to 0.0 - Returns 200 OK on success
+
+**Already implemented in:** - Kotlin: UxRoutes.kt → handleMarkReviewed() - Node.js: ux-routes.ts → handleMarkReviewed() - Python: ux\_routes.py → \_handle\_mark\_reviewed()
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

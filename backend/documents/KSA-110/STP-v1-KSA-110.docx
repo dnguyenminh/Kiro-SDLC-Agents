@@ -1,0 +1,319 @@
+# Software Test Plan (STP)
+
+## mcp-code-intelligence-nodejs — KSA-110: KB System Upgrade v0.6.0
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-110 |
+| Title | KB System Upgrade v0.6.0 — Test Plan |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2025-05-23 |
+| Status | Draft |
+| Related BRD | BRD-v1.1-KSA-110.docx |
+| Related FSD | FSD-v1.0-KSA-110.docx |
+| Related TDD | TDD-v1.0-KSA-110.docx |
+| Related STC | STC-v1.0-KSA-110.xlsx |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2025-05-23 | QA Agent | Initial STP — 6 test levels, 4 features, 3 servers |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This STP defines the test strategy, scope, approach, and resources for verifying KB System Upgrade v0.6.0 across all 3 MCP server implementations (Node.js, Kotlin, Python). It covers 4 features (F1-F4), 15 user stories, 22 business rules, and 14 use cases.
+
+### 1.2 Scope
+
+**In Scope:** - Feature F1: Core/Archival Memory (Pinned Entries + Auto-Recall) - Feature F2: Structured Conversation History - Feature F3: Structured Map (Entity Extraction + Metadata Enrichment) - Feature F4: KB Anti-Pattern Protection (Quality Gate, Agent Scope, Token Budget, Auto-Expiry) - Cross-feature integration (F1+F3, F1+F4, F2+F3, F3+F4) - All 3 server implementations: Node.js, Kotlin, Python - Schema migrations (V3.1–V3.8) - Regression testing of 14 existing MCP tools - Performance targets (pin <50ms, conversation <100ms, extraction <200ms)
+
+**Out of Scope:** - UI testing (system is MCP server, no UI) - Load/stress testing beyond stated performance targets - Security penetration testing - LLM-assisted extraction (deferred to future version) - Multi-tenant scenarios
+
+### 1.3 References
+
+|  |  |  |
+| --- | --- | --- |
+| Document | Version | Location |
+| BRD | v1.1 | documents/KSA-110/BRD.md |
+| FSD | v1.0 | documents/KSA-110/FSD.md |
+| TDD | v1.0 | documents/KSA-110/TDD.md |
+| Source (Node.js) | v0.6.0 | mcp-code-intelligence-nodejs/src/memory/ |
+| Source (Kotlin) | v0.6.0 | src/main/kotlin/memory/ |
+| Source (Python) | v0.6.0 | mcp-bridge-python/memory/ |
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Level | Abbreviation | Purpose | Automation | Server Coverage |
+| Property-Based Testing | PBT | Verify invariants hold for random inputs | 100% automated | Node.js only (fast-check) |
+| Unit Testing | UT | Verify individual class/function behavior | 100% automated | All 3 servers |
+| Integration Testing | IT | Verify component interactions with real SQLite | 100% automated | All 3 servers |
+| End-to-End API Testing | E2E-API | Verify MCP tool calls via stdio protocol | 100% automated | All 3 servers |
+| End-to-End UI Testing | E2E-UI | N/A — no UI in this system | N/A | N/A |
+| System Integration Testing | SIT | Verify cross-server compatibility & migration | 90% automated, 10% manual | Cross-server |
+
+**Note:** E2E-UI is not applicable for this ticket as the system is a headless MCP server with no user interface. All interaction is via MCP protocol (JSON-RPC over stdio).
+
+### 2.2 Test Approach per Feature
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Feature | PBT Focus | UT Focus | IT Focus | E2E-API Focus |
+| F1: Core Memory | Token counting invariants, budget never exceeded | CoreMemoryManager methods | Pin + search integration | mem\_pin tool all actions |
+| F2: Conversation | Turn ordering invariants | ConversationRepo methods | Save + query + summarize | mem\_conversation tool all actions |
+| F3: Structured Map | Entity extraction patterns | StructuredMapExtractor, EntityClassifier | Ingest + extract + index | mem\_map tool all actions |
+| F4: Anti-Pattern | Quality score bounds [0,100] | QualityGate, AgentScopeFilter, TokenBudget, WorkingTierExpiry | Full search pipeline with all F4 components | Enhanced mem\_search + mem\_ingest |
+
+### 2.3 Test Environment
+
+|  |  |  |
+| --- | --- | --- |
+| Environment | Purpose | Configuration |
+| Local Dev | Unit + Integration tests | SQLite in-memory, ONNX model loaded |
+| CI (GitHub Actions) | Automated test suite | SQLite temp file, all 3 servers |
+| Staging | E2E-API + SIT | Real SQLite file, full MCP protocol |
+
+### 2.4 Test Data Strategy
+
+|  |  |  |
+| --- | --- | --- |
+| Data Type | Source | Management |
+| Knowledge entries | Generated fixtures (50-5000 chars) | CSV seed files |
+| Conversation turns | Predefined sessions (5-100 turns) | JSON fixtures |
+| Entity patterns | Curated regex test cases | CSV with expected classifications |
+| Quality gate inputs | Edge cases (49 chars, 50 chars, duplicates) | Inline test data |
+| Agent scope configs | Default 5 roles + custom | JSON fixtures |
+
+## 3. Test Scope & Coverage
+
+### 3.1 Requirements Traceability Matrix (RTM)
+
+|  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| Story ID | Story Title | Business Rules | Use Cases | Test Cases (STC) | Coverage |
+| Story 1 | Pin Critical Knowledge Entries | BR-F1-01, BR-F1-06 | UC-01 | TC-F1-001 to TC-F1-006 | 100% |
+| Story 2 | Manage Pinned Entries | BR-F1-03 | UC-02 | TC-F1-007 to TC-F1-014 | 100% |
+| Story 3 | Token Budget Enforcement | BR-F1-02, BR-F1-04, BR-F1-05 | UC-01 (EF) | TC-F1-015 to TC-F1-020 | 100% |
+| Story 4 | Structured Conversation Storage | BR-F2-01, BR-F2-02, BR-F2-05 | UC-04 | TC-F2-001 to TC-F2-008 | 100% |
+| Story 5 | Conversation Auto-Summarization | BR-F2-03, BR-F2-04 | UC-06 | TC-F2-009 to TC-F2-013 | 100% |
+| Story 6 | Auto-Extract Structured Map | BR-F3-01, BR-F3-04, BR-F3-05 | UC-07 | TC-F3-001 to TC-F3-010 | 100% |
+| Story 7 | Search by Entity/Topic | — | UC-08 | TC-F3-011 to TC-F3-016 | 100% |
+| Story 8 | Backfill Existing Entries | BR-F3-02, BR-F3-03 | UC-09 | TC-F3-017 to TC-F3-020 | 100% |
+| Story 9 | Cross-Feature Integration | — | — | TC-INT-001 to TC-INT-008 | 100% |
+| Story 10 | Performance Targets | — | — | TC-PERF-001 to TC-PERF-008 | 100% |
+| Story 11 | Agent-Level KB Isolation | BR-F4-01 to BR-F4-04 | UC-10 | TC-F4-001 to TC-F4-006 | 100% |
+| Story 12 | Blind Retrieval Prevention | BR-F4-05 to BR-F4-07 | UC-11 | TC-F4-007 to TC-F4-009 | 100% |
+| Story 13 | Ingest Quality Gate | BR-F4-08 to BR-F4-12 | UC-12 | TC-F4-010 to TC-F4-018 | 100% |
+| Story 14 | Search Token Budget | BR-F4-13 to BR-F4-16 | UC-13 | TC-F4-019 to TC-F4-024 | 100% |
+| Story 15 | WORKING Tier Auto-Expiry | BR-F4-17 to BR-F4-22 | UC-14 | TC-F4-025 to TC-F4-032 | 100% |
+
+### 3.2 Business Rules Coverage
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Rule ID | Rule Description | Test Cases | Level |
+| BR-F1-01 | Maximum 10 pinned entries | TC-F1-005, TC-F1-006 | UT, IT |
+| BR-F1-02 | Total pinned ≤ 2000 tokens | TC-F1-015, TC-F1-016 | UT, IT, PBT |
+| BR-F1-03 | Pin order contiguous after unpin | TC-F1-009, TC-F1-010 | UT, IT |
+| BR-F1-04 | Warning at 90% budget (1800 tokens) | TC-F1-017 | UT |
+| BR-F1-05 | Pinned entries exempt from WORKING expiry | TC-F4-031, TC-INT-005 | IT |
+| BR-F1-06 | Cannot pin non-existent entry | TC-F1-003 | UT, E2E-API |
+| BR-F2-01 | Turns stored with role, content, tool\_calls, metadata, timestamp | TC-F2-001, TC-F2-002 | UT, IT |
+| BR-F2-02 | Valid roles: user, assistant, system, tool | TC-F2-003, TC-F2-004 | UT, E2E-API |
+| BR-F2-03 | Summarization preserves original turns | TC-F2-010, TC-F2-011 | IT |
+| BR-F2-04 | Summary captures decisions, action items, topics | TC-F2-012 | IT |
+| BR-F2-05 | Query by session returns turns in order | TC-F2-005 | UT, IT |
+| BR-F3-01 | Extraction is rule-based only (no LLM) | TC-F3-001 | UT |
+| BR-F3-02 | Backfill non-destructive | TC-F3-017, TC-F3-018 | IT |
+| BR-F3-03 | Backfill idempotent | TC-F3-019 | IT |
+| BR-F3-04 | Entity types: ticket, person, system, file, url, concept | TC-F3-003 to TC-F3-008 | UT |
+| BR-F3-05 | Extraction <200ms per entry | TC-PERF-004 | PERF |
+| BR-F4-01 | Agent scope mapping configurable | TC-F4-001, TC-F4-002 | UT, IT |
+| BR-F4-02 | Untagged entries visible to all agents | TC-F4-005 | IT, E2E-API |
+| BR-F4-03 | Filter at query level (not post-filter) | TC-F4-003 | IT |
+| BR-F4-04 | No performance degradation from filtering | TC-PERF-007 | PERF |
+| BR-F4-05 | KB search only when task requires context | TC-F4-007 | SIT (manual) |
+| BR-F4-06 | Each search logs retrieval\_reason | TC-F4-008 | IT, E2E-API |
+| BR-F4-07 | ≥30% reduction in unnecessary KB calls | TC-F4-009 | SIT (manual) |
+| BR-F4-08 | Minimum content length: 50 chars | TC-F4-010, TC-F4-011 | UT, E2E-API |
+| BR-F4-09 | Duplicate threshold: cosine >0.95 | TC-F4-014, TC-F4-015 | IT |
+| BR-F4-10 | Auto-reject: quality <30 | TC-F4-012 | UT, IT |
+| BR-F4-11 | Warning: quality 30-50 | TC-F4-013 | UT, IT |
+| BR-F4-12 | No false positives on legitimate short entries | TC-F4-016 | IT |
+| BR-F4-13 | Default max\_tokens: 2000 | TC-F4-019 | UT, E2E-API |
+| BR-F4-14 | Higher-ranked results prioritized | TC-F4-021 | IT |
+| BR-F4-15 | Token counting: chars/4 | TC-F4-020 | UT, PBT |
+| BR-F4-16 | No significant overhead from token counting | TC-PERF-008 | PERF |
+| BR-F4-17 | Default expiry: 24 hours | TC-F4-025 | UT, IT |
+| BR-F4-18 | Promotion threshold: quality ≥60 | TC-F4-026, TC-F4-027 | UT, IT |
+| BR-F4-19 | Archive = soft delete (recoverable) | TC-F4-028 | IT |
+| BR-F4-20 | Pinned entries exempt from expiry | TC-F4-031 | IT |
+| BR-F4-21 | Lazy evaluation (runs on mem\_search) | TC-F4-029 | IT |
+| BR-F4-22 | Audit trail for all expiry actions | TC-F4-030 | IT |
+
+### 3.3 Test Level Distribution
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Level | Test Cases | Automated | Manual | % of Total |
+| PBT | 8 | 8 | 0 | 6% |
+| UT | 52 | 52 | 0 | 38% |
+| IT | 42 | 42 | 0 | 31% |
+| E2E-API | 24 | 24 | 0 | 18% |
+| SIT | 10 | 7 | 3 | 7% |
+| **Total** | **136** | **133** | **3** | **100%** |
+
+### 3.4 Automation Rate
+
+* **Overall: 97.8% automated** (133/136)
+* **Manual tests:** Only blind retrieval prevention effectiveness (requires real agent behavior observation) and cross-server migration compatibility verification
+
+## 4. Entry & Exit Criteria
+
+### 4.1 Entry Criteria
+
+|  |  |  |
+| --- | --- | --- |
+| # | Criterion | Verification |
+| 1 | BRD v1.1 approved | STATUS.json: requirements.status = “done” |
+| 2 | FSD v1.0 approved | STATUS.json: specification.status = “done” |
+| 3 | TDD v1.0 approved | STATUS.json: design.status = “done” |
+| 4 | Implementation complete (all 3 servers) | STATUS.json: implementation.status = “done” |
+| 5 | All unit tests passing | Node.js: 39, Kotlin: 34, Python: 34 |
+| 6 | Test environment available | SQLite accessible, ONNX model loaded |
+| 7 | Test data prepared | Fixtures and seed data ready |
+
+### 4.2 Exit Criteria
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Criterion | Target | Measurement |
+| 1 | All Critical test cases pass | 100% | TC execution report |
+| 2 | All High priority test cases pass | ≥95% | TC execution report |
+| 3 | Code coverage ≥80% | ≥80% lines | Coverage tool output |
+| 4 | No Critical/High severity defects open | 0 | Defect tracker |
+| 5 | Performance targets met | All within spec | Benchmark results |
+| 6 | Regression tests pass | 100% | Existing test suite |
+| 7 | All 3 servers produce consistent results | 100% parity | Cross-server comparison |
+
+### 4.3 Suspension Criteria
+
+|  |  |  |
+| --- | --- | --- |
+| # | Criterion | Action |
+| 1 | >3 Critical defects found in same feature | Suspend testing, return to DEV |
+| 2 | Test environment unstable | Suspend until environment fixed |
+| 3 | Schema migration fails | Suspend all tests, investigate |
+
+## 5. Test Execution Plan
+
+### 5.1 Execution Order
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Phase | Level | Features | Duration | Dependencies |
+| 1 | PBT | F1, F3, F4 | 1 day | Implementation complete |
+| 2 | UT | All features | 2 days | Phase 1 pass |
+| 3 | IT | All features | 2 days | Phase 2 pass |
+| 4 | E2E-API | All tools | 2 days | Phase 3 pass |
+| 5 | SIT | Cross-server | 1 day | Phase 4 pass |
+| 6 | Performance | All targets | 1 day | Phase 4 pass |
+
+### 5.2 Server Execution Matrix
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Test Level | Node.js | Kotlin | Python | Cross-Server |
+| PBT | ✅ (fast-check) | ❌ | ❌ | — |
+| UT | ✅ (Vitest) | ✅ (JUnit5) | ✅ (pytest) | — |
+| IT | ✅ (Vitest + SQLite) | ✅ (JUnit5 + SQLite) | ✅ (pytest + SQLite) | — |
+| E2E-API | ✅ (MCP stdio) | ✅ (MCP stdio) | ✅ (MCP stdio) | — |
+| SIT | — | — | — | ✅ (all 3) |
+| PERF | ✅ | ✅ | ✅ | — |
+
+### 5.3 Test Execution Commands
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Server | Unit Tests | Integration Tests | All Tests |
+| Node.js | npm test -- --grep "unit" | npm test -- --grep "integration" | npm test |
+| Kotlin | ./gradlew test --tests "\*Unit\*" | ./gradlew test --tests "\*Integration\*" | ./gradlew test |
+| Python | pytest tests/unit/ | pytest tests/integration/ | pytest |
+
+## 6. Risk Assessment
+
+### 6.1 Test Risks
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Risk | Impact | Likelihood | Mitigation |
+| Cross-server behavior inconsistency | High | Medium | E2E-API tests run identical scenarios on all 3 servers |
+| SQLite version differences across servers | Medium | Low | Pin SQLite version in dependencies |
+| ONNX model loading slow in CI | Low | Medium | Cache model in CI, skip embedding tests if unavailable |
+| Flaky tests due to timing (expiry) | Medium | Medium | Use deterministic time mocking |
+| Token counting approximation edge cases | Low | Low | PBT covers random inputs |
+| Quality gate false positives | Medium | Medium | Dedicated test cases for legitimate short entries |
+
+### 6.2 Defect Severity Classification
+
+|  |  |  |
+| --- | --- | --- |
+| Severity | Definition | Example |
+| Critical | Feature completely broken, data loss | Migration corrupts existing data |
+| High | Feature partially broken, workaround exists | Pin budget not enforced |
+| Medium | Feature works but with issues | Incorrect entity classification |
+| Low | Cosmetic or minor behavior difference | Warning message typo |
+
+## 7. Deliverables
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Deliverable | Format | Location |
+| 1 | Software Test Plan (this document) | Markdown → DOCX | documents/KSA-110/STP.md |
+| 2 | Software Test Cases | Markdown → XLSX | documents/KSA-110/STC.md |
+| 3 | Test Data (fixtures) | CSV + JSON | documents/KSA-110/testdata/ |
+| 4 | Test Execution Report | Markdown → DOCX | documents/KSA-110/TEST-REPORT-KSA-110.md |
+| 5 | Defect Log | Jira tickets | Linked to KSA-110 |
+
+## 8. Roles & Responsibilities
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Responsibility | Person/Agent |
+| QA Lead | Create STP/STC, execute tests, report results | QA Agent |
+| Developer | Fix defects, provide test support | DEV Agent |
+| SM | Review STP/STC, coordinate test phases | SM Agent |
+| PO | Accept/reject test results, UAT | Duc Nguyen Minh |
+
+## 9. Appendix
+
+### 9.1 Test Tools
+
+|  |  |  |
+| --- | --- | --- |
+| Tool | Purpose | Server |
+| Vitest | Unit + Integration testing | Node.js |
+| fast-check | Property-based testing | Node.js |
+| JUnit 5 | Unit + Integration testing | Kotlin |
+| pytest | Unit + Integration testing | Python |
+| hypothesis | Property-based testing (optional) | Python |
+| MCP stdio client | E2E-API testing | All |
+
+### 9.2 Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Test Coverage Overview | [test-coverage.png](diagrams/test-coverage.png) | [test-coverage.drawio](diagrams/test-coverage.drawio) |
+| 2 | Test Execution Flow | [test-execution-flow.png](diagrams/test-execution-flow.png) | [test-execution-flow.drawio](diagrams/test-execution-flow.drawio) |

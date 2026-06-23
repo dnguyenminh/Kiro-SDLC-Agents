@@ -1,0 +1,20 @@
+```json
+{
+  "ticket": "KSA-110",
+  "currentPhase": "closed",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1.1, "completedAt": "2025-05-22T10:00:00Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2025-05-22T14:30:00Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2025-05-22T16:00:00Z" },
+    "feedback_loop": { "status": "skipped" },
+    "test_planning": { "status": "done", "file": "STP.md", "version": 1, "completedAt": "2025-05-23T07:30:00Z" },
+    "implementation": { "status": "done", "completedAt": "2025-05-23T07:00:00Z", "note": "Node.js (39 tests), Kotlin (34 tests), Python (34 tests) all passing" },
+    "testing": { "status": "done", "note": "All implementations verified" },
+    "deployment": { "status": "done", "completedAt": "2026-05-25T10:00:00Z", "note": "Code deployed to production" }
+  },
+  "closedAt": "2026-05-25T10:00:00Z",
+  "closeReason": "Implementation complete across 3 platforms, deployed to production",
+  "lastUpdated": "2026-05-25T10:00:00Z"
+}
+
+```

@@ -1,0 +1,139 @@
+# Software Test Plan (STP)
+
+## Kiro SDLC Agent — KSA-3: Injector — Copy Resources to Workspace
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-3 |
+| Title | Injector — Copy Resources to Workspace |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | BRD-v1.0-KSA-3.docx |
+| Related FSD | FSD-v1.0-KSA-3.docx |
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+| --- | --- | --- |
+| Author | QA Agent – QA Engineer | Create document |
+| Peer Reviewer | SM Agent – Scrum Master | Review document |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2025-01-20 | QA Agent | Initiate document — auto-generated from BRD and FSD |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This test plan defines the testing strategy, scope, schedule, and resources for the **Injector** module (KSA-3) of the Kiro SDLC Agent VS Code extension.
+
+### 1.2 Test Objectives
+
+* Verify all five functional features work per FSD specifications
+* Validate all 17 business rules (BR-1 through BR-17)
+* Ensure directory exclusion logic is case-sensitive and applies at any depth
+* Verify cross-platform path handling
+* Confirm error handling produces correct messages per FSD Section 9
+* Validate non-functional requirements (performance ≤ 5s, async I/O)
+
+### 1.3 References
+
+| Document | Location |
+| --- | --- |
+| BRD | documents/KSA-3/BRD.md |
+| FSD | documents/KSA-3/FSD.md |
+| Source Code | kiro-sdlc-agents/src/injector.ts |
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+| Level | Scope | Automation | Tools |
+| --- | --- | --- | --- |
+| PBT | Correctness properties | Automated | vitest + fast-check |
+| UT | Unit tests | Automated | vitest + mock-fs |
+| IT | Integration tests with real fs | Automated | vitest + tmp dirs |
+| E2E-UI | VS Code extension commands | Automated | @vscode/test-electron |
+| SIT | Manual exploratory | Manual | VS Code |
+
+### 2.6 Test Cases Summary
+
+| Level | Count | Automated | Manual |
+| --- | --- | --- | --- |
+| PBT | 5 | 5 | 0 |
+| UT | 17 | 17 | 0 |
+| IT | 8 | 8 | 0 |
+| E2E-UI | 5 | 5 | 0 |
+| SIT | 4 | 0 | 4 |
+| **Total** | **39** | **35 (90%)** | **4 (10%)** |
+
+## 3. Test Scope
+
+### 3.1 Features In Scope
+
+| # | Feature | Priority | FSD Reference |
+| --- | --- | --- | --- |
+| 1 | injectAll() | High | UC-1, BR-1, BR-2, BR-3, BR-4 |
+| 2 | injectSelective() | High | UC-2, BR-5, BR-6, BR-7 |
+| 3 | copyDirRecursive() | High | UC-3, BR-8 to BR-11 |
+| 4 | copyFiltered() | High | UC-4, BR-12 to BR-15 |
+| 5 | checkStatus() | Medium | UC-5, BR-16, BR-17 |
+
+## 4. Test Environment
+
+| Environment | Platform | Node.js | VS Code |
+| --- | --- | --- | --- |
+| Dev/UT | Windows 11 | 18.x+ | 1.85+ |
+| CI | Linux (GitHub Actions) | 18.x+ | Latest |
+| SIT | Win/Mac/Linux | 18.x+ | 1.85+ |
+
+## 5. Test Schedule
+
+| Phase | Duration | Milestone |
+| --- | --- | --- |
+| Test Planning | 2 days | STP + STC approved |
+| UT/PBT Development | 3 days | All unit + PBT pass |
+| IT Development | 2 days | Integration tests pass |
+| E2E-UI Development | 2 days | E2E tests pass |
+| SIT Execution | 2 days | SIT sign-off |
+
+## 6. Resources & Responsibilities
+
+| Role | Name | Responsibility |
+| --- | --- | --- |
+| Test Lead | QA Agent | Planning, coordination |
+| Developer | DEV Agent | Bug fixing |
+| BA | BA Agent | AC clarification |
+
+## 7. Risk & Mitigation
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Cross-platform path differences | High | Test on all 3 OS in CI |
+| Mock-fs inaccuracy | Medium | Supplement with real-fs IT |
+| VS Code test harness instability | Medium | Pin version; retry flaky |
+
+## 8. Defect Management
+
+| Severity | Definition |
+| --- | --- |
+| Critical | Core copy logic broken, data loss |
+| Major | Feature not working, workaround exists |
+| Minor | UI issue, cosmetic defect |
+| Trivial | Typo, minor alignment |
+
+## 9. Test Metrics
+
+| Metric | Target |
+| --- | --- |
+| Test Execution Rate | 100% |
+| Pass Rate | ≥ 95% |
+| Code Coverage | ≥ 90% |
+| Automation Rate | ≥ 85% |

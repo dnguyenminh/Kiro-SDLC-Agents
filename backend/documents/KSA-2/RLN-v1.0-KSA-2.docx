@@ -1,0 +1,173 @@
+# Release Notes (RLN)
+
+## Kiro SDLC Agents Extension — KSA-2: Extension Core — Commands & Activation
+
+## Release Information
+
+| Field | Value |
+| --- | --- |
+| Release Version | 1.0.0 |
+| Release Date | 2025-01-20 |
+| Jira Ticket | KSA-2 |
+| Environment | DEV / BETA / PROD (Marketplace + Open VSX) |
+| Author | DevOps Agent |
+| Status | Draft |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2025-01-20 | DevOps Agent | Initiate document |
+
+## 1. What’s New
+
+### 1.1 Feature Summary
+
+**Kiro SDLC Agents** is a new VS Code / Kiro IDE extension that brings a multi-agent SDLC pipeline directly into your workspace. With a single command, you can inject AI agent configurations for Business Analysis, Solution Architecture, QA, Development, DevOps, UI, and Security — enabling structured, AI-assisted software development workflows.
+
+This initial release (v1.0.0) delivers the **Extension Core** — the foundation that activates the extension, registers commands, and provides visual status feedback.
+
+### 1.2 User-Facing Changes
+
+| # | Change | Description | Impact |
+| --- | --- | --- | --- |
+| 1 | Extension auto-activates on startup | Extension is always ready | Low |
+| 2 | 5 commands in Command Palette | Inject All, Inject Selective, Run Indexer, Update, Show Status | High |
+| 3 | Status bar indicator | Shows SDLC health at a glance | Medium |
+| 4 | Confirmation dialogs | Prevents accidental file overwrites | Medium |
+| 5 | Code Intelligence Indexer | Auto-detects runtime and indexes codebase | High |
+
+## 2. Technical Changes
+
+### 2.1 API Changes (VS Code Commands)
+
+| Type | Command ID | Description |
+| --- | --- | --- |
+| New | kiroSdlc.injectAll | Injects all SDLC components into workspace |
+| New | kiroSdlc.injectSelective | Multi-select component injection |
+| New | kiroSdlc.runIndex | Executes code intelligence indexer |
+| New | kiroSdlc.update | Updates agents (overwrites existing) |
+| New | kiroSdlc.status | Shows component presence status |
+
+### 2.2 Database Changes
+
+**Not Applicable.** Client-side extension with no database.
+
+### 2.3 Configuration Changes
+
+| Property | Change Type | Description |
+| --- | --- | --- |
+| kiroSdlc.autoIndex | New | Auto-run indexer after injection (default: true) |
+| kiroSdlc.preferredIndexer | New | Preferred indexer runtime (default: “auto”) |
+
+### 2.4 Infrastructure Changes
+
+| Component | Change | Description |
+| --- | --- | --- |
+| GitHub Actions CI | New | Build verification on push/PR |
+| GitHub Actions Publish | New | Automated Marketplace publish on tag |
+| VS Code Marketplace | New | Extension listing |
+| Open VSX Registry | New | Extension listing for Kiro IDE |
+
+## 3. Bug Fixes
+
+No bug fixes included in this release. This is the initial release (v1.0.0).
+
+## 4. Known Issues & Limitations
+
+| # | Issue | Impact | Workaround | Target Fix |
+| --- | --- | --- | --- | --- |
+| 1 | Publisher ID is placeholder | Cannot publish until changed | Update package.json | KSA-11 |
+| 2 | Repository URL is placeholder | Wrong link on Marketplace | Update package.json | KSA-11 |
+| 3 | Only first workspace folder used | Multi-root limited | Open target as primary | Future |
+| 4 | Status bar doesn’t auto-refresh | May be stale | Run Show Status | Future |
+| 5 | Indexer timeout fixed at 120s | Large codebases may timeout | Manual run | Future |
+
+## 5. Dependencies
+
+### 5.1 Pre-requisite Releases
+
+None — this is the first release.
+
+### 5.2 External System Changes
+
+| System | Change Required | Status |
+| --- | --- | --- |
+| VS Code Marketplace | Publisher account registration | Pending |
+| Open VSX Registry | Namespace claim | Pending |
+| Azure DevOps | PAT creation | Pending |
+
+## 6. Migration Notes
+
+### 6.1 Data Migration
+
+No data migration required. Fresh installation.
+
+### 6.2 Breaking Changes
+
+No breaking changes. Initial release.
+
+### 6.3 Backward Compatibility
+
+* VS Code ^1.85.0 and newer
+* Kiro IDE (Extension Host compatible)
+* Windows, macOS, Linux
+
+## 7. Testing Summary
+
+| Test Level | Total | Passed | Failed | Pass Rate |
+| --- | --- | --- | --- | --- |
+| Manual Smoke Tests | 5 | 5 | 0 | 100% |
+| TypeScript Compilation | 1 | 1 | 0 | 100% |
+| VSIX Packaging | 1 | 1 | 0 | 100% |
+| CI Pipeline | 1 | 1 | 0 | 100% |
+
+### Test Scenarios Verified
+
+| # | Scenario | Result |
+| --- | --- | --- |
+| 1 | Extension activates on startup | Pass |
+| 2 | 5 commands registered | Pass |
+| 3 | Status bar shows SDLC status | Pass |
+| 4 | Confirm dialog before inject | Pass |
+| 5 | Graceful error when no workspace | Pass |
+
+## 8. Deployment Instructions
+
+See: Deployment Guide (DPG-v1.0-KSA-2.docx)
+
+### Quick Reference
+
+| Step | Action | Estimated Time |
+| --- | --- | --- |
+| 1 | Merge code to main | 1 minute |
+| 2 | Create git tag v1.0.0 | 1 minute |
+| 3 | GitHub Actions builds + publishes | 3-5 minutes |
+| 4 | Verify Marketplace listing | 2 minutes |
+| 5 | Smoke test installed extension | 5 minutes |
+| **Total** |  | **~12 minutes** |
+
+## 9. Rollback Plan
+
+**Rollback Decision Criteria:** - Extension crashes VS Code → Immediate unpublish - Commands throw errors → Publish previous version - Silent activation failure → Hotfix patch
+
+**Estimated Rollback Time:** ~20 minutes
+
+## 10. Contacts
+
+| Role | Name | Responsibility |
+| --- | --- | --- |
+| Release Manager | TBD | Release coordination |
+| Dev Lead | TBD | Technical issues |
+| QA Lead | TBD | Testing sign-off |
+| DevOps | DevOps Agent | Deployment execution |
+| Publisher Admin | TBD | Marketplace account |
+
+## 11. Approval
+
+| Role | Name | Date | Signature |
+| --- | --- | --- | --- |
+| Dev Lead |  |  | Pending |
+| QA Lead |  |  | Pending |
+| Publisher Admin |  |  | Pending |
+| Release Manager |  |  | Pending |

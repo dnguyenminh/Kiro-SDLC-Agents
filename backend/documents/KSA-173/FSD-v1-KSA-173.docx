@@ -1,0 +1,692 @@
+# Functional Specification Document (FSD)
+
+## MCP Code Intelligence — KSA-173: [Kotlin] Graph Engine
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-173 |
+| Title | [Kotlin] Graph Engine |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-05-26 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-173.docx |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-26 | BA Agent | Initial document from BRD |
+| 1.0 | 2026-05-26 | TA Agent | Technical enrichment — API contracts, pseudocode, integration specs |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior of the Kotlin Graph Engine module. It defines use cases, business rules, data specifications, API contracts, and integration requirements for building and querying call graphs and dependency graphs on JVM.
+
+### 1.2 Scope
+
+* Call graph construction from AST/symbol data
+* Dependency graph construction from import statements
+* Graph traversal algorithms (BFS, DFS, shortest path)
+* Impact analysis (change propagation)
+* Cycle detection (circular dependencies, recursive calls)
+* Hot path identification (centrality metrics)
+* Incremental graph updates
+* MCP tool interface for graph queries
+
+### 1.3 References
+
+|  |  |  |
+| --- | --- | --- |
+| Document | Version | Location |
+| BRD | v1.0 | BRD-v1-KSA-173.docx |
+| KSA-172 FSD | v1.0 | FSD-v1-KSA-172.docx |
+| KSA-172 TDD | v1.0 | TDD-v1-KSA-172.docx |
+| Parent Epic BRD | v1.0 | BRD-v1-KSA-171.docx |
+| nodejs v2 Source | HEAD | mcp-code-intelligence-nodejs/src/graph/ |
+
+## 2. System Context
+
+### 2.1 System Context Diagram
+
+System Context
+
+System Context
+
+### 2.2 External Systems
+
+|  |  |  |
+| --- | --- | --- |
+| System | Interface | Description |
+| Tree-sitter Parser (KSA-172) | Kotlin API | Provides AST nodes and symbol tables |
+| Symbol Table (KSA-172) | Kotlin API | Provides function/class/method declarations |
+| Import Resolver (KSA-172) | Kotlin API | Resolves import paths to file paths |
+| MCP Client | JSON-RPC | IDE/AI agent requesting graph queries |
+| Downstream: AI Context (KSA-174) | Kotlin API | Consumes graph for context ranking |
+| Downstream: Code Quality (KSA-175) | Kotlin API | Consumes graph for complexity analysis |
+| Downstream: Security (KSA-176) | Kotlin API | Consumes graph for taint analysis |
+
+### 2.3 Integration with KSA-172
+
+|  |  |
+| --- | --- |
+| KSA-172 Component | Graph Engine Usage |
+| SymbolExtractor | Get function/method declarations for call graph nodes |
+| AstNode | Traverse AST to find call expressions |
+| ImportResolver | Resolve import paths for dependency graph edges |
+| ParseResult | Get file-level metadata (path, language) |
+| SymbolTable | Lookup symbol definitions for call resolution |
+
+## 3. Functional Requirements
+
+### 3.1 Use Case: UC-01 — Build Call Graph
+
+**Actor:** System (triggered by project scan or file change) **Precondition:** AST and symbol data available from KSA-172 **Trigger:** Full project scan or incremental file update
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | System | Request call graph build for project | Initialize empty directed graph |
+| 2 | System | For each parsed file, extract call expressions from AST | Identify function/method calls |
+| 3 | System | For each call expression, resolve target symbol | Match call to declaration using symbol table |
+| 4 | System | Create edge from caller to callee | Add directed edge with metadata |
+| 5 | System | Handle unresolved calls | Mark edge as “unresolved” with best-guess target |
+| 6 | System | Index graph for fast lookup | Build node-to-edges index |
+
+#### Alternative Flows
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Condition | Action |
+| AF-01 | Call target is dynamic (reflection, eval) | Mark as unresolved, add to “dynamic\_calls” list |
+| AF-02 | Call target is in external library (not in project) | Create external node, mark as “external” |
+| AF-03 | Virtual method call (interface/abstract) | Create edges to ALL implementations (over-approximation) |
+| AF-04 | Higher-order function (callback) | Create edge to parameter type if resolvable, else unresolved |
+
+#### Exception Flows
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Condition | Action |
+| EF-01 | AST parsing failed for file | Skip file, log warning, continue with other files |
+| EF-02 | Symbol table incomplete | Build partial graph, mark affected nodes as “incomplete” |
+| EF-03 | Memory limit exceeded | Stop graph construction, return partial graph with warning |
+
+#### Business Rules
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Rule | Description |
+| BR-01 | Node ID format | {file\_path}::{symbol\_name} (e.g., src/main.kt::processData) |
+| BR-02 | Edge deduplication | Only one edge per unique (caller, callee, call\_type) tuple |
+| BR-03 | Self-calls | Self-recursive calls create self-loop edges |
+| BR-04 | Constructor calls | new Foo() creates edge to Foo.constructor |
+| BR-05 | Method chains | a.b().c() creates edges: caller→b, caller→c (not b→c) |
+
+### 3.2 Use Case: UC-02 — Build Dependency Graph
+
+**Actor:** System (triggered by project scan or file change) **Precondition:** Import statements extracted from AST **Trigger:** Full project scan or incremental file update
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | System | Request dependency graph build | Initialize empty directed graph |
+| 2 | System | For each file, extract import/require statements | Get import paths |
+| 3 | System | Resolve each import path to actual file | Use import resolver from KSA-172 |
+| 4 | System | Create edge from importing file to imported file | Add directed edge with import type |
+| 5 | System | Handle re-exports | Track transitive dependencies |
+| 6 | System | Index graph for fast lookup | Build file-to-dependencies index |
+
+#### Alternative Flows
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Condition | Action |
+| AF-01 | Import path unresolvable (external package) | Create external node, mark as “external” |
+| AF-02 | Barrel file (index.ts re-exporting) | Create edges to both barrel and actual source |
+| AF-03 | Dynamic import (import()) | Mark as “dynamic” edge |
+| AF-04 | Conditional import (if/else) | Create edge regardless (static analysis) |
+
+#### Business Rules
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Rule | Description |
+| BR-06 | Node ID format | File path relative to project root (e.g., src/utils/helper.kt) |
+| BR-07 | Edge types | static\_import, dynamic\_import, re\_export, type\_only |
+| BR-08 | Self-imports | Ignored (file importing itself) |
+| BR-09 | Circular imports | Allowed in graph (detected separately by cycle detection) |
+
+### 3.3 Use Case: UC-03 — Perform Impact Analysis
+
+**Actor:** Developer or AI Agent (via MCP tool) **Precondition:** Call graph and/or dependency graph built **Trigger:** User queries impact of a change
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | User | Request impact analysis for symbol/file | Validate input exists in graph |
+| 2 | System | Determine analysis type (call-based or dependency-based) | Select appropriate graph |
+| 3 | System | Find all direct dependents (in-edges) | Return immediate callers/importers |
+| 4 | System | Traverse transitively up to depth limit | BFS from target, collecting all reachable |
+| 5 | System | Calculate impact score for each affected node | Score = 1/distance + fan-out weight |
+| 6 | System | Sort results by impact score (descending) | Return ranked list |
+
+#### API Contract
+
+**Request:**
+
+{
+ "tool": "graph\_impact\_analysis",
+ "arguments": {
+ "target": "src/services/UserService.kt::createUser",
+ "type": "call\_graph",
+ "depth": 3,
+ "include\_external": false
+ }
+}
+
+**Response:**
+
+{
+ "target": "src/services/UserService.kt::createUser",
+ "total\_affected": 12,
+ "direct\_dependents": 4,
+ "transitive\_dependents": 8,
+ "impact\_score": 0.85,
+ "affected": [
+ {
+ "node": "src/controllers/UserController.kt::handleCreate",
+ "distance": 1,
+ "impact\_score": 1.0,
+ "relationship": "direct\_caller"
+ },
+ {
+ "node": "src/api/routes.kt::registerRoutes",
+ "distance": 2,
+ "impact\_score": 0.5,
+ "relationship": "transitive\_caller"
+ }
+ ]
+}
+
+### 3.4 Use Case: UC-04 — Traverse Graph (BFS/DFS)
+
+**Actor:** Developer or AI Agent (via MCP tool) **Precondition:** Graph built **Trigger:** User requests traversal
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | User | Request traversal from start node | Validate start node exists |
+| 2 | System | Initialize traversal with algorithm (BFS/DFS) | Create visited set, queue/stack |
+| 3 | System | Execute traversal respecting depth limit | Visit nodes in order |
+| 4 | System | Apply filter if specified | Skip nodes not matching filter |
+| 5 | System | Collect traversal results | Return ordered list of visited nodes |
+
+#### API Contract
+
+**Request:**
+
+{
+ "tool": "graph\_traverse",
+ "arguments": {
+ "start": "src/main.kt::main",
+ "algorithm": "bfs",
+ "direction": "forward",
+ "max\_depth": 5,
+ "filter": { "package": "src/services" }
+ }
+}
+
+**Response:**
+
+{
+ "start": "src/main.kt::main",
+ "algorithm": "bfs",
+ "direction": "forward",
+ "nodes\_visited": 23,
+ "max\_depth\_reached": 4,
+ "results": [
+ { "node": "src/services/UserService.kt::createUser", "depth": 1 },
+ { "node": "src/services/AuthService.kt::authenticate", "depth": 1 },
+ { "node": "src/services/UserService.kt::validateEmail", "depth": 2 }
+ ]
+}
+
+### 3.5 Use Case: UC-05 — Detect Cycles
+
+**Actor:** Developer or AI Agent (via MCP tool) **Precondition:** Graph built **Trigger:** User requests cycle detection or automated scan
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | User | Request cycle detection | Select graph type (call/dependency) |
+| 2 | System | Run Tarjan’s SCC algorithm | Find all strongly connected components |
+| 3 | System | Filter SCCs with size > 1 | These are cycles |
+| 4 | System | For each cycle, extract cycle path | Report A → B → C → A |
+| 5 | System | Classify severity | Self-recursion=info, mutual=warning, circular deps=error |
+| 6 | System | Return sorted by severity | Critical first |
+
+#### API Contract
+
+**Request:**
+
+{
+ "tool": "graph\_detect\_cycles",
+ "arguments": {
+ "graph\_type": "dependency",
+ "scope": "src/",
+ "min\_severity": "warning"
+ }
+}
+
+**Response:**
+
+{
+ "total\_cycles": 3,
+ "cycles": [
+ {
+ "id": "cycle-1",
+ "severity": "error",
+ "type": "circular\_dependency",
+ "path": ["src/a.kt", "src/b.kt", "src/c.kt", "src/a.kt"],
+ "length": 3
+ },
+ {
+ "id": "cycle-2",
+ "severity": "warning",
+ "type": "mutual\_recursion",
+ "path": ["src/parser.kt::parseExpr", "src/parser.kt::parseTerm", "src/parser.kt::parseExpr"],
+ "length": 2
+ }
+ ]
+}
+
+### 3.6 Use Case: UC-06 — Find Hot Paths
+
+**Actor:** Developer or AI Agent (via MCP tool) **Precondition:** Call graph built **Trigger:** User requests hot path analysis
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | User | Request hot path analysis | Validate call graph exists |
+| 2 | System | Calculate in-degree for all nodes | Count callers per function |
+| 3 | System | Calculate betweenness centrality | Find nodes on many shortest paths |
+| 4 | System | Identify hub nodes (high in + out degree) | Flag as architectural hotspots |
+| 5 | System | Rank by composite score | Return top-N results |
+
+#### API Contract
+
+**Request:**
+
+{
+ "tool": "graph\_hot\_paths",
+ "arguments": {
+ "top\_n": 10,
+ "scope": "src/",
+ "metric": "composite"
+ }
+}
+
+**Response:**
+
+{
+ "total\_nodes": 450,
+ "results": [
+ {
+ "node": "src/utils/logger.kt::log",
+ "in\_degree": 89,
+ "out\_degree": 3,
+ "betweenness": 0.42,
+ "composite\_score": 0.95,
+ "classification": "utility\_hub"
+ },
+ {
+ "node": "src/services/DataService.kt::query",
+ "in\_degree": 34,
+ "out\_degree": 12,
+ "betweenness": 0.38,
+ "composite\_score": 0.87,
+ "classification": "service\_hub"
+ }
+ ]
+}
+
+### 3.7 Use Case: UC-07 — Incremental Graph Update
+
+**Actor:** System (triggered by file change event) **Precondition:** Graph already built, file re-parsed by KSA-172 **Trigger:** File save/edit detected
+
+#### Main Flow
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Step | Actor | Action | System Response |
+| 1 | System | Receive updated AST/symbols for changed file | Identify affected graph nodes |
+| 2 | System | Remove all edges FROM changed file’s symbols | Clear outgoing call edges |
+| 3 | System | Remove all edges TO deleted symbols | Clear incoming edges to removed functions |
+| 4 | System | Re-extract calls from new AST | Build new edge set |
+| 5 | System | Add new edges to graph | Merge with existing graph |
+| 6 | System | Invalidate cached traversal results | Clear memoized paths |
+| 7 | System | Update graph generation counter | Increment version |
+
+#### Business Rules
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Rule | Description |
+| BR-10 | Incremental threshold | If > 30% of files changed, trigger full rebuild |
+| BR-11 | Batch updates | Multiple file changes within 100ms are batched |
+| BR-12 | Cache invalidation | Only invalidate paths that include changed nodes |
+
+### 3.8 Use Case: UC-08 — Query Graph via MCP
+
+**Actor:** AI Agent or IDE (via MCP protocol) **Precondition:** Graph built **Trigger:** MCP tool call received
+
+#### MCP Tools Exposed
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Tool Name | Description | Input | Output |
+| graph\_build | Build/rebuild graph for project | { path: string, type: "call"\|"dependency"\|"both" } | Build status |
+| graph\_impact\_analysis | Analyze change impact | { target, type, depth } | Impact results |
+| graph\_traverse | BFS/DFS traversal | { start, algorithm, direction, max\_depth, filter } | Traversal results |
+| graph\_detect\_cycles | Find circular dependencies | { graph\_type, scope, min\_severity } | Cycle list |
+| graph\_hot\_paths | Find most-called functions | { top\_n, scope, metric } | Ranked nodes |
+| graph\_shortest\_path | Find shortest path between nodes | { from, to, graph\_type } | Path |
+| graph\_stats | Get graph statistics | { graph\_type } | Node/edge counts |
+| graph\_neighbors | Get immediate neighbors | { node, direction, graph\_type } | Neighbor list |
+
+## 4. Data Specifications
+
+### 4.1 Graph Node
+
+data class GraphNode(
+ val id: String, // Unique identifier (file::symbol or file path)
+ val type: NodeType, // FUNCTION, CLASS, METHOD, FILE, MODULE, EXTERNAL
+ val name: String, // Human-readable name
+ val filePath: String, // Source file path
+ val position: Position?, // Line/column in source (null for external)
+ val language: String, // Programming language
+ val visibility: Visibility?, // PUBLIC, PRIVATE, INTERNAL, PROTECTED
+ val metadata: Map<String, Any> // Additional properties
+)
+
+enum class NodeType {
+ FUNCTION, CLASS, METHOD, FILE, MODULE, EXTERNAL, CONSTRUCTOR, PROPERTY
+}
+
+### 4.2 Graph Edge
+
+data class GraphEdge(
+ val id: String, // Unique edge identifier
+ val source: String, // Source node ID
+ val target: String, // Target node ID
+ val type: EdgeType, // CALL, IMPORT, EXTENDS, IMPLEMENTS
+ val metadata: EdgeMetadata // Additional edge properties
+)
+
+enum class EdgeType {
+ CALL, // Function/method call
+ STATIC\_IMPORT, // Static import statement
+ DYNAMIC\_IMPORT, // Dynamic import (import())
+ RE\_EXPORT, // Re-export from barrel file
+ TYPE\_ONLY, // Type-only import (no runtime)
+ EXTENDS, // Class inheritance
+ IMPLEMENTS, // Interface implementation
+ UNRESOLVED // Could not resolve target
+}
+
+data class EdgeMetadata(
+ val callType: CallType?, // DIRECT, VIRTUAL, CALLBACK, CONSTRUCTOR
+ val confidence: Float, // 0.0-1.0 resolution confidence
+ val sourcePosition: Position?, // Call site position
+ val isConditional: Boolean // Inside if/switch branch
+)
+
+### 4.3 Graph Structure
+
+data class CodeGraph(
+ val type: GraphType, // CALL\_GRAPH, DEPENDENCY\_GRAPH
+ val nodes: Map<String, GraphNode>,
+ val edges: List<GraphEdge>,
+ val adjacencyList: Map<String, List<String>>, // Forward edges
+ val reverseAdjacencyList: Map<String, List<String>>, // Reverse edges
+ val metadata: GraphMetadata
+)
+
+data class GraphMetadata(
+ val projectPath: String,
+ val totalFiles: Int,
+ val totalNodes: Int,
+ val totalEdges: Int,
+ val buildTimeMs: Long,
+ val generation: Int, // Incremented on each update
+ val lastUpdated: Instant
+)
+
+## 5. Non-Functional Requirements
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Category | Requirement | Target | Measurement |
+| Performance | Call graph build | < 10s for 1000 files | Benchmark suite |
+| Performance | Dependency graph build | < 5s for 1000 files | Benchmark suite |
+| Performance | Impact analysis query | < 500ms | Per-query timing |
+| Performance | BFS/DFS traversal | < 100ms for 10K nodes | Per-query timing |
+| Performance | Cycle detection | < 2s for 1000 files | Full scan timing |
+| Performance | Incremental update | < 100ms per file | Single file change |
+| Memory | Graph storage | < 500MB for 1000 files | Heap profiling |
+| Accuracy | Static call resolution | > 85% for typed languages | Test fixture comparison |
+| Accuracy | Import resolution | > 95% | Test fixture comparison |
+| Parity | Output match with nodejs | > 99% | Automated comparison |
+| Concurrency | Read queries | Thread-safe, lock-free reads | Concurrent test |
+| Concurrency | Write updates | Serialized writes, no corruption | Stress test |
+
+## 6. Error Handling
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Error Code | Condition | Response | Recovery |
+| GRAPH\_001 | Graph not built yet | Return error with instruction to build | Auto-trigger build |
+| GRAPH\_002 | Node not found in graph | Return empty result with warning | Suggest similar nodes |
+| GRAPH\_003 | Traversal depth exceeded limit | Return partial results with truncation flag | Increase limit |
+| GRAPH\_004 | Memory limit during build | Return partial graph | Suggest scope reduction |
+| GRAPH\_005 | Circular reference in resolution | Break cycle, mark as unresolved | Log warning |
+| GRAPH\_006 | Invalid graph type requested | Return validation error | List valid types |
+| GRAPH\_007 | Concurrent modification | Retry with latest generation | Queue update |
+
+## 7. Integration Requirements
+
+### 7.1 Input from KSA-172
+
+interface ParserDataProvider {
+ fun getSymbolTable(filePath: String): SymbolTable
+ fun getAstRoot(filePath: String): AstNode
+ fun getImports(filePath: String): List<ImportStatement>
+ fun resolveImportPath(importPath: String, fromFile: String): String?
+ fun getAllParsedFiles(): List<String>
+ fun onFileChanged(callback: (String) -> Unit)
+}
+
+### 7.2 Output to Downstream (KSA-174, KSA-175, KSA-176)
+
+interface GraphQueryService {
+ fun getCallGraph(): CodeGraph
+ fun getDependencyGraph(): CodeGraph
+ fun getCallers(symbolId: String, depth: Int = 1): List<ImpactResult>
+ fun getCallees(symbolId: String, depth: Int = 1): List<ImpactResult>
+ fun getDependents(filePath: String, depth: Int = 1): List<ImpactResult>
+ fun getDependencies(filePath: String, depth: Int = 1): List<ImpactResult>
+ fun detectCycles(graphType: GraphType): List<Cycle>
+ fun getShortestPath(from: String, to: String): List<String>?
+ fun getHotPaths(topN: Int): List<HotPathResult>
+ fun getGraphStats(): GraphMetadata
+}
+
+### 7.3 MCP Tool Registration
+
+// Tools registered with MCP server
+val graphTools = listOf(
+ McpTool("graph\_build", "Build call/dependency graph for project", ::handleBuild),
+ McpTool("graph\_impact\_analysis", "Analyze impact of code change", ::handleImpact),
+ McpTool("graph\_traverse", "BFS/DFS graph traversal", ::handleTraverse),
+ McpTool("graph\_detect\_cycles", "Detect circular dependencies", ::handleCycles),
+ McpTool("graph\_hot\_paths", "Find most-called functions", ::handleHotPaths),
+ McpTool("graph\_shortest\_path", "Find shortest path between nodes", ::handleShortestPath),
+ McpTool("graph\_stats", "Get graph statistics", ::handleStats),
+ McpTool("graph\_neighbors", "Get immediate neighbors of a node", ::handleNeighbors)
+)
+
+## 8. Pseudocode for Complex Logic
+
+### 8.1 Call Graph Construction
+
+function buildCallGraph(files: List<File>):
+ graph = new DirectedGraph()
+
+ for each file in files:
+ symbols = parserProvider.getSymbolTable(file.path)
+ ast = parserProvider.getAstRoot(file.path)
+
+ // Add all function/method declarations as nodes
+ for each symbol in symbols.functions + symbols.methods:
+ graph.addNode(GraphNode(
+ id = "${file.path}::${symbol.qualifiedName}",
+ type = symbol.type,
+ name = symbol.name,
+ filePath = file.path
+ ))
+
+ // Find all call expressions in AST
+ callExpressions = ast.findAll(nodeType = "call\_expression")
+
+ for each call in callExpressions:
+ callerSymbol = findEnclosingFunction(call, symbols)
+ targetName = extractCallTarget(call)
+
+ // Resolve target
+ resolvedTarget = resolveCallTarget(targetName, file, symbols)
+
+ if resolvedTarget != null:
+ graph.addEdge(callerSymbol.id, resolvedTarget.id, CALL, confidence=1.0)
+ else if isVirtualCall(call):
+ implementations = findAllImplementations(targetName, allSymbols)
+ for each impl in implementations:
+ graph.addEdge(callerSymbol.id, impl.id, CALL, confidence=0.7)
+ else:
+ graph.addEdge(callerSymbol.id, "UNRESOLVED::${targetName}", UNRESOLVED, confidence=0.0)
+
+ return graph
+
+### 8.2 Tarjan’s SCC for Cycle Detection
+
+function detectCycles(graph: DirectedGraph):
+ index = 0
+ stack = []
+ indices = {}
+ lowlinks = {}
+ onStack = {}
+ sccs = []
+
+ function strongConnect(node):
+ indices[node] = index
+ lowlinks[node] = index
+ index++
+ stack.push(node)
+ onStack[node] = true
+
+ for each neighbor in graph.getSuccessors(node):
+ if neighbor not in indices:
+ strongConnect(neighbor)
+ lowlinks[node] = min(lowlinks[node], lowlinks[neighbor])
+ else if onStack[neighbor]:
+ lowlinks[node] = min(lowlinks[node], indices[neighbor])
+
+ if lowlinks[node] == indices[node]:
+ scc = []
+ do:
+ w = stack.pop()
+ onStack[w] = false
+ scc.add(w)
+ while w != node
+
+ if scc.size > 1:
+ sccs.add(scc)
+
+ for each node in graph.nodes:
+ if node not in indices:
+ strongConnect(node)
+
+ return sccs.map { classifyCycle(it) }
+
+### 8.3 Impact Analysis (BFS-based)
+
+function analyzeImpact(target: String, graph: DirectedGraph, maxDepth: Int):
+ results = []
+ visited = Set()
+ queue = Queue()
+ queue.enqueue((target, 0))
+ visited.add(target)
+
+ while queue is not empty:
+ (current, depth) = queue.dequeue()
+
+ if depth > maxDepth:
+ break
+
+ // Get all nodes that depend on current (reverse edges)
+ dependents = graph.getPredecessors(current)
+
+ for each dep in dependents:
+ if dep not in visited:
+ visited.add(dep)
+ score = calculateImpactScore(dep, depth + 1, graph)
+ results.add(ImpactResult(node=dep, distance=depth+1, score=score))
+ queue.enqueue((dep, depth + 1))
+
+ return results.sortedByDescending { it.score }
+
+function calculateImpactScore(node: String, distance: Int, graph: DirectedGraph):
+ // Score decreases with distance, increases with fan-out
+ distanceFactor = 1.0 / distance
+ fanOut = graph.getSuccessors(node).size
+ fanOutFactor = min(1.0, fanOut / 10.0)
+ return distanceFactor \* 0.7 + fanOutFactor \* 0.3
+
+## 9. Open Issues
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Issue | Impact | Decision Needed By |
+| 1 | Should graph persist to disk or be in-memory only? | Memory usage for large projects | SA during TDD |
+| 2 | How to handle monorepo with 10K+ files? | Performance, memory | SA during TDD |
+| 3 | Should virtual method resolution be configurable (over/under-approximate)? | Accuracy vs performance | SA during TDD |
+| 4 | Thread-safety model: read-write lock vs copy-on-write? | Concurrency performance | SA during TDD |
+
+## 10. Appendix
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Sequence — Build Call Graph | [sequence-build-callgraph.png](diagrams/sequence-build-callgraph.png) | [sequence-build-callgraph.drawio](diagrams/sequence-build-callgraph.drawio) |
+| 3 | State — Graph Lifecycle | [state-graph-lifecycle.png](diagrams/state-graph-lifecycle.png) | [state-graph-lifecycle.drawio](diagrams/state-graph-lifecycle.drawio) |

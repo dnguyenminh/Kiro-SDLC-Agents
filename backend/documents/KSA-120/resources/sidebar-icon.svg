@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Brain outline (left hemisphere) -->
+  <path d="M12 4C10.5 4 9.2 4.8 8.5 6C7.3 6.2 6.3 7 5.8 8.1C4.7 8.6 4 9.7 4 11C4 12.3 4.7 13.4 5.8 13.9C5.8 14 5.8 14.1 5.8 14.2C5.8 15.5 6.5 16.6 7.5 17.2C7.8 18.8 9.2 20 10.8 20C11.2 20 11.6 19.9 12 19.8"/>
+  <!-- Brain outline (right hemisphere) -->
+  <path d="M12 4C13.5 4 14.8 4.8 15.5 6C16.7 6.2 17.7 7 18.2 8.1C19.3 8.6 20 9.7 20 11C20 12.3 19.3 13.4 18.2 13.9C18.2 14 18.2 14.1 18.2 14.2C18.2 15.5 17.5 16.6 16.5 17.2C16.2 18.8 14.8 20 13.2 20C12.8 20 12.4 19.9 12 19.8"/>
+  <!-- Center line (brain division) -->
+  <path d="M12 4L12 20"/>
+  <!-- Knowledge nodes (circuit pattern inside) -->
+  <circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>
+  <circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/>
+  <circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/>
+  <circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/>
+  <!-- Node connections -->
+  <path d="M9 9L12 7L15 9" stroke-width="1"/>
+  <path d="M9 14L12 16L15 14" stroke-width="1"/>
+  <path d="M9 9L9 14" stroke-width="1" stroke-dasharray="2,1"/>
+  <path d="M15 9L15 14" stroke-width="1" stroke-dasharray="2,1"/>
+  <!-- K mark (subtle, bottom-right) -->
+  <text x="17" y="22" font-size="5" font-weight="bold" font-family="Arial" fill="currentColor" stroke="none">K</text>
+</svg>

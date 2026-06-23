@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { MemoryEngine } from './MemoryEngine.js';
+import type { QueryLayer } from '../../engine/query/query-layer.js';
 
 type Args = Record<string, unknown>;
 
@@ -16,10 +17,15 @@ const ALIASES: Record<string, [string, Record<string, string>]> = {
   mem_status: ['mem_admin', { action: 'status' }],
   mem_audit: ['mem_admin', { action: 'audit' }],
   mem_sessions: ['mem_admin', { action: 'sessions' }],
+  mem_sync_code: ['mem_admin', { action: 'sync_code' }],
 };
 
 export class MemoryToolDispatcher {
-  constructor(private readonly engine: MemoryEngine, private readonly workspace: string) {}
+  constructor(
+    private readonly engine: MemoryEngine,
+    private readonly workspace: string,
+    private readonly queryLayer?: QueryLayer
+  ) {}
 
   dispatch(name: string, args: Args): string | null {
     const [resolved, merged] = this.resolveAlias(name, args);
@@ -93,6 +99,10 @@ export class MemoryToolDispatcher {
       if (!fs.existsSync(resolved)) return `Error: file not found — ${resolved}`;
       text = fs.readFileSync(resolved, 'utf-8');
     }
+
+    // Clean up existing entries for this file to prevent duplicates
+    this.engine.getDb().prepare('DELETE FROM knowledge_entries WHERE source = ?').run(filePath);
+
     const sections = text.split(/^#{1,3}\s+/m).filter(s => s.trim());
     let created = 0;
     for (const sec of (sections.length > 0 ? sections : [text])) {
@@ -240,7 +250,13 @@ export class MemoryToolDispatcher {
   private handleAdmin(a: Args): string {
     const action = (a.action as string) || 'status';
     switch (action) {
-      case 'status': return `Entries: 0 | Edges: 0`;
+      case 'status': {
+        const db = this.engine.getDb();
+        const entries = (db.prepare('SELECT COUNT(*) as cnt FROM knowledge_entries').get() as any).cnt;
+        const edges = (db.prepare('SELECT COUNT(*) as cnt FROM knowledge_graph_edges').get() as any).cnt;
+        return `Entries: ${entries} | Edges: ${edges}`;
+      }
+      case 'sync_code': return this.handleSyncCode(a);
       case 'audit': return this.engine.listAudit((a.limit as number) ?? 20, a.operation as string).map((e: any) => `[${e.operation}] ${e.created_at}`).join('\n') || 'Empty';
       case 'sessions': return this.engine.listSessions().map((s: any) => `[${s.session_id}] ${s.status}`).join('\n') || 'None';
       case 'analytics': case 'popular': return '{}';
@@ -260,6 +276,85 @@ export class MemoryToolDispatcher {
     if (['qa','stp','stc','test'].some(k => s.includes(k))) return 'qa-agent';
     if (['dev','code'].some(k => s.includes(k))) return 'dev-agent';
     return 'system';
+  }
+
+  private handleSyncCode(a: Args): string {
+    if (!this.queryLayer) {
+      return JSON.stringify({ error: 'mem_sync_code requires queryLayer (code indexer not available)' });
+    }
+
+    const limit = (a.limit as number) ?? 10000;
+    const kind = a.kind as string | undefined;
+
+    // 1. Fetch symbols
+    let symbols: any[] = [];
+    if (kind) {
+      symbols = this.queryLayer.findSymbols('', kind, limit);
+    } else {
+      const classes = this.queryLayer.findSymbols('', 'class', Math.floor(limit / 2));
+      const interfaces = this.queryLayer.findSymbols('', 'interface', Math.floor(limit / 2));
+      symbols = [...classes, ...interfaces];
+    }
+
+    if (symbols.length === 0) {
+      return 'No code symbols found to sync.';
+    }
+
+    // 2. Ingest symbols
+    const db = this.engine.getDb();
+    const checkStmt = db.prepare(`
+      SELECT id FROM knowledge_entries 
+      WHERE type = 'CODE_ENTITY' AND source = ? AND summary = ?
+    `);
+
+    const created: Array<[number, any]> = [];
+    for (const sym of symbols) {
+      const summary = `${sym.kind}: ${sym.name} (${sym.filePath})`;
+      const exists = checkStmt.get(sym.filePath, summary);
+      if (exists) continue;
+
+      const parts = [`${sym.kind} ${sym.name}`];
+      if (sym.signature) parts.push(`Signature: ${sym.signature}`);
+      parts.push(`File: ${sym.filePath} (lines ${sym.startLine}-${sym.endLine})`);
+      if (sym.parentSymbol) parts.push(`Parent: ${sym.parentSymbol}`);
+      if (sym.docComment) parts.push(`Doc: ${sym.docComment}`);
+      const content = parts.join('\n');
+
+      const id = this.engine.insert({
+        content,
+        summary,
+        type: 'CODE_ENTITY',
+        tier: 'SEMANTIC',
+        source: sym.filePath,
+        tags: `${sym.kind},${sym.name},code`,
+      });
+      created.push([id, sym]);
+    }
+
+    // 3. Link to documents (cross-reference)
+    let linked = 0;
+    const edgeCheckStmt = db.prepare(`
+      SELECT id FROM knowledge_graph_edges 
+      WHERE source_id = ? AND target_id = ? AND relation = ?
+    `);
+
+    for (const [codeId, sym] of created) {
+      const results = this.engine.search(sym.name, 5);
+      const relatedIds = results
+        .filter(r => r.entry.type !== 'CODE_ENTITY')
+        .map(r => r.entry.id)
+        .slice(0, 3);
+
+      for (const docId of relatedIds) {
+        const exists = edgeCheckStmt.get(codeId, docId, 'IMPLEMENTED_BY');
+        if (!exists) {
+          this.engine.addEdge(codeId, docId, 'IMPLEMENTED_BY');
+          linked++;
+        }
+      }
+    }
+
+    return `Synced: ${created.length} code symbols, ${linked} cross-reference edges`;
   }
 
   private resolvePath(fp: string): string {

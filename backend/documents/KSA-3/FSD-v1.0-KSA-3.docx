@@ -1,0 +1,54 @@
+# Functional Specification Document (FSD)
+
+## Kiro SDLC Agent — KSA-3: Injector — Copy Resources to Workspace
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-3 |
+| Title | Injector — Copy Resources to Workspace |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | documents/KSA-3/BRD.md |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior of the Injector module within the Kiro SDLC Agent VS Code extension.
+
+### 1.2 Scope
+
+1. injectAll() — Copy all core components + one indexer language
+2. injectSelective() — QuickPick UI for user to choose components
+3. copyDirRecursive() / copyFiltered() — Low-level copy utilities
+4. checkStatus() — Report which components exist
+
+## 3. Functional Requirements
+
+### 3.1 Inject All Resources (UC-1)
+
+Business Rules: BR-1 to BR-4
+
+### 3.2 Inject Selective Components (UC-2)
+
+Business Rules: BR-5 to BR-7
+
+### 3.3 Recursive Directory Copy (UC-3)
+
+Exclusion list: node\_modules, **pycache**, .git, out, dist Business Rules: BR-8 to BR-11
+
+### 3.4 Filtered Copy for Indexer (UC-4)
+
+Business Rules: BR-12 to BR-15
+
+### 3.5 Check Component Status (UC-5)
+
+Business Rules: BR-16, BR-17
+
+## 10. Testing (17 Test Cases)
+
+TC-1 to TC-17 covering all scenarios.

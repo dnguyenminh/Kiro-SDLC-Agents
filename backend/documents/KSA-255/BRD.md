@@ -1,0 +1,355 @@
+# Business Requirements Document (BRD)
+
+## Chatbox UI — KSA-255: Spinner + Working Indicator on Input Area during AI Processing
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-255 |
+| Title | Chat Panel: Spinner + Working indicator on Input Area during AI processing |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-06-09 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-255.docx |
+| Architecture Pattern | Plugin (VS Code Extension) |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | TA Agent – Technical Analyst | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-09 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-255 |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This document defines the business requirements for the **Spinner + Working Indicator** feature on the Chat Panel Input Area. When the user submits a message and the AI is processing a response, the Input Area must display a spinner animation accompanied by "working" text, providing clear visual feedback that the system is actively processing.
+
+This behavior mirrors the Kiro IDE native chat panel UX pattern. The feature is part of the Chatbox UI VS Code extension (webview-based) and follows the Plugin architecture pattern. It communicates with the Extension Host via postMessage protocol to receive AI processing state signals.
+
+### 1.2 Out of Scope
+
+- AI response streaming/rendering logic — handled by the Message Display component
+- Stop button implementation — covered separately (exists from Chat Panel Foundation KSA-210)
+- Network error handling / retry UI — separate concern
+- Message history persistence during processing state
+- Token usage display during processing
+
+### 1.3 Preliminary Requirement
+
+- Chat Panel Foundation must be implemented (KSA-210 — Done)
+- Tool Call UI blocks must be implemented (KSA-247 — Done)
+- Input Area component must exist and be functional
+- VS Code Webview API communication layer (postMessage) must be established
+- AI response streaming infrastructure must signal start/end of processing
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The Spinner + Working Indicator provides real-time processing feedback within the chat input area:
+
+1. User types a message in the Input Area
+2. User submits the message (Enter key or Send button)
+3. Input Area transitions to "processing" state — spinner + "working" text appears within 100ms
+4. Input textarea becomes disabled (not editable)
+5. AI processes the request (variable duration)
+6. AI response completes OR user clicks Stop button
+7. Spinner disappears, Input Area returns to normal state with placeholder text restored
+
+![Business Flow](diagrams/business-flow.png)
+*[Edit in draw.io](diagrams/business-flow.drawio)*
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|------------------|----------|---------------|
+| 1 | Display Spinner on Message Submit | MUST HAVE | KSA-255 |
+| 2 | Continuous Spinner Animation during Processing | MUST HAVE | KSA-255 |
+| 3 | Remove Spinner on AI Response Complete | MUST HAVE | KSA-255 |
+| 4 | Remove Spinner on Stop Button Click | MUST HAVE | KSA-255 |
+| 5 | Disable Input during Processing | MUST HAVE | KSA-255 |
+| 6 | Dark Theme Consistent Styling | MUST HAVE | KSA-255 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+**Step 1:** User composes a message in the Input Area textarea
+
+**Step 2:** User submits the message (pressing Enter or clicking Send button)
+
+**Step 3:** Within 100ms, the Input Area displays a spinner animation + "working" text overlay, and the textarea becomes disabled (read-only, not editable)
+
+**Step 4:** The spinner animates continuously (CSS rotation or pulse animation) while the AI is processing
+
+**Step 5:** Processing ends via one of two paths:
+- **Path A (Normal):** AI response completes (last token received) → spinner disappears, input restored
+- **Path B (Cancelled):** User clicks Stop button → spinner immediately disappears, input restored
+
+**Step 6:** Input Area returns to normal editable state with original placeholder text
+
+> **Note:** The spinner and "working" text must NOT block or obscure the Stop button or any other interactive element. The user must always be able to cancel the operation.
+
+---
+
+#### STORY 1: Display Spinner on Message Submit
+
+> As a user, I want to see a spinner animation + "working" text immediately after submitting my message, so that I know the system is processing my request.
+
+**Requirement Details:**
+
+1. When a message is submitted (Enter key or Send button), the Input Area SHALL display a spinner animation accompanied by "working" text
+2. The spinner must appear within 100 milliseconds of message submission
+3. The spinner is rendered WITHIN the Input Area (not as a separate component)
+4. The "working" text is displayed alongside the spinner (inline)
+
+**UI Specifications:**
+
+| No. | Name | Type | Required | Description | Note |
+|-----|------|------|----------|-------------|------|
+| 1 | Spinner Icon | CSS Animation (SVG/span) | Yes | Rotating or pulsing circle/dots | 16px size, Kiro theme color |
+| 2 | Working Text | Label | Yes | Static text "working" next to spinner | Font: inherit from input, opacity: 0.7 |
+| 3 | Input Overlay | Container | Yes | Wraps spinner + text within textarea area | Centered vertically in input |
+
+**Acceptance Criteria:**
+
+1. WHEN a message is submitted, THE Input_Area SHALL display a spinner animation + "working" text within 100ms
+
+---
+
+#### STORY 2: Continuous Spinner Animation during Processing
+
+> As a user, I want the spinner to animate continuously while the AI processes my request, so that I can confirm the system is still working.
+
+**Requirement Details:**
+
+1. The spinner SHALL animate continuously using CSS rotation or pulse animation
+2. Animation must be smooth (60fps target via CSS animation/transition)
+3. Animation continues uninterrupted for the entire processing duration
+4. No flickering or stuttering during animation
+
+**Acceptance Criteria:**
+
+2. WHILE the AI is processing, THE spinner SHALL animate continuously (CSS rotation or pulse)
+
+---
+
+#### STORY 3: Remove Spinner on AI Response Complete
+
+> As a user, I want the spinner to disappear and the input to restore when the AI finishes responding, so that I can immediately type my next message.
+
+**Requirement Details:**
+
+1. When the AI response completes (last token/chunk received), the spinner SHALL disappear
+2. The input placeholder text SHALL be restored to its original value
+3. The textarea SHALL become editable again
+4. Transition from "processing" to "ready" state should be immediate (no fade-out delay)
+
+**Acceptance Criteria:**
+
+3. WHEN the AI response completes (last token received), THE spinner SHALL disappear and input placeholder text restores
+
+---
+
+#### STORY 4: Remove Spinner on Stop Button Click
+
+> As a user, I want the spinner to disappear immediately when I click the Stop button, so that I have instant feedback that cancellation was acknowledged.
+
+**Requirement Details:**
+
+1. When the Stop button is clicked during processing, the spinner SHALL disappear immediately
+2. "Immediately" means within 1 frame (~16ms), no animation delay
+3. Input placeholder text restores and textarea becomes editable
+4. The Stop button interaction is NOT blocked by the spinner UI
+
+**Acceptance Criteria:**
+
+4. WHEN the Stop button is clicked, THE spinner SHALL immediately disappear
+
+---
+
+#### STORY 5: Disable Input during Processing
+
+> As a user, I want the input textarea to be disabled while the AI is processing, so that I don't accidentally type into the field during processing.
+
+**Requirement Details:**
+
+1. While the spinner is showing, the input textarea SHALL be disabled (not editable)
+2. Disabled state means: no text input, no paste, no cursor shown in the field
+3. The field visually appears inactive (reduced opacity or grayed out per dark theme)
+4. Re-enabled immediately when processing ends (response complete or Stop clicked)
+
+**Acceptance Criteria:**
+
+7. WHILE spinner is showing, THE input textarea SHALL be disabled (not editable)
+
+---
+
+#### STORY 6: Dark Theme Consistent Styling
+
+> As a user, I want the spinner and "working" text to be styled consistently with the Kiro IDE dark theme, so that the UI feels cohesive and professional.
+
+**Requirement Details:**
+
+1. Spinner color SHALL use Kiro IDE theme variables (e.g., `--vscode-progressBar-background` or similar)
+2. "working" text color SHALL match muted text in dark theme (e.g., `--vscode-descriptionForeground`)
+3. No bright/contrasting colors that break the dark theme aesthetic
+4. Consistent with Kiro IDE's own spinner behavior as reference
+
+**Acceptance Criteria:**
+
+5. THE spinner + working text SHALL be styled consistently with Kiro IDE dark theme
+
+---
+
+#### Non-Blocking Requirement (Cross-cutting)
+
+**Requirement Details:**
+
+1. The spinner + working text SHALL NOT block the Stop button or any other interactive element
+2. z-index and positioning must ensure clickable elements remain accessible
+3. No pointer-events on spinner overlay that would intercept clicks meant for other controls
+
+**Acceptance Criteria:**
+
+6. THE spinner SHALL NOT block the Stop button or any other interactive element
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| Chat Panel Foundation | System | KSA-210 (Done) | Panel layout, Input Area, and Stop button must exist |
+| Tool Call UI Blocks | System | KSA-247 (Done) | Tool call UI interactions must not conflict with spinner state |
+| VS Code Webview API | Infrastructure | N/A | postMessage protocol for extension-webview state communication |
+| AI Response Stream | System | N/A | Extension Host must signal processing start and end events |
+| CSS Custom Properties | Infrastructure | N/A | VS Code theme variables must be accessible in webview |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility | Source |
+|------|-------------|----------------|--------|
+| Product Owner | Development Team Lead | Approve requirements, UAT | Ticket creator |
+| Developer | Frontend Developer | Implement spinner + state management in TypeScript | Assignee |
+| QA Engineer | QA Team | Test all 7 acceptance criteria, timing validation | Ticket watcher |
+| UX Designer | Design Team | Validate visual consistency with Kiro IDE | Reviewer |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| CSS animation performance on low-end devices | Medium | Low | Use GPU-accelerated transforms (rotate, opacity) only |
+| State synchronization issue — spinner stuck | High | Medium | Add timeout fallback (30s max) to auto-clear spinner |
+| Race condition between Stop click and response arrival | Medium | Medium | Use a single state variable; whichever event fires first wins |
+| Theme variable unavailability in webview | Low | Low | Fallback hardcoded dark theme colors if CSS vars undefined |
+| Spinner overlapping Stop button on small panels | Medium | Low | Use flex layout with explicit spacing; test at min panel width |
+
+### 5.2 Assumptions
+
+- The Extension Host reliably signals AI processing start (on message submit) and end (on last token or error)
+- The Stop button already exists and functions (from KSA-210 Chat Panel Foundation)
+- VS Code CSS custom properties (theme variables) are accessible within the webview iframe
+- The Input Area is implemented as a standard HTML textarea or contenteditable element
+- The webview supports CSS animations without vendor prefixes (modern Chromium-based)
+- Processing state is managed in the webview (not round-tripped to Extension Host for spinner toggle)
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+|----------|-------------|---------|
+| Performance | Spinner display latency | Must appear within 100ms of message submission |
+| Performance | Spinner disappear latency | Must disappear within 1 frame (16ms) of completion/stop signal |
+| Performance | Animation smoothness | 60fps CSS animation, no jank (use transform/opacity only) |
+| Accessibility | Screen reader | ARIA live region announcing "AI is processing" on spinner show, "Ready" on hide |
+| Accessibility | Reduced motion | Respect `prefers-reduced-motion` — show static indicator instead of animation |
+| Compatibility | VS Code versions | Must work with VS Code 1.80+ (Webview API v2) |
+| Reliability | Stuck spinner protection | Auto-clear spinner after 60s timeout if no completion signal received |
+| Visual | Theme consistency | Use VS Code CSS custom properties, no hardcoded colors |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-255 | Chat Panel: Spinner + Working indicator on Input Area during AI processing | To Do | Task | Main ticket |
+| KSA-210 | Chat Panel Foundation | Done | Task | Dependency (provides Input Area + Stop button) |
+| KSA-247 | Tool Call UI blocks | Done | Task | Dependency (UI state interactions) |
+
+---
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| Input_Area | The textarea/input field at the bottom of the Chat Panel where users type messages |
+| Spinner | A CSS-animated visual indicator (rotating circle or pulsing dots) showing processing state |
+| Working Text | The text label "working" displayed alongside the spinner |
+| Stop Button | An interactive button that cancels the current AI processing operation |
+| Processing State | The period between message submission and AI response completion |
+| postMessage | VS Code API for bidirectional communication between webview and extension host |
+
+### Reference Documents
+
+| Document | Link / Location |
+|----------|-----------------|
+| Chatbox UI Spec | .kiro/specs/chatbox-ui/requirements.md |
+| VS Code Webview API | https://code.visualstudio.com/api/extension-guides/webview |
+| Kiro IDE Chat Panel (reference implementation) | Kiro IDE v1.x native chat panel behavior |
+| KSA-210 BRD | BRD-v1-KSA-210.docx |
+
+### Use Case Diagram
+
+![Use Case Diagram](diagrams/use-case.png)
+*[Edit in draw.io](diagrams/use-case.drawio)*
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case Diagram | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

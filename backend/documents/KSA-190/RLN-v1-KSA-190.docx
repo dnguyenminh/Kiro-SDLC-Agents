@@ -1,0 +1,51 @@
+# Release Notes
+
+## Code Intelligence MCP Server — v1.13.1
+
+## Release Information
+
+| Field | Value |
+| --- | --- |
+| Version | 1.13.1 |
+| Release Date | 2026-06-01 |
+| Jira Ticket | KSA-190 |
+| Type | Feature (minor) |
+
+## What’s New
+
+### Auto-Linking on KB Ingest
+
+Knowledge Base entries are now automatically linked to related existing entries when ingested.
+
+**Four linking strategies:**
+
+| Strategy | Relation Type | Trigger |
+| --- | --- | --- |
+| Semantic Similarity | SIMILAR\_TO | Cosine similarity >= 0.75 |
+| Shared Entities | SHARES\_ENTITY | Jaccard coefficient >= 0.3 |
+| Shared Tags | SHARES\_TAG | >= 2 tags in common |
+| FTS Topic Overlap | TOPIC\_OVERLAP | Fallback when < 2 edges |
+
+**Key features:** - Automatic edge creation during mem\_ingest and mem\_ingest\_file - Configurable thresholds and max edges per strategy - Direction-agnostic deduplication - Backfill support via mem\_graph action=auto\_link - Ingest response includes auto-link count - Master switch: autoLink.enabled
+
+### Backfill Command
+
+New mem\_graph action auto\_link: - Without entry\_id: processes all orphan entries (0 edges), max 50 per call - With entry\_id: auto-links a specific entry
+
+## Breaking Changes
+
+None. Purely additive feature.
+
+## Test Results
+
+* 39/39 automated tests pass
+* 2/2 manual SIT scenarios verified
+* 100% pass rate
+
+## Upgrade Instructions
+
+1. npm run build in mcp-code-intelligence-nodejs/
+2. vsce package to create VSIX
+3. kiro –install-extension code-intelligence-1.13.1.vsix
+
+No database migration needed.

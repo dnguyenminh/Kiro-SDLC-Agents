@@ -5,6 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { loadConfig, getWorkspacePath } from '../../config/BackendConfig.js';
 import type { ToolDefinition } from '../../types/tool.js';
 
 export class McpClientManager {
@@ -18,7 +19,8 @@ export class McpClientManager {
   }
 
   async initializeAll(): Promise<void> {
-    const configPath = path.resolve(process.cwd(), '../.code-intel/orchestration.json');
+    const cfg = loadConfig();
+    const configPath = path.resolve(getWorkspacePath(), cfg.dataDir, cfg.orchestrationConfigPath);
     if (!fs.existsSync(configPath)) {
       this.logger.warn({ configPath }, 'orchestration.json not found, skipping child servers');
       return;

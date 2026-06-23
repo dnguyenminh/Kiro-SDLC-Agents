@@ -3,7 +3,7 @@
  * Initializes all modules, starts HTTP server on configured port.
  */
 
-import pino from 'pino';
+import pino from 'pino/pino.js';
 import { loadConfig } from './config/BackendConfig.js';
 import { HttpServer } from './server/HttpServer.js';
 import { ModuleRegistry } from './modules/ModuleRegistry.js';

@@ -1,0 +1,248 @@
+# Business Requirements Document (BRD)
+
+## MCP Code Intelligence — KSA-104: VS Code Command: Download Embedding Model
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-104 |
+| Title | VS Code Command: Download Embedding Model (QuickPick UI + HTTP API) |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-05-21 |
+| Status | Final (Retroactive) |
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+| --- | --- | --- |
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SA Agent – Solution Architect | Review technical feasibility |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2026-05-21 | BA Agent | Initiate document — auto-generated retroactively from Jira ticket KSA-104 and implemented code |
+
+## Sign-Off
+
+| Name | Signature and date |
+| --- | --- |
+|  | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+|  | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This change request adds a **VS Code extension command** (Kiro SDLC: Download Embedding Model) that provides a graphical interface for developers to browse, download, and switch between embedding models used by the MCP Code Intelligence system.
+
+The feature includes: 1. **VS Code QuickPick UI** — command registered in Command Palette for model selection 2. **HTTP API routes** (/api/models/\*) — backend endpoints for model lifecycle management 3. **Cross-module implementation** — consistent API across Python, Node.js, and Kotlin MCP servers
+
+This extends the Model Manager capability introduced in KSA-102 by exposing it through a user-friendly VS Code interface rather than requiring direct MCP tool invocation.
+
+### 1.2 Out of Scope
+
+* Custom model upload (only pre-defined models in catalog)
+* Model training or fine-tuning
+* Automatic model selection based on workspace language
+* Download cancellation mid-progress
+* Model deletion from disk
+* Download progress percentage (indeterminate progress only)
+
+### 1.3 Preliminary Requirement
+
+* **KSA-102** (Adaptive Token Cache + Model Manager) must be implemented — provides the ModelManager, ModelRegistry, and ModelCatalog infrastructure this feature builds upon
+* MCP server must be running with HTTP viewer enabled (port configurable, default 3200)
+* VS Code extension kiro-sdlc-agents must be installed and active
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The feature enables a simple user-driven workflow for model management:
+
+1. Developer opens VS Code Command Palette (Ctrl+Shift+P)
+2. Selects “Kiro SDLC: Download Embedding Model”
+3. Extension resolves MCP server port from .kiro/settings/mcp.json
+4. Extension fetches model list and status from HTTP API
+5. QuickPick displays models with status indicators (active/downloaded/not downloaded)
+6. Developer selects a model → download or switch action triggered
+7. Background download from HuggingFace (if needed)
+8. Model activated for semantic search
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+| --- | --- | --- | --- |
+| 1 | As a developer, I want to browse available embedding models from VS Code so that I can see what options exist without leaving my IDE | MUST HAVE | KSA-104 |
+| 2 | As a developer, I want to download an embedding model via QuickPick so that I don’t need to use CLI or manual file management | MUST HAVE | KSA-104 |
+| 3 | As a developer, I want to switch the active embedding model so that I can enable multilingual semantic search | MUST HAVE | KSA-104 |
+| 4 | As a developer, I want clear status indicators for each model so that I know which is active, downloaded, or available | MUST HAVE | KSA-104 |
+| 5 | As a developer, I want clear error messages when MCP server is unreachable so that I know how to fix the issue | SHOULD HAVE | KSA-104 |
+| 6 | As a developer, I want the API to work consistently across Python, Node.js, and Kotlin MCP servers so that my experience is the same regardless of which server variant I use | MUST HAVE | KSA-104 |
+
+### 2.3 Details of User Stories
+
+#### Business Flow
+
+**Step 1:** Developer invokes command “Kiro SDLC: Download Embedding Model” from Command Palette
+
+**Step 2:** Extension reads MCP server viewer port from .kiro/settings/mcp.json (env: CODE\_INTEL\_VIEWER\_PORT, default: 3200)
+
+**Step 3:** Extension calls GET /api/models/list to fetch model catalog with download/active status
+
+**Step 4:** Extension calls GET /api/models/status to get current active model info
+
+**Step 5:** QuickPick UI displays models with status icons
+
+**Step 6:** Developer selects a model from the list
+
+**Step 7:** Based on model status: Not downloaded → download; Downloaded → ask activate; Already active → show info
+
+**Step 8:** On success, show confirmation message with new active model name
+
+#### STORY 1: Browse Available Models
+
+As a developer, I want to browse available embedding models from VS Code so that I can see what options exist without leaving my IDE
+
+**Requirement Details:** 1. Command Kiro SDLC: Download Embedding Model registered in VS Code Command Palette 2. On invocation, extension resolves MCP server HTTP port from workspace config 3. Extension calls GET /api/models/list to retrieve model catalog 4. QuickPick displays each model with: status icon, display name, size, supported languages 5. Models sorted by: active first, then downloaded, then not downloaded
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+| --- | --- | --- | --- | --- |
+| name | string | Yes | Model identifier | all-MiniLM-L6-v2 |
+| display\_name | string | Yes | Human-readable name | English (Small, Fast) |
+| size\_mb | number | Yes | Model size in megabytes | 90 |
+| languages | string[] | Yes | Supported languages | ["en"] |
+| downloaded | boolean | Yes | Whether model files exist on disk | true |
+| active | boolean | Yes | Whether model is currently in use | true |
+
+**Acceptance Criteria:** 1. Given MCP server is running, when user invokes command, then QuickPick shows all available models with correct status 2. Given model is active, then it shows check icon and appears first in list 3. Given model is downloaded but not active, then it shows cloud-download icon 4. Given model is not downloaded, then it shows cloud icon with size info
+
+#### STORY 2: Download Embedding Model
+
+As a developer, I want to download an embedding model via QuickPick so that I don’t need to use CLI or manual file management
+
+**Requirement Details:** 1. When user selects a model marked “Not downloaded”, extension calls POST /api/models/download 2. Server spawns background thread to download model files from HuggingFace 3. Extension shows progress notification (indeterminate, non-cancellable) 4. On completion, extension shows success message with option to activate 5. Model files saved to ~/.code-intel/models/{model-name}/ (global, shared across workspaces) 6. Duplicate download requests are ignored (server tracks downloading state)
+
+**Acceptance Criteria:** 1. Given model not downloaded, when user selects it, then download starts in background 2. Given download completes successfully, then notification shows success with activate option 3. Given download fails (network error), then notification shows error message 4. Given model is already being downloaded, then duplicate request is ignored 5. Given invalid model name, then server returns 400 with MODEL\_NOT\_FOUND error
+
+#### STORY 3: Switch Active Model
+
+As a developer, I want to switch the active embedding model so that I can enable multilingual semantic search
+
+**Requirement Details:** 1. When user selects a downloaded (but not active) model, extension asks “Activate now?” 2. If user confirms, extension calls POST /api/models/switch 3. Server updates registry.json to set new active model 4. Extension shows success message 5. Only one model can be active at a time
+
+**Acceptance Criteria:** 1. Given model is downloaded but not active, when user confirms activation, then model becomes active 2. Given model is not downloaded, when switch is attempted, then server returns error 3. Given model is already active, when user selects it, then show info message 4. Given user clicks Cancel, then no action is taken
+
+#### STORY 4: Model Status Indicators
+
+As a developer, I want clear status indicators for each model so that I know which is active, downloaded, or available
+
+**UI Specifications:**
+
+| No. | Name | Type | Required | Description | Note |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Active Icon | Codicon | Yes | $(check) — green checkmark | Model currently in use |
+| 2 | Downloaded Icon | Codicon | Yes | $(cloud-download) — cloud with arrow | Downloaded, ready to activate |
+| 3 | Not Downloaded Icon | Codicon | Yes | $(cloud) — plain cloud | Available for download |
+
+#### STORY 5: Error Handling for Unreachable Server
+
+As a developer, I want clear error messages when MCP server is unreachable so that I know how to fix the issue
+
+**Error Handling:** - ECONNREFUSED → “Cannot reach MCP server. Ensure it is running.” - Timeout → “MCP server not responding. Check server logs.” - HTTP 503 → “MCP server is starting up. Try again in a moment.”
+
+#### STORY 6: Cross-Module API Consistency
+
+As a developer, I want the API to work consistently across Python, Node.js, and Kotlin MCP servers
+
+**Acceptance Criteria:** 1. All 4 HTTP endpoints implemented identically across all 3 MCP modules 2. Same JSON request/response format across all modules 3. Same error codes and messages across all modules 4. Same model catalog (hardcoded in each module) 5. CORS headers enabled for localhost access
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+| --- | --- | --- | --- |
+| KSA-102 | System | KSA-102 | Adaptive Token Cache + Model Manager infrastructure |
+| MCP Server HTTP Viewer | System | N/A | HTTP server must be running on configurable port (default 3200) |
+| VS Code Extension | System | N/A | kiro-sdlc-agents extension must be installed and active |
+| HuggingFace Hub | External | N/A | Model file hosting for download |
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility | Source |
+| --- | --- | --- | --- |
+| Product Owner | Duc Nguyen Minh | Requirements definition | Jira reporter |
+| Developer | Development Team | Implementation across extension + 3 MCP modules | Jira assignee |
+| End Users | Developers using Kiro SDLC | Primary users of the download command | Target audience |
+| Architect | SA Agent | Technical design review | Review |
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+| --- | --- | --- | --- |
+| MCP server not running when command invoked | Medium | High | Clear error message with guidance |
+| Large model download (470MB) on slow network | Low | Medium | Background download, non-blocking |
+| HuggingFace unavailable (network restriction) | Medium | Low | Graceful error message |
+| Port conflict on default 3200 | Low | Low | Port configurable via env variable |
+| Inconsistent behavior across MCP modules | High | Low | Shared test suite |
+| Partial download leaves corrupted files | Medium | Low | Future: checksum verification |
+
+### 5.2 Assumptions
+
+* MCP server is running with HTTP viewer enabled before command is invoked
+* Developer has internet access for initial model download
+* ~/.code-intel/models/ directory is writable by the current user
+* VS Code extension can make HTTP calls to localhost
+* Model catalog is static (hardcoded)
+* Default model auto-downloaded on first MCP server use (per KSA-102)
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+| --- | --- | --- |
+| Performance | Model list response time | < 50ms (in-memory catalog) |
+| Performance | Download non-blocking | Background thread/async |
+| Reliability | Concurrent download prevention | Same model cannot be downloaded twice simultaneously |
+| Compatibility | Cross-platform | Windows, macOS, Linux |
+| Compatibility | Cross-module | Identical API behavior across Python, Node.js, Kotlin |
+| Storage | Model location | ~/.code-intel/models/{model-name}/ (global) |
+| UX | Progress feedback | Indeterminate progress notification during download |
+| UX | Error messages | User-friendly, actionable, no stack traces |
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+| --- | --- | --- | --- | --- |
+| KSA-104 | VS Code Command: Download Embedding Model | Done | Task | Main ticket |
+| KSA-102 | Adaptive Token Cache + Model Manager | Done | Task | Parent feature |
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+| --- | --- |
+| QuickPick | VS Code native dropdown UI component for item selection |
+| Embedding Model | ONNX neural network that converts text into 384-dimensional vectors |
+| ModelManager | Backend component handling model lifecycle |
+| ModelRegistry | JSON file tracking downloaded models and active selection |
+| HuggingFace | Model hosting platform |
+| ONNX | Open Neural Network Exchange — portable model format |
+| Codicon | VS Code’s built-in icon font |
+| MCP | Model Context Protocol |
+
+### HTTP API Quick Reference
+
+| Method | Path | Request Body | Success Response |
+| --- | --- | --- | --- |
+| GET | /api/models/list | — | { models: [{name, display\_name, size\_mb, languages, downloaded, active}] } |
+| GET | /api/models/status | — | { active\_model, model\_path, dimensions } |
+| POST | /api/models/download | { model\_name } | { success: true, status: “downloading” } |
+| POST | /api/models/switch | { model\_name } | { success: true, active\_model } |

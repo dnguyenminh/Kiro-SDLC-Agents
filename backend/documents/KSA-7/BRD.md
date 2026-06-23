@@ -1,0 +1,337 @@
+# Business Requirements Document (BRD)
+
+## Code Indexer Python — KSA-7: Code Indexer — Python version
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-7 |
+| Title | Code Indexer — Python version |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-05-10 |
+| Status | Draft |
+| Parent Epic | KSA-1 (Kiro SDLC Agents Extension) |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-05-10 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-7 |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This document defines the business requirements for a **standalone Python script** that indexes source code projects. The Code Indexer analyzes project structure, detects project types, parses source files across 7 programming languages, and generates structured metadata for use by AI agents in the Kiro SDLC pipeline.
+
+The indexer replaces the existing TypeScript-based indexer (`.analysis/code-intelligence/scripts/`) with a zero-dependency Python implementation that is simpler to deploy and maintain.
+
+### 1.2 Out of Scope
+
+- IDE/editor integration (VS Code extension, Kiro plugin)
+- Real-time file watching / incremental indexing
+- Code execution or compilation
+- Dependency resolution (downloading packages)
+- AI/LLM-based code analysis
+- Database storage (output is file-based only)
+
+### 1.3 Preliminary Requirements
+
+- Python 3.10+ installed on target machine
+- Access to source code directory to be indexed
+- Write access to output directory (`.analysis/code-intelligence/`)
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The Code Indexer follows a sequential pipeline:
+
+1. **Detect** project type from build files (Gradle, Maven, npm, Cargo, Go, Python, .NET)
+2. **Discover** modules/packages within the project
+3. **Scan** source files, filtering by configured extensions and exclusions
+4. **Parse** each source file to extract signatures (classes, functions, methods)
+5. **Generate** output files: `project-structure.md`, `modules/*.md`, `index-metadata.json`, `kb-payloads.json`
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|-----------------|----------|---------------|
+| 1 | As a developer, I want to index my project's source code so that AI agents can understand the codebase structure | MUST HAVE | KSA-7 |
+| 2 | As a developer, I want the indexer to auto-detect my project type so that I don't need manual configuration | MUST HAVE | KSA-7 |
+| 3 | As a developer, I want the indexer to parse 7 languages so that polyglot projects are fully indexed | MUST HAVE | KSA-7 |
+| 4 | As a developer, I want zero external dependencies so that the tool works without pip install | MUST HAVE | KSA-7 |
+| 5 | As a developer, I want all source files ≤ 200 lines so that the code is maintainable | MUST HAVE | KSA-7 |
+| 6 | As a developer, I want the indexer to generate KB payloads so that documents can be ingested into the knowledge base | SHOULD HAVE | KSA-7 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+**Step 1:** User runs `python main.py <project-root>` from the command line
+
+**Step 2:** Indexer reads `index-config.json` (if exists) or uses defaults for file extensions and exclusions
+
+**Step 3:** Indexer scans project root for build files to detect project type(s)
+
+**Step 4:** Indexer discovers modules/packages based on project type conventions
+
+**Step 5:** For each module, indexer scans for source files matching configured extensions
+
+**Step 6:** For each source file, indexer parses to extract class/function/method signatures
+
+**Step 7:** Indexer generates output files in `.analysis/code-intelligence/` directory
+
+**Step 8:** Indexer prints summary (files indexed, modules found, time elapsed)
+
+---
+
+#### STORY 1: Index Project Source Code
+
+> As a developer, I want to index my project's source code so that AI agents can understand the codebase structure
+
+**Requirement Details:**
+
+1. The indexer MUST accept a project root path as CLI argument
+2. The indexer MUST generate output in `.analysis/code-intelligence/` relative to project root
+3. Output MUST include: `project-structure.md`, `index-metadata.json`, `kb-payloads.json`, `modules/*.md`
+4. The indexer MUST handle errors gracefully (unreadable files, encoding issues) without crashing
+
+**Acceptance Criteria:**
+
+1. Running `python main.py /path/to/project` produces all 4 output types
+2. Indexer completes without error on projects with 1000+ files
+3. Indexer handles binary files gracefully (skips them)
+4. Indexer handles files with non-UTF-8 encoding (skips or uses fallback)
+
+---
+
+#### STORY 2: Auto-Detect Project Type
+
+> As a developer, I want the indexer to auto-detect my project type so that I don't need manual configuration
+
+**Requirement Details:**
+
+1. Detection MUST support 7 project types:
+   - **Gradle** — `build.gradle`, `build.gradle.kts`, `settings.gradle.kts`
+   - **Maven** — `pom.xml`
+   - **npm** — `package.json`
+   - **Cargo** — `Cargo.toml`
+   - **Go** — `go.mod`
+   - **Python** — `pyproject.toml`, `setup.py`, `setup.cfg`
+   - **.NET** — `*.csproj`, `*.sln`
+2. A project MAY have multiple types (e.g., Gradle + npm for full-stack)
+3. Detection MUST be based on presence of build/config files in project root and immediate subdirectories
+
+**Acceptance Criteria:**
+
+1. Given a Gradle/Kotlin project → detects "Gradle"
+2. Given a Node.js project → detects "npm"
+3. Given a Rust project → detects "Cargo"
+4. Given a monorepo with Gradle + npm → detects both
+5. Given an empty directory → reports "Unknown" project type
+
+---
+
+#### STORY 3: Parse 7 Programming Languages
+
+> As a developer, I want the indexer to parse 7 languages so that polyglot projects are fully indexed
+
+**Requirement Details:**
+
+1. Parser MUST extract signatures from these languages:
+   - **Kotlin** (`.kt`) — classes, objects, functions, interfaces, enums
+   - **Java** (`.java`) — classes, interfaces, methods, enums
+   - **Python** (`.py`) — classes, functions, decorators
+   - **TypeScript** (`.ts`, `.tsx`) — classes, functions, interfaces, types, arrow functions
+   - **JavaScript** (`.js`, `.jsx`) — classes, functions, arrow functions, exports
+   - **Go** (`.go`) — structs, interfaces, functions, methods
+   - **Rust** (`.rs`) — structs, enums, traits, impl blocks, functions
+2. Parser uses regex-based extraction (NOT AST parsing — no external deps)
+3. Parser extracts: name, type (class/function/interface), visibility (public/private), parameters (if feasible)
+
+**Acceptance Criteria:**
+
+1. For each language, parser extracts ≥90% of top-level declarations
+2. Parser handles multi-line signatures (e.g., Kotlin functions with many parameters)
+3. Parser ignores code inside comments and strings
+4. Parser produces consistent output format across all languages
+
+---
+
+#### STORY 4: Zero External Dependencies
+
+> As a developer, I want zero external dependencies so that the tool works without pip install
+
+**Requirement Details:**
+
+1. ALL imports MUST be from Python standard library
+2. Allowed modules include: `os`, `sys`, `pathlib`, `json`, `re`, `hashlib`, `datetime`, `argparse`, `dataclasses`, `typing`, `collections`, `fnmatch`, `glob`
+3. NO `requirements.txt` or `pyproject.toml` with dependencies
+4. Script MUST run with vanilla Python 3.10+ installation
+
+**Acceptance Criteria:**
+
+1. `python main.py` runs without any `pip install` step
+2. No `import` statement references a non-stdlib module
+3. Works on Windows, macOS, and Linux with standard Python
+
+---
+
+#### STORY 5: All Files ≤ 200 Lines
+
+> As a developer, I want all source files ≤ 200 lines so that the code is maintainable
+
+**Requirement Details:**
+
+1. Every `.py` file in the indexer MUST be ≤ 200 lines (excluding blank lines and comments)
+2. Code MUST be split by responsibility (see file organization in code standards)
+3. Functions MUST be ≤ 20 lines each
+
+**Acceptance Criteria:**
+
+1. `wc -l *.py` shows no file exceeding 200 total lines
+2. Each file has a single clear responsibility
+3. No function exceeds 20 lines of logic
+
+---
+
+#### STORY 6: Generate KB Payloads
+
+> As a developer, I want the indexer to generate KB payloads so that documents can be ingested into the knowledge base
+
+**Requirement Details:**
+
+1. Output `kb-payloads.json` — array of objects with: `title`, `content`, `tags`
+2. One payload per module discovered
+3. Content includes: module name, language, purpose, key classes/functions, file list
+4. Tags include: `code-index`, module name, language name
+
+**Acceptance Criteria:**
+
+1. `kb-payloads.json` is valid JSON array
+2. Each payload has `title`, `content`, `tags` fields
+3. Payloads cover all discovered modules
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| Python 3.10+ | Runtime | N/A | Required Python version for type hints, match statements |
+| Kiro SDLC Agents | System | KSA-1 | Parent epic — indexer output consumed by AI agents |
+| Existing TypeScript indexer | Reference | N/A | Reference implementation at `.analysis/code-intelligence/scripts/` |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility |
+|------|-------------|----------------|
+| Developer | Kiro SDLC Team | Implement and maintain indexer |
+| Consumer | AI Agents (BA, SA, TA, DEV) | Use indexer output for code understanding |
+| Product Owner | Project Lead | Accept/reject deliverable |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Regex parsing misses edge cases | Medium | High | Comprehensive test suite with real-world code samples |
+| 200-line limit forces over-splitting | Low | Medium | Careful module design, allow up to 200 lines |
+| New language support needed later | Low | Medium | Plugin-like parser architecture (one file per language) |
+
+### 5.2 Assumptions
+
+- Python 3.10+ is available on all target machines
+- Source code files use UTF-8 encoding (or indexer skips non-UTF-8)
+- Project root contains build files at top level or one level deep
+- Output directory `.analysis/code-intelligence/` can be created if missing
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Target |
+|----------|-------------|--------|
+| Performance | Index 1000-file project | < 30 seconds |
+| Performance | Index 100-file project | < 5 seconds |
+| Portability | Cross-platform | Windows, macOS, Linux |
+| Maintainability | File size | ≤ 200 lines per file |
+| Maintainability | Function size | ≤ 20 lines per function |
+| Reliability | Error handling | Never crash on bad input |
+| Compatibility | Python version | 3.10+ |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-7 | Code Indexer — Python version | To Do | Task | Main ticket |
+| KSA-1 | Kiro SDLC Agents Extension | In Progress | Epic | Parent epic |
+
+---
+
+## 8. Appendix
+
+### Output File Specifications
+
+| File | Format | Purpose |
+|------|--------|---------|
+| `project-structure.md` | Markdown | Human-readable project overview |
+| `index-metadata.json` | JSON | Machine-readable file metadata with content hashes |
+| `kb-payloads.json` | JSON array | Ready-to-ingest KB documents |
+| `modules/{name}.md` | Markdown | Per-module detailed analysis |
+
+### Supported File Extensions
+
+| Language | Extensions |
+|----------|-----------|
+| Kotlin | `.kt`, `.kts` |
+| Java | `.java` |
+| Python | `.py` |
+| TypeScript | `.ts`, `.tsx` |
+| JavaScript | `.js`, `.jsx` |
+| Go | `.go` |
+| Rust | `.rs` |
+
+### Default Exclusions
+
+- `node_modules/`, `build/`, `dist/`, `.gradle/`, `target/`
+- `.git/`, `.idea/`, `.vscode/`, `__pycache__/`
+- Binary files, generated files
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| Code Intelligence | Structured metadata about source code for AI consumption |
+| KB Payload | JSON object ready for ingestion into knowledge base |
+| Module | A logical grouping of source files (package, subproject, directory) |
+| Signature | Function/class declaration without implementation body |
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

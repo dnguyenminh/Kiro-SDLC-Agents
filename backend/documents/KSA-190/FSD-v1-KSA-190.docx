@@ -1,0 +1,43 @@
+# Functional Specification Document (FSD)
+
+## Code Intelligence MCP Server — KSA-190: Auto-Linking Logic on KB Ingest
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-190 |
+| Title | Auto-Linking Logic on KB Ingest |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-05-31 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-190.docx |
+
+## 1. Introduction
+
+This FSD specifies the functional behavior of the Auto-Linking feature for the Knowledge Base ingest pipeline.
+
+## 3. Use Cases
+
+### UC-01: Auto-Link on Single Entry Ingest
+
+### UC-02: Auto-Link on File Ingest
+
+### UC-03: Batch Backfill
+
+### UC-04: Configure Thresholds
+
+## 4. Business Rules (10 rules: BR-01 to BR-10)
+
+## 5. Data Specifications (AutoLinkConfig, AutoLinkResult, Edge Model)
+
+## 6. API Contracts (Enhanced mem\_ingest, new mem\_graph auto\_link action)
+
+## 7. Integration Requirements
+
+## 13. Pseudocode (AutoLinker.link, cosineSimilarity, edgeExists)
+
+## 14. Acceptance Criteria (11 criteria across 4 use cases)
+
+Full document: see FSD.md in documents/KSA-190/

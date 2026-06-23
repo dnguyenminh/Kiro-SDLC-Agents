@@ -1,0 +1,58 @@
+## Sheet1
+| TC\_ID | Title | Level | Priority | Type | Requirement | Preconditions | Test Steps Summary | Expected Result | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TC-001 | injectAll — Copy all components with valid language | UT-01 | High | Functional | UC-1, BR-1, BR-2 | Extension installed; workspace open | Call injectAll(python) verify all 5 dirs | All 4 CORE\_COMPONENTS + python indexer copied | NOT\_RUN |
+| TC-002 | injectSelective — Select and inject specific components | UT-02 | High | Functional | UC-2, BR-5 | QuickPick returns agents+hooks | Call injectSelective verify only selected | Only agents and hooks created | NOT\_RUN |
+| TC-003 | copyDirRecursive — Copy directory tree preserving structure | UT-03 | High | Functional | UC-3 | Source with nested structure | Call copyDirRecursive verify structure | Directory structure mirrors source | NOT\_RUN |
+| TC-004 | copyFiltered — Copy only items in filter list | UT-04 | High | Functional | UC-4, BR-12 | Source has 5 language dirs | Call copyFiltered([python]) verify | Only python/ copied | NOT\_RUN |
+| TC-005 | checkStatus — Report all components present | UT-05 | High | Functional | UC-5, BR-16 | All 5 component dirs exist | Call checkStatus verify all true | All 5 booleans = true | NOT\_RUN |
+| TC-100 | injectAll — One component source missing (AF-1) | UT-06 | High | Functional-AF | UC-1 AF-1, BR-7 | steering source missing | Call injectAll verify 3/4 + warning | 3 components injected; steering skipped | NOT\_RUN |
+| TC-101 | injectAll — Workspace already has components (overwrite) | UT-07 | High | Functional-AF | UC-1 AF-2, BR-3 | Workspace has old content | Call injectAll verify overwritten | Existing files overwritten | NOT\_RUN |
+| TC-102 | injectSelective — User selects only indexer | UT-08 | Medium | Functional-AF | UC-2 AF-1 | QuickPick returns indexer only | Call injectSelective verify indexer only | Only python indexer scripts exist | NOT\_RUN |
+| TC-103 | injectSelective — One component fails others continue | UT-09 | High | Functional-AF | UC-2 EF-2, BR-7 | steering source corrupted | Call injectSelective verify 2/3 | agents+hooks copied; partial success | NOT\_RUN |
+| TC-200 | injectAll — No workspace open (EF-1) | UT-10 | High | Functional-EF | UC-1 EF-1 | No workspace open | Call injectAll with no workspace | Error: Please open a workspace | NOT\_RUN |
+| TC-201 | injectAll — Invalid indexer language (EF-3) | UT-11 | High | Functional-EF | UC-1 EF-3 | Workspace open | Call injectAll(ruby) | Error listing valid options | NOT\_RUN |
+| TC-202 | injectSelective — User cancels QuickPick (EF-1) | UT-12 | Medium | Functional-EF | UC-2 EF-1, BR-6 | QuickPick returns undefined | Call injectSelective with cancel | No files created; silent cancel | NOT\_RUN |
+| TC-203 | copyDirRecursive — Source does not exist (EF-1) | UT-13 | High | Functional-EF | UC-3 EF-1 | Source path non-existent | Call copyDirRecursive bad source | Error thrown with path info | NOT\_RUN |
+| TC-204 | copyDirRecursive — Destination not writable (EF-2) | IT-01 | High | Functional-EF | UC-3 EF-2 | Dest parent read-only | Call copyDirRecursive read-only dest | Error: Cannot write to workspace | NOT\_RUN |
+| TC-300 | BR-1 — All 4 CORE\_COMPONENTS copied | UT-14 | High | Business Rule | BR-1 | All 4 source dirs exist | Call injectAll count dirs | Exactly 4 + 1 indexer | NOT\_RUN |
+| TC-301 | BR-2 — Exactly 1 indexer language | UT-15 | High | Business Rule | BR-2 | All 5 indexer languages exist | Call injectAll(java) verify only java | Only java/ in scripts | NOT\_RUN |
+| TC-302 | BR-3 — Existing files overwritten without merge | UT-16 | High | Business Rule | BR-3 | Workspace has config v1 | Call injectAll read file | Content is v2; no merge dialog | NOT\_RUN |
+| TC-303 | BR-4/BR-8 — Excluded directories never copied | UT-17 | High | Business Rule | BR-4, BR-8 | Source has all 5 excluded dirs | Call copyDirRecursive check excluded | All 5 excluded dirs absent | NOT\_RUN |
+| TC-304 | BR-5 — QuickPick supports multi-select | E2E-UI-01 | High | Business Rule | BR-5 | Extension activated | Execute Inject Selective | Multiple items selectable | NOT\_RUN |
+| TC-305 | BR-6 — Cancel = no file modifications | UT-12 | High | Business Rule | BR-6 | Known workspace state | Cancel QuickPick compare hash | Hash unchanged | NOT\_RUN |
+| TC-306 | BR-7 — Partial failure doesn't abort remaining | IT-02 | High | Business Rule | BR-7 | 3 components; #2 corrupted | Inject with failure verify #3 | #1 and #3 copied despite #2 | NOT\_RUN |
+| TC-307 | BR-8 — Exclusion list contains exactly 5 items | PBT-01 | High | Business Rule | BR-8 | Access to EXCLUDE\_LIST | Read and verify list | Length=5; correct items | NOT\_RUN |
+| TC-308 | BR-9 — Exclusion is case-sensitive | PBT-02 | High | Business Rule | BR-9 | Dirs with different casing | Call copyDirRecursive | Only exact case excluded | NOT\_RUN |
+| TC-309 | BR-10 — Exclusion applies at any depth | PBT-03 | High | Business Rule | BR-10 | node\_modules at depth 2 | Call copyDirRecursive | Excluded at nested depth | NOT\_RUN |
+| TC-310 | BR-11 — Files with excluded names still copied | PBT-04 | High | Business Rule | BR-11 | File named dist | Call copyDirRecursive | File copied (not excluded) | NOT\_RUN |
+| TC-311 | BR-12 — Only filter list items copied | UT-04 | High | Business Rule | BR-12 | Source with 6 items | Call copyFiltered([python,README]) | Only 2 items copied | NOT\_RUN |
+| TC-312 | BR-13 — Filter matching is exact (no glob) | PBT-05 | High | Business Rule | BR-13 | python/ python3/ python-scripts/ | Call copyFiltered([python]) | Only python/ copied | NOT\_RUN |
+| TC-313 | BR-14 — Missing filter items silently skipped | UT-19 | Medium | Business Rule | BR-14 | filter includes nonexistent | Call copyFiltered | No error for missing item | NOT\_RUN |
+| TC-314 | BR-15 — Exclusion rules apply within filtered dirs | IT-03 | High | Business Rule | BR-15 | python/ has node\_modules | Call copyFiltered | node\_modules excluded inside | NOT\_RUN |
+| TC-315 | BR-16 — checkStatus() is read-only | IT-04 | High | Business Rule | BR-16 | Known workspace state | Call checkStatus compare snapshots | No modifications | NOT\_RUN |
+| TC-316 | BR-17 — All components default false if workspace invalid | UT-20 | Medium | Business Rule | BR-17 | Invalid workspace path | Call checkStatus | All false | NOT\_RUN |
+| TC-400 | copyFiltered — Empty filter list | UT-21 | Medium | Boundary | UC-4 EF-1 | Source exists | Call copyFiltered([]) | Warning; nothing copied | NOT\_RUN |
+| TC-401 | injectAll — Empty string indexer language | UT-22 | Medium | Negative | UC-1 EF-3 | Workspace open | Call injectAll("") | Error listing valid options | NOT\_RUN |
+| TC-402 | copyDirRecursive — Deeply nested directory (10+ levels) | IT-05 | Medium | Boundary | UC-3 | 10-level deep source | Call copyDirRecursive | Deep file copied | NOT\_RUN |
+| TC-403 | copyDirRecursive — Source with symlinks | IT-06 | Medium | Boundary | UC-3 | Source has symlink | Call copyDirRecursive | Defined behavior | NOT\_RUN |
+| TC-404 | injectAll — Special characters in workspace path | IT-07 | Medium | Boundary | FSD Section 8 | Path with spaces/parens | Call injectAll | All components copied | NOT\_RUN |
+| TC-405 | copyDirRecursive — Empty source directory | UT-23 | Low | Boundary | UC-3 | Empty source dir | Call copyDirRecursive | Empty dest created | NOT\_RUN |
+| TC-500 | QuickPick — All items displayed with correct labels | E2E-UI-02 | Medium | UI/UX | FSD 3.2.4 | Extension activated | Execute Inject Selective | All items match FSD spec | NOT\_RUN |
+| TC-501 | Notifications — Success and error messages | E2E-UI-03 | Medium | UI/UX | FSD Section 9.2 | Extension activated | Execute inject commands | Messages match FSD | NOT\_RUN |
+| TC-600 | Performance — Copy 500 files within 5 seconds | IT-08 | Medium | Non-Functional | FSD Section 8 | 500 files source | Time copyDirRecursive | ≤ 5000ms | NOT\_RUN |
+| TC-601 | Async I/O — Extension host not blocked | E2E-UI-04 | Medium | Non-Functional | FSD Section 8 | Large source (200+ files) | Start inject + run another cmd | VS Code responsive | NOT\_RUN |
+| TC-602 | Security — No path traversal | UT-24 | Medium | Non-Functional | FSD Section 7 | Malicious filename | Call copyDirRecursive | No file outside dest | NOT\_RUN |
+| TC-700 | Full injection flow — Extension to workspace | E2E-UI-05 | High | Integration | UC-1, FSD 5.1 | Extension in test instance | Execute Inject All end-to-end | All components + notification | NOT\_RUN |
+| TC-701 | checkStatus integration — Reflects workspace state | IT-04 | High | Integration | UC-5, FSD 5.2 | Partial workspace | Call checkStatus before/after | Correct partial then full | NOT\_RUN |
+| TC-800 | Existing extension commands still work | SIT-01 | Medium | Regression | KSA-2 | Extension loaded | Activate and verify commands | Clean activation | NOT\_RUN |
+| TC-801 | Re-injection after workspace changes | SIT-02 | Medium | Regression | BR-3 | Modified workspace | Re-inject | Modified files overwritten | NOT\_RUN |
+| PBT-01 | Exclusion list is complete and immutable | PBT | High | Property-Based | BR-8 | EXCLUDE\_LIST access | Verify set = 5 items | Property holds | NOT\_RUN |
+| PBT-02 | Case-sensitivity of exclusion | PBT | High | Property-Based | BR-9 | Random case variations | Verify only exact match excluded | Property holds | NOT\_RUN |
+| PBT-03 | Depth-independence of exclusion | PBT | High | Property-Based | BR-10 | Random depth placement | Verify excluded at any depth | Property holds | NOT\_RUN |
+| PBT-04 | File vs directory distinction | PBT | High | Property-Based | BR-11 | Files with excluded names | Verify files ARE copied | Property holds | NOT\_RUN |
+| PBT-05 | Filter exactness — no partial matching | PBT | High | Property-Based | BR-13 | Random substrings | Verify no partial matches | Property holds | NOT\_RUN |
+| SIT-01 | Full injection workflow (Windows) | SIT | High | Manual | UC-1 | VS Code Windows; empty workspace | Execute Inject All via palette | All components visible | NOT\_RUN |
+| SIT-02 | Selective injection with cancel (macOS) | SIT | Medium | Manual | UC-2, BR-6 | VS Code macOS; empty workspace | Cancel then selective inject | Cancel=no changes; selective=selected only | NOT\_RUN |
+| SIT-03 | Re-injection overwrites (Linux) | SIT | Medium | Manual | BR-3 | VS Code Ubuntu; modified workspace | Modify then re-inject | Modifications overwritten | NOT\_RUN |
+| SIT-04 | Visual verification of QuickPick UI | SIT | Low | Manual | FSD 3.2.4 | Extension activated | Visually inspect QuickPick | Clean layout; checkboxes | NOT\_RUN |

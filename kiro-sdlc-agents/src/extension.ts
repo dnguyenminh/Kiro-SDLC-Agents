@@ -12,7 +12,6 @@ import {
 } from "./injector";
 import { isUpgradeAvailable, loadBundledManifest, migrateLegacyVersion } from "./checksum";
 import { promptIndexAfterInject, handleIndexWorkspace } from "./indexer";
-
 import { McpServerManager } from "./mcp-server-manager";
 import { WebviewPanelManager } from "./webview-panel-manager";
 import { KiroTreeViewProvider } from "./sidebar/tree-view-provider";
@@ -24,22 +23,19 @@ import { registerAIContextCommands } from "./ai-context-commands";
 import { handleIndexSalesforceProject } from "./sf-indexer";
 import { SecurityPanel } from "./panels/security-panel";
 import { showImpactAnalysis } from "./panels/impact-panel";
-// import { NativeAddonManager } from "./native-addon-manager";
-// import { OnnxAddonManager } from "./onnx-addon-manager";
+import { NativeAddonManager } from "./native-addon-manager";
 import { KbEventBus } from "./kb-event-bus";
 import { ChatPanelProvider } from "./chat-panel/chat-panel-provider";
 import { SettingsPanel } from "./panels/settings-panel";
-import { AuthManager } from "./auth/AuthManager";
 import { LoginPanel } from "./panels/login-panel";
+import { AuthManager } from "./auth/AuthManager";
 
 let mcpManager: McpServerManager | undefined;
 let panelManager: WebviewPanelManager | undefined;
 let configWatcher: ConfigWatcher | undefined;
-// let nativeAddonManager: NativeAddonManager | undefined;
-// let onnxAddonManager: OnnxAddonManager | undefined;
+let nativeAddonManager: NativeAddonManager | undefined;
 let kbEventBus: KbEventBus | undefined;
 let treeProvider: KiroTreeViewProvider | undefined;
-let authManager: AuthManager | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
     const statusBar = createStatusBar();
@@ -51,47 +47,23 @@ export async function activate(context: vscode.ExtensionContext) {
         const outputChannel = vscode.window.createOutputChannel("Kiro MCP Server");
         context.subscriptions.push(outputChannel);
 
-        // Initialize AuthManager
-        const mcpConfig = vscode.workspace.getConfiguration("kiroSdlc");
-        const backendUrl = mcpConfig.get<string>("backend.url") || "http://127.0.0.1:48721";
-        authManager = new AuthManager(context.secrets, backendUrl);
-        await authManager.initialize();
-
-        mcpManager = new McpServerManager(workspaceRoot, outputChannel, authManager, backendUrl);
+        mcpManager = new McpServerManager(context.extensionPath, workspaceRoot, outputChannel);
         context.subscriptions.push(mcpManager);
 
+        // Initialize NativeAddonManager for prebuilt binary resolution (KSA-175)
+        nativeAddonManager = new NativeAddonManager(context, outputChannel);
+        mcpManager.setNativeAddonManager(nativeAddonManager);
+
         // Initialize KbEventBus for real-time panel updates via SSE
-        kbEventBus = new KbEventBus(outputChannel, mcpManager);
+        kbEventBus = new KbEventBus(outputChannel);
         context.subscriptions.push(kbEventBus);
 
         panelManager = new WebviewPanelManager(mcpManager, context.extensionUri, kbEventBus);
         context.subscriptions.push(panelManager);
-        
-        // Provide token to webview panels
-        const { BasePanel } = require("./panels/base-panel");
-        BasePanel.authTokenProvider = () => authManager?.getTokenSync() || "";
-        
-        // Initialize sidebar tree view
-        treeProvider = new KiroTreeViewProvider(mcpManager);
-        
-        // Setup auth state syncing
-        authManager.onStateChange((state) => {
-            if (state === "AUTHENTICATED") {
-                treeProvider?.setAuthenticated(true, "admin");
-            } else if (state === "UNAUTHENTICATED") {
-                treeProvider?.setAuthenticated(false);
-            }
-        });
-        
-        // Initial auth state check
-        if (authManager.isAuthenticated) {
-            treeProvider.setAuthenticated(true, "admin");
-        }
 
-        const treeView = vscode.window.createTreeView("kiroSdlcTree", {
-            treeDataProvider: treeProvider,
-            showCollapseAll: true,
-        });
+        // Register tree view (use createTreeView for badge support)
+        treeProvider = new KiroTreeViewProvider(mcpManager);
+        const treeView = vscode.window.createTreeView("kiroSdlcTree", { treeDataProvider: treeProvider });
         treeProvider.setTreeView(treeView);
         context.subscriptions.push(treeView);
 
@@ -192,12 +164,12 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             if (mcpManager.status === "running") {
-                mcpManager.reconnect().catch((err) => {
-                    outputChannel.appendLine(`[Config] Reconnect failed: ${(err as Error).message}`);
+                mcpManager.restart().catch((err) => {
+                    outputChannel.appendLine(`[Config] Restart failed: ${(err as Error).message}`);
                 });
             } else {
-                mcpManager.connect().catch((err) => {
-                    outputChannel.appendLine(`[Config] Connect failed after port change: ${(err as Error).message}`);
+                mcpManager.spawn().catch((err) => {
+                    outputChannel.appendLine(`[Config] Spawn failed after port change: ${(err as Error).message}`);
                 });
             }
         }));
@@ -210,7 +182,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
             // Connect/disconnect KbEventBus based on server status
             if (status === "running" && mcpManager?.port) {
-                kbEventBus?.connect();
+                kbEventBus?.connect(mcpManager.port);
             } else if (status === "stopped" || status === "crashed") {
                 kbEventBus?.disconnect();
             }
@@ -227,9 +199,9 @@ export async function activate(context: vscode.ExtensionContext) {
         const serverEnabled = config.get<boolean>("enableMcpServer", true);
         if (serverEnabled) {
             try {
-                await mcpManager.connect();
+                await mcpManager.spawn();
             } catch (err) {
-                outputChannel.appendLine(`[WARN] Auto-connect failed: ${(err as Error).message}`);
+                outputChannel.appendLine(`[WARN] Auto-spawn failed: ${(err as Error).message}`);
             }
         } else {
             outputChannel.appendLine("[MCP] Server disabled by setting kiroSdlc.enableMcpServer");
@@ -242,19 +214,23 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("kiroSdlc.injectSelective", () => handleInjectSelective(context)),
         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
         vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context)),
-        vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace(authManager?.getTokenSync())),
+        vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace()),
         vscode.commands.registerCommand("kiroSdlc.indexSalesforceProject", () => handleIndexSalesforceProject()),
         vscode.commands.registerCommand("kiroSdlc.login", async () => {
-            if (!authManager) return;
+            const config = vscode.workspace.getConfiguration("kiroSdlc");
+            const port = config.get<number>("mcpServerPort", 9181);
+            const serverUrl = config.get<string>("mcpServerUrl", `http://localhost:${port}`);
+            const authManager = new AuthManager(context.secrets, serverUrl);
+            await authManager.initialize();
             const loginPanel = new LoginPanel(authManager, context.extensionUri);
             loginPanel.show();
-        }),
-        vscode.commands.registerCommand("kiroSdlc.logout", async () => {
-            if (!authManager) return;
-            await authManager.logout();
-            // Dispose any open KB panels so that subsequent navigation (e.g., Dashboard) creates a fresh panel without a stale auth token.
-            panelManager?.disposeAll();
-            vscode.window.showInformationMessage("Logged out successfully.");
+            authManager.onStateChange((state) => {
+                if (state === "AUTHENTICATED") {
+                    treeProvider?.setAuthenticated(true, "admin");
+                } else if (state === "UNAUTHENTICATED") {
+                    treeProvider?.setAuthenticated(false);
+                }
+            });
         }),
     );
 
@@ -309,7 +285,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     configWatcher?.dispose();
-    mcpManager?.disconnect().catch(() => {});
+    mcpManager?.kill().catch(() => {});
     panelManager?.disposeAll();
 }
 
@@ -328,10 +304,10 @@ async function handleRestartServer(): Promise<void> {
         return;
     }
     try {
-        await mcpManager.reconnect();
-        vscode.window.showInformationMessage("MCP server reconnected.");
+        await mcpManager.restart();
+        vscode.window.showInformationMessage("MCP server restarted.");
     } catch (err) {
-        vscode.window.showErrorMessage(`Reconnect failed: ${(err as Error).message}`);
+        vscode.window.showErrorMessage(`Restart failed: ${(err as Error).message}`);
     }
 }
 
@@ -342,20 +318,18 @@ async function handleStopServer(): Promise<void> {
     }
     try {
         configWatcher?.suppressNextChange();
-        await mcpManager.disconnect();
+        await mcpManager.kill();
         // Remove code-intelligence entry from mcp.json so Kiro IDE doesn't try to reconnect
         const workspaceRoot = getWorkspaceRoot();
         if (workspaceRoot) {
             configWatcher?.suppressNextChange();
             removeBundledMcpConfig(workspaceRoot);
         }
-        vscode.window.showInformationMessage("MCP server disconnected.");
+        vscode.window.showInformationMessage("MCP server stopped.");
     } catch (err) {
-        vscode.window.showErrorMessage(`Disconnect failed: ${(err as Error).message}`);
+        vscode.window.showErrorMessage(`Stop failed: ${(err as Error).message}`);
     }
 }
-
-
 
 async function handleEditConfig(): Promise<void> {
     const root = getWorkspaceRoot();

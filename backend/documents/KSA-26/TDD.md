@@ -1,0 +1,1639 @@
+# Technical Design Document (TDD)
+
+## Kiro SDLC Agents — KSA-26: [Indexer] Port Pattern Detection Logic from Scripts to MCP Indexer
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-26 |
+| Title | [Indexer] Port pattern detection logic from scripts to MCP indexer |
+| Author | SA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | BRD-v1.0-KSA-26.docx |
+| Related FSD | N/A (BRD serves as functional spec for this infrastructure ticket) |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | SA Agent – Solution Architect | Create document |
+| Peer Reviewer | DEV Agent – Developer | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-20 | SA Agent | Initiate document — auto-generated from BRD and source code analysis |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm the technical design in this TDD |
+| | ☐ I agree and confirm the technical design in this TDD |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This TDD specifies the technical design for porting the existing pattern detection logic from the Code Intelligence scripts (`scripts/python/patterns.py` and `scripts/nodejs/src/full-indexer.ts`) into the 6 MCP indexer server variants. The goal is to enable real-time pattern detection during indexing, storing results in the `modules` table for downstream consumption by `code_modules` and `code_kb_export` tools.
+
+### 1.2 Scope
+
+- New `pattern-detector` module in each of the 6 MCP server variants
+- Integration into the existing `IndexingEngine` pipeline (post-scan, post-parse)
+- Schema extension for pattern metadata columns in `modules` table (depends on KSA-25)
+- Performance validation (< 10% overhead)
+
+### 1.3 Technology Stack
+
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Node.js MCP | TypeScript + better-sqlite3 | Node 20+ |
+| Python MCP | Python + sqlite3 (stdlib) | Python 3.11+ |
+| Kotlin MCP | Kotlin + JDBC SQLite | Kotlin 1.9+ / JDK 17+ |
+| Bash MCP | Bash + sqlite3 CLI | Bash 4+ |
+| PowerShell MCP | PowerShell + sqlite3 CLI | PowerShell 5.1+ / 7+ |
+| CMD MCP | Batch + sqlite3.exe | Windows CMD |
+| Database | SQLite + FTS5 | 3.40+ |
+| MCP Protocol | @modelcontextprotocol/sdk | 1.x |
+
+### 1.4 Design Principles
+
+- **Zero external dependencies** — Pattern detection uses only stdlib string operations
+- **Single Responsibility** — Each pattern detector function does one thing
+- **Deterministic** — Same input always produces same output
+- **Fault-tolerant** — Detection failure for one module does not crash the pipeline
+- **Performance-first** — Pure string matching, no file I/O, no regex beyond simple contains/endsWith
+
+### 1.5 Constraints
+
+- Pattern detection must NOT re-read source files — operates on in-memory parsed data only
+- Must produce identical output to existing scripts for the same input
+- Tier 2 languages (Bash, PowerShell, CMD) only support DI Style + Naming detection
+- Depends on KSA-25 schema migration being applied first
+- Maximum 200 lines per file, 20 lines per function (code standards)
+
+### 1.6 References
+
+| Document | Location |
+|----------|----------|
+| BRD | documents/KSA-26/BRD.md |
+| Python reference implementation | .analysis/code-intelligence/scripts/python/patterns.py |
+| TypeScript reference implementation | .analysis/code-intelligence/scripts/nodejs/src/full-indexer.ts |
+| KSA-25 Schema migration | Jira ticket KSA-25 |
+
+---
+
+## 2. System Architecture
+
+### 2.1 Architecture Overview
+
+The pattern detection system is a post-processing step within each MCP indexer's pipeline. It receives aggregated parse data (classes, functions, imports) per module and produces pattern metadata that is stored in the `modules` table.
+
+```mermaid
+graph TB
+    subgraph "MCP Server (any variant)"
+        A[File Scanner] --> B[Signature Extractor]
+        B --> C[IndexingEngine]
+        C --> D[updateModules]
+        D --> E[PatternDetector]
+        E --> F[SQLite modules table]
+    end
+    
+    subgraph "Downstream Tools"
+        F --> G[code_modules tool]
+        F --> H[code_kb_export tool]
+    end
+    
+    subgraph "Input Data (per module)"
+        I[ClassInfo array] --> E
+        J[FunctionInfo array] --> E
+        K[imports array] --> E
+    end
+```
+
+![Architecture Diagram](diagrams/architecture.png)
+*[Edit in draw.io](diagrams/architecture.drawio)*
+
+### 2.2 Component Diagram
+
+```mermaid
+graph LR
+    subgraph "scanner/"
+        FS[file-scanner] --> SE[signature-extractor]
+        SE --> PD[pattern-detector]
+    end
+    
+    subgraph "indexer/"
+        IE[IndexingEngine]
+    end
+    
+    subgraph "db/"
+        DM[DatabaseManager]
+        SC[Schema/Migrations]
+    end
+    
+    IE --> FS
+    IE --> PD
+    IE --> DM
+    DM --> SC
+```
+
+![Component Diagram](diagrams/component.png)
+*[Edit in draw.io](diagrams/component.drawio)*
+
+| Component | Responsibility | Technology |
+|-----------|---------------|------------|
+| PatternDetector | Detect 6 coding patterns from parsed data | Pure string matching |
+| IndexingEngine | Orchestrate scan → parse → detect → store | Language-specific |
+| DatabaseManager | SQLite lifecycle, migrations, queries | better-sqlite3 / sqlite3 |
+| FileScanner | Traverse workspace, detect languages | fs / pathlib / find |
+| SignatureExtractor | Extract classes, functions, imports via regex | Language-specific regex |
+
+### 2.3 Deployment Architecture
+
+Each MCP server variant is a standalone process communicating via stdio with the AI agent. Pattern detection is embedded within the server process — no separate service or network call.
+
+```mermaid
+graph TB
+    subgraph "Developer Machine"
+        Agent[AI Agent / IDE] -->|stdio| MCP[MCP Server Process]
+        MCP --> DB[(SQLite .code-intel/index.db)]
+        MCP --> WS[Workspace Files]
+    end
+```
+
+![Deployment Diagram](diagrams/deployment.png)
+*[Edit in draw.io](diagrams/deployment.drawio)*
+
+### 2.4 Communication Patterns
+
+| From | To | Protocol | Pattern | Description |
+|------|----|----------|---------|-------------|
+| AI Agent | MCP Server | stdio (JSON-RPC) | Sync | Tool invocation triggers indexing |
+| IndexingEngine | PatternDetector | In-process function call | Sync | Direct function invocation |
+| PatternDetector | SQLite | JDBC/better-sqlite3 | Sync | UPDATE modules SET patterns |
+
+---
+
+## 3. API Design
+
+> Pattern detection is an internal pipeline step — it does not expose new MCP tools. However, it modifies the data returned by existing tools (`code_modules`, `code_index_status`).
+
+### 3.1 Modified Tool Response: `code_modules`
+
+**Implements:** Story 1-6 (pattern data in module response)
+
+The `code_modules` MCP tool response will be enriched (by KSA-28) with pattern fields. This section documents the data contract that pattern detection must fulfill.
+
+**Enhanced Module Record (after KSA-25 + KSA-26):**
+
+```json
+{
+  "name": "core",
+  "root_path": "src/main/kotlin/com/example/core",
+  "language": "kotlin",
+  "file_count": 42,
+  "symbol_count": 156,
+  "di_style": "constructor injection",
+  "error_handling": "Result type",
+  "naming_convention": "*Controller, *Service, *Repository",
+  "logging_framework": "SLF4J",
+  "testing_framework": "JUnit",
+  "purpose": "Business logic"
+}
+```
+
+### 3.2 Modified Tool Response: `code_index_status`
+
+**Implements:** Story 7-8 (automatic detection + performance tracking)
+
+The index status response will include pattern detection timing:
+
+```json
+{
+  "status": "complete",
+  "totalFiles": 1000,
+  "totalModules": 8,
+  "elapsedMs": 5200,
+  "patternDetectionMs": 45,
+  "patternsDetected": true
+}
+```
+
+### 3.3 Internal API Contract: PatternDetector Input
+
+All 6 variants must accept the same logical input structure:
+
+```typescript
+// TypeScript representation (canonical)
+interface PatternInput {
+  moduleName: string;
+  classes: ClassInfo[];      // from signature extractor
+  functions: FunctionInfo[]; // from signature extractor
+  imports: string[];         // from file parser
+  packages: string[];        // unique package names in module
+}
+
+interface ClassInfo {
+  name: string;
+  visibility: string;
+  annotations: string[];
+}
+
+interface FunctionInfo {
+  name: string;
+  visibility: string;
+  parameters: { name: string; type: string }[];
+  annotations: string[];
+}
+```
+
+### 3.4 Internal API Contract: PatternDetector Output
+
+```typescript
+interface DetectedPatterns {
+  diStyle: string;           // "field injection" | "constructor injection" | "none"
+  errorHandling: string;     // "Result type" | "exception handler" | "try-catch" | "unknown"
+  naming: string;            // "*Controller, *Service, *Repository" | "unknown"
+  logging: string;           // "SLF4J" | "Log4j" | "logging" | "console.log" | "unknown"
+  testing: string;           // "JUnit" | "Jest" | "pytest" | "vitest" | "kotest" | "unknown"
+  purpose: string;           // "API layer" | "Business logic" | ... | "Application module"
+}
+```
+
+---
+
+## 4. Database Design
+
+### 4.1 Schema Overview
+
+The `modules` table is extended with 6 pattern metadata columns (KSA-25 provides the migration, KSA-26 populates the data).
+
+```mermaid
+erDiagram
+    files {
+        INTEGER id PK
+        TEXT path
+        TEXT relative_path
+        TEXT language
+        TEXT module FK
+        TEXT content_hash
+        INTEGER size_bytes
+        INTEGER line_count
+        TEXT last_indexed
+    }
+    
+    symbols {
+        INTEGER id PK
+        INTEGER file_id FK
+        TEXT name
+        TEXT kind
+        TEXT signature
+        INTEGER start_line
+        INTEGER end_line
+        TEXT parent_symbol
+        TEXT visibility
+        TEXT doc_comment
+    }
+    
+    modules {
+        INTEGER id PK
+        TEXT name UK
+        TEXT root_path
+        TEXT language
+        TEXT description
+        INTEGER file_count
+        INTEGER symbol_count
+        TEXT di_style
+        TEXT error_handling
+        TEXT naming_convention
+        TEXT logging_framework
+        TEXT testing_framework
+        TEXT purpose
+    }
+    
+    files ||--o{ symbols : "has"
+    modules ||--o{ files : "contains"
+```
+
+![Database Schema](diagrams/db-schema.png)
+*[Edit in draw.io](diagrams/db-schema.drawio)*
+
+### 4.2 DDL Scripts
+
+#### Migration: Add pattern columns to `modules` table
+
+> **Note:** This DDL is defined by KSA-25. Shown here for reference — KSA-26 does NOT execute this migration.
+
+```sql
+-- KSA-25 Migration V2: Add pattern metadata columns
+ALTER TABLE modules ADD COLUMN di_style TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN error_handling TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN naming_convention TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN logging_framework TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN testing_framework TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN purpose TEXT DEFAULT NULL;
+```
+
+#### KSA-26 SQL: Update patterns for a module
+
+```sql
+-- Pattern update query (executed per module after detection)
+UPDATE modules
+SET di_style = ?,
+    error_handling = ?,
+    naming_convention = ?,
+    logging_framework = ?,
+    testing_framework = ?,
+    purpose = ?
+WHERE name = ?;
+```
+
+#### KSA-26 SQL: Aggregate data for pattern detection
+
+```sql
+-- Get all symbols for a specific module (used to build ClassInfo/FunctionInfo arrays)
+SELECT s.name, s.kind, s.signature, s.visibility, s.doc_comment
+FROM symbols s
+JOIN files f ON s.file_id = f.id
+WHERE f.module = ?;
+
+-- Get all imports for a module (extracted from file content during indexing)
+-- Note: imports are not currently stored in DB — they must be collected during indexing
+-- and passed in-memory to the pattern detector.
+```
+
+### 4.3 Migration Plan
+
+| Order | Script | Description | Estimated Time | Rollback |
+|-------|--------|-------------|----------------|----------|
+| 1 | KSA-25 migration | Add 6 columns to modules | < 1ms (ALTER TABLE) | DROP COLUMN (SQLite 3.35+) |
+
+### 4.4 Query Patterns
+
+| Operation | Query Pattern | Expected Performance |
+|-----------|--------------|---------------------|
+| Update module patterns | `UPDATE modules SET ... WHERE name = ?` | < 1ms per module |
+| Get symbols per module | `SELECT ... FROM symbols JOIN files WHERE module = ?` | < 10ms for 500 symbols |
+| Full pattern detection (all modules) | N updates in transaction | < 50ms for 10 modules |
+
+### 4.5 Data Volume Estimates
+
+| Metric | Typical | Large Project |
+|--------|---------|---------------|
+| Modules per project | 3-8 | 15-30 |
+| Files per module | 10-50 | 100-500 |
+| Symbols per module | 50-200 | 500-2000 |
+| Pattern detection time per module | < 5ms | < 10ms |
+
+---
+
+## 5. Class / Module Design
+
+### 5.1 Package Structure — All Variants
+
+Each MCP server variant adds a single new file in the `scanner` directory (or equivalent):
+
+```
+mcp-code-intelligence-nodejs/src/scanner/
+├── file-scanner.ts              # Existing
+├── signature-extractor.ts       # Existing
+└── pattern-detector.ts          # NEW (KSA-26)
+
+mcp-code-intelligence-python/src/mcp_code_intel/
+├── scanner.py                   # Existing
+├── extractor.py                 # Existing
+└── patterns.py                  # NEW (KSA-26)
+
+mcp-code-intelligence-kotlin/src/main/kotlin/com/codeintel/scanner/
+├── FileScanner.kt               # Existing
+├── SignatureExtractor.kt        # Existing
+└── PatternDetector.kt           # NEW (KSA-26)
+
+mcp-code-intelligence-bash/lib/
+├── scan.sh                      # Existing
+├── extract.sh                   # Existing
+└── patterns.sh                  # NEW (KSA-26)
+
+mcp-code-intelligence-powershell/
+├── code-intel-scan.ps1          # Existing
+├── code-intel-extract.ps1       # Existing
+└── code-intel-patterns.ps1      # NEW (KSA-26)
+
+mcp-code-intelligence-cmd/
+├── code-intel-scan.cmd          # Existing
+├── code-intel-extract.cmd       # Existing
+└── code-intel-patterns.cmd      # NEW (KSA-26)
+```
+
+### 5.2 Class Diagram
+
+```mermaid
+classDiagram
+    class PatternDetector {
+        +detectPatterns(classes, functions, imports) DetectedPatterns
+        +inferModulePurpose(name, classes, packages) string
+        -detectDiStyle(classes, functions, imports) string
+        -detectErrorHandling(classes, imports) string
+        -detectNaming(classes) string
+        -detectLogging(imports) string
+        -detectTesting(imports) string
+    }
+    
+    class DetectedPatterns {
+        +diStyle: string
+        +errorHandling: string
+        +naming: string
+        +logging: string
+        +testing: string
+    }
+    
+    class IndexingEngine {
+        +runFullIndex() void
+        +indexSingleFile(path) void
+        -updateModules() void
+        -detectAndStorePatterns() void
+    }
+    
+    class ClassInfo {
+        +name: string
+        +visibility: string
+        +annotations: string[]
+    }
+    
+    class FunctionInfo {
+        +name: string
+        +visibility: string
+        +parameters: ParameterInfo[]
+        +annotations: string[]
+    }
+    
+    IndexingEngine --> PatternDetector : uses
+    PatternDetector --> DetectedPatterns : produces
+    PatternDetector ..> ClassInfo : reads
+    PatternDetector ..> FunctionInfo : reads
+```
+
+![Class Diagram](diagrams/class-diagram.png)
+*[Edit in draw.io](diagrams/class-diagram.drawio)*
+
+### 5.3 Key Interfaces — TypeScript (Node.js)
+
+```typescript
+// pattern-detector.ts — New file
+
+/** Input: aggregated parse data for one module. */
+export interface ModuleParseData {
+  moduleName: string;
+  classes: ClassInfo[];
+  functions: FunctionInfo[];
+  imports: string[];
+  packages: string[];
+}
+
+/** Output: detected patterns for one module. */
+export interface DetectedPatterns {
+  diStyle: string;
+  errorHandling: string;
+  naming: string;
+  logging: string;
+  testing: string;
+}
+
+/** Detect all coding patterns from aggregated module data. */
+export function detectPatterns(
+  classes: ClassInfo[],
+  functions: FunctionInfo[],
+  imports: string[]
+): DetectedPatterns;
+
+/** Infer module purpose from name, classes, and packages. */
+export function inferModulePurpose(
+  moduleName: string,
+  classes: ClassInfo[],
+  packages: string[]
+): string;
+```
+
+### 5.4 Key Interfaces — Python
+
+```python
+# patterns.py — New file
+
+from typing import TypedDict
+
+class DetectedPatterns(TypedDict):
+    di_style: str
+    error_handling: str
+    naming: str
+    logging: str
+    testing: str
+
+def detect_patterns(
+    classes: list[dict], functions: list[dict], imports: list[str]
+) -> DetectedPatterns:
+    """Detect coding patterns from aggregated parse results."""
+    ...
+
+def infer_module_purpose(
+    name: str, classes: list[dict], packages: list[str]
+) -> str:
+    """Infer a module's purpose from its contents."""
+    ...
+```
+
+### 5.5 Key Interfaces — Kotlin
+
+```kotlin
+// PatternDetector.kt — New file
+package com.codeintel.scanner
+
+data class DetectedPatterns(
+    val diStyle: String,
+    val errorHandling: String,
+    val naming: String,
+    val logging: String,
+    val testing: String
+)
+
+object PatternDetector {
+    fun detectPatterns(
+        classes: List<SymbolInfo>,
+        functions: List<SymbolInfo>,
+        imports: List<String>
+    ): DetectedPatterns
+
+    fun inferModulePurpose(
+        moduleName: String,
+        classes: List<SymbolInfo>,
+        packages: List<String>
+    ): String
+}
+```
+
+### 5.6 Detection Algorithm — Pseudocode
+
+#### 5.6.1 detectDiStyle
+
+```
+FUNCTION detectDiStyle(classes, functions, imports):
+    allText = JOIN(imports) + JOIN(class.annotations for each class) + JOIN(function.annotations for each function)
+    
+    IF "@Inject" IN allText OR "@Autowired" IN allText:
+        RETURN "field injection"
+    
+    FOR EACH function IN functions:
+        IF function.name == "constructor" OR function.name == "__init__":
+            IF function.parameters.length > 0:
+                RETURN "constructor injection"
+    
+    RETURN "none"
+```
+
+**Priority:** field injection > constructor injection > none
+
+#### 5.6.2 detectErrorHandling
+
+```
+FUNCTION detectErrorHandling(classes, imports):
+    allText = JOIN(imports) + JOIN(class.name for each class)
+    
+    IF "Result" IN allText OR "Either" IN allText:
+        RETURN "Result type"
+    
+    IF "ExceptionHandler" IN allText OR "ControllerAdvice" IN allText:
+        RETURN "exception handler"
+    
+    IF "Exception" IN allText OR "Error" IN allText:
+        RETURN "try-catch"
+    
+    RETURN "unknown"
+```
+
+**Priority:** Result type > exception handler > try-catch > unknown
+
+#### 5.6.3 detectNaming
+
+```
+FUNCTION detectNaming(classes):
+    suffixes = ["Controller", "Service", "Repository"]
+    found = []
+    
+    FOR EACH suffix IN suffixes:
+        IF ANY class.name ENDS_WITH suffix:
+            found.APPEND("*" + suffix)
+    
+    IF found IS EMPTY:
+        RETURN "unknown"
+    RETURN JOIN(found, ", ")
+```
+
+#### 5.6.4 detectLogging
+
+```
+FUNCTION detectLogging(imports):
+    allImports = JOIN(imports)
+    
+    IF "slf4j" IN allImports OR "SLF4J" IN allImports:
+        RETURN "SLF4J"
+    IF "log4j" IN allImports OR "Log4j" IN allImports:
+        RETURN "Log4j"
+    IF "logging" IN allImports:
+        RETURN "logging"
+    IF "console" IN allImports:
+        RETURN "console.log"
+    
+    RETURN "unknown"
+```
+
+**Priority:** SLF4J > Log4j > logging > console.log > unknown
+
+#### 5.6.5 detectTesting
+
+```
+FUNCTION detectTesting(imports):
+    allImports = JOIN(imports)
+    
+    IF "junit" IN allImports OR "org.junit" IN allImports:
+        RETURN "JUnit"
+    IF "pytest" IN allImports OR "unittest" IN allImports:
+        RETURN "pytest"
+    IF "jest" IN allImports OR "@jest" IN allImports:
+        RETURN "Jest"
+    IF "kotest" IN allImports:
+        RETURN "kotest"
+    IF "vitest" IN allImports:
+        RETURN "vitest"
+    
+    RETURN "unknown"
+```
+
+**Priority:** JUnit > pytest > Jest > kotest > vitest > unknown
+
+#### 5.6.6 inferModulePurpose
+
+```
+FUNCTION inferModulePurpose(moduleName, classes, packages):
+    allNames = LOWERCASE(JOIN([moduleName] + class.names + packages))
+    
+    purposes = [
+        ("api", "API layer"), ("controller", "API layer"),
+        ("service", "Business logic"), ("business", "Business logic"),
+        ("repository", "Data access"), ("dao", "Data access"), ("data", "Data access"),
+        ("config", "Configuration"), ("configuration", "Configuration"),
+        ("common", "Shared utilities"), ("shared", "Shared utilities"),
+        ("test", "Testing"), ("spec", "Testing"),
+        ("web", "Web/UI layer"), ("ui", "Web/UI layer"),
+        ("model", "Domain model"), ("domain", "Domain model"),
+    ]
+    
+    FOR EACH (keyword, purpose) IN purposes:
+        IF keyword IN allNames:
+            RETURN purpose
+    
+    RETURN "Application module"
+```
+
+**Priority:** First match wins (order matters).
+
+### 5.7 Design Patterns
+
+| Pattern | Where Used | Rationale |
+|---------|-----------|-----------|
+| Pure Functions | All detection functions | No side effects, deterministic, easy to test |
+| Strategy (implicit) | Per-pattern detection | Each pattern has its own detection strategy |
+| Facade | `detectPatterns()` | Single entry point aggregates all 5 detections |
+| Module Pattern | File-level encapsulation | Private helpers, public API surface |
+
+### 5.8 Error Handling
+
+Pattern detection is fault-tolerant. Errors are logged but never propagate to crash the pipeline.
+
+| Error Scenario | Handling | Fallback Value |
+|----------------|----------|----------------|
+| Empty classes array | Return defaults | "none"/"unknown" per field |
+| Empty imports array | Skip import-based detection | "unknown" for logging/testing |
+| Null/undefined input | Guard clause, return defaults | All fields "unknown" |
+| SQL UPDATE fails | Log error, continue next module | Module retains NULL patterns |
+| Exception in detection | try-catch wrapper, log, continue | "unknown" for failed field |
+
+---
+
+## 6. Integration Design
+
+### 6.1 Integration Point: IndexingEngine → PatternDetector
+
+Pattern detection integrates into the existing `updateModules()` method of each `IndexingEngine`. The integration is a post-processing step that runs after modules are rebuilt.
+
+```mermaid
+sequenceDiagram
+    participant IE as IndexingEngine
+    participant FS as FileScanner
+    participant SE as SignatureExtractor
+    participant PD as PatternDetector
+    participant DB as SQLite
+
+    IE->>FS: scanWorkspace()
+    FS-->>IE: ScannedFile[]
+    
+    loop For each file
+        IE->>SE: extractSymbols(content, language)
+        SE-->>IE: ExtractedSymbol[]
+        Note over IE: Collect imports per module (in-memory)
+    end
+    
+    IE->>DB: INSERT/UPDATE files + symbols
+    IE->>DB: DELETE + INSERT modules (rebuild)
+    
+    Note over IE: Pattern Detection Phase
+    loop For each module
+        IE->>DB: SELECT symbols WHERE module = ?
+        DB-->>IE: ClassInfo[], FunctionInfo[]
+        IE->>PD: detectPatterns(classes, functions, imports)
+        PD-->>IE: DetectedPatterns
+        IE->>PD: inferModulePurpose(name, classes, packages)
+        PD-->>IE: purpose string
+        IE->>DB: UPDATE modules SET patterns WHERE name = ?
+    end
+```
+
+![API Sequence — Full Index with Pattern Detection](diagrams/api-sequence-full-index.png)
+*[Edit in draw.io](diagrams/api-sequence-full-index.drawio)*
+
+### 6.2 Integration Point: Incremental Index
+
+For incremental indexing, pattern detection runs only for modules whose files were modified:
+
+```mermaid
+sequenceDiagram
+    participant FW as FileWatcher
+    participant IE as IndexingEngine
+    participant PD as PatternDetector
+    participant DB as SQLite
+
+    FW->>IE: fileChanged(path)
+    IE->>IE: indexSingleFile(path)
+    IE->>IE: detectModule(path) → moduleName
+    
+    Note over IE: Re-detect patterns for affected module only
+    IE->>DB: SELECT symbols WHERE module = moduleName
+    DB-->>IE: ClassInfo[], FunctionInfo[]
+    IE->>PD: detectPatterns(classes, functions, imports)
+    PD-->>IE: DetectedPatterns
+    IE->>DB: UPDATE modules SET patterns WHERE name = moduleName
+```
+
+### 6.3 Data Flow: Import Collection
+
+**Critical Design Decision:** Imports are NOT stored in the database (they are transient parse data). For pattern detection, imports must be collected during the indexing phase and passed in-memory.
+
+**Full Index Flow:**
+1. During `indexFiles()`, collect imports per module in a `Map<string, string[]>`
+2. After `updateModules()`, iterate the map and call `detectPatterns()` with collected imports
+
+**Incremental Index Flow:**
+1. When a file changes, re-parse it to get fresh imports
+2. Query DB for all other files in the same module to get their symbols
+3. Combine fresh imports with existing module data for re-detection
+
+**Alternative (simpler but less accurate for incremental):**
+- Store imports in a new `file_imports` table or as JSON in the `files` table
+- This avoids re-parsing during incremental detection
+- **Recommendation:** Use in-memory collection for full index; for incremental, re-parse the changed file only and combine with cached module patterns
+
+### 6.4 Tier 2 Language Limitations
+
+For Bash, PowerShell, and CMD variants:
+- The signature extractor produces limited data (no annotations, no import statements)
+- Pattern detection is restricted to:
+  - **DI Style:** Check for `@Inject`/`@Autowired` in symbol signatures (unlikely in scripts, will usually return "none")
+  - **Naming:** Check class/function name suffixes (Controller, Service, Repository)
+- All other patterns default to "unknown"
+
+---
+
+## 7. Security Design
+
+### 7.1 Security Considerations
+
+Pattern detection operates entirely locally with no network access:
+
+| Aspect | Design |
+|--------|--------|
+| Data Access | Read-only access to in-memory parsed data |
+| Storage | SQLite file on local disk (same as existing) |
+| Network | None — no external calls |
+| Input Validation | Null checks on input arrays |
+| Injection Risk | Parameterized SQL queries (no string interpolation) |
+
+### 7.2 Input Validation
+
+| Input | Validation | Sanitization |
+|-------|-----------|--------------|
+| classes[] | Null/empty check | None needed (read-only) |
+| functions[] | Null/empty check | None needed |
+| imports[] | Null/empty check | None needed |
+| moduleName | Non-empty string check | SQL parameterized |
+
+### 7.3 SQL Injection Prevention
+
+All SQL operations use parameterized queries:
+
+```typescript
+// ✅ CORRECT — Parameterized
+db.prepare('UPDATE modules SET di_style = ? WHERE name = ?').run(patterns.diStyle, moduleName);
+
+// ❌ NEVER — String interpolation
+db.exec(`UPDATE modules SET di_style = '${patterns.diStyle}' WHERE name = '${moduleName}'`);
+```
+
+**Exception:** Bash and CMD variants use sqlite3 CLI which requires string escaping. These must escape single quotes in values:
+```bash
+# Bash: escape single quotes
+escaped_value="${value//\'/\'\'}"
+sqlite3 "$DB_PATH" "UPDATE modules SET di_style='$escaped_value' WHERE name='$module';"
+```
+
+---
+
+## 8. Performance & Scalability
+
+### 8.1 Performance Budget
+
+| Metric | Target | Rationale |
+|--------|--------|-----------|
+| Pattern detection overhead | < 10% of total index time | BRD requirement (Story 8) |
+| Per-module detection time | < 5ms | Pure string matching on small data |
+| Total detection (10 modules) | < 50ms | Well within 10% budget |
+| Memory overhead | < 1MB | Only string arrays in memory |
+
+### 8.2 Performance Characteristics
+
+Pattern detection is O(n) where n = total symbols + imports in a module:
+
+| Operation | Complexity | Typical Data Size |
+|-----------|-----------|-------------------|
+| detectDiStyle | O(annotations + imports + functions) | ~100-500 strings |
+| detectErrorHandling | O(imports + classes) | ~50-200 strings |
+| detectNaming | O(classes × 3 suffixes) | ~20-100 classes |
+| detectLogging | O(imports) | ~20-100 imports |
+| detectTesting | O(imports) | ~20-100 imports |
+| inferModulePurpose | O(classes + packages) | ~50-200 strings |
+
+### 8.3 Benchmarking Strategy
+
+Each variant must report `patternDetectionMs` in the index result:
+
+```typescript
+// Measure pattern detection time
+const patternStart = Date.now();
+for (const module of modules) {
+  detectAndStorePatterns(module);
+}
+const patternDetectionMs = Date.now() - patternStart;
+
+// Validate < 10% constraint
+const overhead = patternDetectionMs / totalIndexMs;
+if (overhead > 0.10) {
+  console.error(`[indexer] WARNING: Pattern detection overhead ${(overhead * 100).toFixed(1)}% exceeds 10% budget`);
+}
+```
+
+### 8.4 Optimization Techniques
+
+1. **No file I/O** — All detection operates on in-memory data
+2. **String.includes()** — Fastest substring check (no regex)
+3. **Early return** — Stop checking once a pattern is found (priority order)
+4. **Batch SQL** — Single transaction for all module updates
+5. **Lazy aggregation** — Collect imports during indexing, don't re-read files
+
+---
+
+## 9. Monitoring & Observability
+
+### 9.1 Logging
+
+| Log Event | Level | Fields | Destination |
+|-----------|-------|--------|-------------|
+| Pattern detection started | INFO | moduleCount | stderr |
+| Pattern detected for module | DEBUG | moduleName, patterns | stderr |
+| Pattern detection failed | ERROR | moduleName, error | stderr |
+| Pattern detection complete | INFO | elapsedMs, moduleCount | stderr |
+| Performance warning (>10%) | WARN | overhead%, elapsedMs | stderr |
+
+### 9.2 Metrics (in index result)
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| patternDetectionMs | Gauge | Time spent on pattern detection |
+| patternsDetected | Boolean | Whether patterns were successfully detected |
+| modulesWithPatterns | Counter | Number of modules with non-null patterns |
+
+### 9.3 Health Checks
+
+Pattern detection health is implicit in the index status:
+- If `patternDetectionMs` is present → detection ran
+- If all modules have non-null pattern columns → detection succeeded
+- If `patternDetectionMs / totalIndexMs > 0.10` → performance degradation alert
+
+---
+
+## 10. Deployment Considerations
+
+### 10.1 Prerequisites
+
+| Prerequisite | How to Verify |
+|--------------|---------------|
+| KSA-25 schema migration applied | `SELECT di_style FROM modules LIMIT 1` does not error |
+| SQLite 3.35+ (for ALTER TABLE ADD COLUMN) | `sqlite3 --version` |
+| Existing indexer functional | `code_index_status` returns valid response |
+
+### 10.2 Rollback Strategy
+
+Pattern detection is additive — it only writes to new columns that default to NULL. Rollback:
+1. Remove pattern detection code from `updateModules()`
+2. Pattern columns remain in schema but stay NULL
+3. Downstream tools (KSA-28) handle NULL gracefully
+
+### 10.3 Feature Flag (Optional)
+
+```typescript
+// config.ts — Optional flag to disable pattern detection
+const PATTERNS_ENABLED = envBool('CODE_INTEL_PATTERNS', true);
+
+// indexing-engine.ts
+if (config.patternsEnabled) {
+  detectAndStorePatterns(modules);
+}
+```
+
+### 10.4 Deployment Order
+
+1. **KSA-25** — Schema migration (adds columns) — MUST deploy first
+2. **KSA-26** — Pattern detection (populates columns) — This ticket
+3. **KSA-28** — Enrich `code_modules` response — After KSA-26
+4. **KSA-27** — KB export with patterns — After KSA-26
+
+---
+
+## 11. Implementation Guide — Per Variant
+
+### 11.1 Node.js/TypeScript Implementation
+
+**File:** `mcp-code-intelligence-nodejs/src/scanner/pattern-detector.ts`
+
+```typescript
+/**
+ * Pattern Detector — Identifies DI style, error handling, naming, logging, testing patterns.
+ * Ported from: .analysis/code-intelligence/scripts/nodejs/src/full-indexer.ts
+ */
+
+import type { ExtractedSymbol } from './signature-extractor.js';
+
+export interface DetectedPatterns {
+  diStyle: string;
+  errorHandling: string;
+  naming: string;
+  logging: string;
+  testing: string;
+}
+
+/** Detect all coding patterns from aggregated module data. */
+export function detectPatterns(
+  classes: ExtractedSymbol[],
+  functions: ExtractedSymbol[],
+  imports: string[]
+): DetectedPatterns {
+  return {
+    diStyle: detectDiStyle(classes, functions, imports),
+    errorHandling: detectErrorHandling(classes, imports),
+    naming: detectNaming(classes),
+    logging: detectLogging(imports),
+    testing: detectTesting(imports),
+  };
+}
+
+/** Infer module purpose from name, classes, and packages. */
+export function inferModulePurpose(
+  moduleName: string,
+  classes: ExtractedSymbol[],
+  packages: string[]
+): string {
+  const allNames = [moduleName, ...classes.map(c => c.name), ...packages]
+    .join(' ').toLowerCase();
+  const purposes: [string, string][] = [
+    ['api', 'API layer'], ['controller', 'API layer'],
+    ['service', 'Business logic'], ['business', 'Business logic'],
+    ['repository', 'Data access'], ['dao', 'Data access'],
+    ['data', 'Data access'],
+    ['config', 'Configuration'], ['configuration', 'Configuration'],
+    ['common', 'Shared utilities'], ['shared', 'Shared utilities'],
+    ['test', 'Testing'], ['spec', 'Testing'],
+    ['web', 'Web/UI layer'], ['ui', 'Web/UI layer'],
+    ['model', 'Domain model'], ['domain', 'Domain model'],
+  ];
+  for (const [keyword, purpose] of purposes) {
+    if (allNames.includes(keyword)) return purpose;
+  }
+  return 'Application module';
+}
+```
+
+**Integration in `indexing-engine.ts`:**
+
+```typescript
+import { detectPatterns, inferModulePurpose } from '../scanner/pattern-detector.js';
+
+// Add to updateModules() method — after INSERT INTO modules
+private detectAndStorePatterns(moduleImports: Map<string, string[]>): void {
+  const startMs = Date.now();
+  const modules = this.db.prepare('SELECT name FROM modules').all() as { name: string }[];
+  const updateStmt = this.db.prepare(`
+    UPDATE modules SET di_style = ?, error_handling = ?, naming_convention = ?,
+    logging_framework = ?, testing_framework = ?, purpose = ? WHERE name = ?
+  `);
+
+  const transaction = this.db.transaction(() => {
+    for (const { name } of modules) {
+      try {
+        const symbols = this.db.prepare(
+          'SELECT name, kind, signature, visibility FROM symbols WHERE file_id IN (SELECT id FROM files WHERE module = ?)'
+        ).all(name) as ExtractedSymbol[];
+        const classes = symbols.filter(s => s.kind === 'class' || s.kind === 'interface');
+        const functions = symbols.filter(s => s.kind === 'function' || s.kind === 'method');
+        const imports = moduleImports.get(name) ?? [];
+        const patterns = detectPatterns(classes, functions, imports);
+        const purpose = inferModulePurpose(name, classes, []);
+        updateStmt.run(
+          patterns.diStyle, patterns.errorHandling, patterns.naming,
+          patterns.logging, patterns.testing, purpose, name
+        );
+      } catch (err) {
+        console.error(`[indexer] Pattern detection failed for ${name}:`, err);
+      }
+    }
+  });
+  transaction();
+  console.error(`[indexer] Pattern detection: ${Date.now() - startMs}ms`);
+}
+```
+
+### 11.2 Python Implementation
+
+**File:** `mcp-code-intelligence-python/src/mcp_code_intel/patterns.py`
+
+```python
+"""Pattern detection — identifies DI style, error handling, naming, logging, testing."""
+
+from typing import TypedDict
+
+
+class DetectedPatterns(TypedDict):
+    """Detected coding patterns for a module."""
+    di_style: str
+    error_handling: str
+    naming: str
+    logging: str
+    testing: str
+
+
+def detect_patterns(
+    classes: list[dict], functions: list[dict], imports: list[str]
+) -> DetectedPatterns:
+    """Detect coding patterns from aggregated parse results."""
+    return {
+        "di_style": _detect_di(classes, functions, imports),
+        "error_handling": _detect_error_handling(classes, imports),
+        "naming": _detect_naming(classes),
+        "logging": _detect_logging(imports),
+        "testing": _detect_testing(imports),
+    }
+
+
+def infer_module_purpose(
+    name: str, classes: list[dict], packages: list[str]
+) -> str:
+    """Infer a module's purpose from its contents."""
+    all_names = " ".join([name] + [c["name"] for c in classes] + packages).lower()
+    purposes = [
+        ("api", "API layer"), ("controller", "API layer"),
+        ("service", "Business logic"), ("business", "Business logic"),
+        ("repository", "Data access"), ("dao", "Data access"),
+        ("data", "Data access"),
+        ("config", "Configuration"), ("configuration", "Configuration"),
+        ("common", "Shared utilities"), ("shared", "Shared utilities"),
+        ("test", "Testing"), ("spec", "Testing"),
+        ("web", "Web/UI layer"), ("ui", "Web/UI layer"),
+        ("model", "Domain model"), ("domain", "Domain model"),
+    ]
+    for keyword, purpose in purposes:
+        if keyword in all_names:
+            return purpose
+    return "Application module"
+
+
+def _detect_di(classes, functions, imports):
+    """Detect dependency injection style."""
+    all_text = " ".join(imports)
+    if "@Inject" in all_text or "@Autowired" in all_text:
+        return "field injection"
+    if any(f["name"] in ("constructor", "__init__") for f in functions):
+        return "constructor injection"
+    return "none"
+
+
+def _detect_error_handling(classes, imports):
+    """Detect error handling approach."""
+    names_text = " ".join(imports + [c["name"] for c in classes])
+    if "Result" in names_text or "Either" in names_text:
+        return "Result type"
+    if "ExceptionHandler" in names_text or "ControllerAdvice" in names_text:
+        return "exception handler"
+    if "Exception" in names_text or "Error" in names_text:
+        return "try-catch"
+    return "unknown"
+
+
+def _detect_naming(classes):
+    """Detect naming conventions from class suffixes."""
+    suffixes = ["Controller", "Service", "Repository"]
+    found = [f"*{s}" for s in suffixes if any(c["name"].endswith(s) for c in classes)]
+    return ", ".join(found) if found else "unknown"
+
+
+def _detect_logging(imports):
+    """Detect logging framework from imports."""
+    imp_text = " ".join(imports)
+    if "slf4j" in imp_text or "SLF4J" in imp_text:
+        return "SLF4J"
+    if "log4j" in imp_text or "Log4j" in imp_text:
+        return "Log4j"
+    if "logging" in imp_text:
+        return "logging"
+    return "unknown"
+
+
+def _detect_testing(imports):
+    """Detect testing framework from imports."""
+    imp_text = " ".join(imports)
+    if "junit" in imp_text or "org.junit" in imp_text:
+        return "JUnit"
+    if "pytest" in imp_text or "unittest" in imp_text:
+        return "pytest"
+    if "jest" in imp_text:
+        return "Jest"
+    if "kotest" in imp_text:
+        return "kotest"
+    if "vitest" in imp_text:
+        return "vitest"
+    return "unknown"
+```
+
+### 11.3 Kotlin Implementation
+
+**File:** `mcp-code-intelligence-kotlin/src/main/kotlin/com/codeintel/scanner/PatternDetector.kt`
+
+```kotlin
+/** Pattern detection — identifies DI style, error handling, naming, logging, testing. */
+package com.codeintel.scanner
+
+data class DetectedPatterns(
+    val diStyle: String,
+    val errorHandling: String,
+    val naming: String,
+    val logging: String,
+    val testing: String
+)
+
+/** Detect all coding patterns from aggregated module data. */
+fun detectPatterns(
+    classes: List<SymbolInfo>,
+    functions: List<SymbolInfo>,
+    imports: List<String>
+): DetectedPatterns = DetectedPatterns(
+    diStyle = detectDiStyle(classes, functions, imports),
+    errorHandling = detectErrorHandling(classes, imports),
+    naming = detectNaming(classes),
+    logging = detectLogging(imports),
+    testing = detectTesting(imports)
+)
+
+/** Infer module purpose from name, classes, and packages. */
+fun inferModulePurpose(
+    moduleName: String,
+    classes: List<SymbolInfo>,
+    packages: List<String>
+): String {
+    val allNames = (listOf(moduleName) + classes.map { it.name } + packages)
+        .joinToString(" ").lowercase()
+    val purposes = listOf(
+        "api" to "API layer", "controller" to "API layer",
+        "service" to "Business logic", "business" to "Business logic",
+        "repository" to "Data access", "dao" to "Data access",
+        "data" to "Data access",
+        "config" to "Configuration", "configuration" to "Configuration",
+        "common" to "Shared utilities", "shared" to "Shared utilities",
+        "test" to "Testing", "spec" to "Testing",
+        "web" to "Web/UI layer", "ui" to "Web/UI layer",
+        "model" to "Domain model", "domain" to "Domain model",
+    )
+    for ((keyword, purpose) in purposes) {
+        if (keyword in allNames) return purpose
+    }
+    return "Application module"
+}
+
+private fun detectDiStyle(
+    classes: List<SymbolInfo>, functions: List<SymbolInfo>, imports: List<String>
+): String {
+    val allText = imports.joinToString(" ")
+    if ("@Inject" in allText || "@Autowired" in allText) return "field injection"
+    if (functions.any { it.name in listOf("constructor", "__init__") }) {
+        return "constructor injection"
+    }
+    return "none"
+}
+
+private fun detectErrorHandling(classes: List<SymbolInfo>, imports: List<String>): String {
+    val allText = (imports + classes.map { it.name }).joinToString(" ")
+    if ("Result" in allText || "Either" in allText) return "Result type"
+    if ("ExceptionHandler" in allText || "ControllerAdvice" in allText) return "exception handler"
+    if ("Exception" in allText || "Error" in allText) return "try-catch"
+    return "unknown"
+}
+
+private fun detectNaming(classes: List<SymbolInfo>): String {
+    val suffixes = listOf("Controller", "Service", "Repository")
+    val found = suffixes.filter { suffix -> classes.any { it.name.endsWith(suffix) } }
+        .map { "*$it" }
+    return if (found.isEmpty()) "unknown" else found.joinToString(", ")
+}
+
+private fun detectLogging(imports: List<String>): String {
+    val allImports = imports.joinToString(" ")
+    if ("slf4j" in allImports || "SLF4J" in allImports) return "SLF4J"
+    if ("log4j" in allImports || "Log4j" in allImports) return "Log4j"
+    if ("logging" in allImports) return "logging"
+    return "unknown"
+}
+
+private fun detectTesting(imports: List<String>): String {
+    val allImports = imports.joinToString(" ")
+    if ("junit" in allImports || "org.junit" in allImports) return "JUnit"
+    if ("pytest" in allImports || "unittest" in allImports) return "pytest"
+    if ("jest" in allImports) return "Jest"
+    if ("kotest" in allImports) return "kotest"
+    if ("vitest" in allImports) return "vitest"
+    return "unknown"
+}
+```
+
+### 11.4 Bash Implementation (Tier 2 — Basic)
+
+**File:** `mcp-code-intelligence-bash/lib/patterns.sh`
+
+```bash
+#!/usr/bin/env bash
+# Pattern detection — basic DI + naming detection for Bash variant (Tier 2).
+
+detect_patterns_for_module() {
+    # Detect patterns for a module and update DB.
+    local module="$1" db_path="$2"
+    local di_style naming purpose
+    di_style=$(detect_di_style "$module" "$db_path")
+    naming=$(detect_naming "$module" "$db_path")
+    purpose=$(infer_purpose "$module" "$db_path")
+    local sql="UPDATE modules SET di_style='$di_style', naming_convention='$naming', purpose='$purpose', error_handling='unknown', logging_framework='unknown', testing_framework='unknown' WHERE name='$module';"
+    run_exec "$db_path" "$sql"
+}
+
+detect_di_style() {
+    # Check for DI annotations in symbol signatures.
+    local module="$1" db_path="$2"
+    local sigs
+    sigs=$(run_query "$db_path" "SELECT signature FROM symbols WHERE file_id IN (SELECT id FROM files WHERE module='$module');")
+    if echo "$sigs" | grep -qi "@Inject\|@Autowired"; then
+        echo "field injection"
+    elif echo "$sigs" | grep -qi "constructor\|__init__"; then
+        echo "constructor injection"
+    else
+        echo "none"
+    fi
+}
+
+detect_naming() {
+    # Check class name suffixes.
+    local module="$1" db_path="$2"
+    local names found=""
+    names=$(run_query "$db_path" "SELECT name FROM symbols WHERE kind='class' AND file_id IN (SELECT id FROM files WHERE module='$module');")
+    echo "$names" | grep -q "Controller$" && found="${found}*Controller, "
+    echo "$names" | grep -q "Service$" && found="${found}*Service, "
+    echo "$names" | grep -q "Repository$" && found="${found}*Repository, "
+    [ -z "$found" ] && echo "unknown" && return
+    echo "${found%, }"
+}
+
+infer_purpose() {
+    # Infer module purpose from name and class names.
+    local module="$1" db_path="$2"
+    local all_names
+    all_names=$(run_query "$db_path" "SELECT name FROM symbols WHERE kind='class' AND file_id IN (SELECT id FROM files WHERE module='$module');")
+    all_names="$module $all_names"
+    all_names=$(echo "$all_names" | tr '[:upper:]' '[:lower:]')
+    echo "$all_names" | grep -q "api\|controller" && echo "API layer" && return
+    echo "$all_names" | grep -q "service\|business" && echo "Business logic" && return
+    echo "$all_names" | grep -q "repository\|dao\|data" && echo "Data access" && return
+    echo "$all_names" | grep -q "config" && echo "Configuration" && return
+    echo "$all_names" | grep -q "common\|shared" && echo "Shared utilities" && return
+    echo "$all_names" | grep -q "test\|spec" && echo "Testing" && return
+    echo "$all_names" | grep -q "web\|ui" && echo "Web/UI layer" && return
+    echo "$all_names" | grep -q "model\|domain" && echo "Domain model" && return
+    echo "Application module"
+}
+
+run_pattern_detection() {
+    # Run pattern detection for all modules.
+    local db_path="$1"
+    local modules
+    modules=$(run_query "$db_path" "SELECT name FROM modules;")
+    while IFS= read -r module; do
+        [ -z "$module" ] && continue
+        detect_patterns_for_module "$module" "$db_path"
+    done <<< "$modules"
+}
+```
+
+### 11.5 PowerShell Implementation (Tier 2 — Basic)
+
+**File:** `mcp-code-intelligence-powershell/code-intel-patterns.ps1`
+
+```powershell
+<# .SYNOPSIS Pattern detection — basic DI + naming for PowerShell variant (Tier 2). #>
+
+function Invoke-PatternDetection {
+    <# Run pattern detection for all modules. #>
+    param([string]$DbPath, [string]$SqlitePath)
+    $modules = Invoke-SqlQuery -DbPath $DbPath -SqlitePath $SqlitePath -Sql "SELECT name FROM modules;"
+    foreach ($module in $modules) {
+        if (-not $module) { continue }
+        $moduleName = $module.Trim()
+        if (-not $moduleName) { continue }
+        try {
+            Invoke-ModulePatternDetection -Module $moduleName -DbPath $DbPath -SqlitePath $SqlitePath
+        } catch {
+            Write-Host "[patterns] ERROR: $moduleName — $_" -ForegroundColor Red
+        }
+    }
+}
+
+function Invoke-ModulePatternDetection {
+    <# Detect patterns for a single module. #>
+    param([string]$Module, [string]$DbPath, [string]$SqlitePath)
+    $diStyle = Get-DiStyle -Module $Module -DbPath $DbPath -SqlitePath $SqlitePath
+    $naming = Get-NamingConvention -Module $Module -DbPath $DbPath -SqlitePath $SqlitePath
+    $purpose = Get-ModulePurpose -Module $Module -DbPath $DbPath -SqlitePath $SqlitePath
+    $escapedModule = $Module.Replace("'", "''")
+    $sql = "UPDATE modules SET di_style='$diStyle', naming_convention='$naming', purpose='$purpose', error_handling='unknown', logging_framework='unknown', testing_framework='unknown' WHERE name='$escapedModule';"
+    Invoke-SqlExec -DbPath $DbPath -SqlitePath $SqlitePath -Sql $sql
+}
+
+function Get-DiStyle {
+    <# Detect DI style from symbol signatures. #>
+    param([string]$Module, [string]$DbPath, [string]$SqlitePath)
+    $sigs = Invoke-SqlQuery -DbPath $DbPath -SqlitePath $SqlitePath -Sql "SELECT signature FROM symbols WHERE file_id IN (SELECT id FROM files WHERE module='$Module');"
+    $allSigs = $sigs -join ' '
+    if ($allSigs -match '@Inject|@Autowired') { return 'field injection' }
+    if ($allSigs -match 'constructor|__init__') { return 'constructor injection' }
+    return 'none'
+}
+
+function Get-NamingConvention {
+    <# Detect naming conventions from class names. #>
+    param([string]$Module, [string]$DbPath, [string]$SqlitePath)
+    $names = Invoke-SqlQuery -DbPath $DbPath -SqlitePath $SqlitePath -Sql "SELECT name FROM symbols WHERE kind='class' AND file_id IN (SELECT id FROM files WHERE module='$Module');"
+    $found = @()
+    if ($names -match 'Controller$') { $found += '*Controller' }
+    if ($names -match 'Service$') { $found += '*Service' }
+    if ($names -match 'Repository$') { $found += '*Repository' }
+    if ($found.Count -eq 0) { return 'unknown' }
+    return $found -join ', '
+}
+
+function Get-ModulePurpose {
+    <# Infer module purpose from name and class names. #>
+    param([string]$Module, [string]$DbPath, [string]$SqlitePath)
+    $names = Invoke-SqlQuery -DbPath $DbPath -SqlitePath $SqlitePath -Sql "SELECT name FROM symbols WHERE kind='class' AND file_id IN (SELECT id FROM files WHERE module='$Module');"
+    $allNames = ("$Module $($names -join ' ')").ToLower()
+    if ($allNames -match 'api|controller') { return 'API layer' }
+    if ($allNames -match 'service|business') { return 'Business logic' }
+    if ($allNames -match 'repository|dao|data') { return 'Data access' }
+    if ($allNames -match 'config') { return 'Configuration' }
+    if ($allNames -match 'common|shared') { return 'Shared utilities' }
+    if ($allNames -match 'test|spec') { return 'Testing' }
+    if ($allNames -match 'web|ui') { return 'Web/UI layer' }
+    if ($allNames -match 'model|domain') { return 'Domain model' }
+    return 'Application module'
+}
+```
+
+### 11.6 CMD Implementation (Tier 2 — Basic)
+
+**File:** `mcp-code-intelligence-cmd/code-intel-patterns.cmd`
+
+```batch
+@echo off
+REM Pattern detection — basic DI + naming for CMD variant (Tier 2).
+REM Usage: code-intel-patterns.cmd <db_path>
+
+setlocal enabledelayedexpansion
+set "DB_PATH=%~1"
+set "SCRIPT_DIR=%~dp0"
+set "SQLITE=%SCRIPT_DIR%bin\sqlite3.exe"
+
+if "%DB_PATH%"=="" (
+    echo [patterns] ERROR: db_path required >&2
+    exit /b 1
+)
+
+REM Get all module names
+for /f "tokens=*" %%m in ('"%SQLITE%" "%DB_PATH%" "SELECT name FROM modules;"') do (
+    call :detect_module "%%m"
+)
+exit /b 0
+
+:detect_module
+set "MODULE=%~1"
+if "%MODULE%"=="" exit /b 0
+
+REM Detect DI style
+set "DI_STYLE=none"
+for /f "tokens=*" %%s in ('"%SQLITE%" "%DB_PATH%" "SELECT signature FROM symbols WHERE file_id IN (SELECT id FROM files WHERE module='%MODULE%');" 2^>nul') do (
+    echo %%s | findstr /i "@Inject @Autowired" >nul 2>&1
+    if !ERRORLEVEL! equ 0 set "DI_STYLE=field injection"
+)
+if "!DI_STYLE!"=="none" (
+    for /f "tokens=*" %%s in ('"%SQLITE%" "%DB_PATH%" "SELECT name FROM symbols WHERE kind='function' AND name IN ('constructor','__init__') AND file_id IN (SELECT id FROM files WHERE module='%MODULE%');" 2^>nul') do (
+        if not "%%s"=="" set "DI_STYLE=constructor injection"
+    )
+)
+
+REM Detect naming
+set "NAMING=unknown"
+set "FOUND="
+for /f "tokens=*" %%n in ('"%SQLITE%" "%DB_PATH%" "SELECT name FROM symbols WHERE kind='class' AND file_id IN (SELECT id FROM files WHERE module='%MODULE%');" 2^>nul') do (
+    echo %%n | findstr /r "Controller$" >nul 2>&1 && set "FOUND=!FOUND!*Controller, "
+    echo %%n | findstr /r "Service$" >nul 2>&1 && set "FOUND=!FOUND!*Service, "
+    echo %%n | findstr /r "Repository$" >nul 2>&1 && set "FOUND=!FOUND!*Repository, "
+)
+if not "!FOUND!"=="" set "NAMING=!FOUND:~0,-2!"
+
+REM Infer purpose
+set "PURPOSE=Application module"
+echo %MODULE% | findstr /i "api controller" >nul 2>&1 && set "PURPOSE=API layer"
+echo %MODULE% | findstr /i "service business" >nul 2>&1 && set "PURPOSE=Business logic"
+echo %MODULE% | findstr /i "repository dao data" >nul 2>&1 && set "PURPOSE=Data access"
+echo %MODULE% | findstr /i "config" >nul 2>&1 && set "PURPOSE=Configuration"
+
+REM Update DB
+"%SQLITE%" "%DB_PATH%" "UPDATE modules SET di_style='!DI_STYLE!', naming_convention='!NAMING!', purpose='!PURPOSE!', error_handling='unknown', logging_framework='unknown', testing_framework='unknown' WHERE name='%MODULE%';"
+echo [patterns] Detected: %MODULE% — DI=!DI_STYLE!, Naming=!NAMING!, Purpose=!PURPOSE! >&2
+exit /b 0
+```
+
+---
+
+## 12. Test Strategy
+
+### 12.1 Testing Approach
+
+The primary validation strategy is **output comparison**: run pattern detection on the same input data using both the existing scripts and the new MCP implementation, then assert identical results.
+
+### 12.2 Unit Tests — Per Variant
+
+Each variant must have unit tests for the pattern detector:
+
+| Test Case | Input | Expected Output |
+|-----------|-------|-----------------|
+| DI: field injection | imports containing "@Inject" | "field injection" |
+| DI: constructor injection | function named "constructor" with params | "constructor injection" |
+| DI: none | empty annotations/imports | "none" |
+| Error: Result type | imports containing "Result" | "Result type" |
+| Error: exception handler | class named "GlobalExceptionHandler" | "exception handler" |
+| Error: try-catch | imports containing "Exception" | "try-catch" |
+| Error: unknown | no error indicators | "unknown" |
+| Naming: all three | classes: UserController, UserService, UserRepository | "*Controller, *Service, *Repository" |
+| Naming: partial | classes: UserService only | "*Service" |
+| Naming: unknown | classes: Helper, Utils | "unknown" |
+| Logging: SLF4J | imports containing "org.slf4j" | "SLF4J" |
+| Logging: unknown | no logging imports | "unknown" |
+| Testing: JUnit | imports containing "org.junit" | "JUnit" |
+| Testing: vitest | imports containing "vitest" | "vitest" |
+| Purpose: API layer | module named "api-controller" | "API layer" |
+| Purpose: default | module named "utils-helper" | "Application module" |
+
+### 12.3 Integration Tests
+
+1. **Full index with patterns** — Run full index on a test workspace, verify all modules have non-null pattern columns
+2. **Incremental re-detection** — Modify a file, trigger incremental index, verify affected module's patterns are updated
+3. **Performance test** — Index a workspace with 1000+ files, verify `patternDetectionMs / totalIndexMs < 0.10`
+4. **Fault tolerance** — Inject an error in one module's data, verify other modules still get patterns
+
+### 12.4 Cross-Variant Consistency Tests
+
+**Critical:** All 6 variants must produce identical output for the same input. Test procedure:
+
+1. Create a reference test dataset (JSON file with classes, functions, imports)
+2. Feed the same dataset to each variant's pattern detector
+3. Assert all 6 produce identical `DetectedPatterns` output
+4. Automate in CI: `scripts/test-pattern-consistency.sh`
+
+### 12.5 Regression Tests vs. Existing Scripts
+
+Compare MCP output against existing script output:
+
+```bash
+# 1. Run existing script on test workspace
+cd .analysis/code-intelligence/scripts/nodejs
+npx tsx src/full-indexer.ts /path/to/test-workspace > expected.json
+
+# 2. Run MCP indexer on same workspace
+# (trigger via MCP tool call, then query modules table)
+
+# 3. Compare pattern fields
+diff <(jq '.modules[].patterns' expected.json) <(sqlite3 index.db "SELECT di_style, error_handling, naming_convention, logging_framework, testing_framework, purpose FROM modules ORDER BY name;")
+```
+
+---
+
+## 13. Appendix
+
+### 13.1 Glossary
+
+| Term | Definition |
+|------|------------|
+| MCP | Model Context Protocol — standard for AI agent tool communication |
+| DI | Dependency Injection — design pattern for managing object dependencies |
+| FTS5 | Full-Text Search 5 — SQLite extension for text search |
+| Tier 1 | Languages with full pattern detection (Node.js, Python, Kotlin) |
+| Tier 2 | Languages with basic pattern detection (Bash, PowerShell, CMD) |
+| Pattern Detection | Process of identifying coding patterns from parsed source code metadata |
+| ClassInfo | Parsed class data: name, visibility, annotations |
+| FunctionInfo | Parsed function data: name, visibility, parameters, annotations |
+
+### 13.2 Pattern Detection Value Reference
+
+| Pattern | Possible Values |
+|---------|----------------|
+| di_style | "field injection", "constructor injection", "none" |
+| error_handling | "Result type", "exception handler", "try-catch", "unknown" |
+| naming_convention | "*Controller, *Service, *Repository" (comma-separated) or "unknown" |
+| logging_framework | "SLF4J", "Log4j", "logging", "console.log", "unknown" |
+| testing_framework | "JUnit", "Jest", "pytest", "vitest", "kotest", "unknown" |
+| purpose | "API layer", "Business logic", "Data access", "Configuration", "Shared utilities", "Testing", "Web/UI layer", "Domain model", "Application module" |
+
+### 13.3 File Locations Summary
+
+| Variant | New File | Lines (est.) |
+|---------|----------|-------------|
+| Node.js | `mcp-code-intelligence-nodejs/src/scanner/pattern-detector.ts` | ~100 |
+| Python | `mcp-code-intelligence-python/src/mcp_code_intel/patterns.py` | ~90 |
+| Kotlin | `mcp-code-intelligence-kotlin/src/main/kotlin/com/codeintel/scanner/PatternDetector.kt` | ~100 |
+| Bash | `mcp-code-intelligence-bash/lib/patterns.sh` | ~80 |
+| PowerShell | `mcp-code-intelligence-powershell/code-intel-patterns.ps1` | ~80 |
+| CMD | `mcp-code-intelligence-cmd/code-intel-patterns.cmd` | ~70 |
+
+### 13.4 Modified Files (Integration Points)
+
+| Variant | File to Modify | Change Description |
+|---------|---------------|-------------------|
+| Node.js | `src/indexer/indexing-engine.ts` | Add `detectAndStorePatterns()` call in `updateModules()` |
+| Python | `src/mcp_code_intel/indexer.py` | Add pattern detection call in `_update_modules()` |
+| Kotlin | `src/main/kotlin/com/codeintel/indexer/IndexingEngine.kt` | Add pattern detection call in `updateModules()` |
+| Bash | `lib/scan.sh` | Call `run_pattern_detection` after `update_modules` |
+| PowerShell | `code-intel-scan.ps1` | Call `Invoke-PatternDetection` after `Update-Modules` |
+| CMD | `code-intel-scan.cmd` | Call `code-intel-patterns.cmd` after `:update_modules` |
+
+### 13.5 Open Questions
+
+| # | Question | Status | Answer |
+|---|----------|--------|--------|
+| 1 | Should imports be stored in DB for incremental detection? | Open | Recommendation: No for v1, use in-memory collection. Revisit if incremental accuracy is insufficient. |
+| 2 | Should Tier 2 variants attempt logging/testing detection via signature text? | Resolved | No — signatures don't reliably contain import info. Keep Tier 2 basic. |
+| 3 | How to handle modules with 0 files (empty modules)? | Resolved | Skip pattern detection, leave columns NULL. |
+
+---

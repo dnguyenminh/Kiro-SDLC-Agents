@@ -7,8 +7,8 @@ import { Hono } from 'hono';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { getAdminDb, verifyPassword, createSession, validateSession, invalidateSession, invalidateUserSessions, getUsers, getUserById, getUserByUsername, createUser, updateUserStatus, deleteUser, resetUserPassword, changePassword, updateLastLogin, getGroups, getGroupById, createGroup, updateGroup, deleteGroup, getUserPermissions, getUserSessions, recordAudit, getAuditLogs, recordConfigChange, getConfigChanges, getKbEntryCount, getKbEntries, getRecentActivity, recordQueryLog, getQueryLogs, getQueryLogStats, setPromotionCooldown, checkPromotionCooldown, searchKbEntries, getKbEmbeddings, getKbEntryById, getAllKbTags, updateKbEntryTags, renameKbTag, deleteKbTag, mergeKbTags, getKbEntriesByTag, } from '../../admin/admin-db.js';
-import { loadConfig } from '../../config/BackendConfig.js';
+import { getAdminDb, verifyPassword, createSession, validateSession, invalidateSession, invalidateUserSessions, refreshSession, getUsers, getUserById, getUserByUsername, createUser, updateUserStatus, deleteUser, resetUserPassword, changePassword, updateLastLogin, getGroups, getGroupById, createGroup, updateGroup, deleteGroup, getUserPermissions, getUserSessions, recordAudit, getAuditLogs, recordConfigChange, getConfigChanges, getKbEntryCount, getKbEntries, getRecentActivity, recordQueryLog, getQueryLogs, getQueryLogStats, setPromotionCooldown, checkPromotionCooldown, searchKbEntries, getKbEmbeddings, getKbEntryById, getAllKbTags, updateKbEntryTags, renameKbTag, deleteKbTag, mergeKbTags, getKbEntriesByTag, } from '../../admin/admin-db.js';
+import { loadConfig, getWorkspacePath } from '../../config/BackendConfig.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 function formatUptime(ms) {
@@ -184,9 +184,17 @@ export function createAdminRoute(logger) {
         }
     });
     // POST /api/admin/auth/logout
-    app.post('/api/admin/auth/logout', (c) => {
+    // POST /api/auth/logout
+    const handleLogout = async (c) => {
         const auth = c.req.header('Authorization') || '';
-        const token = auth.replace('Bearer ', '');
+        let token = auth.replace('Bearer ', '');
+        if (!token) {
+            try {
+                const body = await c.req.json();
+                token = body?.refresh_token || '';
+            }
+            catch { }
+        }
         if (token) {
             const user = validateSession(token);
             if (user) {
@@ -195,7 +203,33 @@ export function createAdminRoute(logger) {
             invalidateSession(token);
         }
         return c.json({ success: true });
-    });
+    };
+    app.post('/api/admin/auth/logout', handleLogout);
+    app.post('/api/auth/logout', handleLogout);
+    // POST /api/admin/auth/refresh
+    // POST /api/auth/refresh
+    const handleRefresh = async (c) => {
+        try {
+            const { refresh_token } = await c.req.json();
+            if (!refresh_token) {
+                return c.json({ error: 'Refresh token required' }, 400);
+            }
+            const result = refreshSession(refresh_token);
+            if (!result) {
+                return c.json({ error: 'Invalid or expired session' }, 401);
+            }
+            return c.json({
+                token: result.token,
+                expiresAt: result.expiresAt,
+            });
+        }
+        catch (err) {
+            logger.error({ err }, 'Token refresh error');
+            return c.json({ error: 'Internal error' }, 500);
+        }
+    };
+    app.post('/api/admin/auth/refresh', handleRefresh);
+    app.post('/api/auth/refresh', handleRefresh);
     // POST /api/admin/auth/change-password
     app.post('/api/admin/auth/change-password', async (c) => {
         const user = requireAuth(c);
@@ -246,7 +280,8 @@ export function createAdminRoute(logger) {
         const allowedTiers = kbPerm.roleData?.allowedTiers;
         const d = getAdminDb();
         const userCount = d.prepare('SELECT COUNT(*) as cnt FROM users').get().cnt;
-        const orchPath = path.resolve(__dirname, '../../../../.code-intel/orchestration.json');
+        const cfg = loadConfig();
+        const orchPath = path.resolve(getWorkspacePath(), cfg.dataDir, cfg.orchestrationConfigPath);
         let mcpCount = 0;
         if (fs.existsSync(orchPath)) {
             try {
@@ -596,7 +631,8 @@ export function createAdminRoute(logger) {
         const permCheck = requirePermission(c, user.userId, 'MCP_ACCESS');
         if (permCheck instanceof Response)
             return permCheck;
-        const orchPath = path.resolve(__dirname, '../../../../.code-intel/orchestration.json');
+        const cfg = loadConfig();
+        const orchPath = path.resolve(getWorkspacePath(), cfg.dataDir, cfg.orchestrationConfigPath);
         let servers = [];
         if (fs.existsSync(orchPath)) {
             try {

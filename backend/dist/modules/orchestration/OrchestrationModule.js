@@ -72,7 +72,7 @@ export class OrchestrationModule {
             };
         });
         handlers.set('execute_dynamic_tool', async (args) => {
-            const toolName = args.toolName;
+            const toolName = args.toolName || args.tool_name;
             const toolArgs = args.arguments || {};
             // If a child MCP server owns this tool, proxy the request
             if (this.clientManager.ownsTool(toolName)) {

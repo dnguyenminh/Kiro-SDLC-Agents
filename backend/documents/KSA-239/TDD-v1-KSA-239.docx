@@ -1,0 +1,233 @@
+# Technical Design Document (TDD)
+
+## Kiro SDLC Agents — KSA-239: Multi-format Document Indexing
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-239 |
+| Title | Multi-format document indexing — support docx/xlsx/pdf/image in Index Documents |
+| Author | SA Agent |
+| Version | 1.0 |
+| Date | 2025-07-14 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-239.docx |
+| Related FSD | FSD-v1-KSA-239.docx |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2025-07-14 | SA Agent | Initial technical design |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This TDD specifies the technical implementation of multi-format document indexing for the Kiro SDLC Agents VS Code extension.
+
+### 1.2 Scope
+
+* Modification of kiro-sdlc-agents/src/indexer.ts
+* New module kiro-sdlc-agents/src/converter.ts
+* Addition of filetomarkdown npm dependency
+* Updated ingestion HTTP payload
+
+### 1.3 Technology Stack
+
+| Layer | Technology | Version |
+| --- | --- | --- |
+| Language | TypeScript | 5.4+ |
+| Runtime | Node.js (VS Code bundled) | 18+ |
+| Build Tool | esbuild | 0.21+ |
+| Extension Host | VS Code Extension API | 1.85+ |
+| Conversion | filetomarkdown | latest (pinned) |
+| KB Backend | MCP Server (HTTP) | internal |
+
+### 1.4 Design Principles
+
+* Error Isolation: One file failure must not abort the batch
+* Minimal Footprint: Avoid heavy native dependencies
+* Progressive Enhancement: Extension works if filetomarkdown fails to load
+* Idempotency: Re-running produces no duplicates
+* Lazy Loading: filetomarkdown loaded only when needed
+
+### 1.5 Constraints
+
+* Must bundle with esbuild
+* Must run within VS Code extension host memory
+* Network calls limited to localhost
+* Conversion timeout: 30 seconds per file
+
+## 2. System Architecture
+
+### 2.1 Architecture Overview
+
+|  |
+| --- |
+| Architecture Diagram |
+
+Architecture Diagram
+
+Pipeline pattern: Command Handler to File Discovery to Format Router to Conversion to Ingestion.
+
+Format Router splits into three paths: - Markdown: pass-through (read content directly) - Text (.txt, .csv, .json, .xml, .yaml): read as UTF-8, wrap in code block - Binary (.docx, .pdf, .xlsx, .png): convert via filetomarkdown
+
+All paths converge at HTTP Ingest which sends to MCP Server KB.
+
+### 2.2 Component Diagram
+
+|  |
+| --- |
+| Component Diagram |
+
+Component Diagram
+
+| Component | Responsibility | Technology |
+| --- | --- | --- |
+| indexer.ts | Pipeline orchestration | TypeScript |
+| converter.ts (NEW) | Conversion with timeout, size checks | TypeScript |
+| discoverDocuments() | Recursive file scanning | Node.js fs |
+| ingestDocumentsViaHttp() | HTTP POST to MCP server | Node.js http |
+| filetomarkdown | Third-party conversion | npm package |
+
+## 3. Module Design
+
+### 3.1 File Structure
+
+kiro-sdlc-agents/src/
+|-- indexer.ts # MODIFIED
+|-- converter.ts # NEW
+|-- types/
+ |-- indexer-types.ts # NEW
+
+### 3.2 converter.ts Design
+
+Key constants: - SIZE\_LIMITS: PDF 50MB, Images 20MB, default 50MB - TEXT\_FORMATS: txt, csv, json, xml, yaml, yml - CONVERSION\_TIMEOUT\_MS: 30000
+
+Key function: convertFileToMarkdown(filePath, format) -> ConversionResult
+
+Logic: 1. Check file exists, get size 2. Check size limit (skip if too large) 3. If text format: read as UTF-8, wrap in markdown code block 4. If binary: call filetomarkdown with 30s timeout 5. Return ConversionResult with success/error
+
+Lazy loading: filetomarkdown loaded via require() on first use. If package unavailable, throw descriptive error.
+
+### 3.3 indexer.ts Modifications
+
+Changes: 1. Import convertFileToMarkdown from converter.ts 2. In document indexing path: separate md vs non-md files 3. Convert non-md files sequentially with progress updates 4. Update quick pick label to “Index all SDLC documents into Knowledge Base” 5. Enhanced ingest payload: add optional content field for pre-converted files
+
+### 3.4 Type Definitions
+
+interface ConversionResult {
+ markdown: string;
+ success: boolean;
+ error: string | null;
+ bytesProcessed: number;
+ conversionTime: number;
+}
+
+interface DiscoveredDocument {
+ path: string;
+ type: string;
+ ticket: string;
+ format: string;
+}
+
+interface IndexStats {
+ totalDiscovered: number;
+ directMarkdown: number;
+ converted: number;
+ skipped: number;
+ ingested: number;
+ errors: Array<{ file: string; error: string }>;
+}
+
+## 4. Integration Design
+
+### 4.1 filetomarkdown Package
+
+| Attribute | Value |
+| --- | --- |
+| Package | filetomarkdown |
+| Import | require (lazy loaded) |
+| Bundling | Try inline first; externalize if native deps |
+| Fallback | Skip binary conversions if unavailable |
+
+package.json: "filetomarkdown": "^1.0.0"
+
+### 4.2 MCP Server HTTP API
+
+Enhanced payload supports optional content field: - If content present: server ingests content directly - If content absent: server reads file from file\_path (existing behavior)
+
+Endpoint: POST http://localhost:{port}/api/memory/ingest-file
+
+## 5. Error Handling
+
+| Category | Handling | Notification |
+| --- | --- | --- |
+| File Access | Skip + continue | Output channel |
+| Size Limit | Skip + continue | Output channel |
+| Conversion Error | Skip + continue | Output channel |
+| Timeout (>30s) | Abort + continue | Output channel |
+| Network (MCP down) | Abort ingestion | Error toast |
+| Package Unavailable | Disable binary conversion | Warning toast |
+
+## 6. Security Design
+
+* Path validation: Only files under workspace documents/
+* No external network: All HTTP to localhost
+* Size limits: Prevent memory exhaustion
+* No secrets in logs
+
+## 7. Performance
+
+| Operation | Target | Strategy |
+| --- | --- | --- |
+| Single docx | < 3s | Lazy load, in-process |
+| Single pdf | < 5s | 30s timeout cap |
+| 50-file batch | < 2 min | Sequential processing |
+| Memory | < 100MB increase | One file at a time |
+
+## 8. Implementation Checklist
+
+### Files to Create
+
+| # | File | Purpose |
+| --- | --- | --- |
+| 1 | src/converter.ts | Conversion wrapper |
+| 2 | src/types/indexer-types.ts | TypeScript interfaces |
+
+### Files to Modify
+
+| # | File | Changes |
+| --- | --- | --- |
+| 1 | src/indexer.ts | Add conversion pipeline, update label |
+| 2 | package.json | Add filetomarkdown dependency |
+| 3 | esbuild.js | Potentially externalize filetomarkdown |
+
+### Implementation Order
+
+1. npm install filetomarkdown, test bundling
+2. Create types/indexer-types.ts
+3. Create converter.ts
+4. Modify indexer.ts with conversion pipeline
+5. Update quick pick label
+6. Test with sample files
+7. Fix esbuild issues if any
+8. Run vsce package to verify
+
+## 9. Deployment Considerations
+
+* filetomarkdown bundled in VSIX via esbuild
+* Verify extension size increase < 5MB
+* Rollback: revert indexer.ts to md-only version
+* No data migration needed (KB entries are additive)
+
+## 10. Appendix
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+| --- | --- | --- | --- |
+| 1 | Architecture | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
+| 2 | Component | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |

@@ -1,0 +1,1065 @@
+# Functional Specification Document (FSD)
+
+## Kiro SDLC Agents Extension — KSA-2: Extension Core — Commands & Activation
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-2 |
+| Title | Extension Core — Commands & Activation |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | documents/KSA-2/BRD.md |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-20 | BA Agent | Initiate document — auto-generated from BRD and Jira ticket KSA-2 |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior of the **Extension Core — Commands & Activation** component of the Kiro SDLC Agents VS Code extension. It details how the extension activates, registers commands, displays status, and confirms destructive operations — translating the BRD's "what" into the "how" for development.
+
+### 1.2 Scope
+
+This document covers the functional specifications for:
+- Extension activation lifecycle (startup activation via `activationEvents: []`)
+- Five Command Palette commands with their complete interaction flows
+- Status bar indicator with three visual states
+- Confirmation dialogs for inject and update operations
+
+**Out of scope:** File injection logic (KSA-3), indexer runtime detection (KSA-5), bundled resources (KSA-6).
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+|------|------------|
+| VS Code | Visual Studio Code — Microsoft's code editor |
+| Kiro IDE | Amazon's AI-powered IDE (VS Code compatible) |
+| SDLC | Software Development Life Cycle |
+| Command Palette | VS Code's command search UI (Ctrl+Shift+P / Cmd+Shift+P) |
+| StatusBarItem | VS Code API element displayed in the bottom status bar |
+| Codicon | VS Code's built-in icon font (e.g., `$(check)`, `$(warning)`) |
+| Extension Host | The Node.js process that runs VS Code extensions |
+| activationEvents | package.json field controlling when an extension loads |
+| QuickPick | VS Code's multi-select dropdown UI component |
+
+### 1.4 References
+
+| Document | Location |
+|----------|----------|
+| BRD — KSA-2 | documents/KSA-2/BRD.md |
+| VS Code Extension API | https://code.visualstudio.com/api |
+| VS Code Extension Manifest | https://code.visualstudio.com/api/references/extension-manifest |
+| Source: extension.ts | kiro-sdlc-agents/src/extension.ts |
+| Source: config.ts | kiro-sdlc-agents/src/config.ts |
+| Source: injector.ts | kiro-sdlc-agents/src/injector.ts |
+| Source: indexer.ts | kiro-sdlc-agents/src/indexer.ts |
+
+---
+
+## 2. System Overview
+
+### 2.1 System Context
+
+The extension operates within the VS Code Extension Host process and interacts with:
+
+- **Developer (Actor):** Triggers commands via Command Palette or clicks status bar
+- **VS Code Extension Host:** Loads and activates the extension at startup
+- **VS Code Command Registry:** Registers and dispatches command handlers
+- **VS Code Status Bar API:** Renders the status indicator
+- **VS Code Window API:** Shows information/warning messages and QuickPick dialogs
+- **Workspace File System:** Checked for SDLC component presence (status)
+- **Injector Module (KSA-3):** Delegated to for file copy operations
+- **Indexer Module (KSA-5):** Delegated to for code indexing operations
+
+```mermaid
+graph TB
+    DEV[Developer] -->|Ctrl+Shift+P| CP[Command Palette]
+    DEV -->|Click| SB[Status Bar]
+    CP --> CMD[Command Registry]
+    CMD --> EXT[Extension Core<br/>extension.ts]
+    SB --> EXT
+    EXT --> INJ[Injector Module<br/>injector.ts]
+    EXT --> IDX[Indexer Module<br/>indexer.ts]
+    EXT --> FS[Workspace<br/>File System]
+    EXT --> VSCAPI[VS Code Window API<br/>Dialogs & Messages]
+    INJ --> FS
+    IDX --> FS
+
+    style EXT fill:#4FC3F7,stroke:#0288D1,color:#000
+    style DEV fill:#A5D6A7,stroke:#388E3C,color:#000
+    style FS fill:#FFF9C4,stroke:#F9A825,color:#000
+```
+
+### 2.2 System Architecture
+
+The extension follows a simple layered architecture:
+
+| Layer | Module | Responsibility |
+|-------|--------|----------------|
+| Entry Point | `extension.ts` | `activate()` / `deactivate()`, command registration, status bar |
+| Configuration | `config.ts` | Component definitions, indexer options |
+| Injection | `injector.ts` | File copy logic (delegated from commands) |
+| Indexing | `indexer.ts` | Runtime detection, script execution (delegated from commands) |
+
+**Key design decisions:**
+- `activate()` is synchronous and lightweight — no async I/O during activation
+- Status bar uses `fs.existsSync` (synchronous) for fast checks
+- All commands are async and show progress via VS Code API
+- Error handling uses VS Code's `showErrorMessage` / `showWarningMessage`
+
+
+
+---
+
+## 3. Functional Requirements
+
+### 3.1 Feature: Extension Activation on Startup
+
+**Source:** BRD Story 1
+
+#### 3.1.1 Description
+
+The extension activates immediately when VS Code starts (or when the extension is installed/enabled). This is achieved by setting `activationEvents: []` (empty array) in `package.json`, which tells VS Code to activate the extension on startup without waiting for any specific trigger event.
+
+#### 3.1.2 Use Case
+
+**Use Case ID:** UC-1
+**Actor:** VS Code Extension Host
+**Preconditions:**
+- Extension is installed and enabled
+- VS Code is launching or reloading
+
+**Postconditions:**
+- All 5 commands are registered and available
+- Status bar item is visible
+- Extension is ready to handle user interactions
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Extension Host | | Calls `activate(context)` on extension startup |
+| 2 | | Extension | Creates status bar item (right-aligned, priority 100) |
+| 3 | | Extension | Pushes status bar item to `context.subscriptions` |
+| 4 | | Extension | Registers 5 commands via `vscode.commands.registerCommand()` |
+| 5 | | Extension | Pushes all command disposables to `context.subscriptions` |
+| 6 | | Extension | Calls `updateStatusBar()` to set initial icon/tooltip |
+| 7 | | Extension | Activation complete — returns control to Extension Host |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-1 | No workspace folder open | Step 6: Status bar shows `$(circle-slash) SDLC` with tooltip "No workspace open". Commands still registered but will show error when invoked. |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-1 | Extension Host fails to call activate | Extension remains inactive. VS Code logs error in Extension Host output. No user-visible impact beyond missing commands. |
+
+#### 3.1.3 Business Rules
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-1 | Extension MUST activate without any user action | BRD Story 1, AC-2 |
+| BR-2 | Activation MUST NOT perform heavy I/O (< 100ms) | BRD NFR: Performance |
+| BR-3 | Extension MUST NOT throw errors if no workspace is open | BRD Story 1, AC-3 |
+| BR-4 | All disposables MUST be pushed to context.subscriptions for cleanup | VS Code best practice |
+
+#### 3.1.4 Data Specifications
+
+**Input Data:**
+
+| Field | Type | Required | Validation | Description |
+|-------|------|----------|------------|-------------|
+| context | ExtensionContext | Y | Provided by VS Code | Extension lifecycle context with subscriptions array |
+
+**Output Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| (none) | void | activate() returns void; side effects are command registrations and status bar |
+
+#### 3.1.5 UI Specifications
+
+No direct UI for activation. Status bar is created as a side effect (see UC-3).
+
+#### 3.1.6 Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant EH as Extension Host
+    participant EXT as extension.ts
+    participant SB as Status Bar
+    participant CMD as Command Registry
+
+    EH->>EXT: activate(context)
+    EXT->>SB: createStatusBar()
+    SB-->>EXT: StatusBarItem
+    EXT->>CMD: registerCommand("kiroSdlc.injectAll")
+    EXT->>CMD: registerCommand("kiroSdlc.injectSelective")
+    EXT->>CMD: registerCommand("kiroSdlc.runIndex")
+    EXT->>CMD: registerCommand("kiroSdlc.update")
+    EXT->>CMD: registerCommand("kiroSdlc.status")
+    EXT->>SB: updateStatusBar(item)
+    EXT-->>EH: void (activation complete)
+```
+
+---
+
+### 3.2 Feature: Command Palette Registration (5 Commands)
+
+**Source:** BRD Story 2
+
+#### 3.2.1 Description
+
+Five commands are registered in the VS Code Command Palette under the "Kiro SDLC:" prefix. Each command maps to a specific handler function that orchestrates user interaction and delegates to the injector or indexer modules.
+
+#### 3.2.2 Command Registry
+
+| # | Command ID | Display Title | Handler Function | Category |
+|---|-----------|---------------|------------------|----------|
+| 1 | `kiroSdlc.injectAll` | Kiro SDLC: Inject All Agents | `handleInjectAll()` | Injection |
+| 2 | `kiroSdlc.injectSelective` | Kiro SDLC: Inject (Select Components) | `handleInjectSelective()` | Injection |
+| 3 | `kiroSdlc.runIndex` | Kiro SDLC: Run Code Indexer | `handleRunIndex()` | Indexing |
+| 4 | `kiroSdlc.update` | Kiro SDLC: Update Agents (Keep Customizations) | `handleUpdate()` | Update |
+| 5 | `kiroSdlc.status` | Kiro SDLC: Show Status | `handleStatus()` | Status |
+
+#### 3.2.3 Use Case: Inject All (UC-2a)
+
+**Use Case ID:** UC-2a
+**Actor:** Developer
+**Preconditions:**
+- Extension is activated
+- A workspace folder is open
+
+**Postconditions:**
+- All SDLC components are copied to workspace
+- Success message displayed
+- Auto-index triggered (if configured)
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Developer | | Opens Command Palette, types "Kiro SDLC", selects "Inject All Agents" |
+| 2 | | Extension | Calls `getWorkspaceRoot()` — returns first workspace folder path |
+| 3 | | Extension | Shows confirmation dialog: "Inject all SDLC agents...?" with [Yes] [Cancel] |
+| 4 | Developer | | Clicks "Yes" |
+| 5 | | Injector | Calls `injectAll(root, extensionPath)` — copies all CORE_COMPONENTS |
+| 6 | | Injector | Shows QuickPick for indexer language selection |
+| 7 | Developer | | Selects an indexer language |
+| 8 | | Injector | Copies indexer base config + selected language scripts |
+| 9 | | Extension | Shows success message: "✅ Injected N components: ..." |
+| 10 | | Extension | If `kiroSdlc.autoIndex` is true AND indexer was injected → calls `runIndexer()` |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-2a-1 | User clicks "Cancel" at Step 4 | Operation aborted. No files modified. No message shown. |
+| AF-2a-2 | User dismisses indexer QuickPick (Step 7) | Indexer not injected. Only core components injected. Success message reflects actual count. |
+| AF-2a-3 | `kiroSdlc.autoIndex` is false | Step 10 skipped. No auto-indexing. |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-2a-1 | No workspace folder open | `getWorkspaceRoot()` shows error "No workspace folder open." and returns undefined. Handler exits early. |
+| EF-2a-2 | Source resource not found | Injector shows warning "Source not found: {path}". Continues with remaining components. |
+| EF-2a-3 | File copy fails (permission error) | Injector shows error "Failed to inject {id}: {error}". Continues with remaining components. |
+
+#### 3.2.4 Use Case: Inject Selective (UC-2b)
+
+**Use Case ID:** UC-2b
+**Actor:** Developer
+**Preconditions:**
+- Extension is activated
+- A workspace folder is open
+
+**Postconditions:**
+- Selected components are copied to workspace
+- Success message displayed (or nothing if cancelled)
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Developer | | Selects "Kiro SDLC: Inject (Select Components)" from Command Palette |
+| 2 | | Extension | Calls `getWorkspaceRoot()` |
+| 3 | | Injector | Shows multi-select QuickPick with all CORE_COMPONENTS (pre-selected) + "Code Intelligence Indexer" option |
+| 4 | Developer | | Checks/unchecks desired components, confirms |
+| 5 | | Injector | For each selected core component: copies to workspace |
+| 6 | | Injector | If "indexer" selected: shows single-select QuickPick for language |
+| 7 | Developer | | Selects indexer language |
+| 8 | | Injector | Copies indexer base + selected language |
+| 9 | | Extension | Shows success message: "✅ Injected: {list}" |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-2b-1 | User cancels QuickPick (Step 4) | Returns empty array. No message shown. |
+| AF-2b-2 | User selects nothing (empty selection) | Returns empty array. No message shown. |
+
+#### 3.2.5 Use Case: Run Code Indexer (UC-2c)
+
+**Use Case ID:** UC-2c
+**Actor:** Developer
+**Preconditions:**
+- Extension is activated
+- A workspace folder is open
+- Indexer scripts are present in workspace (`.analysis/code-intelligence/scripts/`)
+
+**Postconditions:**
+- Code intelligence index files generated/updated
+- Output channel shows indexer progress
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Developer | | Selects "Kiro SDLC: Run Code Indexer" from Command Palette |
+| 2 | | Extension | Calls `getWorkspaceRoot()` |
+| 3 | | Indexer | Reads `kiroSdlc.preferredIndexer` setting (default: "auto") |
+| 4 | | Indexer | If "auto": detects available runtimes in priority order (Python → Java → Node.js → PowerShell → Bash) |
+| 5 | | Indexer | Builds command string for detected runtime |
+| 6 | | Indexer | Creates Output Channel "Kiro Code Indexer" and shows it |
+| 7 | | Indexer | Executes command via `child_process.exec` (timeout: 120s) |
+| 8 | | Indexer | Streams stdout/stderr to Output Channel |
+| 9 | | Indexer | On success: shows "Code indexing complete!" info message |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-2c-1 | `preferredIndexer` is set to specific language | Step 4 skipped. Uses configured language directly. |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-2c-1 | No compatible runtime found | Shows warning: "No compatible runtime found. Install Python, Java, or Node.js." |
+| EF-2c-2 | Indexer command fails | Shows error: "Indexer failed: {message}". Output channel shows full error. |
+| EF-2c-3 | Indexer exceeds 120s timeout | Process killed. Error shown to user. |
+
+#### 3.2.6 Use Case: Update Agents (UC-2d)
+
+**Use Case ID:** UC-2d
+**Actor:** Developer
+**Preconditions:**
+- Extension is activated
+- A workspace folder is open
+- SDLC components previously injected
+
+**Postconditions:**
+- All SDLC components overwritten with latest versions from extension bundle
+- Warning acknowledged by user
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Developer | | Selects "Kiro SDLC: Update Agents (Keep Customizations)" from Command Palette |
+| 2 | | Extension | Calls `getWorkspaceRoot()` |
+| 3 | | Extension | Shows WARNING dialog: "Update will overwrite agents/steering/templates. Custom modifications in these folders will be lost. Continue?" with [Update] [Cancel] |
+| 4 | Developer | | Clicks "Update" |
+| 5 | | Injector | Calls `injectAll(root, extensionPath)` — overwrites all components |
+| 6 | | Extension | Shows success: "✅ Updated N components" |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-2d-1 | User clicks "Cancel" at Step 4 | Operation aborted. No files modified. |
+
+#### 3.2.7 Use Case: Show Status (UC-2e)
+
+**Use Case ID:** UC-2e
+**Actor:** Developer
+**Preconditions:**
+- Extension is activated
+- A workspace folder is open
+
+**Postconditions:**
+- Status information displayed to user
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | Developer | | Selects "Kiro SDLC: Show Status" from Command Palette (or clicks status bar) |
+| 2 | | Extension | Calls `getWorkspaceRoot()` |
+| 3 | | Extension | Calls `checkStatus(root)` — checks existence of each component's target path |
+| 4 | | Extension | Builds status lines: "✅ {id}" or "❌ {id}" for each component |
+| 5 | | Extension | Shows information message with status lines + [Inject Missing] [Close] buttons |
+| 6 | Developer | | (Optional) Clicks "Inject Missing" |
+| 7 | | Extension | Executes `kiroSdlc.injectSelective` command |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-2e-1 | User clicks "Close" | Dialog dismissed. No action taken. |
+| AF-2e-2 | All components present | Status shows all ✅. "Inject Missing" still available but will show all pre-selected. |
+
+#### 3.2.8 Business Rules (Commands)
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-5 | All commands MUST check for workspace root before proceeding | BRD Story 2, AC-3 |
+| BR-6 | Command IDs MUST follow pattern `kiroSdlc.{action}` | BRD Story 2, AC-2 |
+| BR-7 | All commands MUST share the "Kiro SDLC:" display prefix | BRD Story 2, AC-1 |
+| BR-8 | `injectAll` MUST show confirmation before modifying workspace | BRD Story 4, AC-1 |
+| BR-9 | `update` MUST show WARNING-level confirmation (destructive) | BRD Story 4, AC-2 |
+| BR-10 | `injectSelective` does NOT require confirmation (user explicitly picks) | Design decision |
+| BR-11 | `runIndex` does NOT require confirmation (non-destructive) | Design decision |
+| BR-12 | Auto-index after inject is controlled by `kiroSdlc.autoIndex` setting (default: true) | extension.ts logic |
+
+#### 3.2.9 Sequence Diagram — Command Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant DEV as Developer
+    participant CP as Command Palette
+    participant EXT as Extension
+    participant DLG as VS Code Dialog
+    participant INJ as Injector
+    participant FS as File System
+
+    DEV->>CP: Type "Kiro SDLC"
+    CP->>EXT: Execute kiroSdlc.injectAll
+    EXT->>EXT: getWorkspaceRoot()
+    alt No workspace
+        EXT->>DLG: showErrorMessage("No workspace folder open")
+    else Workspace exists
+        EXT->>DLG: showInformationMessage("Inject all...?", "Yes", "Cancel")
+        DLG-->>EXT: "Yes"
+        EXT->>INJ: injectAll(root, extensionPath)
+        INJ->>FS: Copy CORE_COMPONENTS
+        INJ->>DLG: showQuickPick(INDEXER_OPTIONS)
+        DLG-->>INJ: Selected indexer
+        INJ->>FS: Copy indexer files
+        INJ-->>EXT: injected[]
+        EXT->>DLG: showInformationMessage("✅ Injected N components")
+    end
+```
+
+
+
+---
+
+### 3.3 Feature: Status Bar Indicator
+
+**Source:** BRD Story 3
+
+#### 3.3.1 Description
+
+A persistent status bar item is displayed in the bottom-right area of VS Code. It provides at-a-glance visibility into whether all SDLC components are present in the current workspace. The indicator uses three distinct visual states with codicon icons.
+
+#### 3.3.2 Use Case
+
+**Use Case ID:** UC-3
+**Actor:** Developer (passive — observes status bar)
+**Preconditions:**
+- Extension is activated
+
+**Postconditions:**
+- Status bar displays correct icon based on workspace state
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | | Extension | `createStatusBar()` creates StatusBarItem (alignment: Right, priority: 100) |
+| 2 | | Extension | Sets `item.command = "kiroSdlc.status"` (click handler) |
+| 3 | | Extension | Calls `item.show()` to make visible |
+| 4 | | Extension | `updateStatusBar()` evaluates workspace state |
+| 5 | | Extension | Sets icon + text + tooltip based on state (see State Table below) |
+
+**State Table:**
+
+| State | Condition | Icon + Text | Tooltip |
+|-------|-----------|-------------|---------|
+| All Present | `checkStatus()` returns all `true` | `$(check) SDLC Agents` | "All SDLC components active" |
+| Some Missing | `checkStatus()` returns at least one `false` | `$(warning) SDLC Agents` | "Some components missing — click to check" |
+| No Workspace | `getWorkspaceRoot()` returns `undefined` | `$(circle-slash) SDLC` | "No workspace open" |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-3-1 | Developer clicks status bar item | Executes `kiroSdlc.status` command (UC-2e) |
+
+#### 3.3.3 Business Rules (Status Bar)
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-13 | Status bar MUST be right-aligned with priority 100 | BRD Story 3, UI Spec |
+| BR-14 | Status bar MUST use codicon icons: `$(check)`, `$(warning)`, `$(circle-slash)` | BRD Story 3, UI Spec |
+| BR-15 | Clicking status bar MUST trigger the status command | BRD Story 3, AC-4 |
+| BR-16 | Status check uses `fs.existsSync` — synchronous, no async overhead | BRD NFR: Performance |
+| BR-17 | Status bar MUST be added to `context.subscriptions` for proper disposal | VS Code best practice |
+
+#### 3.3.4 UI Specifications
+
+**Element: Status Bar Item**
+
+| No. | Property | Value | Description |
+|-----|----------|-------|-------------|
+| 1 | Alignment | `StatusBarAlignment.Right` | Positioned on right side of status bar |
+| 2 | Priority | `100` | Higher priority = further left within right section |
+| 3 | Command | `kiroSdlc.status` | Click action |
+| 4 | Text (all ok) | `$(check) SDLC Agents` | Green check + label |
+| 5 | Text (missing) | `$(warning) SDLC Agents` | Yellow warning + label |
+| 6 | Text (no ws) | `$(circle-slash) SDLC` | Slash circle + short label |
+| 7 | Tooltip (all ok) | "All SDLC components active" | Hover text |
+| 8 | Tooltip (missing) | "Some components missing — click to check" | Hover text |
+| 9 | Tooltip (no ws) | "No workspace open" | Hover text |
+
+#### 3.3.5 State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> NoWorkspace: activate() called, no workspace
+    [*] --> Checking: activate() called, workspace exists
+    Checking --> AllPresent: all components exist
+    Checking --> SomeMissing: one or more missing
+    
+    AllPresent --> SomeMissing: component deleted externally
+    SomeMissing --> AllPresent: inject/update completes
+    NoWorkspace --> Checking: workspace opened
+    
+    AllPresent --> AllPresent: click → show status
+    SomeMissing --> SomeMissing: click → show status
+    NoWorkspace --> NoWorkspace: click → show error
+```
+
+---
+
+### 3.4 Feature: Confirmation Dialog Before Injection
+
+**Source:** BRD Story 4
+
+#### 3.4.1 Description
+
+Before performing operations that modify workspace files (inject all, update), the extension displays a confirmation dialog. This prevents accidental overwrites. The dialog severity level differs based on the operation's destructiveness.
+
+#### 3.4.2 Use Case
+
+**Use Case ID:** UC-4
+**Actor:** Developer
+**Preconditions:**
+- A command that modifies files has been triggered (injectAll or update)
+- Workspace root is valid
+
+**Postconditions:**
+- User has explicitly confirmed or cancelled the operation
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+|------|-------|--------|-------------|
+| 1 | | Extension | Determines dialog type based on command |
+| 2 | | Extension | Shows appropriate dialog (see Dialog Specifications below) |
+| 3 | Developer | | Reads message, clicks confirm button |
+| 4 | | Extension | Proceeds with operation |
+
+**Dialog Specifications:**
+
+| Command | API Method | Message | Buttons | Severity |
+|---------|-----------|---------|---------|----------|
+| `injectAll` | `showInformationMessage` | "Inject all SDLC agents, steering, hooks, templates, and indexer into this workspace?" | [Yes] [Cancel] | Info |
+| `update` | `showWarningMessage` | "Update will overwrite agents/steering/templates. Custom modifications in these folders will be lost. Continue?" | [Update] [Cancel] | Warning |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| AF-4-1 | User clicks "Cancel" | Operation aborted immediately. No files touched. |
+| AF-4-2 | User dismisses dialog (Escape key or click away) | Same as Cancel — operation aborted. `confirm` variable is `undefined`. |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+|----|-----------|-------|
+| EF-4-1 | Dialog fails to show (VS Code API error) | Extremely unlikely. If occurs, operation does not proceed (fail-safe). |
+
+#### 3.4.3 Business Rules (Confirmation)
+
+| Rule ID | Rule | Source |
+|---------|------|--------|
+| BR-18 | `injectAll` MUST use `showInformationMessage` (info level) | BRD Story 4, UI Spec |
+| BR-19 | `update` MUST use `showWarningMessage` (warning level — yellow icon) | BRD Story 4, UI Spec |
+| BR-20 | Dismissing dialog (no button clicked) MUST abort operation | BRD Story 4, AC-3 |
+| BR-21 | After successful operation, a success message MUST be shown | BRD Story 4, AC-5 |
+| BR-22 | `injectSelective` does NOT show pre-confirmation (QuickPick IS the confirmation) | Design decision |
+| BR-23 | `runIndex` does NOT show confirmation (non-destructive, generates new files only) | Design decision |
+
+#### 3.4.4 Sequence Diagram — Confirmation Flow
+
+```mermaid
+sequenceDiagram
+    participant DEV as Developer
+    participant EXT as Extension
+    participant DLG as VS Code Dialog API
+    participant INJ as Injector
+
+    DEV->>EXT: Trigger kiroSdlc.update
+    EXT->>DLG: showWarningMessage("Update will overwrite...", "Update", "Cancel")
+    
+    alt User clicks "Update"
+        DLG-->>EXT: "Update"
+        EXT->>INJ: injectAll(root, extensionPath)
+        INJ-->>EXT: injected[]
+        EXT->>DLG: showInformationMessage("✅ Updated N components")
+    else User clicks "Cancel" or dismisses
+        DLG-->>EXT: undefined
+        Note over EXT: Operation aborted
+    end
+```
+
+
+
+---
+
+## 4. Data Model
+
+> **Note:** This extension is a VS Code extension with no database. The "data model" describes the in-memory and configuration data structures used at runtime.
+
+### 4.1 Logical Entities
+
+#### Entity: Component
+
+Represents a single injectable SDLC component (defined in `config.ts`).
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | string | Y | BR-6 (unique identifier) | Unique component identifier (e.g., "agents", "steering") |
+| label | string | Y | — | Human-readable display name for QuickPick |
+| description | string | Y | — | Short description shown in QuickPick |
+| sourcePath | string | Y | — | Relative path within extension bundle (resources/) |
+| targetPath | string | Y | — | Relative path in target workspace |
+| filter | string[] | N | — | Optional whitelist of files/dirs to copy (if not set, copies all) |
+
+#### Entity: IndexerOption
+
+Represents an available code indexer language variant.
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| id | string | Y | — | Indexer identifier (e.g., "indexer-python") |
+| label | string | Y | — | Display name in QuickPick |
+| description | string | Y | — | Runtime requirements description |
+| sourcePath | string | Y | — | Path to indexer scripts in bundle |
+| targetPath | string | Y | — | Path in target workspace |
+
+#### Entity: StatusState
+
+Represents the computed status of SDLC components in a workspace.
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| componentId | string (key) | Y | — | Maps to Component.id |
+| exists | boolean | Y | BR-16 | Whether the component's targetPath exists on disk |
+
+#### Entity: ExtensionSettings
+
+VS Code configuration settings for the extension (contributed via `package.json`).
+
+| Attribute | Type | Required | Business Rule | Description |
+|-----------|------|----------|---------------|-------------|
+| kiroSdlc.autoIndex | boolean | N (default: true) | BR-12 | Auto-run indexer after injection |
+| kiroSdlc.preferredIndexer | string | N (default: "auto") | AF-2c-1 | Override auto-detection: "auto", "python", "java", "nodejs", "powershell", "bash" |
+
+### 4.2 Relationships
+
+| From Entity | To Entity | Cardinality | Description |
+|-------------|-----------|-------------|-------------|
+| Component | StatusState | 1:1 | Each component has exactly one status (present/missing) |
+| IndexerOption | Component | is-a | IndexerOption extends Component with same structure |
+| ExtensionSettings | IndexerOption | 1:1 | preferredIndexer selects one IndexerOption |
+
+### 4.3 Entity Relationship Diagram
+
+```mermaid
+classDiagram
+    class Component {
+        +string id
+        +string label
+        +string description
+        +string sourcePath
+        +string targetPath
+        +string[] filter
+    }
+    
+    class IndexerOption {
+        +string id
+        +string label
+        +string description
+        +string sourcePath
+        +string targetPath
+    }
+    
+    class StatusState {
+        +string componentId
+        +boolean exists
+    }
+    
+    class ExtensionSettings {
+        +boolean autoIndex
+        +string preferredIndexer
+    }
+    
+    Component <|-- IndexerOption : extends
+    Component "1" --> "1" StatusState : has status
+    ExtensionSettings "1" --> "0..1" IndexerOption : selects
+```
+
+---
+
+## 5. Integration Specifications
+
+> **Note:** This extension integrates with VS Code APIs (internal) and delegates to child modules. No external network services are involved.
+
+### 5.1 External System: VS Code Extension API
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Provides UI primitives (commands, status bar, dialogs, QuickPick) and workspace access |
+| Direction | Bidirectional |
+| Data Format | TypeScript API calls (in-process) |
+| Frequency | Real-time (event-driven) |
+
+**API Surface Used:**
+
+| VS Code API | Usage | Business Rule |
+|-------------|-------|---------------|
+| `vscode.commands.registerCommand()` | Register 5 commands | BR-6, BR-7 |
+| `vscode.window.createStatusBarItem()` | Create status indicator | BR-13 |
+| `vscode.window.showInformationMessage()` | Confirmation + success messages | BR-8, BR-21 |
+| `vscode.window.showWarningMessage()` | Destructive operation warning | BR-9, BR-19 |
+| `vscode.window.showErrorMessage()` | Error notifications | BR-5 |
+| `vscode.window.showQuickPick()` | Component/indexer selection | UC-2b |
+| `vscode.window.createOutputChannel()` | Indexer output streaming | UC-2c |
+| `vscode.workspace.workspaceFolders` | Get workspace root | BR-5 |
+| `vscode.workspace.getConfiguration()` | Read extension settings | BR-12 |
+
+### 5.2 Internal Module: Injector (KSA-3)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Copies bundled SDLC resources to workspace file system |
+| Direction | Outbound (extension calls injector) |
+| Data Format | TypeScript function calls |
+| Frequency | On-demand (user-triggered) |
+
+**Data Exchange:**
+
+| Extension Provides | Injector Returns | Direction | Business Rule |
+|-------------------|-----------------|-----------|---------------|
+| workspaceRoot: string | injected: string[] | Call → Return | List of successfully injected component IDs |
+| extensionPath: string | (included in call) | Call | Path to bundled resources |
+
+### 5.3 Internal Module: Indexer (KSA-5)
+
+| Attribute | Value |
+|-----------|-------|
+| Purpose | Detects runtime and executes code intelligence indexer |
+| Direction | Outbound (extension calls indexer) |
+| Data Format | TypeScript function calls + child_process.exec |
+| Frequency | On-demand (user-triggered or auto after inject) |
+
+**Data Exchange:**
+
+| Extension Provides | Indexer Returns | Direction | Business Rule |
+|-------------------|----------------|-----------|---------------|
+| workspaceRoot: string | success: boolean | Call → Return | Whether indexing completed successfully |
+
+---
+
+## 6. Processing Logic
+
+### 6.1 Status Check Process
+
+**Trigger:** Extension activation OR status command invoked
+**Schedule:** On-demand (not periodic)
+**Input:** Workspace root path
+**Output:** Record<string, boolean> mapping component IDs to existence
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Get workspace root from `vscode.workspace.workspaceFolders[0]` | If no folders: return undefined, show "No workspace" state |
+| 2 | For each CORE_COMPONENT: check `fs.existsSync(path.join(root, component.targetPath))` | existsSync never throws — returns false on error |
+| 3 | Check indexer: `fs.existsSync(path.join(root, ".analysis/code-intelligence/index-config.json"))` | Same as above |
+| 4 | Return status record | N/A |
+
+### 6.2 Inject All Process
+
+**Trigger:** User confirms "Inject All" dialog
+**Input:** workspaceRoot, extensionPath
+**Output:** string[] of injected component IDs
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Iterate CORE_COMPONENTS array | Continue on individual failure |
+| 2 | For each: resolve source = `extensionPath/resources/{sourcePath}` | If source missing: show warning, skip, continue |
+| 3 | For each: resolve target = `workspaceRoot/{targetPath}` | N/A |
+| 4 | If component has `filter`: copy only listed files/dirs | If filter item missing: skip silently |
+| 5 | If no filter: recursive directory copy (skip node_modules, __pycache__, out, dist, .git) | If copy fails: show error, continue |
+| 6 | Show indexer QuickPick | If dismissed: skip indexer |
+| 7 | Copy INDEXER_BASE (config) + selected indexer scripts | Same error handling as step 5 |
+| 8 | Return array of successfully injected IDs | N/A |
+
+### 6.3 Runtime Detection Process (Indexer)
+
+**Trigger:** `runIndex` command with `preferredIndexer = "auto"`
+**Input:** None (checks system PATH)
+**Output:** IndexerKey or null
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+|------|-------------|----------------|
+| 1 | Try `python --version` (5s timeout) | If fails: try next |
+| 2 | Try `java --version` (5s timeout) | If fails: try next |
+| 3 | Try `node --version` (5s timeout) | If fails: try next |
+| 4 | If Windows: fallback to "powershell" | Always available on Windows |
+| 5 | If Linux/Mac: fallback to "bash" | Always available on Unix |
+| 6 | If nothing works: return null | Show warning to user |
+
+**Activity Diagram:**
+
+```mermaid
+flowchart TD
+    A[Start: runIndex command] --> B{preferredIndexer setting?}
+    B -->|"auto"| C[Detect available runtimes]
+    B -->|specific| D[Use configured runtime]
+    C --> E{Python available?}
+    E -->|Yes| F[Use Python indexer]
+    E -->|No| G{Java available?}
+    G -->|Yes| H[Use Java indexer]
+    G -->|No| I{Node.js available?}
+    I -->|Yes| J[Use Node.js indexer]
+    I -->|No| K{Windows?}
+    K -->|Yes| L[Use PowerShell]
+    K -->|No| M[Use Bash]
+    F --> N[Build command string]
+    H --> N
+    J --> N
+    L --> N
+    M --> N
+    D --> N
+    N --> O[Create Output Channel]
+    O --> P[Execute via child_process.exec]
+    P --> Q{Exit code 0?}
+    Q -->|Yes| R[Show success message]
+    Q -->|No| S[Show error message]
+```
+
+---
+
+## 7. Security Requirements
+
+> **Note:** This is a local VS Code extension with no network communication, authentication, or sensitive data handling. Security concerns are minimal.
+
+### 7.1 Authentication & Authorization
+
+| Role | Permissions | Screens/Features |
+|------|-------------|-------------------|
+| Developer (local user) | Full access | All commands, all operations |
+
+No authentication required — the extension runs in the user's local VS Code instance with the same permissions as the user.
+
+### 7.2 Data Sensitivity Classification
+
+| Data Type | Classification | Business Requirement |
+|-----------|---------------|---------------------|
+| Extension settings | Public | User-configurable, stored in VS Code settings.json |
+| Workspace file paths | Internal | Used only for status checks and file copy |
+| Bundled SDLC resources | Public | Open-source agent prompts and templates |
+| Indexer output | Internal | Code analysis results stored locally |
+
+### 7.3 File System Safety
+
+| Concern | Mitigation | Business Rule |
+|---------|-----------|---------------|
+| Accidental overwrite | Confirmation dialogs before inject/update | BR-8, BR-9 |
+| Directory traversal | All paths resolved relative to workspace root | Implementation constraint |
+| Skipped dangerous dirs | `shouldSkipDir()` excludes node_modules, .git, etc. | Injector logic |
+
+---
+
+## 8. Non-Functional Requirements
+
+| Category | Business Requirement | Acceptance Criteria |
+|----------|---------------------|---------------------|
+| Performance | Extension activation must be fast | Activation completes in < 100ms (no async I/O in activate()) |
+| Performance | Commands respond quickly | User sees dialog or result within 2 seconds of command invocation |
+| Performance | Status bar check is instant | Uses synchronous `fs.existsSync` — no async overhead |
+| Usability | Commands are discoverable | All 5 commands share "Kiro SDLC:" prefix, appear when typing "Kiro" |
+| Usability | Status is visible at a glance | Codicon icons provide instant visual feedback |
+| Compatibility | VS Code version support | Minimum engine: `^1.85.0` |
+| Compatibility | Kiro IDE support | Extension uses standard VS Code API (compatible) |
+| Reliability | Graceful degradation | Extension activates without errors when no workspace is open |
+| Reliability | Partial failure tolerance | If one component fails to inject, others continue |
+| Maintainability | Modular architecture | Separate files: extension.ts, config.ts, injector.ts, indexer.ts |
+| Indexer timeout | Indexer must not hang indefinitely | 120-second timeout on child_process.exec |
+
+---
+
+## 9. Error Handling (User-Facing)
+
+### 9.1 Error Scenarios
+
+| Scenario | Severity | User Message | Expected Behavior |
+|----------|----------|-------------|-------------------|
+| No workspace open | Warning | "No workspace folder open." | Command exits early. User opens a folder and retries. |
+| Source resource not found | Warning | "Source not found: {sourcePath}" | Component skipped. Other components still injected. |
+| File copy permission error | Error | "Failed to inject {id}: {error}" | Component skipped. User checks file permissions. |
+| No compatible runtime (indexer) | Warning | "No compatible runtime found. Install Python, Java, or Node.js." | User installs a runtime and retries. |
+| Indexer execution fails | Error | "Indexer failed: {message}" | Full error in Output Channel. User checks indexer scripts. |
+| Indexer timeout (120s) | Error | "Indexer failed: Command timed out" | Process killed. User checks for infinite loops in scripts. |
+
+### 9.2 Notification Requirements
+
+| Event | Who is Notified | Channel | Timing |
+|-------|----------------|---------|--------|
+| Successful injection | Developer | VS Code Information Message | Immediate |
+| Successful update | Developer | VS Code Information Message | Immediate |
+| Successful indexing | Developer | VS Code Information Message | After indexer completes |
+| Component injection failure | Developer | VS Code Warning/Error Message | Immediate |
+| Indexer failure | Developer | VS Code Error Message + Output Channel | After failure |
+| No workspace | Developer | VS Code Error Message | Immediate |
+
+---
+
+## 10. Testing Considerations
+
+### 10.1 Test Scenarios
+
+| ID | Scenario | Input | Expected Output | Priority |
+|----|----------|-------|-----------------|----------|
+| TC-1 | Extension activates on startup | Install extension, open VS Code | Commands available in palette, status bar visible | High |
+| TC-2 | Activation with no workspace | Open VS Code without folder | Status bar shows `$(circle-slash) SDLC`, commands show error on invoke | High |
+| TC-3 | Inject All — happy path | Invoke injectAll, confirm "Yes" | All components copied, success message shown | High |
+| TC-4 | Inject All — cancel | Invoke injectAll, click "Cancel" | No files modified, no message | High |
+| TC-5 | Inject Selective — pick subset | Invoke injectSelective, select 2 components | Only selected components copied | Medium |
+| TC-6 | Inject Selective — cancel QuickPick | Invoke injectSelective, press Escape | No files modified | Medium |
+| TC-7 | Run Indexer — Python available | Invoke runIndex, Python installed | Output channel shows indexer running, success message | High |
+| TC-8 | Run Indexer — no runtime | Invoke runIndex, no runtimes installed | Warning message about missing runtimes | Medium |
+| TC-9 | Run Indexer — timeout | Invoke runIndex, indexer script hangs | Error after 120s, process killed | Low |
+| TC-10 | Update — confirm | Invoke update, click "Update" | All components overwritten, success message | High |
+| TC-11 | Update — cancel | Invoke update, click "Cancel" | No files modified | High |
+| TC-12 | Status — all present | Invoke status, all components exist | All ✅ in status message | Medium |
+| TC-13 | Status — some missing | Invoke status, agents folder deleted | Mix of ✅ and ❌, "Inject Missing" button available | Medium |
+| TC-14 | Status — click "Inject Missing" | Click "Inject Missing" in status dialog | injectSelective command triggered | Medium |
+| TC-15 | Status bar — all present | All components exist | `$(check) SDLC Agents` displayed | High |
+| TC-16 | Status bar — some missing | Delete one component folder | `$(warning) SDLC Agents` displayed | High |
+| TC-17 | Status bar — click | Click status bar item | Status dialog opens (UC-2e) | Medium |
+| TC-18 | Auto-index after inject | autoIndex=true, inject with indexer | Indexer runs automatically after injection | Medium |
+| TC-19 | No auto-index | autoIndex=false, inject with indexer | Indexer does NOT run after injection | Low |
+| TC-20 | Source resource missing | Delete a resource from extension bundle | Warning shown, other components still injected | Low |
+
+---
+
+## 11. Appendix
+
+### 11.1 package.json Manifest (Relevant Sections)
+
+```json
+{
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      { "command": "kiroSdlc.injectAll", "title": "Kiro SDLC: Inject All Agents" },
+      { "command": "kiroSdlc.injectSelective", "title": "Kiro SDLC: Inject (Select Components)" },
+      { "command": "kiroSdlc.runIndex", "title": "Kiro SDLC: Run Code Indexer" },
+      { "command": "kiroSdlc.update", "title": "Kiro SDLC: Update Agents (Keep Customizations)" },
+      { "command": "kiroSdlc.status", "title": "Kiro SDLC: Show Status" }
+    ],
+    "configuration": {
+      "title": "Kiro SDLC Agents",
+      "properties": {
+        "kiroSdlc.autoIndex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run code indexer after injecting components"
+        },
+        "kiroSdlc.preferredIndexer": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "python", "java", "nodejs", "powershell", "bash"],
+          "description": "Preferred indexer runtime (auto = detect available)"
+        }
+      }
+    }
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  }
+}
+```
+
+### 11.2 Component Registry (CORE_COMPONENTS)
+
+| ID | Label | Source Path | Target Path |
+|----|-------|-------------|-------------|
+| agents | Agents (BA, SA, QA, DEV, DevOps, UI, Security, SM, TA) | .kiro/agents | .kiro/agents |
+| steering | Steering Rules | .kiro/steering | .kiro/steering |
+| hooks | Hooks (Code Index + Drawio Validation) | .kiro/hooks | .kiro/hooks |
+| templates | Document Templates (BRD, FSD, TDD, STP, STC, DPG, RLN, UG) | documents/templates | documents/templates |
+
+### 11.3 Indexer Options
+
+| ID | Label | Runtime Requirement |
+|----|-------|-------------------|
+| indexer-python | Python Indexer (recommended) | Python 3.7+ (stdlib only) |
+| indexer-java | Java Indexer | Java 17+ |
+| indexer-powershell | PowerShell Indexer | PowerShell 5.1+ (Windows built-in) |
+| indexer-bash | Bash Indexer | Bash 4+ (Linux/Mac built-in) |
+| indexer-nodejs | Node.js Indexer (most accurate) | Node.js 18+ (needs npm install) |
+
+### 11.4 Diagrams Index
+
+| Diagram | Type | Location |
+|---------|------|----------|
+| System Context | Mermaid (graph TB) | Section 2.1 (inline) |
+| Command Execution Sequence | Mermaid (sequenceDiagram) | Section 3.2.9 (inline) |
+| Activation Sequence | Mermaid (sequenceDiagram) | Section 3.1.6 (inline) |
+| Confirmation Flow Sequence | Mermaid (sequenceDiagram) | Section 3.4.4 (inline) |
+| Status Bar State Diagram | Mermaid (stateDiagram-v2) | Section 3.3.5 (inline) |
+| Entity Relationship | Mermaid (classDiagram) | Section 4.3 (inline) |
+| Runtime Detection Activity | Mermaid (flowchart TD) | Section 6.3 (inline) |
+
+### 11.5 Change Log from BRD
+
+| Item | BRD Statement | FSD Clarification |
+|------|--------------|-------------------|
+| Command title for Update | "Kiro SDLC: Update Agents (Keep Customizations)" | Title is aspirational — current implementation overwrites all. Future: diff-merge for custom files. |
+| Status bar refresh | Not specified when status refreshes | Status is computed once at activation. Does not auto-refresh when files change. Manual refresh via status command. |
+| Auto-index behavior | Mentioned in extension.ts code | Formalized as `kiroSdlc.autoIndex` setting with default `true`. |
+| Indexer timeout | Not specified in BRD | Set to 120 seconds based on implementation. Documented in NFR. |
+
+---
+
+*End of Document*

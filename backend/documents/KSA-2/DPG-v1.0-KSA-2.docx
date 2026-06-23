@@ -1,0 +1,237 @@
+# Deployment Guide (DPG)
+
+## Kiro SDLC Agents Extension — KSA-2: Extension Core — Commands & Activation
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-2 |
+| Title | Extension Core — Commands & Activation |
+| Author | DevOps Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related TDD | TDD-v1.0-KSA-2.docx |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2025-01-20 | DevOps Agent | Initiate document — auto-generated from TDD and project context |
+
+## Sign-Off
+
+Name | Role | Signature and date |
+
+|——|——|——————–|| | | Dev Lead | ☐ Approved for deployment | | | QA Lead | ☐ Testing completed | | | Ops Lead | ☐ Infrastructure ready |
+
+## 1. Overview
+
+### 1.1 Feature Summary
+
+The **Extension Core — Commands & Activation** component is the entry point of the Kiro SDLC Agents VS Code extension. It provides:
+
+* Startup activation (extension loads immediately when VS Code/Kiro IDE starts)
+* Five Command Palette commands for injecting SDLC agents, running code indexer, updating agents, and checking status
+* A status bar indicator showing SDLC component health (present/missing/no workspace)
+* Confirmation dialogs before destructive operations (inject all, update)
+
+This is a **client-side VS Code extension** — no server deployment, no database, no containers. Deployment means publishing the .vsix package to VS Code Marketplace and/or Open VSX Registry.
+
+### 1.2 Deployment Scope
+
+| Item | Type | Description |
+| --- | --- | --- |
+| kiro-sdlc-agents extension | New | VS Code extension packaged as .vsix |
+| GitHub Actions CI | New | Build + compile verification on push/PR |
+| GitHub Actions Publish | New | Automated publish to Marketplace on tag push |
+| VS Code Marketplace listing | New | Public extension listing |
+| Open VSX Registry listing | New | Kiro IDE / open-source marketplace listing |
+
+### 1.3 Target Environments
+
+| Environment | Distribution Channel | Deploy Order | Approval Required |
+| --- | --- | --- | --- |
+| DEV | Local .vsix install | 1st | No |
+| BETA | Pre-release flag on Marketplace | 2nd | Dev Lead |
+| PROD (Marketplace) | VS Code Marketplace | 3rd | Dev Lead + QA Sign-off |
+| PROD (Open VSX) | Open VSX Registry | 3rd | Dev Lead + QA Sign-off |
+
+## 2. Prerequisites
+
+### 2.1 Infrastructure
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| GitHub repository | Ready | Source code hosted on GitHub |
+| GitHub Actions enabled | Ready | CI/CD workflows in .github/workflows/ |
+| VS Code Marketplace publisher account | Pending | Publisher ID: your-publisher-id (must be registered) |
+| Open VSX namespace | Pending | Namespace must be claimed on open-vsx.org |
+
+### 2.2 Software Dependencies
+
+| Dependency | Version | Status |
+| --- | --- | --- |
+| Node.js | 20.x LTS | Required for build |
+| TypeScript | ^5.4.0 | devDependency |
+| @vscode/vsce | ^2.24.0 | Packaging & publishing tool |
+| VS Code Engine | ^1.85.0 | Minimum compatible version |
+
+### 2.3 Access Requirements
+
+| Access | Type | Who Needs It |
+| --- | --- | --- |
+| GitHub repository write | SSH key / PAT | Dev team |
+| VS Code Marketplace PAT | Personal Access Token | CI/CD (secret: VSCE\_PAT) |
+| Open VSX Token | API Token | CI/CD (secret: OVSX\_TOKEN) |
+| GitHub Actions secrets | Repository settings | Repository admin |
+
+### 2.4 Backup Requirements
+
+* Previous .vsix artifact saved (download from GitHub Actions artifacts)
+* Git tag for previous release exists (enables rollback via git checkout)
+* Marketplace allows unpublishing/reverting to previous version
+
+## 3. Pre-Deployment Checklist
+
+| # | Item | Responsible | Status |
+| --- | --- | --- | --- |
+| 1 | Code merged to main branch | Developer | ☐ |
+| 2 | All TypeScript compilation passes | Developer | ☐ |
+| 3 | CI workflow passes (GitHub Actions) | Automated | ☐ |
+| 4 | VSIX package builds successfully | Developer | ☐ |
+| 5 | Manual testing in VS Code (5 commands work) | QA | ☐ |
+| 6 | Status bar displays correctly (3 states) | QA | ☐ |
+| 7 | Confirmation dialogs appear for inject/update | QA | ☐ |
+| 8 | Extension activates on startup without errors | QA | ☐ |
+| 9 | package.json version bumped to target version | Developer | ☐ |
+| 10 | publisher field updated from placeholder | Developer | ☐ |
+| 11 | CHANGELOG.md updated with release notes | Developer | ☐ |
+| 12 | GitHub secrets configured | DevOps | ☐ |
+| 13 | README.md has accurate installation instructions | Developer | ☐ |
+| 14 | Icon file exists at resources/icon.png | Developer | ☐ |
+
+## 4. Database Migration
+
+**Not Applicable.** This is a client-side VS Code extension with no database.
+
+## 5. Application Deployment
+
+### 5.2 Method A: Automated Publish via GitHub Actions (Recommended)
+
+| Step | Action | Command | Verification |
+| --- | --- | --- | --- |
+| 1 | Ensure all changes merged to main | git log --oneline -5 | Latest commit is the release commit |
+| 2 | Update version in package.json | Edit version field | npm pkg get version returns correct version |
+| 3 | Commit version bump | git commit -am "chore: bump version" | Commit in log |
+| 4 | Create and push git tag | git tag v1.0.0 && git push origin v1.0.0 | Tag visible on GitHub |
+| 5 | GitHub Actions triggers publish.yml | Automatic on tag push | Check Actions tab for green build |
+| 6 | Verify VSIX artifact uploaded | GitHub Actions Artifacts | .vsix present |
+| 7 | Verify Marketplace publish | VS Code Marketplace website | Extension visible and installable |
+| 8 | Verify Open VSX publish | open-vsx.org | Extension visible and installable |
+
+### 5.3 Method B: Manual Publish (Fallback)
+
+1. npm ci — Install dependencies
+2. npm run compile — Compile TypeScript
+3. npx vsce package --no-dependencies — Package VSIX
+4. npx vsce publish --packagePath \*.vsix -p <VSCE\_PAT> — Publish to Marketplace
+5. npx ovsx publish \*.vsix -p <OVSX\_TOKEN> — Publish to Open VSX
+
+### 5.4 Method C: Local VSIX Distribution (DEV/Testing)
+
+1. code --install-extension kiro-sdlc-agents-1.0.0.vsix — Install locally
+2. code --list-extensions | grep kiro-sdlc-agents — Verify installation
+
+## 6. Configuration Changes
+
+### 6.1 GitHub Repository Secrets
+
+| Secret Name | Description |
+| --- | --- |
+| VSCE\_PAT | VS Code Marketplace Personal Access Token |
+| OVSX\_TOKEN | Open VSX Registry API Token |
+
+### 6.2 Extension Settings (User-Facing)
+
+| Setting | Type | Default | Description |
+| --- | --- | --- | --- |
+| kiroSdlc.autoIndex | boolean | true | Auto-run code indexer after injection |
+| kiroSdlc.preferredIndexer | enum | "auto" | Preferred indexer runtime |
+
+## 7. Post-Deployment Verification
+
+### 7.1 Health Checks
+
+| Check | Method | Expected Result |
+| --- | --- | --- |
+| Extension activates | Open VS Code | No errors in Extension Host output |
+| Commands registered | Command Palette | All 5 commands visible |
+| Status bar visible | Bottom-right | Icon + text visible |
+| Marketplace listing | Visit URL | Extension page loads |
+
+### 7.2 Smoke Tests
+
+| # | Scenario | Expected Result |
+| --- | --- | --- |
+| 1 | Extension activates on startup | Status bar shows, no errors |
+| 2 | Inject All command works | Confirmation → files injected → success |
+| 3 | Status command works | Shows component status |
+| 4 | Confirmation dialog blocks | Cancel = no files modified |
+| 5 | No workspace error | Error message shown |
+
+## 8. Rollback Plan
+
+### 8.2 Rollback Decision Criteria
+
+| Condition | Action |
+| --- | --- |
+| Extension crashes VS Code | Immediate unpublish |
+| Commands throw errors | Publish previous version |
+| Silent activation failure | Hotfix patch |
+| Minor UI issue | Fix in next patch |
+
+### 8.3 Rollback Steps
+
+| Step | Action | Verification |
+| --- | --- | --- |
+| 1 | Unpublish broken version | Marketplace shows removed |
+| 2 | Checkout previous tag | Source matches previous release |
+| 3 | Build previous version | VSIX created |
+| 4 | Publish previous version | Previous version live |
+| 5 | Verify rollback | Previous behavior restored |
+
+### 8.4 Rollback Time Estimate: ~20 minutes
+
+## 9. Environment-Specific Notes
+
+### 9.1 DEV
+
+* Install from .vsix file locally
+* Use F5 for debugging
+
+### 9.2 BETA
+
+* Publish with --pre-release flag
+* Monitor GitHub Issues
+
+### 9.3 PROD (Marketplace)
+
+* Deployment Window: Any time
+* Approval: Dev Lead + QA Lead
+* Propagation: ~5-10 minutes
+
+### 9.4 PROD (Open VSX)
+
+* Published simultaneously via GitHub Actions
+* Serves Kiro IDE users
+
+## 10. Appendix
+
+### CI/CD Pipeline Reference
+
+| Workflow | Trigger | Purpose |
+| --- | --- | --- |
+| ci.yml | Push/PR to main | Build verification |
+| publish.yml | Tag push v\* | Publish to Marketplace + Open VSX |

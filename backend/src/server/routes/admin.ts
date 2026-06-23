@@ -16,6 +16,7 @@ import {
   validateSession,
   invalidateSession,
   invalidateUserSessions,
+  refreshSession,
   getUsers,
   getUserById,
   getUserByUsername,
@@ -54,7 +55,7 @@ import {
   mergeKbTags,
   getKbEntriesByTag,
 } from '../../admin/admin-db.js';
-import { loadConfig } from '../../config/BackendConfig.js';
+import { loadConfig, getWorkspacePath } from '../../config/BackendConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -241,9 +242,16 @@ export function createAdminRoute(logger: Logger): Hono {
   });
 
   // POST /api/admin/auth/logout
-  app.post('/api/admin/auth/logout', (c) => {
+  // POST /api/auth/logout
+  const handleLogout = async (c: any) => {
     const auth = c.req.header('Authorization') || '';
-    const token = auth.replace('Bearer ', '');
+    let token = auth.replace('Bearer ', '');
+    if (!token) {
+      try {
+        const body = await c.req.json();
+        token = body?.refresh_token || '';
+      } catch {}
+    }
     if (token) {
       const user = validateSession(token);
       if (user) {
@@ -252,7 +260,35 @@ export function createAdminRoute(logger: Logger): Hono {
       invalidateSession(token);
     }
     return c.json({ success: true });
-  });
+  };
+
+  app.post('/api/admin/auth/logout', handleLogout);
+  app.post('/api/auth/logout', handleLogout);
+
+  // POST /api/admin/auth/refresh
+  // POST /api/auth/refresh
+  const handleRefresh = async (c: any) => {
+    try {
+      const { refresh_token } = await c.req.json();
+      if (!refresh_token) {
+        return c.json({ error: 'Refresh token required' }, 400);
+      }
+      const result = refreshSession(refresh_token);
+      if (!result) {
+        return c.json({ error: 'Invalid or expired session' }, 401);
+      }
+      return c.json({
+        token: result.token,
+        expiresAt: result.expiresAt,
+      });
+    } catch (err: any) {
+      logger.error({ err }, 'Token refresh error');
+      return c.json({ error: 'Internal error' }, 500);
+    }
+  };
+
+  app.post('/api/admin/auth/refresh', handleRefresh);
+  app.post('/api/auth/refresh', handleRefresh);
 
   // POST /api/admin/auth/change-password
   app.post('/api/admin/auth/change-password', async (c) => {
@@ -311,7 +347,8 @@ export function createAdminRoute(logger: Logger): Hono {
 
     const d = getAdminDb();
     const userCount = (d.prepare('SELECT COUNT(*) as cnt FROM users').get() as any).cnt;
-    const orchPath = path.resolve(__dirname, '../../../../.code-intel/orchestration.json');
+    const cfg = loadConfig();
+    const orchPath = path.resolve(getWorkspacePath(), cfg.dataDir, cfg.orchestrationConfigPath);
     let mcpCount = 0;
     if (fs.existsSync(orchPath)) {
       try { mcpCount = Object.keys(JSON.parse(fs.readFileSync(orchPath, 'utf-8')).mcpServers || {}).length; } catch {}
@@ -677,7 +714,8 @@ export function createAdminRoute(logger: Logger): Hono {
     const permCheck = requirePermission(c, user.userId, 'MCP_ACCESS');
     if (permCheck instanceof Response) return permCheck;
 
-    const orchPath = path.resolve(__dirname, '../../../../.code-intel/orchestration.json');
+    const cfg = loadConfig();
+    const orchPath = path.resolve(getWorkspacePath(), cfg.dataDir, cfg.orchestrationConfigPath);
     let servers: any[] = [];
     if (fs.existsSync(orchPath)) {
       try {
@@ -1277,6 +1315,34 @@ export function createAdminRoute(logger: Logger): Hono {
       };
     });
     return c.json({ nodes, total: nodes.length });
+  });
+
+  // KB Graph Full Sync — rebuilds graph from all sources (documents + code symbols)
+  app.post('/api/admin/kb/graph/sync', async (c) => {
+    const user = requireAuth(c);
+    if (user instanceof Response) return user;
+    const permCheck = requirePermission(c, user.userId, 'GRAPH_VIEW');
+    if (permCheck instanceof Response) return permCheck;
+
+    const graphService = (globalThis as any).__sqliteGraphService;
+    if (!graphService) {
+      return c.json({ error: 'Graph service not initialized' }, 503);
+    }
+
+    // Run sync in the background, respond immediately so the client doesn't time out
+    c.header('Content-Type', 'application/json');
+    setImmediate(async () => {
+      try {
+        // Wipe old data first
+        const db = (await import('../../admin/admin-db.js')).getAdminDb();
+        db.exec('DELETE FROM graph_nodes; DELETE FROM graph_edges;');
+        await graphService.fullSync();
+      } catch (err: any) {
+        logger.error({ error: err.message }, 'Graph sync failed');
+      }
+    });
+
+    return c.json({ status: 'sync_started', message: 'Graph sync triggered in background. Check server logs for progress.' });
   });
 
   // KB Graph Spatial Query — Neo4j-powered progressive loading based on camera position

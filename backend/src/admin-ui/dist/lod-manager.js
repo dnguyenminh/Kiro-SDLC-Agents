@@ -9,9 +9,14 @@
 // LODClustering and LODAnimation loaded via separate <script> tags (global)
 
 const COLORS = {
-  CONTEXT: '#38bdf8', DECISION: '#f472b6', ERROR_PATTERN: '#fb923c',
-  ARCHITECTURE: '#a78bfa', REQUIREMENT: '#34d399', PROCEDURE: '#facc15',
-  LESSON_LEARNED: '#f87171', CODE_ENTITY: '#e2e8f0', API_DESIGN: '#2dd4bf',
+  // Document types
+  CONTEXT: '#ec4899', DECISION: '#06b6d4', ERROR_PATTERN: '#dc2626',
+  ARCHITECTURE: '#10b981', REQUIREMENT: '#3b82f6', PROCEDURE: '#f59e0b',
+  LESSON_LEARNED: '#f97316', CODE_ENTITY: '#ef4444', DOCUMENT: '#a855f7',
+  // Code entity types
+  FUNCTION: '#818cf8', METHOD: '#6366f1', CLASS: '#e879f9',
+  INTERFACE: '#c084fc', TYPE: '#fb7185', CONSTRUCTOR: '#f472b6',
+  ENUM: '#34d399', CONSTANT: '#fbbf24', VARIABLE: '#94a3b8',
 };
 
 class LODManager {

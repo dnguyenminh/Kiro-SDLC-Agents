@@ -1,0 +1,89 @@
+"use strict";
+/**
+ * KSA-156: MCP Tool Registration for code_impact.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IMPACT_TOOL_DEFINITIONS = void 0;
+exports.handleCodeImpact = handleCodeImpact;
+const graph_repository_js_1 = require("../database/graph-repository.js");
+const symbol_resolver_js_1 = require("../graph/symbol-resolver.js");
+const call_graph_service_js_1 = require("../graph/call-graph-service.js");
+const file_resolver_js_1 = require("../graph/file-resolver.js");
+const dependency_graph_service_js_1 = require("../graph/dependency-graph-service.js");
+const test_detector_js_1 = require("../graph/test-detector.js");
+const impact_analysis_service_js_1 = require("../graph/impact-analysis-service.js");
+exports.IMPACT_TOOL_DEFINITIONS = [
+    {
+        name: 'code_impact',
+        description: 'Predict blast radius of modifying, deleting, or renaming a symbol. Shows affected callers, dependents, tests, and provides recommendations.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                symbol: { type: 'string', description: 'Symbol name to analyze impact for' },
+                action: { type: 'string', enum: ['modify', 'delete', 'rename'], description: 'Type of change (default: modify)' },
+                depth: { type: 'number', description: 'Analysis depth 1-5 (default: 3)' },
+                include_tests: { type: 'boolean', description: 'Include affected test files (default: true)' },
+                severity_threshold: { type: 'string', enum: ['critical', 'high', 'medium', 'low'], description: 'Minimum severity to include (default: low)' },
+            },
+            required: ['symbol'],
+        },
+    },
+];
+function handleCodeImpact(args, db, workspace) {
+    const symbol = args.symbol;
+    if (!symbol)
+        return JSON.stringify({ error: 'Parameter "symbol" is required' });
+    const action = args.action ?? 'modify';
+    const depth = args.depth ?? 3;
+    const includeTests = args.include_tests ?? true;
+    const severityThreshold = args.severity_threshold ?? 'low';
+    const graphRepo = new graph_repository_js_1.GraphRepository(db);
+    const resolver = new symbol_resolver_js_1.SymbolResolver(db);
+    const callGraph = new call_graph_service_js_1.CallGraphService(graphRepo, resolver);
+    const fileResolver = new file_resolver_js_1.FileResolver(db, workspace);
+    const depGraph = new dependency_graph_service_js_1.DependencyGraphService(db, fileResolver);
+    const testDetector = new test_detector_js_1.TestDetector(db);
+    const service = new impact_analysis_service_js_1.ImpactAnalysisService(db, callGraph, depGraph, resolver, testDetector);
+    const result = service.analyzeImpact(symbol, action, depth, includeTests, severityThreshold);
+    return formatImpactResult(result);
+}
+function formatImpactResult(result) {
+    const lines = [];
+    lines.push(`Impact Analysis: "${result.symbol}" (${result.action})\n`);
+    lines.push(`Blast Radius:`);
+    lines.push(`  Critical: ${result.blastRadius.summary.critical}`);
+    lines.push(`  High: ${result.blastRadius.summary.high}`);
+    lines.push(`  Medium: ${result.blastRadius.summary.medium}`);
+    lines.push(`  Low: ${result.blastRadius.summary.low}`);
+    lines.push(`  Total affected: ${result.blastRadius.totalAffected} (${result.blastRadius.affectedFiles} files)`);
+    lines.push(`  Affected tests: ${result.blastRadius.affectedTests}\n`);
+    if (result.impacts.length > 0) {
+        lines.push(`Impacts:`);
+        for (const impact of result.impacts.slice(0, 30)) {
+            const icon = impact.severity === 'critical' ? '!!' : impact.severity === 'high' ? '!' : '-';
+            lines.push(`  ${icon} [${impact.severity}] ${impact.symbol}`);
+            lines.push(`    ${impact.file}:${impact.line} - ${impact.reason}`);
+        }
+        if (result.impacts.length > 30) {
+            lines.push(`  ... and ${result.impacts.length - 30} more`);
+        }
+        lines.push('');
+    }
+    if (result.affectedTests.length > 0) {
+        lines.push(`Affected Tests:`);
+        for (const test of result.affectedTests.slice(0, 10)) {
+            lines.push(`  - ${test.file} (${test.reason})`);
+        }
+        lines.push('');
+    }
+    if (result.recommendations.length > 0) {
+        lines.push(`Recommendations:`);
+        for (const rec of result.recommendations) {
+            lines.push(`  * ${rec}`);
+        }
+        lines.push('');
+    }
+    lines.push(`--- ${result.metadata.queryTimeMs}ms | depth ${result.metadata.depthSearched}${result.metadata.truncated ? ' | TRUNCATED' : ''}`);
+    return lines.join('\n');
+}
+//# sourceMappingURL=impact-tools.js.map

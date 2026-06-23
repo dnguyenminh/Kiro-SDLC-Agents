@@ -25,6 +25,10 @@ export class CodeIntelModule implements IModule {
 
   get status(): ModuleStatus { return this._status; }
 
+  getIndexer(): IndexingEngine {
+    return this.indexer;
+  }
+
   async initialize(): Promise<void> {
     this.logger.info('Initializing code intelligence module');
     try {

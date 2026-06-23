@@ -15,14 +15,35 @@
   'use strict';
 
   const COLORS = {
-    REQUIREMENT: 0x3b82f6, ARCHITECTURE: 0x10b981, PROCEDURE: 0xf59e0b,
-    CONTEXT: 0xec4899, CODE_ENTITY: 0xef4444, DECISION: 0x06b6d4,
-    LESSON_LEARNED: 0xf97316, ERROR_PATTERN: 0xdc2626, DOCUMENT: 0xa855f7
+    // Document types
+    REQUIREMENT: 0x3b82f6,    // blue
+    ARCHITECTURE: 0x10b981,   // emerald
+    PROCEDURE: 0xf59e0b,      // amber
+    CONTEXT: 0xec4899,        // pink
+    CODE_ENTITY: 0xef4444,    // red
+    DECISION: 0x06b6d4,       // cyan
+    LESSON_LEARNED: 0xf97316, // orange
+    ERROR_PATTERN: 0xdc2626,  // dark red
+    DOCUMENT: 0xa855f7,       // purple
+    // Code entity types
+    FUNCTION: 0x818cf8,       // indigo-400
+    METHOD: 0x6366f1,         // indigo-500
+    CLASS: 0xe879f9,          // fuchsia-400
+    INTERFACE: 0xc084fc,      // purple-400
+    TYPE: 0xfb7185,           // rose-400
+    CONSTRUCTOR: 0xf472b6,    // pink-400
+    ENUM: 0x34d399,           // emerald-400
+    CONSTANT: 0xfbbf24,       // amber-400
+    VARIABLE: 0x94a3b8,       // slate-400
   };
 
   const NODE_SIZES = {
+    // Document types (larger = more important)
     ARCHITECTURE: 6, DECISION: 5, REQUIREMENT: 4, PROCEDURE: 3,
-    CONTEXT: 3, CODE_ENTITY: 3, LESSON_LEARNED: 2.5, ERROR_PATTERN: 2.5, DOCUMENT: 2.5
+    CONTEXT: 3, CODE_ENTITY: 3, LESSON_LEARNED: 2.5, ERROR_PATTERN: 2.5, DOCUMENT: 2.5,
+    // Code entity types
+    CLASS: 4, INTERFACE: 3.5,
+    FUNCTION: 2, METHOD: 2, TYPE: 2, CONSTRUCTOR: 2.5, ENUM: 3, CONSTANT: 1.5, VARIABLE: 1.5,
   };
 
   const FAR_THRESHOLD = 800;

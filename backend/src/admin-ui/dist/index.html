@@ -66,10 +66,10 @@ function KBGraphPage({activeTab}={}){
   const[loading,setLoading]=useState(true);const[selectedNode,setSelectedNode]=useState(null);
   const[nodeDetail,setNodeDetail]=useState(null);const[searchTerm,setSearchTerm]=useState('');
   const[graphStats,setGraphStats]=useState(null);
-  const[typeFilters,setTypeFilters]=useState({REQUIREMENT:true,ARCHITECTURE:true,PROCEDURE:true,CONTEXT:true,CODE_ENTITY:true,DECISION:true,LESSON_LEARNED:true,ERROR_PATTERN:true,DOCUMENT:true});
+  const[typeFilters,setTypeFilters]=useState({REQUIREMENT:true,ARCHITECTURE:true,PROCEDURE:true,CONTEXT:true,CODE_ENTITY:true,DECISION:true,LESSON_LEARNED:true,ERROR_PATTERN:true,DOCUMENT:true,FUNCTION:true,METHOD:true,CLASS:true,INTERFACE:true,TYPE:true,CONSTRUCTOR:true,ENUM:true,CONSTANT:true,VARIABLE:true});
   const[showFilterDrop,setShowFilterDrop]=useState(false);
   const allNodesRef=useRef([]);
-  const colors={REQUIREMENT:'#3b82f6',ARCHITECTURE:'#10b981',PROCEDURE:'#f59e0b',CONTEXT:'#ec4899',CODE_ENTITY:'#ef4444',DECISION:'#06b6d4',LESSON_LEARNED:'#f97316',ERROR_PATTERN:'#dc2626',DOCUMENT:'#a855f7'};
+  const colors={REQUIREMENT:'#3b82f6',ARCHITECTURE:'#10b981',PROCEDURE:'#f59e0b',CONTEXT:'#ec4899',CODE_ENTITY:'#ef4444',DECISION:'#06b6d4',LESSON_LEARNED:'#f97316',ERROR_PATTERN:'#dc2626',DOCUMENT:'#a855f7',FUNCTION:'#818cf8',METHOD:'#6366f1',CLASS:'#e879f9',INTERFACE:'#c084fc',TYPE:'#fb7185',CONSTRUCTOR:'#f472b6',ENUM:'#34d399',CONSTANT:'#fbbf24',VARIABLE:'#94a3b8'};
   const basePath=window.__MCP_BASE||'';
 
   useEffect(()=>{

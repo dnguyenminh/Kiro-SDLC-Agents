@@ -105,14 +105,18 @@ function resolveWorkspaceFromRoots(rootUri: string | null): string {
 }
 
 function buildConfig(workspace: string): AppConfig {
-  const codeIntelDir = path.join(workspace, '.code-intel');
+  const envDataDir = process.env['CODE_INTEL_DATA_DIR'] || '.code-intel';
+  const codeIntelDir = path.isAbsolute(envDataDir) ? envDataDir : path.join(workspace, envDataDir);
   const configPath = path.join(codeIntelDir, 'config.json');
   const fileConfig = loadFileConfig(configPath);
+
+  const envDb = process.env['CODE_INTEL_DB'] || 'index.db';
+  const dbPath = path.isAbsolute(envDb) ? envDb : path.join(codeIntelDir, envDb);
 
   return {
     workspace,
     viewerPort: resolveViewerPort(),
-    dbPath: path.join(codeIntelDir, 'index.db'),
+    dbPath,
     configPath,
     watchEnabled: envBool('CODE_INTEL_WATCH', fileConfig.watchEnabled ?? true),
     watchDebounceMs: envInt('CODE_INTEL_DEBOUNCE', fileConfig.watchDebounceMs ?? 500),

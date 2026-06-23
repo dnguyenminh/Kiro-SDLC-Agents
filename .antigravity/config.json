@@ -1,0 +1,6 @@
+{
+  "runtime": "node",
+  "environment": "development",
+  "version": "1.0.0",
+  "strictMode": true
+}

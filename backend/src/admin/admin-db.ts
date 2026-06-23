@@ -10,17 +10,17 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import type { User, UserStatus, AccessGroup, GroupPermission, Session, AuditEntry } from './types/rbac.types.js';
-import { loadConfig } from '../config/BackendConfig.js';
+import { loadConfig, getWorkspacePath } from '../config/BackendConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const config = loadConfig();
 
 // DB location: .code-intel/admin.db (separate from index-backend.db)
-const DB_PATH = path.resolve(process.cwd(), config.dataDir, 'admin.db');
+const DB_PATH = path.resolve(getWorkspacePath(), config.dataDir, 'admin.db');
 
 function getIndexDbPath(): string {
-  return path.resolve(process.cwd(), config.dataDir, config.sqliteDbPath);
+  return path.resolve(getWorkspacePath(), config.dataDir, config.sqliteDbPath);
 }
 
 let db: Database.Database | null = null;
@@ -236,6 +236,32 @@ export function invalidateUserSessions(userId: string): number {
   const result = d.prepare('UPDATE sessions SET is_active = 0 WHERE user_id = ? AND is_active = 1').run(userId);
   return result.changes;
 }
+
+export function refreshSession(token: string): { token: string; expiresAt: string } | null {
+  const d = getAdminDb();
+  const row = d.prepare(`
+    SELECT s.user_id, s.expires_at, s.is_active, u.status
+    FROM sessions s JOIN users u ON s.user_id = u.user_id
+    WHERE s.token = ?
+  `).get(token) as any;
+
+  if (!row) return null;
+  if (!row.is_active) return null;
+  if (row.status !== 'ACTIVE') return null;
+
+  if (new Date(row.expires_at) < new Date()) {
+    d.prepare('UPDATE sessions SET is_active = 0 WHERE token = ?').run(token);
+    return null;
+  }
+
+  const newToken = generateToken();
+  const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  d.prepare('UPDATE sessions SET token = ?, expires_at = ? WHERE token = ?').run(newToken, newExpires, token);
+
+  return { token: newToken, expiresAt: newExpires };
+}
+
 
 // --- User Operations ---
 

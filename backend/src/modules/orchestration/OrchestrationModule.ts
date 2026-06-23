@@ -93,7 +93,7 @@ export class OrchestrationModule implements IModule {
     });
 
     handlers.set('execute_dynamic_tool', async (args: any) => {
-      const toolName = args.toolName;
+      const toolName = args.toolName || args.tool_name;
       const toolArgs = args.arguments || {};
       
       // If a child MCP server owns this tool, proxy the request

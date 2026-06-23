@@ -1,0 +1,403 @@
+# Business Requirements Document (BRD)
+
+## Kiro SDLC Agents Extension — KSA-2: Extension Core — Commands & Activation
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-2 |
+| Title | Extension Core — Commands & Activation |
+| Author | BA Agent |
+| Version | 2.0 |
+| Date | 2025-07-14 |
+| Status | Draft |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SA Agent – Solution Architect | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-20 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-2 and linked tickets |
+| 2.0 | 2025-07-14 | BA Agent | Recreated with draw.io diagrams (business-flow + use-case), removed Mermaid |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+| | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This document defines the business requirements for the **Extension Core — Commands & Activation** component of the Kiro SDLC Agents VS Code/Kiro extension. The extension provides a multi-agent SDLC pipeline that can be injected into any workspace, enabling teams to leverage AI agents for Business Analysis, Solution Architecture, QA, Development, DevOps, UI, and Security tasks.
+
+KSA-2 specifically covers:
+- Extension activation behavior (startup activation)
+- Command Palette registration (5 commands)
+- Status bar indicator for SDLC component health
+- User confirmation dialogs before destructive operations
+
+### 1.2 Out of Scope
+
+- File injection logic (covered by KSA-3: Injector)
+- Indexer language selection UI (covered by KSA-4: Indexer Selection)
+- Runtime detection and indexer execution (covered by KSA-5: Auto-detect Runtime)
+- Bundled resource files (covered by KSA-6: Bundled Resources)
+- Individual code indexer implementations (covered by KSA-7 through KSA-10)
+- Marketplace publishing (covered by KSA-11: Publish to Marketplace)
+
+### 1.3 Preliminary Requirement
+
+- VS Code engine version ^1.85.0 or Kiro IDE (compatible)
+- Node.js runtime for extension host
+- TypeScript compilation toolchain (tsc)
+- Extension must be packaged with `@vscode/vsce`
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The extension core acts as the entry point for all user interactions with the SDLC Agents system. The high-level flow is:
+
+1. Extension activates immediately when VS Code/Kiro starts (no trigger conditions)
+2. Status bar item appears showing current SDLC health status
+3. User invokes commands via Command Palette or status bar click
+4. For destructive operations (inject/update), a confirmation dialog is shown
+5. Upon confirmation, the appropriate handler executes the operation
+6. Status bar updates to reflect the new state
+
+```mermaid
+flowchart TD
+    A[VS Code / Kiro Starts] --> B[Extension Activates]
+    B --> C[Register 5 Commands]
+    B --> D[Create Status Bar Item]
+    D --> E{Check Workspace Status}
+    E -->|All Present| F["✓ SDLC Agents (green)"]
+    E -->|Missing Components| G["⚠ SDLC Agents (warning)"]
+    F --> H[User Invokes Command]
+    G --> H
+    H --> I{Command Type}
+    I -->|injectAll| J[Show Confirm Dialog]
+    I -->|injectSelective| K[Show Component Picker]
+    I -->|runIndex| L[Execute Indexer]
+    I -->|update| M[Show Warning Dialog]
+    I -->|status| N[Show Status Report]
+    J -->|Yes| O[Inject All Components]
+    J -->|Cancel| P[Abort]
+    M -->|Update| Q[Overwrite Components]
+    M -->|Cancel| P
+```
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|------------------|----------|---------------|
+| 1 | As a developer, I want the extension to activate on startup so that SDLC commands are always available without manual activation | MUST HAVE | KSA-2 |
+| 2 | As a developer, I want 5 commands in the Command Palette so that I can inject, index, update, or check status of SDLC agents | MUST HAVE | KSA-2 |
+| 3 | As a developer, I want a status bar indicator so that I can see at a glance whether all SDLC components are present in my workspace | MUST HAVE | KSA-2 |
+| 4 | As a developer, I want a confirmation dialog before injection so that I don't accidentally overwrite workspace files | MUST HAVE | KSA-2 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+```mermaid
+sequenceDiagram
+    participant U as Developer
+    participant E as Extension
+    participant CP as Command Palette
+    participant SB as Status Bar
+    participant WS as Workspace
+
+    Note over E: VS Code starts
+    E->>E: activate() called
+    E->>CP: Register 5 commands
+    E->>SB: Create status bar item
+    E->>WS: Check component status
+    WS-->>SB: Update icon (✓ or ⚠)
+    
+    U->>CP: Invoke "Kiro SDLC: Inject All"
+    CP->>E: handleInjectAll()
+    E->>U: Show confirmation dialog
+    U->>E: Click "Yes"
+    E->>WS: Copy all resources
+    WS-->>E: Injection complete
+    E->>U: Show success message
+    E->>SB: Update status (✓)
+```
+
+**Step 1:** VS Code/Kiro IDE starts and loads the extension (activation event: `[]` = on startup)
+
+**Step 2:** Extension registers all 5 commands with the VS Code command system
+
+**Step 3:** Extension creates a status bar item (right-aligned, priority 100) and checks workspace health
+
+**Step 4:** Status bar displays check icon (all components present) or warning icon (components missing)
+
+**Step 5:** User opens Command Palette (Ctrl+Shift+P) and types "Kiro SDLC"
+
+**Step 6:** User selects desired command from the filtered list
+
+**Step 7:** For inject/update commands, a confirmation dialog appears
+
+**Step 8:** Upon confirmation, the operation executes and feedback is shown
+
+> **Note:** The status bar item is clickable and triggers the `kiroSdlc.status` command directly.
+
+---
+
+#### STORY 1: Extension Activation on Startup
+
+> As a developer, I want the extension to activate on startup so that SDLC commands are always available without manual activation.
+
+**Requirement Details:**
+
+1. The extension MUST activate immediately when VS Code/Kiro starts — no activation events required (empty `activationEvents` array in `package.json`)
+2. The `activate()` function must complete without errors even when no workspace folder is open
+3. All command registrations and status bar creation happen synchronously during activation
+
+**Acceptance Criteria:**
+
+1. Extension activates on startup (`activationEvents: []` in package.json)
+2. No user action required to trigger activation
+3. Extension does not throw errors if no workspace is open (graceful degradation)
+
+---
+
+#### STORY 2: Command Palette Registration
+
+> As a developer, I want 5 commands registered in the Command Palette so that I can inject, index, update, or check status of SDLC agents.
+
+**Requirement Details:**
+
+1. Five commands must be registered and visible in the Command Palette
+2. Each command must have a clear, descriptive title prefixed with "Kiro SDLC:"
+3. Commands must be functional only when a workspace folder is open (show error otherwise)
+
+**Data Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| command ID | string | Yes | Unique command identifier | `kiroSdlc.injectAll` |
+| title | string | Yes | Display name in Command Palette | `Kiro SDLC: Inject All Agents` |
+
+**Command Registry:**
+
+| # | Command ID | Title | Description |
+|---|-----------|-------|-------------|
+| 1 | `kiroSdlc.injectAll` | Kiro SDLC: Inject All Agents | Copies all SDLC resources (agents, steering, hooks, templates, indexer) into workspace |
+| 2 | `kiroSdlc.injectSelective` | Kiro SDLC: Inject (Select Components) | Shows multi-select picker for choosing which components to inject |
+| 3 | `kiroSdlc.runIndex` | Kiro SDLC: Run Code Indexer | Executes the code intelligence indexer on the current workspace |
+| 4 | `kiroSdlc.update` | Kiro SDLC: Update Agents (Keep Customizations) | Re-injects latest agent versions, overwriting existing files |
+| 5 | `kiroSdlc.status` | Kiro SDLC: Show Status | Displays which SDLC components are present/missing in workspace |
+
+**Acceptance Criteria:**
+
+1. All 5 commands appear in Command Palette when user types "Kiro SDLC"
+2. Each command has a unique ID following the pattern `kiroSdlc.{action}`
+3. Commands show an error message "No workspace folder open" if invoked without a workspace
+
+**Validation Rules:**
+
+- Command IDs must match exactly as defined in `package.json` contributes.commands
+- Titles must be prefixed with "Kiro SDLC: " for discoverability
+
+**Error Handling:**
+
+- No workspace open: Show error message via `vscode.window.showErrorMessage("No workspace folder open.")`
+- Command execution failure: Show error message with failure details
+
+---
+
+#### STORY 3: Status Bar Indicator
+
+> As a developer, I want a status bar indicator so that I can see at a glance whether all SDLC components are present in my workspace.
+
+**Requirement Details:**
+
+1. A status bar item must be created on the right side (alignment: Right, priority: 100)
+2. The item must show a check icon `$(check)` with text "SDLC Agents" when all components are present
+3. The item must show a warning icon `$(warning)` with text "SDLC Agents" when any component is missing
+4. The item must show a circle-slash icon `$(circle-slash)` with text "SDLC" when no workspace is open
+5. Clicking the status bar item must trigger the `kiroSdlc.status` command
+6. Tooltip must provide additional context about the current state
+
+**UI Specifications:**
+
+| No. | Name | Type | Required | Description | Note |
+|-----|------|------|----------|-------------|------|
+| 1 | Status Bar Item | StatusBarItem | Yes | Right-aligned indicator showing SDLC health | Priority: 100 |
+| 2 | Check Icon | Icon + Text | Conditional | `$(check) SDLC Agents` | All components present |
+| 3 | Warning Icon | Icon + Text | Conditional | `$(warning) SDLC Agents` | Some components missing |
+| 4 | No-Workspace Icon | Icon + Text | Conditional | `$(circle-slash) SDLC` | No workspace folder open |
+
+**Acceptance Criteria:**
+
+1. Status bar shows check icon (`$(check)`) when all SDLC components are present in workspace
+2. Status bar shows warning icon (`$(warning)`) when one or more components are missing
+3. Status bar shows circle-slash icon when no workspace is open
+4. Clicking the status bar item opens the status detail view
+5. Tooltip text provides meaningful context (e.g., "All SDLC components active" or "Some components missing — click to check")
+
+---
+
+#### STORY 4: Confirmation Dialog Before Injection
+
+> As a developer, I want a confirmation dialog before injection so that I don't accidentally overwrite workspace files.
+
+**Requirement Details:**
+
+1. The `injectAll` command must show an information message dialog before proceeding
+2. The `update` command must show a warning message dialog (more prominent) before proceeding
+3. Both dialogs must offer "Yes"/"Cancel" (or "Update"/"Cancel") options
+4. If user selects "Cancel" or dismisses the dialog, the operation must abort silently
+
+**UI Specifications:**
+
+| No. | Name | Type | Required | Description | Note |
+|-----|------|------|----------|-------------|------|
+| 1 | Inject Confirm | InformationMessage | Yes | "Inject all SDLC agents, steering, hooks, templates, and indexer into this workspace?" | Buttons: Yes, Cancel |
+| 2 | Update Warning | WarningMessage | Yes | "Update will overwrite agents/steering/templates. Custom modifications in these folders will be lost. Continue?" | Buttons: Update, Cancel |
+
+**Acceptance Criteria:**
+
+1. `injectAll` shows confirmation dialog with "Yes" and "Cancel" buttons
+2. `update` shows warning dialog with "Update" and "Cancel" buttons
+3. Selecting "Cancel" or dismissing the dialog aborts the operation — no files are modified
+4. Selecting "Yes"/"Update" proceeds with the operation
+5. After successful operation, a success message is shown with details of what was injected/updated
+
+**Error Handling:**
+
+- Dialog dismissed (Escape key or click outside): Treat as "Cancel" — abort operation
+- Operation fails after confirmation: Show error message with details
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| Injector Module | System | KSA-3 | `injectAll` and `injectSelective` commands delegate to the injector module for file copying |
+| Indexer Module | System | KSA-5 | `runIndex` command delegates to the indexer module for code analysis |
+| Bundled Resources | System | KSA-6 | Extension must bundle all SDLC resources (agents, steering, hooks, templates) for injection |
+| VS Code Extension API | External | N/A | Extension depends on `vscode` API v1.85.0+ for commands, status bar, dialogs |
+| TypeScript Compiler | Infrastructure | N/A | Source must compile to JavaScript before packaging |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility | Source |
+|------|-------------|----------------|--------|
+| Developer | Extension Users | Primary users who invoke commands and view status | Target audience |
+| Maintainer | Extension Author | Develops and publishes the extension | KSA-11 |
+| Dependent Teams | SA, QA, DEV, DevOps Agents | Consume injected SDLC resources | KSA-1 Epic |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Startup activation may slow VS Code launch | Medium | Low | Keep `activate()` lightweight — defer heavy operations to command invocation |
+| Status bar check may be slow for large workspaces | Low | Low | Use synchronous `fs.existsSync` for quick path checks only |
+| User may not notice status bar warning | Low | Medium | Use distinct icons and tooltip text; status bar is clickable |
+
+### 5.2 Assumptions
+
+- VS Code/Kiro IDE supports `activationEvents: []` for startup activation
+- The `$(check)`, `$(warning)`, and `$(circle-slash)` codicons are available in the target VS Code version
+- Users are familiar with the Command Palette workflow (Ctrl+Shift+P)
+- Only the first workspace folder is used as the root (multi-root workspaces use `workspaceFolders[0]`)
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+|----------|-------------|---------|
+| Performance | Activation must complete in < 100ms | No heavy I/O during activate(); status check uses sync fs.existsSync |
+| Performance | Command execution feedback within 2s | User sees confirmation dialog or result within 2 seconds |
+| Usability | Commands discoverable via "Kiro SDLC" prefix | All 5 commands share the same prefix for easy filtering |
+| Compatibility | VS Code ^1.85.0 | Minimum engine version as declared in package.json |
+| Reliability | Graceful degradation without workspace | Extension activates without errors; commands show appropriate error messages |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-2 | Extension Core — Commands & Activation | In Progress | Task | Main ticket |
+| KSA-1 | Kiro SDLC Agents — VS Code/Kiro Extension | In Progress | Epic | Parent epic |
+| KSA-3 | Injector — Copy resources to workspace | To Do | Task | Depends on (inject logic) |
+| KSA-4 | Indexer Selection — Choose ONE language | To Do | Task | Related (indexer UI) |
+| KSA-5 | Auto-detect Runtime & Run Indexer | To Do | Task | Depends on (runIndex logic) |
+| KSA-6 | Bundled Resources | To Do | Task | Depends on (resources to inject) |
+| KSA-7 | Code Indexer — Python | To Do | Task | Related (indexer variant) |
+| KSA-8 | Code Indexer — Java | To Do | Task | Related (indexer variant) |
+| KSA-9 | Code Indexer — PowerShell | To Do | Task | Related (indexer variant) |
+| KSA-10 | Code Indexer — Bash | To Do | Task | Related (indexer variant) |
+| KSA-11 | Publish to Marketplace | To Do | Task | Related (distribution) |
+
+---
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| SDLC | Software Development Life Cycle |
+| Command Palette | VS Code UI element (Ctrl+Shift+P) for discovering and executing commands |
+| Status Bar | Bottom bar in VS Code showing contextual information |
+| Activation Event | Condition that triggers extension loading; empty array means "activate on startup" |
+| Codicon | VS Code's built-in icon set (e.g., `$(check)`, `$(warning)`) |
+| Inject | Copy bundled SDLC resource files into the user's workspace |
+
+### Reference Documents
+
+| Document | Link / Location |
+|----------|-----------------|
+| VS Code Extension API | https://code.visualstudio.com/api |
+| Extension package.json | `kiro-sdlc-agents/package.json` |
+| Extension entry point | `kiro-sdlc-agents/src/extension.ts` |
+| Component config | `kiro-sdlc-agents/src/config.ts` |
+| Parent Epic | KSA-1: Kiro SDLC Agents — VS Code/Kiro Extension |
+
+### Configuration Schema
+
+The extension contributes two settings:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `kiroSdlc.autoIndex` | boolean | `true` | Automatically run code indexer after injection |
+| `kiroSdlc.preferredIndexer` | enum | `"auto"` | Preferred indexer script: auto, python, java, nodejs, powershell, bash |

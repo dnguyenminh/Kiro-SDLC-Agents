@@ -1,0 +1,20 @@
+```json
+{
+  "ticket": "KSA-13",
+  "currentPhase": "closed",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-05-10T10:05:00Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2026-05-10T10:10:00Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2026-05-10T10:15:00Z" },
+    "feedback_loop": { "status": "done", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "skipped", "note": "Design-only ticket" },
+    "implementation": { "status": "skipped", "note": "Implementation tracked separately" },
+    "testing": { "status": "skipped" },
+    "deployment": { "status": "skipped" }
+  },
+  "closedAt": "2026-05-25T10:00:00Z",
+  "closeReason": "Design documentation complete",
+  "lastUpdated": "2026-05-25T10:00:00Z"
+}
+
+```

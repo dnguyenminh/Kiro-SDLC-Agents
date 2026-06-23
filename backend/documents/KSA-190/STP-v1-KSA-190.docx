@@ -1,0 +1,11 @@
+# Software Test Plan (STP)
+
+## KSA-190: Auto-Linking Logic on KB Ingest
+
+### Test Levels: PBT, UT, IT, E2E-API (no UI)
+
+### Coverage: 41 test cases, 95% automated
+
+### RTM: All 8 BRD stories mapped to test cases
+
+Full document: see STP.md

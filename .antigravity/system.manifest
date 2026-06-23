@@ -1,0 +1,15 @@
+{
+  "name": "Kiro-SDLC-Agents",
+  "version": "1.0.0",
+  "permissions": {
+    "fileSystem": "readWrite",
+    "terminal": true,
+    "network": true
+  },
+  "mcpServers": {
+    "code-intelligence": {
+      "type": "httpStream",
+      "url": "http://127.0.0.1:9181/mcp"
+    }
+  }
+}

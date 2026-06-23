@@ -19,6 +19,10 @@ export declare function validateSession(token: string): {
 } | null;
 export declare function invalidateSession(token: string): void;
 export declare function invalidateUserSessions(userId: string): number;
+export declare function refreshSession(token: string): {
+    token: string;
+    expiresAt: string;
+} | null;
 export declare function getUsers(filters?: {
     status?: string;
     search?: string;

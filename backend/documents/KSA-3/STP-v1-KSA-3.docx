@@ -1,0 +1,303 @@
+# Software Test Plan (STP)
+
+## Kiro SDLC Agent — KSA-3: Injector — Copy Resources to Workspace
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-3 |
+| Title | Injector — Copy Resources to Workspace |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2025-01-20 |
+| Status | Draft |
+| Related BRD | BRD-v1.0-KSA-3.docx |
+| Related FSD | FSD-v1.0-KSA-3.docx |
+
+## Author Tracking
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name - Position | Responsibility |
+| Author | QA Agent – QA Engineer | Create document |
+| Peer Reviewer | SM Agent – Scrum Master | Review document |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2025-01-20 | QA Agent | Initiate document — auto-generated from BRD and FSD |
+
+## Sign-Off
+
+|  |  |
+| --- | --- |
+| Name | Signature and date |
+|  | ☐ I agree and confirm the test plan in this STP |
+|  | ☐ I agree and confirm the test plan in this STP |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This test plan defines the testing strategy, scope, schedule, and resources for the **Injector** module (KSA-3) of the Kiro SDLC Agent VS Code extension. The Injector is responsible for copying bundled resource files from the extension’s installation directory into the user’s workspace, supporting full injection, selective injection, recursive copy with exclusions, filtered copy, and status checking.
+
+### 1.2 Test Objectives
+
+* Verify all five functional features (injectAll, injectSelective, copyDirRecursive, copyFiltered, checkStatus) work per FSD specifications
+* Validate all 17 business rules (BR-1 through BR-17) are correctly enforced
+* Ensure directory exclusion logic is case-sensitive and applies at any depth
+* Verify cross-platform path handling (Windows, macOS, Linux)
+* Confirm error handling produces correct user-facing messages per FSD Section 9
+* Validate non-functional requirements (performance ≤ 5s, async I/O, reliability)
+
+### 1.3 References
+
+|  |  |
+| --- | --- |
+| Document | Location |
+| BRD | documents/KSA-3/BRD.md |
+| FSD | documents/KSA-3/FSD.md |
+| Source Code | kiro-sdlc-agents/src/injector.ts, kiro-sdlc-agents/src/config.ts |
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Level | Scope | Automation | Tools |
+| PBT | Correctness properties for exclusion logic, filter matching, path handling | Automated | vitest + fast-check |
+| UT | Unit tests for individual functions (copyDirRecursive, copyFiltered, checkStatus) | Automated | vitest + mock-fs |
+| IT | Integration tests with real file system operations | Automated | vitest + tmp directories |
+| E2E-API | N/A (no REST API — VS Code extension module) | N/A | N/A |
+| E2E-UI | VS Code extension command execution via test harness | Automated | @vscode/test-electron |
+| SIT | Manual exploratory testing in VS Code | Manual | VS Code + manual |
+
+### 2.2 Test Types
+
+|  |  |  |
+| --- | --- | --- |
+| Type | Description | Applicable |
+| Functional Testing | Verify features work per FSD use cases (UC-1 to UC-5) | Yes |
+| Regression Testing | Ensure existing extension features are not broken | Yes |
+| Performance Testing | Verify copy completes within 5 seconds for < 500 files | Yes |
+| Security Testing | Verify no path traversal, permission handling | Yes |
+| Compatibility Testing | Verify cross-platform (Windows, macOS, Linux) | Yes |
+| Usability Testing | Verify QuickPick UI behavior | Yes |
+
+### 2.3 Test Approach
+
+* **Risk-based prioritization**: High-priority tests cover core copy logic and exclusion rules (most likely to have defects)
+* **Property-based testing**: Use random inputs to verify exclusion and filter invariants hold for any valid input
+* **Mock file system**: Unit tests use mock-fs to simulate directory structures without real I/O
+* **Real file system**: Integration tests create temporary directories to verify actual copy behavior
+* **VS Code test harness**: E2E-UI tests use @vscode/test-electron to run commands in a real VS Code instance
+
+![Test Execution Flow](data:image/png;base64...)
+
+Test Execution Flow
+
+### 2.4 Entry Criteria
+
+|  |  |
+| --- | --- |
+| Level | Entry Criteria |
+| UT/PBT | Source code compiles without errors |
+| IT | Unit tests pass, temp directory utilities available |
+| E2E-UI | Extension builds and loads in test VS Code instance |
+| SIT | All automated tests pass, extension packaged (.vsix) |
+
+### 2.5 Exit Criteria
+
+|  |  |
+| --- | --- |
+| Level | Exit Criteria |
+| UT/PBT | 100% test cases pass, code coverage ≥ 90% for injector.ts |
+| IT | All integration tests pass with real file system |
+| E2E-UI | All E2E scenarios pass in VS Code test harness |
+| SIT | 100% manual test cases executed, 0 Critical defects, ≤ 1 Major defect |
+
+### 2.6 Test Cases Summary
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Level | Count | Automated | Manual |
+| PBT | 5 | 5 | 0 |
+| UT | 17 | 17 | 0 |
+| IT | 8 | 8 | 0 |
+| E2E-UI | 5 | 5 | 0 |
+| SIT | 4 | 0 | 4 |
+| **Total** | **39** | **35 (90%)** | **4 (10%)** |
+
+## 3. Test Scope
+
+### 3.1 Features In Scope
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Feature / Story | Priority | FSD Reference | Test Type |
+| 1 | injectAll() — Copy all CORE\_COMPONENTS + indexer | High | UC-1, BR-1, BR-2, BR-3, BR-4 | Functional, Integration |
+| 2 | injectSelective() — QuickPick multi-select | High | UC-2, BR-5, BR-6, BR-7 | Functional, UI |
+| 3 | copyDirRecursive() — Recursive copy with exclusions | High | UC-3, BR-8, BR-9, BR-10, BR-11 | Functional, PBT |
+| 4 | copyFiltered() — Filtered copy for indexer | High | UC-4, BR-12, BR-13, BR-14, BR-15 | Functional, PBT |
+| 5 | checkStatus() — Component status reporting | Medium | UC-5, BR-16, BR-17 | Functional |
+| 6 | Cross-platform path handling | High | FSD Section 8 | Compatibility |
+| 7 | Performance (< 5s for 500 files) | Medium | FSD Section 8 | Non-Functional |
+| 8 | Error handling and notifications | High | FSD Section 9 | Functional |
+
+![Test Coverage](data:image/png;base64...)
+
+Test Coverage
+
+### 3.2 Features Out of Scope
+
+|  |  |  |
+| --- | --- | --- |
+| # | Feature | Reason |
+| 1 | Indexer Selection UI (KSA-4) | Separate ticket, tested independently |
+| 2 | Auto-detect Runtime (KSA-5) | Separate ticket, tested independently |
+| 3 | Extension Core activation (KSA-2) | Separate ticket, dependency only |
+| 4 | Content of resource files | Maintained separately, not Injector responsibility |
+| 5 | File watching / auto-sync | Explicitly out of scope per BRD |
+
+## 4. Test Environment
+
+### 4.1 Environment Requirements
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Environment | Platform | Node.js | VS Code | Purpose |
+| Dev/UT | Windows 11 | 18.x+ | 1.85+ | Unit + Integration tests |
+| CI | Linux (GitHub Actions) | 18.x+ | Latest | Automated test pipeline |
+| SIT | Windows 11 / macOS 14 / Ubuntu 22.04 | 18.x+ | 1.85+ | Manual cross-platform testing |
+
+### 4.2 Test Data Requirements
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Data Type | Description | Source | Preparation |
+| Extension resources | Mock directory structure with agents, steering, hooks, templates, scripts | Test fixtures | Create in test setup |
+| Workspace directory | Empty temp directory simulating workspace | OS temp | Create per test |
+| Nested directories | Deep directory tree with excluded dirs at various depths | Test fixtures | Create in test setup |
+| Large file set | 500+ files for performance testing | Generated | Script to create dummy files |
+
+### 4.3 External Dependencies
+
+|  |  |  |
+| --- | --- | --- |
+| System | Dependency | Mock/Stub Available |
+| VS Code API | vscode.window.showQuickPick, vscode.workspace | Yes — @vscode/test-electron provides real API |
+| Node.js fs | File system operations | Yes — mock-fs for UT, real fs for IT |
+| OS file system | Cross-platform path resolution | Yes — test on all 3 platforms in CI |
+
+## 5. Test Schedule
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Phase | Start Date | End Date | Duration | Milestone |
+| Test Planning | 2025-01-20 | 2025-01-21 | 2 days | STP + STC approved |
+| Test Data Preparation | 2025-01-21 | 2025-01-22 | 1 day | Test fixtures ready |
+| UT/PBT Development | 2025-01-22 | 2025-01-24 | 3 days | All unit + PBT tests pass |
+| IT Development | 2025-01-24 | 2025-01-25 | 2 days | Integration tests pass |
+| E2E-UI Development | 2025-01-25 | 2025-01-27 | 2 days | E2E tests pass |
+| SIT Execution | 2025-01-27 | 2025-01-28 | 2 days | SIT sign-off |
+| Defect Fix & Retest | 2025-01-28 | 2025-01-29 | 1 day | All Critical/Major fixed |
+
+## 6. Resources & Responsibilities
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name | Responsibility |
+| Test Lead | QA Agent | Test planning, coordination, reporting |
+| QA Engineer | QA Agent | Test case design, execution, defect reporting |
+| BA | BA Agent | Acceptance criteria clarification |
+| Developer | DEV Agent | Bug fixing, unit test coverage |
+| DevOps | DevOps Agent | CI pipeline setup, environment provisioning |
+
+## 7. Risk & Mitigation
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Risk | Impact | Likelihood | Mitigation |
+| 1 | Cross-platform path differences cause failures | High | Medium | Test on all 3 OS in CI; use path.join() consistently |
+| 2 | Mock-fs doesn’t accurately simulate real fs behavior | Medium | Low | Supplement with real-fs integration tests |
+| 3 | VS Code test harness instability | Medium | Medium | Pin @vscode/test-electron version; retry flaky tests |
+| 4 | Large directory trees cause timeout in tests | Low | Low | Set generous timeout; use smaller fixtures for UT |
+| 5 | Permission issues differ across OS | Medium | Medium | Test with restricted permissions on each platform |
+
+## 8. Defect Management
+
+### 8.1 Severity Levels
+
+|  |  |  |
+| --- | --- | --- |
+| Severity | Definition | Example |
+| Critical | Core copy logic broken, data loss | Files silently not copied; workspace corrupted |
+| Major | Feature not working, workaround exists | Exclusion list not applied at nested depth |
+| Minor | UI issue, cosmetic defect | QuickPick description text incorrect |
+| Trivial | Typo, minor alignment issue | Log message typo |
+
+### 8.2 Priority Levels
+
+|  |  |  |
+| --- | --- | --- |
+| Priority | Definition | SLA (Fix Time) |
+| P1 | Must fix immediately | 4 hours |
+| P2 | Must fix before release | 1 business day |
+| P3 | Should fix if time permits | 3 business days |
+| P4 | Nice to fix, can defer | Next release |
+
+### 8.3 Defect Lifecycle
+
+New → Open → In Progress → Fixed → Ready for Retest → Verified → Closed
+ → Reopened → In Progress
+
+## 9. Test Metrics & Reporting
+
+### 9.1 Metrics
+
+|  |  |  |
+| --- | --- | --- |
+| Metric | Formula | Target |
+| Test Execution Rate | Executed / Total × 100% | 100% |
+| Pass Rate | Passed / Executed × 100% | ≥ 95% |
+| Defect Density | Defects / Test Cases | ≤ 0.1 |
+| Critical Defect Count | Count of Critical severity | 0 |
+| Code Coverage (injector.ts) | Lines covered / Total lines × 100% | ≥ 90% |
+| Automation Rate | Automated / Total × 100% | ≥ 85% |
+
+### 9.2 Reporting Schedule
+
+|  |  |  |
+| --- | --- | --- |
+| Report | Frequency | Audience |
+| Daily Test Status | Daily during SIT | Project team |
+| Defect Summary | Per defect found | Dev team |
+| Test Completion Report | End of each test level | All stakeholders |
+
+## 10. Appendix
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| SIT | System Integration Testing |
+| STP | Software Test Plan |
+| STC | Software Test Cases |
+| PBT | Property-Based Testing |
+| UT | Unit Testing |
+| IT | Integration Testing |
+| E2E-UI | End-to-End UI Testing |
+| CORE\_COMPONENTS | agents, steering, hooks, templates |
+
+### Assumptions
+
+* VS Code extension host provides stable Node.js fs module access
+* Extension resources directory is always correctly structured after installation
+* Test fixtures can accurately represent real-world directory structures
+* CI environment supports all three target platforms (Windows, macOS, Linux)

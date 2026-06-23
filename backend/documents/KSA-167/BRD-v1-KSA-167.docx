@@ -1,0 +1,323 @@
+# Business Requirements Document (BRD)
+
+## MCP Code Intelligence — KSA-167: [Security] Misconfig + Secrets + SBOM + SARIF
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-167 |
+| Title | [Security] Misconfig + Secrets + SBOM + SARIF |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-06-07 |
+| Status | Draft |
+| Parent Epic | KSA-144: Code Intelligence v2 — Graph Engine + Static Analysis |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-06-07 | BA Agent | Initial document — auto-generated from Jira ticket KSA-167 |
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This ticket implements four security capabilities:
+
+1. **Misconfiguration Scan** — Detect insecure configurations: debug mode enabled, permissive CORS, weak TLS, insecure cookies (20 sinks)
+2. **Secrets Entropy Detection** — Find hardcoded secrets using Shannon entropy analysis + pattern matching
+3. **SBOM Generation** — Generate CycloneDX Software Bill of Materials from lockfiles (8 formats)
+4. **Dependency Audit** — Check dependencies against OSV vulnerability database
+5. **SARIF Export** — Export all security findings in SARIF format for GitHub/GitLab integration
+
+### 1.2 Out of Scope
+
+* Runtime configuration scanning (only static code/config files)
+* Secret rotation / remediation
+* License compliance checking (future ticket)
+* Dependency auto-update / PR creation
+* Custom vulnerability database
+
+### 1.3 Preliminary Requirements
+
+* KSA-164: Control Flow + Data Flow Analysis (for misconfig detection in code)
+* KSA-165: Injection Detection (shared pattern infrastructure)
+* KSA-145: Tree-sitter Core (AST parsing)
+* Network access for OSV API queries (dependency audit)
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+This ticket provides “supply chain security” and “configuration security” capabilities: - Misconfig: scans code and config files for insecure settings - Secrets: finds accidentally committed credentials - SBOM: inventories all dependencies for compliance/audit - Dep Audit: checks inventory against known vulnerabilities - SARIF: standardized output for CI/CD integration
+
+### 2.2 List of User Stories / Use Cases
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Story / Use Case | Priority | Source Ticket |
+| 1 | As a security engineer, I want misconfiguration detected so that insecure settings are found before deployment | MUST HAVE | KSA-167 |
+| 2 | As a security engineer, I want hardcoded secrets detected so that credentials don’t leak to repositories | MUST HAVE | KSA-167 |
+| 3 | As a compliance officer, I want SBOM generated so that I have a complete dependency inventory | MUST HAVE | KSA-167 |
+| 4 | As a developer, I want dependency vulnerabilities flagged so that I can update affected packages | SHOULD HAVE | KSA-167 |
+| 5 | As a DevOps engineer, I want SARIF export so that findings integrate with GitHub/GitLab security dashboards | SHOULD HAVE | KSA-167 |
+
+### 2.3 Details of User Stories
+
+#### Business Flow
+
+**Step 1:** Developer requests security scan (via MCP tool)
+
+**Step 2:** Misconfig scanner checks code + config files against 20 sink patterns
+
+**Step 3:** Secrets scanner analyzes strings for high entropy + known patterns
+
+**Step 4:** SBOM generator reads lockfiles, produces CycloneDX inventory
+
+**Step 5:** Dependency auditor queries OSV API with SBOM components
+
+**Step 6:** All findings aggregated, exported as SARIF
+
+**Step 7:** Results returned via MCP tool + SARIF file written
+
+#### STORY 1: Misconfiguration Detection
+
+As a security engineer, I want misconfiguration detected so that insecure settings are found before deployment.
+
+**Requirement Details:**
+
+**20 Misconfiguration Sinks:**
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Category | Pattern | CWE | Severity |
+| 1 | Debug | DEBUG=True in production config | CWE-489 | High |
+| 2 | Debug | Verbose error messages enabled | CWE-209 | Medium |
+| 3 | Debug | Stack trace exposure in responses | CWE-497 | Medium |
+| 4 | CORS | Access-Control-Allow-Origin: \* | CWE-942 | High |
+| 5 | CORS | Credentials with wildcard origin | CWE-942 | Critical |
+| 6 | CORS | Reflecting Origin header without validation | CWE-942 | High |
+| 7 | TLS | TLS 1.0/1.1 enabled | CWE-326 | High |
+| 8 | TLS | SSL verification disabled | CWE-295 | Critical |
+| 9 | TLS | Self-signed cert in production | CWE-295 | Medium |
+| 10 | Cookies | Missing Secure flag | CWE-614 | Medium |
+| 11 | Cookies | Missing HttpOnly flag | CWE-1004 | Medium |
+| 12 | Cookies | Missing SameSite attribute | CWE-1275 | Medium |
+| 13 | Headers | Missing X-Frame-Options | CWE-1021 | Medium |
+| 14 | Headers | Missing Content-Security-Policy | CWE-693 | Medium |
+| 15 | Headers | Missing X-Content-Type-Options | CWE-16 | Low |
+| 16 | Auth | Hardcoded credentials in config | CWE-798 | Critical |
+| 17 | Auth | Default passwords not changed | CWE-1393 | High |
+| 18 | Session | Session timeout too long (> 24h) | CWE-613 | Medium |
+| 19 | Logging | Sensitive data in logs | CWE-532 | High |
+| 20 | Crypto | Weak hash algorithm (MD5/SHA1 for security) | CWE-328 | High |
+
+**Acceptance Criteria:**
+
+1. All 20 misconfig patterns detected across config files and code
+2. Scans: .env, .yml, .yaml, .json, .properties, .toml, .xml config files
+3. Scans code for programmatic misconfigurations
+4. Each finding includes CWE, severity, file location, remediation
+5. False positive rate < 20% for config file patterns
+
+#### STORY 2: Secrets Entropy Detection
+
+As a security engineer, I want hardcoded secrets detected so that credentials don’t leak to repositories.
+
+**Requirement Details:**
+
+**Detection Methods:**
+
+1. **Shannon Entropy** — Strings with entropy > 4.5 bits/char (high randomness = likely secret)
+2. **Pattern Matching** — Known secret formats:
+   * AWS keys: AKIA[0-9A-Z]{16}
+   * GitHub tokens: ghp\_[a-zA-Z0-9]{36}
+   * JWT: eyJ[a-zA-Z0-9\_-]+\.eyJ[a-zA-Z0-9\_-]+\.[a-zA-Z0-9\_-]+
+   * Private keys: -----BEGIN (RSA|EC|DSA) PRIVATE KEY-----
+   * Generic API keys: (api[\_-]?key|secret|token|password)\s\*[:=]\s\*['"][^'"]{8,}['"]
+3. **Context Analysis** — Variable name suggests secret (password, secret, token, api\_key)
+
+**Exclusions (reduce false positives):** - Test files (configurable) - Example/placeholder values (e.g., “your-api-key-here”) - Hash constants (known library hashes) - UUIDs (format matches but not secrets)
+
+**Acceptance Criteria:**
+
+1. Detects high-entropy strings (Shannon > 4.5) in source code
+2. Detects known secret patterns (AWS, GitHub, JWT, etc.)
+3. Context-aware: variable name “password” with literal value = finding
+4. Excludes test files and placeholder values
+5. Reports secret type, location, and remediation
+
+#### STORY 3: SBOM Generation (CycloneDX)
+
+As a compliance officer, I want SBOM generated so that I have a complete dependency inventory.
+
+**Requirement Details:**
+
+**Supported Lockfile Formats (8):**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Format | Language | File |
+| 1 | npm | JavaScript/TypeScript | package-lock.json, yarn.lock, pnpm-lock.yaml |
+| 2 | pip | Python | requirements.txt, Pipfile.lock, poetry.lock |
+| 3 | Maven | Java/Kotlin | pom.xml (resolved), gradle.lockfile |
+| 4 | Go | Go | go.sum |
+| 5 | Cargo | Rust | Cargo.lock |
+| 6 | Composer | PHP | composer.lock |
+| 7 | Gems | Ruby | Gemfile.lock |
+| 8 | NuGet | C#/.NET | packages.lock.json |
+
+**Output Format:** CycloneDX 1.5 JSON
+
+**SBOM Fields per Component:** - name, version, purl (Package URL) - license (if available from lockfile) - hash (integrity hash from lockfile) - scope (runtime/dev)
+
+**Acceptance Criteria:**
+
+1. Parses all 8 lockfile formats correctly
+2. Generates valid CycloneDX 1.5 JSON
+3. Includes transitive dependencies (from lockfiles)
+4. Distinguishes runtime vs dev dependencies
+5. SBOM validates against CycloneDX schema
+
+#### STORY 4: Dependency Audit (OSV)
+
+As a developer, I want dependency vulnerabilities flagged so that I can update affected packages.
+
+**Requirement Details:**
+
+1. Take SBOM components (from Story 3)
+2. Query OSV.dev API for known vulnerabilities
+3. Match by package name + version range
+4. Report: CVE ID, severity (CVSS), affected versions, fixed version
+5. Cache results (TTL: 24h) to avoid repeated API calls
+
+**Acceptance Criteria:**
+
+1. Queries OSV API for all SBOM components
+2. Reports CVE/GHSA IDs with severity scores
+3. Shows which version fixes the vulnerability
+4. Caches results to reduce API calls
+5. Works offline with cached data (stale but available)
+
+#### STORY 5: SARIF Export
+
+As a DevOps engineer, I want SARIF export so that findings integrate with GitHub/GitLab security dashboards.
+
+**Requirement Details:**
+
+1. Export ALL security findings (misconfig + secrets + injection + SSRF/IDOR + dep audit) as SARIF 2.1.0
+2. SARIF includes: tool info, rules, results with locations, severity levels
+3. Compatible with GitHub Code Scanning and GitLab SAST
+4. One SARIF file per scan run
+
+**Acceptance Criteria:**
+
+1. Valid SARIF 2.1.0 output
+2. All finding types included in single SARIF file
+3. GitHub Code Scanning accepts and displays results
+4. Rule IDs map to CWE numbers
+5. Locations include file path, line, column
+
+## 3. Dependencies
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Dependency | Type | Related Ticket | Description |
+| CFG/DFG/Taint | System | KSA-164 | For code-level misconfig detection |
+| Injection Detection | System | KSA-165 | Shared pattern infrastructure |
+| Tree-sitter Core | System | KSA-145 | AST parsing |
+| OSV API | External | N/A | Vulnerability database |
+| Network Access | Infrastructure | N/A | For OSV API queries |
+
+## 4. Stakeholders
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name / Team | Responsibility |
+| Product Owner | Development Team Lead | Approve requirements |
+| Security Engineer | Security Team | Define patterns, validate |
+| Compliance Officer | Compliance Team | SBOM requirements |
+| DevOps | DevOps Team | SARIF integration |
+| Developer | Code Intelligence Team | Implement all features |
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Risk | Impact | Likelihood | Mitigation |
+| OSV API rate limiting | Medium | Medium | Caching, batch queries |
+| Secrets detection high false positives | High | High | Entropy threshold tuning, context analysis |
+| Lockfile format changes | Medium | Low | Version-aware parsers |
+| SARIF spec complexity | Low | Low | Use SARIF SDK/library |
+
+### 5.2 Assumptions
+
+* OSV API is freely available and reliable
+* CycloneDX 1.5 is the current standard
+* SARIF 2.1.0 is supported by major CI/CD platforms
+* Shannon entropy > 4.5 is a good threshold for secrets
+* Lockfiles contain sufficient data for SBOM generation
+
+## 6. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| Category | Requirement | Details |
+| Performance | Misconfig scan < 10s | Full project |
+| Performance | Secrets scan < 15s | Full project |
+| Performance | SBOM generation < 5s | Per lockfile |
+| Performance | Dep audit < 30s | Including API calls |
+| Accuracy | Secrets FP rate < 30% | With entropy + context |
+| Compliance | CycloneDX 1.5 valid | Schema validation |
+| Integration | SARIF 2.1.0 valid | GitHub/GitLab compatible |
+
+## 7. Related Tickets
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Ticket Key | Summary | Status | Type | Relationship |
+| KSA-167 | [Security] Misconfig + Secrets + SBOM + SARIF | To Do | Task | Main ticket |
+| KSA-144 | Code Intelligence v2 — Graph Engine + Static Analysis | To Do | Epic | Parent epic |
+| KSA-164 | [Security] Control Flow + Data Flow Analysis | To Do | Task | Prerequisite |
+| KSA-165 | [Security] Injection Detection | To Do | Task | Shared infrastructure |
+| KSA-166 | [Security] SSRF + IDOR + Missing Auth | To Do | Task | Related security |
+
+## 8. Appendix
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| SBOM | Software Bill of Materials — inventory of all software components |
+| CycloneDX | OWASP standard for SBOM format |
+| SARIF | Static Analysis Results Interchange Format |
+| OSV | Open Source Vulnerabilities database (Google) |
+| Shannon Entropy | Measure of randomness/information density in a string |
+| Misconfiguration | Insecure default or explicit setting that weakens security |
+
+### Reference Documents
+
+|  |  |
+| --- | --- |
+| Document | Location |
+| CodeGraph vs FEC Comparison | documents/CodeGraph-vs-FEC-Comparison.md |
+| KSA-164 BRD (CFG/DFG) | documents/KSA-164/BRD.md |
+| KSA-165 BRD (Injection) | documents/KSA-165/BRD.md |
+| CycloneDX Spec | https://cyclonedx.org/specification/overview/ |
+| SARIF Spec | https://docs.oasis-open.org/sarif/sarif/v2.1.0/ |
+| OSV API | https://osv.dev/docs/ |
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case Diagram | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

@@ -1,0 +1,303 @@
+# Software Test Plan (STP)
+
+## kiro-rs — KSA-236: tool_use_id mismatch causes 400 on ReAct tool continuation
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-236 |
+| Title | kiro-rs: tool_use_id mismatch causes 400 on ReAct tool continuation |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2025-07-14 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-236.docx |
+| Related FSD | FSD-v1-KSA-236.docx |
+| Related TDD | TDD-v1-KSA-236.docx |
+
+---
+
+## Author Tracking
+
+| Role | Name - Position | Responsibility |
+|------|-----------------|----------------|
+| Author | QA Agent – QA Engineer | Create document |
+| Peer Reviewer | Duc Nguyen Minh – Reporter | Review document |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-07-14 | QA Agent | Initiate document — auto-generated from BRD, FSD, and TDD |
+
+---
+
+## Sign-Off
+
+| Name | Signature and date |
+|------|--------------------|
+| | ☐ I agree and confirm the test plan in this STP |
+| | ☐ I agree and confirm the test plan in this STP |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This test plan defines the testing strategy, scope, schedule, and resources for verifying the fix of the `tool_use_id` mismatch bug in the kiro-rs Anthropic converter module. The fix ensures that `tool_use_id` values are passed through without transformation, restoring the ReAct tool-calling loop in the Chat Panel.
+
+### 1.2 Test Objectives
+
+- Verify that `tool_use_id` from Kiro Q API is preserved verbatim in SSE stream, conversation history, and continuation matching (BR-1, BR-2)
+- Validate all business rules BR-1 through BR-9 are correctly enforced
+- Ensure the full ReAct tool loop (chat → tool_use → tool_result → continuation) completes without 400 errors
+- Verify diagnostic logging and descriptive error messages on ID mismatch (UC-2)
+- Confirm no regression in existing streaming functionality
+- Validate thread-safety for concurrent tool_use blocks
+- Ensure no performance degradation from the fix
+
+### 1.3 References
+
+| Document | Location |
+|----------|----------|
+| BRD | BRD-v1-KSA-236.docx |
+| FSD | FSD-v1-KSA-236.docx |
+| TDD | TDD-v1-KSA-236.docx |
+| Source (converter) | kiro-rs/src/anthropic/converter.rs |
+| Source (handlers) | kiro-rs/src/anthropic/handlers.rs |
+
+---
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+| Level | Scope | Automation | Tools |
+|-------|-------|------------|-------|
+| PBT | Correctness properties — tool_use_id passthrough invariant holds for all random inputs | Automated | proptest (Rust) |
+| UT | Unit/edge case tests — converter.rs functions, history lookup, validation | Automated | cargo test (Rust built-in) |
+| IT | Integration tests — full handler flow with mock Kiro Q API responses | Automated | cargo test + tokio::test + wiremock |
+| E2E-API | HTTP endpoint E2E — chatWithTools + continuation against running kiro-rs | Automated | reqwest + tokio::test |
+| E2E-UI | Not applicable — backend service with no UI | N/A | N/A |
+| SIT | Not applicable — no UI, no manual browser testing needed | N/A | N/A |
+
+![Test Execution Flow](diagrams/test-execution-flow.png)
+
+### 2.2 Test Types
+
+| Type | Description | Applicable |
+|------|-------------|------------|
+| Functional Testing | Verify ID passthrough, continuation matching, error handling per FSD | Yes |
+| Regression Testing | Ensure plain text streaming, non-tool responses still work | Yes |
+| Performance Testing | Verify no latency increase (< 1ms overhead target) | Yes |
+| Security Testing | Input validation, no injection via tool_use_id | Yes |
+| Concurrency Testing | Thread-safe history access under multiple concurrent tool_use blocks | Yes |
+
+### 2.3 Test Approach
+
+- **Risk-based prioritization**: Critical path (ID passthrough + continuation match) tested first
+- **Property-based testing**: Use proptest to verify the passthrough invariant holds for arbitrary tool_use_id strings
+- **Integration testing**: Full handler flow with mock HTTP backend (wiremock) simulating Kiro Q API responses
+- **E2E-API testing**: Start kiro-rs binary, send real HTTP requests, verify SSE stream content
+- **No manual SIT**: This is a pure backend fix with no UI component. All scenarios are automatable.
+
+### 2.4 Entry Criteria
+
+| Level | Entry Criteria |
+|-------|---------------|
+| PBT/UT | Code changes compiled successfully (`cargo build` passes) |
+| IT | Unit tests pass, mock server (wiremock) configured |
+| E2E-API | kiro-rs binary built, test environment running |
+
+### 2.5 Exit Criteria
+
+| Level | Exit Criteria |
+|-------|--------------|
+| PBT | 1000+ random inputs pass without failure |
+| UT | 100% of unit tests pass, all edge cases covered |
+| IT | Full ReAct loop completes, mismatch diagnostics work, concurrent access safe |
+| E2E-API | HTTP requests succeed, SSE stream contains correct IDs, continuation succeeds |
+| Overall | 0 Critical defects, 0 Major defects, all test cases PASS |
+
+---
+
+## 3. Test Scope
+
+### 3.1 Features In Scope
+
+| # | Feature / Story | Priority | FSD Reference | Test Type |
+|---|----------------|----------|---------------|-----------|
+| 1 | tool_use_id passthrough in converter | Critical | UC-1, BR-1, BR-2 | PBT + UT + IT |
+| 2 | ID preserved in SSE stream output | Critical | UC-1 Step 6, BR-1 | UT + IT + E2E-API |
+| 3 | ID preserved in conversation history | Critical | UC-1 Step 7, BR-2 | UT + IT |
+| 4 | Continuation matching against history | Critical | UC-1 Step 11, BR-2 | UT + IT + E2E-API |
+| 5 | Multiple tool_use blocks handling | High | AF-1, BR-5 | UT + IT |
+| 6 | Diagnostic error on ID mismatch | High | UC-2, BR-6, BR-7, BR-8 | UT + IT |
+| 7 | Empty/missing tool_use_id rejection | High | EF-2, BR-3 | UT + IT |
+| 8 | No new ID generation (regression) | Critical | BR-1, TC-10 | PBT + UT |
+| 9 | Thread-safe concurrent access | High | NFR Concurrency | IT |
+| 10 | Performance — no latency increase | Medium | NFR Performance | IT |
+
+![Test Coverage](diagrams/test-coverage.png)
+
+### 3.2 Features Out of Scope
+
+| # | Feature | Reason |
+|---|---------|--------|
+| 1 | VS Code Extension tool execution logic | Not modified by this fix |
+| 2 | Kiro Q API backend behavior | External system, not under test |
+| 3 | Non-Anthropic format converters | Different module, not affected |
+| 4 | Tool discovery/registration | Not related to this bug |
+| 5 | Plain text streaming (non-tool responses) | Already working, covered by regression only |
+
+---
+
+## 4. Test Environment
+
+### 4.1 Environment Requirements
+
+| Environment | Configuration | Purpose |
+|-------------|--------------|---------|
+| Local Dev | Rust stable toolchain, Tokio runtime | PBT + UT + IT execution |
+| CI | GitHub Actions runner (Linux), Rust stable | Automated test suite |
+| E2E | kiro-rs binary running locally on localhost | E2E-API testing |
+
+### 4.2 Test Data Requirements
+
+| Data Type | Description | Source | Preparation |
+|-----------|-------------|--------|-------------|
+| tool_use_id values | Various valid IDs matching `tooluse_[A-Za-z0-9]+` | Generated | proptest generators + hardcoded fixtures |
+| API responses | Mock Kiro Q API JSON responses with tool_use blocks | Fixture files | JSON files in test/fixtures/ |
+| Continuation requests | Mock extension continuation requests | Fixture files | JSON files in test/fixtures/ |
+| Multi-tool responses | Responses with 2-5 tool_use blocks | Fixture files | JSON files in test/fixtures/ |
+| Invalid data | Empty IDs, missing fields, malformed JSON | Generated | Hardcoded edge cases |
+
+### 4.3 External Dependencies
+
+| System | Dependency | Mock/Stub Available |
+|--------|-----------|---------------------|
+| Kiro Q API | HTTP responses with tool_use blocks | Yes — wiremock mock server |
+| VS Code Extension | Sends continuation requests | Yes — reqwest HTTP client simulates extension |
+
+---
+
+## 5. Test Schedule
+
+| Phase | Start Date | End Date | Duration | Milestone |
+|-------|-----------|----------|----------|-----------|
+| Test Planning | 2025-07-14 | 2025-07-14 | 1 day | STP + STC approved |
+| Test Implementation | 2025-07-15 | 2025-07-16 | 2 days | All test code written |
+| Test Execution | 2025-07-17 | 2025-07-17 | 1 day | All tests pass |
+| Defect Fix & Retest | 2025-07-18 | 2025-07-18 | 1 day | All defects fixed |
+| Sign-Off | 2025-07-19 | 2025-07-19 | 1 day | Test completion report |
+
+---
+
+## 6. Resources & Responsibilities
+
+| Role | Name | Responsibility |
+|------|------|---------------|
+| Test Lead | QA Agent | Test planning, test case design, execution coordination |
+| QA Engineer | QA Agent | Test implementation and execution |
+| Developer | kiro-rs Team | Bug fix implementation, unit test coverage |
+| BA | BA Agent | Acceptance criteria clarification |
+
+---
+
+## 7. Risk & Mitigation
+
+| # | Risk | Impact | Likelihood | Mitigation |
+|---|------|--------|------------|------------|
+| 1 | Cannot reproduce mismatch in test environment | High | Low | Use specific fixture data replicating known broken state |
+| 2 | Concurrency issues hard to reproduce | Medium | Medium | Use proptest with concurrent execution stress testing |
+| 3 | Mock server may not perfectly replicate Kiro Q API format | Medium | Low | Validate mock fixtures against real API response samples |
+| 4 | Regression in unrelated streaming features | Medium | Low | Include regression test cases for plain text streaming |
+
+---
+
+## 8. Defect Management
+
+### 8.1 Severity Levels
+
+| Severity | Definition | Example |
+|----------|-----------|---------|
+| Critical | tool_use_id still mismatches after fix, ReAct loop still broken | ID transformation not removed |
+| Major | Diagnostic logging incomplete, error message generic | Missing stored_ids in WARN log |
+| Minor | Log level incorrect, format slightly off | TRACE instead of WARN on mismatch |
+| Trivial | Documentation typo, comment formatting | Typo in error message string |
+
+### 8.2 Priority Levels
+
+| Priority | Definition | SLA (Fix Time) |
+|----------|-----------|----------------|
+| P1 | Must fix immediately — blocks ReAct loop | 4 hours |
+| P2 | Must fix before release — diagnostics broken | 1 business day |
+| P3 | Should fix if time permits — cosmetic | 3 business days |
+| P4 | Nice to fix, can defer | Next release |
+
+### 8.3 Defect Lifecycle
+
+```
+New → Open → In Progress → Fixed → Ready for Retest → Verified → Closed
+                                                     → Reopened → In Progress
+```
+
+---
+
+## 9. Test Metrics & Reporting
+
+### 9.1 Metrics
+
+| Metric | Formula | Target |
+|--------|---------|--------|
+| Test Execution Rate | Executed / Total × 100% | 100% |
+| Pass Rate | Passed / Executed × 100% | 100% |
+| Defect Density | Defects / Test Cases | 0 |
+| Critical Defect Count | Count of Critical severity | 0 |
+| PBT Iterations | Random inputs tested | ≥ 1000 |
+
+### 9.2 Test Cases Summary
+
+| Level | Count | Automated | Manual |
+|-------|-------|-----------|--------|
+| PBT | 3 | 3 | 0 |
+| UT | 12 | 12 | 0 |
+| IT | 8 | 8 | 0 |
+| E2E-API | 5 | 5 | 0 |
+| E2E-UI | 0 | 0 | 0 |
+| SIT | 0 | 0 | 0 |
+| **Total** | **28** | **28 (100%)** | **0 (0%)** |
+
+---
+
+## 10. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| PBT | Property-Based Testing — verifying invariants hold for random inputs |
+| ReAct Loop | Reasoning + Acting pattern for AI tool calling |
+| tool_use_id | Unique identifier for a tool invocation from Kiro Q API |
+| Passthrough | Data flows unchanged between layers |
+| SSE | Server-Sent Events — HTTP-based server push protocol |
+
+### Assumptions
+
+- Kiro Q API always returns valid JSON with stable tool_use_id format
+- Rust stable toolchain supports all required testing libraries
+- The fix is scoped to converter.rs and handlers.rs only
+- No external network access needed for test execution (all mocked)
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Test Coverage Overview | [test-coverage.png](diagrams/test-coverage.png) | [test-coverage.drawio](diagrams/test-coverage.drawio) |
+| 2 | Test Execution Flow | [test-execution-flow.png](diagrams/test-execution-flow.png) | [test-execution-flow.drawio](diagrams/test-execution-flow.drawio) |

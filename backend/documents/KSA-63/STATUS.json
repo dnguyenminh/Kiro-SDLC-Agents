@@ -1,0 +1,26 @@
+```json
+{
+  "ticket": "KSA-63",
+  "currentPhase": "done",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2025-07-14T10:00:00Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2025-07-14T10:30:00Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2025-07-14T11:00:00Z" },
+    "feedback_loop": { "status": "not_started", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2025-07-15T10:00:00Z" },
+    "implementation": { "status": "done", "completedAt": "2025-07-14T14:00:00Z" },
+    "testing": { "status": "done", "completedAt": "2025-07-15T10:00:00Z", "result": "PASS" },
+    "deployment": { "status": "done", "file": "DPG.md", "version": 1, "completedAt": "2025-07-15T10:00:00Z" },
+    "port_extension": {
+      "status": "done",
+      "brd_port": { "status": "done", "file": "BRD-port.md", "version": 1 },
+      "tdd_python": { "status": "done", "file": "TDD-python.md", "version": 1 },
+      "tdd_nodejs": { "status": "done", "file": "TDD-nodejs.md", "version": 1 },
+      "impl_python": { "status": "done", "files": 21 },
+      "impl_nodejs": { "status": "done", "files": 18 }
+    }
+  },
+  "lastUpdated": "2025-07-15T10:00:00Z"
+}
+
+```

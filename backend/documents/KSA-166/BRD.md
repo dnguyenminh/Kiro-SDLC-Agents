@@ -1,0 +1,317 @@
+# Business Requirements Document (BRD)
+
+## MCP Code Intelligence — KSA-166: [Security] SSRF + IDOR + Missing Auth Detection
+
+---
+
+## Document Information
+
+| Field | Value |
+|-------|-------|
+| Jira Ticket | KSA-166 |
+| Title | [Security] SSRF + IDOR + Missing Auth Detection |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-06-07 |
+| Status | Draft |
+| Parent Epic | KSA-144: Code Intelligence v2 — Graph Engine + Static Analysis |
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-07 | BA Agent | Initial document — auto-generated from Jira ticket KSA-166 |
+
+---
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This ticket implements three advanced security vulnerability detectors that analyze request handling patterns:
+
+1. **SSRF (CWE-918):** Detect when a URL from user request is used in outbound fetch/HTTP call without safeguard (allowlist, SSRF filter)
+2. **IDOR (CWE-639):** Detect object lookups using user-supplied IDs without authorization checks
+3. **REST Missing Auth (CWE-862):** Detect HTTP handlers that lack authorization when sibling handlers in the same controller have it
+
+All three detectors leverage the CFG/DFG infrastructure from KSA-164 and the entry point detection from KSA-162.
+
+### 1.2 Out of Scope
+
+- CFG/DFG construction (KSA-164 — prerequisite)
+- Injection detection (KSA-165 — separate ticket)
+- Runtime/DAST testing
+- Auto-remediation / code fixes
+- Authentication mechanism implementation
+
+### 1.3 Preliminary Requirements
+
+- KSA-164: Control Flow + Data Flow Analysis (CFG/DFG/Taint)
+- KSA-165: Injection Detection (shared pattern matching infrastructure)
+- KSA-162: Entry Point Detection (HTTP handler identification)
+- KSA-145: Tree-sitter Core (AST parsing)
+
+---
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+These three vulnerabilities represent common authorization/access control flaws:
+- SSRF: Server makes requests to attacker-controlled URLs (internal network access)
+- IDOR: Users access other users' data by manipulating object IDs
+- Missing Auth: Endpoints accidentally exposed without authentication
+
+Detection approach:
+1. Identify HTTP handlers (from KSA-162)
+2. Trace data flow from request parameters to dangerous operations
+3. Check for presence/absence of security controls (allowlists, authz checks)
+4. Report findings with CWE classification and trust-tier scoring
+
+### 2.2 List of User Stories / Use Cases
+
+| # | Story / Use Case | Priority | Source Ticket |
+|---|-----------------|----------|---------------|
+| 1 | As a security engineer, I want SSRF detected so that internal network exposure is prevented | MUST HAVE | KSA-166 |
+| 2 | As a security engineer, I want IDOR detected so that unauthorized data access is prevented | MUST HAVE | KSA-166 |
+| 3 | As a security engineer, I want missing auth detected so that unprotected endpoints are found | MUST HAVE | KSA-166 |
+| 4 | As a developer, I want trust-tier classification so that I can prioritize findings | SHOULD HAVE | KSA-166 |
+| 5 | As a developer, I want suppression support so that I can mark intentional patterns | SHOULD HAVE | KSA-166 |
+
+---
+
+### 2.3 Details of User Stories
+
+---
+
+#### Business Flow
+
+**Step 1:** Identify all HTTP handlers in codebase (from KSA-162)
+
+**Step 2:** For each handler, extract request parameters (path params, query, body)
+
+**Step 3:** Trace data flow from parameters through function body
+
+**Step 4:** SSRF check: does parameter reach outbound HTTP/fetch call without URL validation?
+
+**Step 5:** IDOR check: does parameter reach DB lookup without authorization check?
+
+**Step 6:** Missing Auth check: does handler lack auth middleware when siblings have it?
+
+**Step 7:** Classify findings by CWE, severity, trust-tier
+
+**Step 8:** Report via MCP tool with remediation guidance
+
+---
+
+#### STORY 1: SSRF Detection (CWE-918)
+
+> As a security engineer, I want SSRF detected so that internal network exposure is prevented.
+
+**Requirement Details:**
+
+**Detection Pattern:**
+1. Source: URL/hostname from request parameter (path, query, body, header)
+2. Sink: Outbound HTTP call (fetch, axios, requests, HttpClient, etc.)
+3. Vulnerable: source reaches sink WITHOUT passing through URL validation/allowlist
+4. Safe: URL validated against allowlist, or only path component used (not full URL)
+
+**Outbound HTTP Sinks (per language):**
+
+| Language | Sink Functions |
+|----------|---------------|
+| Python | requests.get/post, urllib.urlopen, httpx.get, aiohttp.ClientSession |
+| TypeScript/JS | fetch, axios.get/post, http.request, got, node-fetch |
+| Kotlin/Java | HttpClient.send, RestTemplate.exchange, OkHttp.newCall |
+| Go | http.Get, http.Post, http.NewRequest |
+
+**Trust-Tier Classification:**
+
+| Tier | Description | Severity |
+|------|-------------|----------|
+| T1 - Direct | User input → fetch(input) with no validation | Critical |
+| T2 - Partial | User input → URL construction → fetch (some validation) | High |
+| T3 - Indirect | User input → config lookup → fetch (indirect path) | Medium |
+
+**Acceptance Criteria:**
+
+1. Detects direct SSRF (user URL → outbound fetch) in all 6 languages
+2. Does NOT flag requests to hardcoded/config URLs
+3. Does NOT flag requests with proper URL allowlist validation
+4. Trust-tier classification applied to each finding
+5. Reports source, sink, and data flow path
+
+---
+
+#### STORY 2: IDOR Detection (CWE-639)
+
+> As a security engineer, I want IDOR detected so that unauthorized data access is prevented.
+
+**Requirement Details:**
+
+**Detection Pattern:**
+1. Source: Object ID from request parameter (path param like `/users/:id`, query param)
+2. Sink: Database/storage lookup using that ID
+3. Vulnerable: lookup happens WITHOUT authorization check (no ownership verification)
+4. Safe: authorization check between source and sink (e.g., `if user.id == param.id`)
+
+**Authorization Check Patterns:**
+
+| Pattern | Example | Classification |
+|---------|---------|---------------|
+| Ownership check | `if obj.owner_id == current_user.id` | Safe |
+| Role check | `@require_role("admin")` | Safe |
+| Policy check | `authorize(user, :read, resource)` | Safe |
+| No check | Direct `db.find(id)` from param | Vulnerable |
+
+**Acceptance Criteria:**
+
+1. Detects IDOR when path/query param used directly in DB lookup
+2. Recognizes common authorization patterns (ownership, role, policy)
+3. Does NOT flag admin-only endpoints (role-protected)
+4. Does NOT flag public resources (explicitly marked)
+5. Reports which authorization check is missing
+
+---
+
+#### STORY 3: REST Missing Auth Detection (CWE-862)
+
+> As a security engineer, I want missing auth detected so that unprotected endpoints are found.
+
+**Requirement Details:**
+
+**Detection Pattern:**
+1. Identify all handlers in a controller/router group
+2. Check which handlers have auth middleware/decorator
+3. If most handlers have auth but some don't → flag the unprotected ones
+4. Threshold: if >= 70% of sibling handlers have auth, flag those without
+
+**Auth Middleware Patterns (per framework):**
+
+| Framework | Auth Pattern |
+|-----------|-------------|
+| Express.js | `router.use(authMiddleware)`, `app.get('/path', auth, handler)` |
+| FastAPI | `@Depends(get_current_user)`, `Security(...)` |
+| Spring | `@PreAuthorize`, `@Secured`, SecurityConfig |
+| Ktor | `authenticate("auth") { ... }` |
+| Gin (Go) | `router.Use(AuthMiddleware())` |
+
+**Acceptance Criteria:**
+
+1. Detects handlers missing auth when siblings have it
+2. Configurable threshold (default 70%)
+3. Recognizes framework-specific auth patterns
+4. Does NOT flag intentionally public endpoints (health, docs, login)
+5. Reports which auth mechanism siblings use
+
+---
+
+#### STORY 4: Trust-Tier Classification
+
+> As a developer, I want trust-tier classification so that I can prioritize findings.
+
+**Acceptance Criteria:**
+
+1. Each finding classified as T1 (Critical), T2 (High), or T3 (Medium)
+2. Classification based on directness of data flow path
+3. Confidence score (0-100) based on analysis certainty
+4. Findings sortable by trust-tier
+
+---
+
+## 3. Dependencies
+
+| Dependency | Type | Related Ticket | Description |
+|------------|------|----------------|-------------|
+| CFG/DFG/Taint | System | KSA-164 | Data flow analysis infrastructure |
+| Injection Detection | System | KSA-165 | Shared pattern matching engine |
+| Entry Point Detection | System | KSA-162 | HTTP handler identification |
+| Tree-sitter Core | System | KSA-145 | AST parsing |
+
+---
+
+## 4. Stakeholders
+
+| Role | Name / Team | Responsibility |
+|------|-------------|----------------|
+| Product Owner | Development Team Lead | Approve requirements |
+| Security Engineer | Security Team | Define patterns, validate |
+| Developer | Code Intelligence Team | Implement detectors |
+| Users | Security teams, developers | Consume findings |
+
+---
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| High false positive rate for IDOR (custom auth patterns) | High | High | Extensible auth pattern registry |
+| Missing auth detection confused by global middleware | Medium | Medium | Analyze middleware chain, not just handler |
+| SSRF detection misses indirect URL construction | Medium | Medium | Multi-step taint tracking |
+| Framework-specific patterns incomplete | Medium | High | Start with top 5 frameworks, extensible |
+
+### 5.2 Assumptions
+
+- KSA-164 taint trace provides reliable source-to-sink paths
+- HTTP handler detection (KSA-162) correctly identifies all endpoints
+- Authorization patterns are recognizable from AST/code structure
+- Intra-procedural analysis catches 60%+ of real vulnerabilities
+
+---
+
+## 6. Non-Functional Requirements
+
+| Category | Requirement | Details |
+|----------|-------------|---------|
+| Performance | Single file scan < 3s | All 3 detectors |
+| Performance | Full project scan < 60s | 100-file project |
+| Accuracy | True positive >= 70% | For T1 findings |
+| Accuracy | False positive < 40% | With auth pattern recognition |
+| Extensibility | New auth patterns via config | No code change |
+
+---
+
+## 7. Related Tickets
+
+| Ticket Key | Summary | Status | Type | Relationship |
+|------------|---------|--------|------|--------------|
+| KSA-166 | [Security] SSRF + IDOR + Missing Auth Detection | To Do | Task | Main ticket |
+| KSA-144 | Code Intelligence v2 — Graph Engine + Static Analysis | To Do | Epic | Parent epic |
+| KSA-164 | [Security] Control Flow + Data Flow Analysis | To Do | Task | Prerequisite |
+| KSA-165 | [Security] Injection Detection | To Do | Task | Shared infrastructure |
+| KSA-162 | [Quality] Entry Point Detection | To Do | Task | HTTP handler identification |
+
+---
+
+## 8. Appendix
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| SSRF | Server-Side Request Forgery — server makes requests to attacker-controlled URLs |
+| IDOR | Insecure Direct Object Reference — accessing objects without authorization |
+| CWE-918 | SSRF classification in Common Weakness Enumeration |
+| CWE-639 | Authorization Bypass Through User-Controlled Key |
+| CWE-862 | Missing Authorization |
+| Trust-Tier | Confidence classification based on directness of vulnerability path |
+
+### Reference Documents
+
+| Document | Location |
+|----------|----------|
+| CodeGraph vs FEC Comparison | documents/CodeGraph-vs-FEC-Comparison.md |
+| KSA-164 BRD (CFG/DFG) | documents/KSA-164/BRD.md |
+| KSA-165 BRD (Injection) | documents/KSA-165/BRD.md |
+| OWASP SSRF Prevention | https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html |
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+|---|---------|-------|-------------------|
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case Diagram | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

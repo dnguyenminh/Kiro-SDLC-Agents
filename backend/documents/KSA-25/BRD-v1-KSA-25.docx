@@ -1,0 +1,368 @@
+# Business Requirements Document (BRD)
+
+## Code Intelligence System — KSA-25: [DB] Extend modules table schema for pattern metadata
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-25 |
+| Title | [DB] Extend modules table schema for pattern metadata |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-05-16 |
+| Status | Draft |
+
+## Author Tracking
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name - Position | Responsibility |
+| Author | BA Agent – Business Analyst | Create document |
+| Peer Reviewer | SA Agent – Solution Architect | Review document |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-16 | BA Agent | Initiate document — auto-generated from Jira ticket KSA-25 and user-provided context |
+
+## Sign-Off
+
+|  |  |
+| --- | --- |
+| Name | Signature and date |
+| SA Agent | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+| DEV Agent | ☐ I agree and confirm all criteria on this BRD as expected requirements |
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This change request extends the existing modules table in the Code Intelligence SQLite database to store pattern metadata detected during code indexing. The Code Intelligence system currently operates across 6 MCP server variants (Node.js, Python, Kotlin, Bash, PowerShell, CMD) that share a common SQLite schema stored at {workspace}/.code-intel/index.db.
+
+The current modules table stores basic module information (id, name, root\_path, language, file\_count, symbol\_count, last\_indexed) but does not persist the detected coding patterns (DI style, error handling, naming conventions, logging framework, testing framework, module purpose). These patterns are currently computed at runtime but lost between sessions.
+
+This CR adds 6 new columns to the modules table to persist pattern metadata, implements automatic schema migration on server startup, and ensures backward compatibility across all 6 MCP server variants.
+
+### 1.2 Out of Scope
+
+* Changes to the files, symbols, or any other existing tables
+* Changes to the pattern detection logic itself (detection algorithms remain unchanged)
+* Adding new MCP tools or endpoints
+* UI/frontend changes
+* Changes to the Knowledge Base ingestion pipeline
+* Performance optimization of existing queries
+* Adding indexes on the new columns (can be addressed in a future CR if needed)
+
+### 1.3 Preliminary Requirement
+
+* All 6 MCP server variants must be functional and passing tests before migration implementation
+* The existing SQLite database schema must be documented and consistent across all variants
+* Access to all 6 variant codebases (Node.js, Python, Kotlin, Bash, PowerShell, CMD)
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The schema extension follows a standard database migration pattern applied across multiple language implementations:
+
+flowchart TD
+ A[Server Startup] --> B{Check DB exists?}
+ B -->|No| C[Create DB with full schema including new columns]
+ B -->|Yes| D{Check if new columns exist?}
+ D -->|Yes| E[Continue normal operation]
+ D -->|No| F[Run ALTER TABLE migration]
+ F --> G[Add 6 new columns with NULL defaults]
+ G --> E
+ E --> H[Index workspace modules]
+ H --> I[Detect patterns per module]
+ I --> J[Write pattern metadata to modules table]
+ J --> K[Serve MCP requests with enriched data]
+
+![Use Case Diagram](data:image/png;base64...) [*Edit in draw.io*](diagrams/use-case.drawio)
+
+![Business Flow](data:image/png;base64...) [*Edit in draw.io*](diagrams/business-flow.drawio)
+
+### 2.2 List of User Stories / Use Cases
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Story / Use Case / Epic | Priority | Source Ticket |
+| 1 | As a Code Intelligence server, I want to persist detected pattern metadata in the modules table so that patterns survive between sessions without re-detection | MUST HAVE | KSA-25 |
+| 2 | As a Code Intelligence server, I want automatic schema migration on startup so that existing databases are upgraded transparently | MUST HAVE | KSA-25 |
+| 3 | As a Code Intelligence server, I want backward-compatible schema changes so that older databases remain readable without data loss | MUST HAVE | KSA-25 |
+| 4 | As a DEV agent, I want all 6 MCP server variants to use the same extended schema so that behavior is consistent regardless of which variant is running | MUST HAVE | KSA-25 |
+
+### 2.3 Details of User Stories
+
+#### Business Flow
+
+**Step 1:** MCP server starts up and opens (or creates) the SQLite database at {workspace}/.code-intel/index.db
+
+**Step 2:** Server checks if the modules table exists. If not, creates it with the full schema (including new pattern columns).
+
+**Step 3:** If the table exists, server checks whether the new pattern columns are present (e.g., by querying PRAGMA table\_info(modules) or attempting a SELECT on the new columns).
+
+**Step 4:** If columns are missing, server executes ALTER TABLE modules ADD COLUMN for each missing column with appropriate NULL defaults.
+
+**Step 5:** Server proceeds with normal indexing operations. During module discovery and pattern detection, the detected patterns are written to the new columns.
+
+**Step 6:** On subsequent queries (e.g., get\_module\_info MCP tool), the pattern metadata is included in the response, providing richer context to AI agents.
+
+**Note:** The migration must be idempotent — running it multiple times on an already-migrated database must be safe (no errors, no data loss).
+
+#### STORY 1: Persist Pattern Metadata in Modules Table
+
+As a Code Intelligence server, I want to persist detected pattern metadata in the modules table so that patterns survive between sessions without re-detection.
+
+**Requirement Details:**
+
+1. Add 6 new columns to the modules table to store pattern metadata detected during code indexing
+2. Each column stores a text value representing the detected pattern for that category
+3. All new columns must be nullable (NULL default) to maintain backward compatibility
+4. Pattern values are written during the indexing phase after pattern detection completes
+5. Pattern values are read when serving module information via MCP tools
+
+**Data Fields:**
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Field | Type | Required | Description | Example |
+| di\_style | TEXT | No | Dependency injection style detected in the module | “constructor injection”, “field injection”, “none” |
+| error\_handling | TEXT | No | Error handling pattern used in the module | “try-catch”, “Result type”, “exception handler”, “unknown” |
+| naming\_convention | TEXT | No | Naming conventions detected from class/function names | "*Controller,* Service, \*Repository“,”unknown" |
+| logging\_framework | TEXT | No | Logging framework detected from imports | “SLF4J”, “Log4j”, “console.log”, “unknown” |
+| testing\_framework | TEXT | No | Testing framework detected from imports | “JUnit”, “Jest”, “pytest”, “vitest”, “unknown” |
+| purpose | TEXT | No | Inferred purpose/responsibility of the module | “API layer”, “Business logic”, “Data access”, “Configuration” |
+
+**Acceptance Criteria:**
+
+1. GIVEN a fresh workspace with no existing database WHEN the MCP server starts THEN the modules table is created with all 6 new columns included in the schema
+2. GIVEN an existing database without the new columns WHEN the MCP server starts THEN the 6 new columns are added via ALTER TABLE without affecting existing data
+3. GIVEN an existing database that already has the new columns WHEN the MCP server starts THEN no migration is attempted and no errors occur
+4. GIVEN a module has been indexed with pattern detection WHEN the module record is written/updated THEN all 6 pattern fields are populated with detected values
+5. GIVEN a module where a pattern cannot be detected WHEN the record is written THEN the corresponding column contains NULL or “unknown”
+
+**Validation Rules:**
+
+* Column values must be TEXT type (no length restriction in SQLite)
+* NULL is acceptable for all new columns (no NOT NULL constraint)
+* Values should be human-readable strings (not encoded/serialized objects)
+* Maximum practical length: 255 characters per field (enforced at application level, not DB level)
+
+**Error Handling:**
+
+* If ALTER TABLE fails (e.g., disk full, permissions): Log error with full context, continue server startup without pattern persistence (graceful degradation)
+* If PRAGMA table\_info fails: Assume columns don’t exist, attempt migration
+* If writing pattern data fails for a specific module: Log warning, continue with other modules
+
+#### STORY 2: Automatic Schema Migration on Startup
+
+As a Code Intelligence server, I want automatic schema migration on startup so that existing databases are upgraded transparently.
+
+**Requirement Details:**
+
+1. Schema migration runs automatically during server initialization — no manual intervention required
+2. Migration checks current schema state before applying changes (idempotent)
+3. Migration uses SQLite’s ALTER TABLE ADD COLUMN which is safe and non-destructive
+4. Migration logic must be implemented in all 6 server variants (Node.js, Python, Kotlin, Bash, PowerShell, CMD)
+5. Migration should complete in under 100ms for typical databases (< 1000 modules)
+
+**Acceptance Criteria:**
+
+1. GIVEN any of the 6 MCP server variants WHEN the server starts with an old-schema database THEN migration runs automatically without user action
+2. GIVEN the migration has already been applied WHEN the server restarts THEN no duplicate column errors occur
+3. GIVEN the migration is running WHEN it completes THEN a log message confirms successful migration with the number of columns added
+4. GIVEN the migration fails WHEN the server continues startup THEN the server operates in degraded mode (reads existing columns, skips pattern writes)
+
+**Validation Rules:**
+
+* Migration must use ALTER TABLE modules ADD COLUMN <name> TEXT DEFAULT NULL syntax
+* Migration must check column existence before adding (via PRAGMA table\_info or try/catch on ALTER)
+* Migration must not use transactions that could lock the database for extended periods
+* Migration must be safe to run concurrently (multiple server instances starting simultaneously)
+
+**Error Handling:**
+
+* SQLite “duplicate column name” error: Catch silently — column already exists, migration not needed
+* Database locked error: Retry up to 3 times with 100ms backoff, then log warning and continue without migration
+* Database file corruption: Log error, do not attempt migration, alert user
+
+#### STORY 3: Backward Compatibility
+
+As a Code Intelligence server, I want backward-compatible schema changes so that older databases remain readable without data loss.
+
+**Requirement Details:**
+
+1. Existing data in the modules table must not be modified or deleted during migration
+2. New columns use NULL defaults — existing rows automatically have NULL for new columns
+3. Application code must handle NULL values gracefully when reading pattern columns
+4. Older server versions (without migration code) must still be able to read the database (they simply ignore unknown columns)
+5. No breaking changes to existing MCP tool responses — new fields are additive only
+
+**Acceptance Criteria:**
+
+1. GIVEN a database with existing module records WHEN migration adds new columns THEN all existing records retain their original values unchanged
+2. GIVEN a module record with NULL pattern columns WHEN the MCP tool returns module info THEN NULL fields are either omitted from the response or returned as null/empty
+3. GIVEN a newer database (with pattern columns) WHEN opened by an older server version (without migration code) THEN the older server reads existing columns without error
+4. GIVEN the MCP tool get\_module\_info response WHEN pattern columns are populated THEN the response includes the new fields as additional properties
+
+**Validation Rules:**
+
+* No NOT NULL constraints on new columns
+* No DEFAULT values other than NULL (to distinguish “not yet detected” from “detected as empty”)
+* No foreign key constraints on new columns
+* No column renames or type changes to existing columns
+
+#### STORY 4: Consistent Schema Across All 6 Variants
+
+As a DEV agent, I want all 6 MCP server variants to use the same extended schema so that behavior is consistent regardless of which variant is running.
+
+**Requirement Details:**
+
+1. All 6 variants (Node.js, Python, Kotlin, Bash, PowerShell, CMD) must implement the same schema extension
+2. Column names, types, and defaults must be identical across all implementations
+3. Migration logic must follow the same algorithm (check → add if missing → log)
+4. Each variant’s schema file must be updated:
+   * Node.js: db/schema.ts
+   * Python: db.py
+   * Kotlin: Schema.kt
+   * Bash: lib/db.sh
+   * PowerShell: code-intel-db.ps1
+   * CMD: code-intel-scan.cmd
+
+**Acceptance Criteria:**
+
+1. GIVEN any of the 6 variants WHEN creating a fresh database THEN the resulting schema is byte-for-byte identical (same column order, types, defaults)
+2. GIVEN a database created by variant A WHEN opened by variant B THEN variant B can read and write all columns including pattern metadata
+3. GIVEN all 6 variants WHEN their schema definitions are compared THEN the column definitions match exactly
+4. GIVEN the migration runs on variant X WHEN the same database is opened by variant Y THEN variant Y detects no migration is needed
+
+**Validation Rules:**
+
+* Column order in CREATE TABLE must be: id, name, root\_path, language, file\_count, symbol\_count, last\_indexed, di\_style, error\_handling, naming\_convention, logging\_framework, testing\_framework, purpose
+* All variants must use TEXT type for new columns (not VARCHAR, NVARCHAR, etc.)
+* All variants must use DEFAULT NULL (not DEFAULT ’’ or DEFAULT ‘unknown’)
+
+## 3. Dependencies
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Dependency | Type | Related Ticket | Description |
+| SQLite Database Engine | System | N/A | All 6 variants must support SQLite ALTER TABLE ADD COLUMN |
+| Existing modules table | System | N/A | The current schema (id, name, root\_path, language, file\_count, symbol\_count, last\_indexed) must exist |
+| Pattern Detection Logic | System | N/A | The existing pattern detection functions (detectDiStyle, detectErrorHandling, etc.) provide values for the new columns |
+| All 6 MCP Server Variants | Infrastructure | N/A | Node.js, Python, Kotlin, Bash, PowerShell, CMD codebases must all be updated |
+
+## 4. Stakeholders
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Role | Name / Team | Responsibility | Source |
+| Solution Architect | SA Agent | Design schema migration strategy, review implementation | Ticket context |
+| Developer | DEV Agent | Implement migration in all 6 variants | Ticket context |
+| Quality Assurance | QA Agent | Verify backward compatibility and cross-variant consistency | Ticket context |
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Risk | Impact | Likelihood | Mitigation |
+| Schema migration fails on corrupted database | Medium | Low | Implement graceful degradation — server continues without pattern persistence |
+| Concurrent server instances cause migration race condition | Low | Medium | SQLite handles concurrent ALTER TABLE safely; use try/catch for “duplicate column” errors |
+| Inconsistent implementation across 6 variants | High | Medium | Define exact SQL statements in FSD; QA cross-variant testing |
+| Large databases slow down startup due to migration check | Low | Low | PRAGMA table\_info is O(1) — negligible overhead |
+| Future schema changes conflict with these columns | Low | Low | Use a versioned migration approach; document column semantics clearly |
+
+### 5.2 Assumptions
+
+* All 6 MCP server variants currently use the same modules table schema (id, name, root\_path, language, file\_count, symbol\_count, last\_indexed)
+* SQLite version used by all variants supports ALTER TABLE ADD COLUMN (available since SQLite 3.2.0, 2005)
+* The database file is stored locally at {workspace}/.code-intel/index.db and is not shared across network
+* Pattern detection logic already exists and produces string values suitable for TEXT columns
+* No other pending CRs modify the modules table schema simultaneously
+
+## 6. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| Category | Requirement | Details |
+| Performance | Migration must complete in < 100ms | ALTER TABLE ADD COLUMN in SQLite is O(1) — modifies schema only, not data |
+| Performance | Pattern column reads must not degrade query performance | No indexes required initially; columns are read alongside existing data |
+| Reliability | Migration must be idempotent | Running migration multiple times produces no errors and no data changes |
+| Compatibility | Backward compatible with older server versions | Older versions ignore unknown columns; no breaking changes |
+| Maintainability | Schema definition centralized per variant | Each variant has one authoritative schema file |
+| Portability | Same schema across all 6 language implementations | Identical SQL DDL regardless of host language |
+
+## 7. Related Tickets
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Ticket Key | Summary | Status | Type | Relationship |
+| KSA-25 | [DB] Extend modules table schema for pattern metadata | In Progress | Task | Main ticket |
+
+## 8. Appendix
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| MCP | Model Context Protocol — the protocol used by Code Intelligence servers to communicate with AI agents |
+| DI Style | Dependency Injection Style — how dependencies are provided to classes (constructor injection, field injection, none) |
+| Pattern Metadata | Coding patterns detected by static analysis: DI style, error handling, naming conventions, logging, testing, purpose |
+| Schema Migration | The process of updating a database schema to a new version while preserving existing data |
+| Variant | One of the 6 language implementations of the Code Intelligence MCP server |
+
+### Reference Documents
+
+|  |  |
+| --- | --- |
+| Document | Link / Location |
+| Node.js Schema | .analysis/code-intelligence/scripts/nodejs/src/types.ts (ModuleData, DetectedPatterns interfaces) |
+| Full Indexer (reference implementation) | .analysis/code-intelligence/scripts/nodejs/src/full-indexer.ts |
+| SQLite ALTER TABLE docs | https://www.sqlite.org/lang\_altertable.html |
+
+### Current Schema (Before Migration)
+
+CREATE TABLE modules (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL,
+ root\_path TEXT NOT NULL,
+ language TEXT,
+ file\_count INTEGER DEFAULT 0,
+ symbol\_count INTEGER DEFAULT 0,
+ last\_indexed TEXT
+);
+
+### Target Schema (After Migration)
+
+CREATE TABLE modules (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL,
+ root\_path TEXT NOT NULL,
+ language TEXT,
+ file\_count INTEGER DEFAULT 0,
+ symbol\_count INTEGER DEFAULT 0,
+ last\_indexed TEXT,
+ di\_style TEXT DEFAULT NULL,
+ error\_handling TEXT DEFAULT NULL,
+ naming\_convention TEXT DEFAULT NULL,
+ logging\_framework TEXT DEFAULT NULL,
+ testing\_framework TEXT DEFAULT NULL,
+ purpose TEXT DEFAULT NULL
+);
+
+### Migration SQL
+
+ALTER TABLE modules ADD COLUMN di\_style TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN error\_handling TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN naming\_convention TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN logging\_framework TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN testing\_framework TEXT DEFAULT NULL;
+ALTER TABLE modules ADD COLUMN purpose TEXT DEFAULT NULL;

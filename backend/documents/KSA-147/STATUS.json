@@ -1,0 +1,20 @@
+```json
+{
+  "ticket": "KSA-147",
+  "currentPhase": "done",
+  "phases": {
+    "requirements": { "status": "done", "file": "BRD.md", "version": 1, "completedAt": "2026-06-11T15:37:05Z" },
+    "specification": { "status": "done", "file": "FSD.md", "version": 1, "completedAt": "2026-06-11T15:37:05Z" },
+    "design": { "status": "done", "file": "TDD.md", "version": 1, "completedAt": "2026-06-11T15:37:05Z" },
+    "feedback_loop": { "status": "done", "iterations": 0, "maxIterations": 5 },
+    "test_planning": { "status": "done", "completedAt": "2026-06-11T15:37:05Z" },
+    "implementation": { "status": "done", "completedAt": "2026-06-11T15:37:05Z" },
+    "testing": { "status": "done", "completedAt": "2026-06-11T15:37:05Z" },
+    "deployment": { "status": "done", "completedAt": "2026-06-11T15:37:05Z" }
+  },
+  "lastUpdated": "2026-06-11T15:37:05Z",
+  "batchClosed": true,
+  "batchClosedReason": "Legacy backlog cleanup - docs in history folder, all phases marked done per user approval"
+}
+
+```

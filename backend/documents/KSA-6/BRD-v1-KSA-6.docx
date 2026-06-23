@@ -1,0 +1,401 @@
+# Business Requirements Document (BRD)
+
+## Kiro SDLC Agents Extension — KSA-6: Bundled Resources — Agents, Steering, Hooks, Templates
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-6 |
+| Title | Bundled Resources — Agents, Steering, Hooks, Templates |
+| Parent Epic | KSA-1 (Kiro SDLC Agents Extension) |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2026-05-10 |
+| Status | Draft |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-10 | BA Agent | Initial document — auto-generated from Jira ticket KSA-6 |
+
+## 1. Introduction
+
+### 1.1 Scope
+
+This task covers the bundling of all SDLC pipeline resources into the VS Code extension package (kiro-sdlc-agents). The extension must include agent definitions, steering rules, hooks, and document templates that are copied from the source project (MCPOrchestration) into the extension’s resources/ directory during the build process, and then injected into target workspaces when users run the extension commands.
+
+The bundled resources form the core value of the extension — they provide a complete multi-agent SDLC pipeline (BA, SA, QA, DEV, DevOps, UI, Security, SM, TA) that can be injected into any Kiro IDE workspace.
+
+### 1.2 Out of Scope
+
+* Extension TypeScript source code logic (covered by other KSA tickets)
+* Code Intelligence indexer scripts (separate component)
+* Extension marketplace publishing workflow
+* Runtime behavior of agents after injection (agent execution is Kiro IDE responsibility)
+
+### 1.3 Preliminary Requirements
+
+* Source project (MCPOrchestration) must have all agent, steering, hook, and template files finalized
+* Build scripts (copy-resources.js, gen-checksums.js) must be functional
+* Extension packaging tool (vsce) must be available
+
+## 2. Business Requirements
+
+### 2.1 High Level Process Map
+
+The bundled resources flow follows this lifecycle:
+
+1. **Source** — Agent/steering/hook/template files are authored in the MCPOrchestration project
+2. **Sync** — sync-from-source.ps1 copies changed files to FEC\_CR\_Builder workspace
+3. **Bundle** — copy-resources.js copies files from workspace root into kiro-sdlc-agents/resources/
+4. **Checksum** — gen-checksums.js generates .sdlc-checksums.json manifest with SHA-256 hashes
+5. **Package** — vsce package bundles everything into a .vsix file
+6. **Inject** — Extension commands copy resources from resources/ into target workspace
+
+### 2.2 List of User Stories
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Story / Use Case | Priority | Source Ticket |
+| 1 | As a developer, I want all 9 SDLC agents bundled in the extension so that I can inject a complete multi-agent pipeline into my workspace | MUST HAVE | KSA-6 |
+| 2 | As a developer, I want all 9 steering rules bundled so that injected agents follow consistent coding standards and workflows | MUST HAVE | KSA-6 |
+| 3 | As a developer, I want all 8 hooks bundled so that code intelligence indexing and draw.io validation happen automatically | MUST HAVE | KSA-6 |
+| 4 | As a developer, I want all document templates bundled so that agents can generate standardized SDLC documents | MUST HAVE | KSA-6 |
+| 5 | As a developer, I want bundled resources to match the source project exactly so that I get the latest agent capabilities | MUST HAVE | KSA-6 |
+| 6 | As a developer, I want a checksum manifest so that the extension can detect if I’ve customized any files | SHOULD HAVE | KSA-6 |
+
+### 2.3 Details of User Stories
+
+#### Business Flow
+
+**Step 1:** Developer installs the kiro-sdlc-agents extension in VS Code/Kiro IDE
+
+**Step 2:** Developer opens a workspace and runs “Kiro SDLC: Inject All Agents” command
+
+**Step 3:** Extension reads bundled resources from its resources/ directory
+
+**Step 4:** Extension copies agents to .kiro/agents/, steering to .kiro/steering/, hooks to .kiro/hooks/, templates to documents/templates/
+
+**Step 5:** Extension generates .kiro/.sdlc-version file tracking the injected version
+
+**Step 6:** Developer can now use all SDLC agents in their workspace
+
+**Note:** The “Update” command detects user modifications via checksum comparison and offers skip/backup/overwrite options.
+
+#### STORY 1: 9 Agents Bundled and Match Source
+
+As a developer, I want all 9 SDLC agents bundled in the extension so that I can inject a complete multi-agent pipeline into my workspace.
+
+**Requirement Details:**
+
+1. The extension MUST bundle exactly 9 agent definitions, each consisting of a .json config file and a .md description file
+2. Each agent MUST also have a detailed prompt file in agents/prompts/{agent-name}.md
+3. All agent files MUST match the source project (MCPOrchestration/.kiro/agents/) byte-for-byte after sync
+
+**Agent Inventory:**
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Agent ID | JSON Config | Description | Prompt |
+| 1 | ba-agent | ba-agent.json | ba-agent.md | prompts/ba-agent.md |
+| 2 | dev-agent | dev-agent.json | dev-agent.md | prompts/dev-agent.md |
+| 3 | devops-agent | devops-agent.json | devops-agent.md | prompts/devops-agent.md |
+| 4 | qa-agent | qa-agent.json | qa-agent.md | prompts/qa-agent.md |
+| 5 | sa-agent | sa-agent.json | sa-agent.md | prompts/sa-agent.md |
+| 6 | security-agent | security-agent.json | security-agent.md | prompts/security-agent.md |
+| 7 | sm-agent | sm-agent.json | sm-agent.md | prompts/sm-agent.md |
+| 8 | ta-agent | ta-agent.json | ta-agent.md | prompts/ta-agent.md |
+| 9 | ui-agent | ui-agent.json | ui-agent.md | prompts/ui-agent.md |
+
+**Acceptance Criteria:**
+
+1. All 9 agents present in resources/.kiro/agents/ directory
+2. Each agent has both .json and .md files
+3. All 9 prompt files present in resources/.kiro/agents/prompts/
+4. SHA-256 checksums in .sdlc-checksums.json match actual file hashes
+5. Running copy-resources.js from source produces identical files
+
+#### STORY 2: 9 Steering Files Bundled
+
+As a developer, I want all 9 steering rules bundled so that injected agents follow consistent coding standards and workflows.
+
+**Requirement Details:**
+
+1. The extension MUST bundle exactly 9 steering rule files in .kiro/steering/
+2. Steering files provide workspace-level rules that guide all agent behavior
+3. Files MUST match source project
+
+**Steering File Inventory:**
+
+|  |  |  |
+| --- | --- | --- |
+| # | File | Purpose |
+| 1 | agent-self-learning.md | Agent learning and adaptation rules |
+| 2 | backend-structure.md | Backend project structure conventions |
+| 3 | code-intelligence.md | Code intelligence indexing rules |
+| 4 | code-standards.md | General code standards (all languages) |
+| 5 | drawio.md | Draw.io diagram creation rules |
+| 6 | file-writing.md | File writing conventions |
+| 7 | frontend-structure.md | Frontend project structure conventions |
+| 8 | jira-workflow.md | Jira workflow integration rules |
+| 9 | kotlin-code-standards.md | Kotlin-specific code standards |
+
+**Acceptance Criteria:**
+
+1. All 9 steering files present in resources/.kiro/steering/
+2. Each file has meaningful content (not empty/placeholder)
+3. SHA-256 checksums match in manifest
+
+#### STORY 3: 8 Hooks Bundled
+
+As a developer, I want all 8 hooks bundled so that code intelligence indexing and draw.io validation happen automatically.
+
+**Requirement Details:**
+
+1. The extension MUST bundle exactly 8 hook files in .kiro/hooks/
+2. Hooks provide automated triggers for file events (create, edit, delete)
+3. Hook types: Code Intelligence indexing (4 hooks) + Draw.io validation (3 hooks) + File watcher (1 hook)
+
+**Hook Inventory:**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | File | Type | Trigger |
+| 1 | code-index-create.json | Code Intelligence | File created |
+| 2 | code-index-delete.json | Code Intelligence | File deleted |
+| 3 | code-index-edit.json | Code Intelligence | File edited |
+| 4 | code-index-full.json | Code Intelligence | Full re-index |
+| 5 | file-watcher.sh | File Watcher | File system events |
+| 6 | validate-drawio-edit.kiro.hook | Draw.io Validation | .drawio file edited |
+| 7 | validate-drawio-xml.kiro.hook | Draw.io Validation | .drawio XML validation |
+| 8 | validate-drawio.sh | Draw.io Validation | Shell-based validation |
+
+**Acceptance Criteria:**
+
+1. All 8 hook files present in resources/.kiro/hooks/
+2. JSON hooks have valid JSON structure
+3. Shell scripts have proper shebang and are executable
+4. .kiro.hook files follow Kiro hook format
+5. SHA-256 checksums match in manifest
+
+#### STORY 4: Document Templates Bundled
+
+As a developer, I want all document templates bundled so that agents can generate standardized SDLC documents.
+
+**Requirement Details:**
+
+1. The extension MUST bundle document templates in documents/templates/
+2. Templates cover the full SDLC lifecycle: requirements, specification, design, testing, deployment
+3. Current source has 12 templates; acceptance criteria specifies 10 (minimum required for core SDLC pipeline)
+
+**Template Inventory:**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | File | SDLC Phase | Required |
+| 1 | BRD-TEMPLATE.md | Requirements | Yes |
+| 2 | FSD-TEMPLATE.md | Specification | Yes |
+| 3 | TDD-TEMPLATE.md | Design | Yes |
+| 4 | STP-TEMPLATE.md | Test Planning | Yes |
+| 5 | STC-TEMPLATE.md | Test Cases | Yes |
+| 6 | DPG-TEMPLATE.md | Deployment | Yes |
+| 7 | RLN-TEMPLATE.md | Release Notes | Yes |
+| 8 | UG-TEMPLATE.md | User Guide | Yes |
+| 9 | TEST-REPORT-TEMPLATE.md | Test Reporting | Yes |
+| 10 | SECURITY-REPORT-TEMPLATE.md | Security | Yes |
+| 11 | DESIGN-SYSTEM.md | UI Design | Optional |
+| 12 | UI-SPEC-TEMPLATE.md | UI Specification | Optional |
+
+**Acceptance Criteria:**
+
+1. At minimum 10 core templates present in resources/documents/templates/
+2. All templates have proper markdown structure with placeholder variables
+3. Templates are usable by agents without modification
+4. SHA-256 checksums match in manifest
+
+#### STORY 5: Resources Match Source
+
+As a developer, I want bundled resources to match the source project exactly so that I get the latest agent capabilities.
+
+**Requirement Details:**
+
+1. The copy-resources.js build script MUST copy files from workspace root to resources/
+2. The sync-from-source.ps1 script MUST sync from MCPOrchestration to FEC\_CR\_Builder
+3. After running both scripts, bundled resources MUST be byte-identical to source
+
+**Acceptance Criteria:**
+
+1. copy-resources.js copies all mapped paths correctly
+2. No files are missed or extra files included
+3. Skip rules exclude: node\_modules, \_\_pycache\_\_, out, dist, .git, settings, mcp.json
+4. Running gen-checksums.js after copy produces valid manifest
+
+#### STORY 6: Checksum Manifest for Modification Detection
+
+As a developer, I want a checksum manifest so that the extension can detect if I’ve customized any files.
+
+**Requirement Details:**
+
+1. .sdlc-checksums.json MUST contain SHA-256 hash for every bundled file
+2. Manifest includes version number and generation timestamp
+3. Extension uses manifest to detect user modifications during “Update” command
+
+**Acceptance Criteria:**
+
+1. Manifest covers all files in resources/ (agents, steering, hooks, templates)
+2. Each entry has: hash, version, injectedAt fields
+3. Hashes are SHA-256 (64 hex characters)
+4. Manifest version matches package.json version
+
+## 3. Dependencies
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Dependency | Type | Related Ticket | Description |
+| MCPOrchestration source | System | N/A | Source of truth for all agent/steering/hook/template files |
+| Node.js 18+ | Infrastructure | N/A | Required for build scripts |
+| vsce CLI | Infrastructure | N/A | Required for VSIX packaging |
+| KSA-1 (Epic) | System | KSA-1 | Parent epic for the extension |
+| KSA-2 (Extension Scaffold) | System | KSA-2 | Extension project structure must exist |
+| KSA-4 (Injection Logic) | System | KSA-4 | Injection commands must work |
+
+## 4. Stakeholders
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name / Team | Responsibility |
+| Product Owner | Duc Nguyen | Define acceptance criteria, approve deliverables |
+| Developer | Extension Dev Team | Implement build scripts, maintain resources |
+| End User | Any Kiro IDE developer | Install extension, inject agents into workspace |
+
+## 5. Risks and Assumptions
+
+### 5.1 Risks
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Risk | Impact | Likelihood | Mitigation |
+| Source files change frequently causing bundle to be outdated | Medium | High | Automated sync script + CI/CD pipeline |
+| Large bundle size slows extension install | Low | Low | Resources are text files (small), exclude binaries |
+| User customizations lost during update | High | Medium | Checksum detection + backup option in Update command |
+| Agent prompt files too large for Kiro context window | Medium | Low | Keep prompts focused, split if needed |
+
+### 5.2 Assumptions
+
+* Source project (MCPOrchestration) is the single source of truth for all resources
+* All 9 agents are stable and ready for distribution
+* Kiro IDE supports .kiro/agents/, .kiro/steering/, .kiro/hooks/ directory conventions
+* Document templates use {PLACEHOLDER} variable syntax that agents can fill
+
+## 6. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| Category | Requirement | Details |
+| Build Time | Bundle generation < 5 seconds | copy-resources.js + gen-checksums.js combined |
+| Package Size | VSIX < 5 MB | Text-only resources, no binaries in core bundle |
+| Integrity | SHA-256 checksums for all files | Tamper detection via bundled manifest |
+| Compatibility | VS Code 1.85+ | Minimum engine version |
+| Maintainability | Single sync script updates all resources | sync-from-source.ps1 handles all mappings |
+
+## 7. Related Tickets
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Ticket Key | Summary | Status | Type | Relationship |
+| KSA-6 | Bundled Resources — Agents, Steering, Hooks, Templates | In Progress | Task | Main ticket |
+| KSA-1 | Kiro SDLC Agents Extension | To Do | Epic | Parent epic |
+| KSA-2 | Extension Scaffold & Package.json | Done | Task | Prerequisite |
+| KSA-4 | Injection Logic — Copy Resources to Workspace | Done | Task | Prerequisite |
+
+## 8. Appendix
+
+### Resource Directory Structure
+
+kiro-sdlc-agents/resources/
+├── .sdlc-checksums.json ← Integrity manifest
+├── .kiro/
+│ ├── agents/
+│ │ ├── ba-agent.json + .md
+│ │ ├── dev-agent.json + .md
+│ │ ├── devops-agent.json + .md
+│ │ ├── qa-agent.json + .md
+│ │ ├── sa-agent.json + .md
+│ │ ├── security-agent.json + .md
+│ │ ├── sm-agent.json + .md
+│ │ ├── ta-agent.json + .md
+│ │ ├── ui-agent.json + .md
+│ │ └── prompts/
+│ │ ├── ba-agent.md
+│ │ ├── dev-agent.md
+│ │ ├── devops-agent.md
+│ │ ├── qa-agent.md
+│ │ ├── sa-agent.md
+│ │ ├── security-agent.md
+│ │ ├── sm-agent.md
+│ │ ├── ta-agent.md
+│ │ └── ui-agent.md
+│ ├── steering/
+│ │ ├── agent-self-learning.md
+│ │ ├── backend-structure.md
+│ │ ├── code-intelligence.md
+│ │ ├── code-standards.md
+│ │ ├── drawio.md
+│ │ ├── file-writing.md
+│ │ ├── frontend-structure.md
+│ │ ├── jira-workflow.md
+│ │ └── kotlin-code-standards.md
+│ └── hooks/
+│ ├── code-index-create.json
+│ ├── code-index-delete.json
+│ ├── code-index-edit.json
+│ ├── code-index-full.json
+│ ├── file-watcher.sh
+│ ├── validate-drawio-edit.kiro.hook
+│ ├── validate-drawio-xml.kiro.hook
+│ └── validate-drawio.sh
+├── documents/
+│ └── templates/
+│ ├── BRD-TEMPLATE.md
+│ ├── FSD-TEMPLATE.md
+│ ├── TDD-TEMPLATE.md
+│ ├── STP-TEMPLATE.md
+│ ├── STC-TEMPLATE.md
+│ ├── DPG-TEMPLATE.md
+│ ├── RLN-TEMPLATE.md
+│ ├── UG-TEMPLATE.md
+│ ├── TEST-REPORT-TEMPLATE.md
+│ ├── SECURITY-REPORT-TEMPLATE.md
+│ ├── DESIGN-SYSTEM.md
+│ └── UI-SPEC-TEMPLATE.md
+└── .analysis/
+ └── code-intelligence/
+ └── index-config.json
+
+### Build Pipeline
+
+sync-from-source.ps1 → copy-resources.js → gen-checksums.js → tsc → vsce package
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| Agent | An AI agent definition (JSON config + MD prompt) that performs a specific SDLC role |
+| Steering | Workspace-level rules that guide agent behavior across all interactions |
+| Hook | An automated trigger that fires on file system events |
+| Template | A markdown document template with placeholders for agent-generated content |
+| Injection | The process of copying bundled resources into a target workspace |
+| Manifest | The .sdlc-checksums.json file containing SHA-256 hashes of all bundled files |
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Business Flow | [business-flow.png](diagrams/business-flow.png) | [business-flow.drawio](diagrams/business-flow.drawio) |
+| 2 | Use Case | [use-case.png](diagrams/use-case.png) | [use-case.drawio](diagrams/use-case.drawio) |

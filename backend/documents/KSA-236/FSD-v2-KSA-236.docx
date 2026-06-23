@@ -1,0 +1,446 @@
+# Functional Specification Document (FSD)
+
+## kiro-ts — KSA-236: tool\_use\_id mismatch causes 400 on ReAct tool continuation
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-236 |
+| Title | kiro-ts: tool\_use\_id mismatch causes 400 on ReAct tool continuation |
+| Author | BA Agent |
+| Version | 1.0 |
+| Date | 2025-07-14 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-236.docx |
+
+## Revision History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2025-07-14 | BA Agent | Initiate document from BRD and Jira ticket KSA-236 |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional behavior required to fix the tool\_use\_id mismatch bug in the kiro-ts Anthropic converter module. It defines the use cases, data flow, processing logic, and acceptance criteria that developers will implement to restore the ReAct tool-calling loop in the Chat Panel.
+
+### 1.2 Scope
+
+* Fix the Anthropic converter to pass through tool\_use\_id values without transformation
+* Ensure conversation history stores the same ID that is streamed to the client
+* Ensure continuation requests can match tool results to history entries
+* Add diagnostic logging for tool\_use\_id at transformation boundaries
+* Add improved error reporting when ID mismatch occurs
+
+### 1.3 Definitions & Acronyms
+
+| Term | Definition |
+| --- | --- |
+| ReAct Loop | Reasoning + Acting pattern: model reasons, calls tool, observes result, continues until done |
+| tool\_use\_id | Unique identifier assigned by Kiro Q API to each tool invocation in a response |
+| Continuation Request | Follow-up HTTP request containing tool execution results, sent after local tool execution |
+| Anthropic Converter | Module in kiro-ts that transforms between Kiro Q internal message format and Anthropic-compatible streaming format |
+| Orphan tool\_result | A tool result message whose toolUseId cannot be matched to any stored tool\_use\_id in conversation history |
+| Conversation History | In-memory message list maintained by kiro-ts for multi-turn context management |
+| Streaming Response | Server-Sent Events (SSE) stream sent from kiro-ts to VS Code extension client |
+
+### 1.4 References
+
+| Document | Location |
+| --- | --- |
+| BRD | documents/KSA-236/BRD.md |
+| Source File (converter) | kiro-ts/src/anthropic/converter.ts |
+| Source File (handlers) | kiro-ts/src/anthropic/handlers.ts |
+
+## 2. System Overview
+
+### 2.1 System Context Diagram
+
+System Context [*Edit in draw.io*](diagrams/system-context.drawio)
+
+The kiro-ts service operates as a middleware proxy between the VS Code extension (client) and the Kiro Q API (backend). Key interactions:
+
+* **VS Code Extension**: Sends chatWithTools requests, receives SSE streaming responses, sends continuation requests with tool results
+* **Kiro Q API**: Receives formatted requests, returns tool\_use responses with unique tool\_use\_id values
+* **Conversation History (in-memory)**: Stores assistant messages including tool\_use blocks for multi-turn correlation
+
+### 2.2 System Architecture
+
+The fix targets the **Anthropic Converter** module within kiro-ts:
+
+VS Code Extension <──SSE──> kiro-ts (handlers.ts)
+ │
+ ├── Anthropic Converter (converter.ts) ← FIX HERE
+ │ ├── Request conversion (Extension → Kiro Q format)
+ │ ├── Response conversion (Kiro Q → Streaming format)
+ │ └── ID mapping logic ← ROOT CAUSE
+ │
+ ├── Conversation History (in-memory store)
+ │
+ └──HTTP──> Kiro Q API
+
+## 3. Functional Requirements
+
+### 3.1 Feature: tool\_use\_id Passthrough Fix
+
+**Source:** BRD Story 1 — Fix tool\_use\_id Consistency in ReAct Loop
+
+#### 3.1.1 Description
+
+The Anthropic converter MUST pass through the tool\_use\_id value from the Kiro Q API response without modification. The same value must appear in three locations: (1) the SSE streaming response sent to the extension, (2) the conversation history stored in kiro-ts, and (3) the continuation request received back from the extension. Currently, the converter generates or maps a different ID during response conversion, causing a mismatch at step (3).
+
+#### 3.1.2 Use Case: Successful ReAct Tool Loop
+
+**Use Case ID:** UC-1 **Actor:** Developer (via VS Code Extension) **Preconditions:** Chat Panel is open, kiro-ts is running, Kiro Q API is accessible **Postconditions:** Tool is executed and result is incorporated into conversation; model continues reasoning
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+| --- | --- | --- | --- |
+| 1 | Developer sends chat message requiring tool use |  | User types message in Chat Panel and sends |
+| 2 |  | Extension packages chatWithTools request | Extension creates request with message history and tool definitions |
+| 3 |  | kiro-ts converter transforms to Kiro Q format | Request converted from Anthropic format to internal format |
+| 4 |  | kiro-ts forwards to Kiro Q API | HTTP POST to backend |
+| 5 |  | Kiro Q API returns tool\_use response with id=tooluse\_XYZ | Response contains content block type=tool\_use |
+| 6 |  | kiro-ts converter transforms to streaming format, preserving tool\_use\_id=tooluse\_XYZ | **CRITICAL: ID must be identical** |
+| 7 |  | kiro-ts stores assistant message with tool\_use\_id=tooluse\_XYZ in history | History entry matches streamed ID |
+| 8 |  | Extension receives streaming response, identifies tool call | Parses tool\_use block from SSE events |
+| 9 | Extension executes tool locally |  | Tool runs (e.g., readFile, grep\_search) |
+| 10 |  | Extension sends continuation with toolResult.toolUseId=tooluse\_XYZ | Continuation request sent to kiro-ts |
+| 11 |  | kiro-ts matches tooluse\_XYZ in history — SUCCESS | Finds corresponding tool\_use entry |
+| 12 |  | kiro-ts constructs next API request with tool\_result | Builds valid Kiro Q API request |
+| 13 |  | Kiro Q API processes and returns next response | May be text or another tool\_use |
+| 14 |  | Cycle repeats (steps 5-13) or model returns final text | Loop ends when no more tool calls |
+
+Sequence - ReAct Tool Loop [*Edit in draw.io*](diagrams/sequence-react-loop.drawio)
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+| --- | --- | --- |
+| AF-1 | Multiple tool\_use blocks in single response | Each block gets its own tool\_use\_id; all IDs preserved independently. Extension sends continuation with ALL tool results in order. |
+| AF-2 | Model returns final text (no tool\_use) | No tool execution needed. Response streamed directly to extension. Loop ends. |
+| AF-3 | Tool execution returns error | Extension sends toolResult with error content. kiro-ts forwards error as tool\_result to API. Model handles gracefully. |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+| --- | --- | --- |
+| EF-1 | tool\_use\_id mismatch (current bug) | kiro-ts cannot find ID in history → logs WARNING with received ID + available IDs → returns descriptive error to extension → extension shows error to user |
+| EF-2 | Kiro Q API returns tool\_use without id field | kiro-ts rejects response → logs ERROR → returns “malformed API response” to extension |
+| EF-3 | Network error during continuation | kiro-ts returns timeout/network error → extension may retry |
+
+#### 3.1.3 Business Rules
+
+| Rule ID | Rule | Source |
+| --- | --- | --- |
+| BR-1 | tool\_use\_id from Kiro Q API response MUST be used verbatim — no transformation, re-encoding, or regeneration | BRD Story 2 |
+| BR-2 | The same tool\_use\_id value MUST appear in: (a) SSE stream to client, (b) conversation history, (c) expected in continuation from client | BRD Story 1, AC-1,2 |
+| BR-3 | tool\_use\_id must be non-empty string matching pattern tooluse\_[A-Za-z0-9]+ | BRD Validation Rules |
+| BR-4 | A tool\_use\_id MUST NOT be reused across different tool invocations within a conversation | BRD Validation Rules |
+| BR-5 | When multiple tool\_use blocks exist in one response, each block’s ID is independent and all must be preserved | BRD Story 1, AC-4 |
+| BR-6 | If a toolResult.toolUseId does not match any history entry, the system MUST log a diagnostic warning (not silently skip) | BRD Story 3 |
+
+#### 3.1.4 Data Specifications
+
+**Input Data (from Kiro Q API Response):**
+
+| Field | Type | Required | Validation | Description |
+| --- | --- | --- | --- | --- |
+| content[].type | String | Y | Must be “tool\_use” | Identifies content block as tool invocation |
+| content[].id | String | Y | Non-empty, matches tooluse\_[A-Za-z0-9]+ | The tool\_use\_id to preserve |
+| content[].name | String | Y | Non-empty | Tool name being invoked |
+| content[].input | JSON Object | Y | Valid JSON | Parameters for the tool |
+
+**Output Data (SSE Stream to Extension):**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| type | String | “content\_block\_start” or “content\_block\_delta” |
+| content\_block.type | String | “tool\_use” |
+| content\_block.id | String | MUST equal input content[].id — the preserved tool\_use\_id |
+| content\_block.name | String | Tool name (passthrough) |
+| content\_block.input | JSON Object | Tool parameters (passthrough) |
+
+**Input Data (Continuation Request from Extension):**
+
+| Field | Type | Required | Validation | Description |
+| --- | --- | --- | --- | --- |
+| toolResult.toolUseId | String | Y | Must match a stored tool\_use\_id | Correlates result to invocation |
+| toolResult.content | String/JSON | Y | Non-empty | Result of tool execution |
+| toolResult.isError | Boolean | N | Default: false | Whether tool execution failed |
+
+#### 3.1.5 UI Specifications
+
+Not applicable — this is a backend service fix with no direct UI changes. The Chat Panel UI behavior remains unchanged; only the underlying data flow is corrected.
+
+#### 3.1.6 API Contract (Functional View)
+
+**Endpoint:** POST /chat/completions (internal kiro-ts handler) **Purpose:** Handle chat requests with tool-calling capability
+
+**Input Parameters:**
+
+| Parameter | Type | Required | Business Rule | Description |
+| --- | --- | --- | --- | --- |
+| messages[] | Array | Y | — | Conversation history from extension |
+| tools[] | Array | N | — | Available tool definitions |
+| toolResult.toolUseId | String | Y (on continuation) | BR-2 | Must match previously streamed tool\_use\_id |
+| toolResult.content | String | Y (on continuation) | — | Tool execution result |
+
+**Output Data (SSE stream):**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| event: content\_block\_start | SSE Event | Signals new content block (text or tool\_use) |
+| data.content\_block.id | String | tool\_use\_id — MUST match Kiro Q API original (BR-1) |
+| data.content\_block.name | String | Tool name |
+| event: content\_block\_delta | SSE Event | Incremental tool input data |
+| event: message\_stop | SSE Event | End of response |
+
+**Business Error Scenarios:**
+
+| Scenario | User Message | Trigger Condition |
+| --- | --- | --- |
+| tool\_use\_id not found in history | “Tool continuation failed: tool\_use\_id ‘{id}’ not found in conversation history. Available IDs: […]” | Extension sends toolResult with ID that doesn’t match any stored history entry (BR-6) |
+| Malformed API response (no ID) | “Received malformed tool\_use response from API (missing id field)” | Kiro Q API returns tool\_use block without id field |
+| Empty tool\_use\_id | “Invalid tool\_use\_id: value cannot be empty” | API returns empty string for tool\_use\_id |
+
+### 3.2 Feature: Improved Error Diagnostics
+
+**Source:** BRD Story 3 — Improve Error Diagnostics for Tool Continuation Failures
+
+#### 3.2.1 Description
+
+When a tool\_use\_id mismatch occurs (whether due to a regression or external factors), the system must provide actionable diagnostic information rather than a generic 400 error.
+
+#### 3.2.2 Use Case: Diagnostic Error on Mismatch
+
+**Use Case ID:** UC-2 **Actor:** Developer (debugging) **Preconditions:** A tool\_use\_id mismatch has occurred **Postconditions:** Developer has sufficient information to diagnose the issue
+
+**Main Flow:**
+
+| Step | Actor | System | Description |
+| --- | --- | --- | --- |
+| 1 |  | Extension sends continuation with mismatched toolUseId | ID doesn’t exist in history |
+| 2 |  | kiro-ts searches history for matching ID | No match found |
+| 3 |  | kiro-ts logs WARNING with: received ID, all stored IDs, conversation turn number | Structured log entry |
+| 4 |  | kiro-ts returns descriptive error response to extension | Error includes mismatch details |
+| 5 | Developer sees error in Chat Panel |  | Error message explains what went wrong |
+
+**Alternative Flows:**
+
+| ID | Condition | Steps |
+| --- | --- | --- |
+| AF-1 | Partial match (prefix matches but suffix differs) | Log includes “possible near-match: {id}” to aid debugging |
+
+**Exception Flows:**
+
+| ID | Condition | Steps |
+| --- | --- | --- |
+| EF-1 | History is empty (no tool\_use ever stored) | Log “conversation history is empty — tool\_use was never stored” |
+
+#### 3.2.3 Business Rules
+
+| Rule ID | Rule | Source |
+| --- | --- | --- |
+| BR-7 | Diagnostic log MUST include: received toolUseId, all stored tool\_use\_ids, conversation turn number | BRD Story 3 |
+| BR-8 | Error response to extension MUST say “tool\_use\_id not found in conversation history” — not generic “400 Bad Request” | BRD Story 3, AC-2 |
+| BR-9 | Diagnostic logging must be at WARN level (not ERROR) since this is a recoverable client-side issue | Best practice |
+
+## 4. Data Model
+
+### 4.1 Entity Relationship Diagram
+
+This fix does not introduce new persistent storage. All data is in-memory during a conversation session.
+
+### 4.2 Logical Entities
+
+#### Entity: ConversationMessage (in-memory)
+
+| Attribute | Type | Required | Business Rule | Description |
+| --- | --- | --- | --- | --- |
+| role | Enum(user, assistant, tool\_result) | Y | — | Message sender role |
+| content | Vec | Y | — | Message content blocks |
+| turn\_number | u32 | Y | — | Sequential turn counter |
+
+#### Entity: ContentBlock (in-memory)
+
+| Attribute | Type | Required | Business Rule | Description |
+| --- | --- | --- | --- | --- |
+| block\_type | Enum(text, tool\_use, tool\_result) | Y | — | Type of content |
+| id | Option | Y (for tool\_use) | BR-1, BR-3 | The tool\_use\_id — preserved from API |
+| name | Option | Y (for tool\_use) | — | Tool name |
+| input | Option | Y (for tool\_use) | — | Tool parameters |
+| content | Option | Y (for text/tool\_result) | — | Text or result content |
+| tool\_use\_id | Option | Y (for tool\_result) | BR-2 | References which tool\_use this result belongs to |
+
+**Relationships:**
+
+| From Entity | To Entity | Cardinality | Description |
+| --- | --- | --- | --- |
+| ConversationMessage | ContentBlock | 1:N | Each message contains one or more content blocks |
+| ContentBlock (tool\_result) | ContentBlock (tool\_use) | 1:1 | Each tool\_result references exactly one tool\_use via tool\_use\_id |
+
+## 5. Integration Specifications
+
+### 5.1 External System: Kiro Q API
+
+| Attribute | Value |
+| --- | --- |
+| Purpose | Provides LLM inference with tool-calling capability |
+| Direction | Bidirectional |
+| Data Format | JSON (HTTP request/response) |
+| Frequency | Real-time (per chat message) |
+
+**Data Exchange:**
+
+| Our Data | External Data | Direction | Business Rule |
+| --- | --- | --- | --- |
+| Formatted messages array | messages[] (Kiro Q format) | Send | Convert from Anthropic format to Kiro Q format |
+| tool\_use content block | content[].id + name + input | Receive | BR-1: Preserve id value exactly |
+| tool\_result with matching ID | tool\_result referencing tool\_use\_id | Send | BR-2: ID in result must match stored ID |
+
+### 5.2 External System: VS Code Extension (Client)
+
+| Attribute | Value |
+| --- | --- |
+| Purpose | Chat Panel UI — sends requests, receives streaming responses |
+| Direction | Bidirectional |
+| Data Format | SSE (Server-Sent Events) for responses, JSON for requests |
+| Frequency | Real-time (per user interaction) |
+
+**Data Exchange:**
+
+| Our Data | External Data | Direction | Business Rule |
+| --- | --- | --- | --- |
+| SSE content\_block events | tool\_use\_id + name + input | Send | BR-1, BR-2: ID in stream must match API original |
+| Continuation request | toolResult.toolUseId + content | Receive | BR-2: Extension sends back the ID we streamed |
+
+## 6. Processing Logic
+
+### 6.1 Response Conversion (Kiro Q → Streaming)
+
+**Trigger:** Kiro Q API returns HTTP response with tool\_use content blocks **Input:** Raw Kiro Q API JSON response **Output:** SSE events streamed to extension + conversation history entry
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+| --- | --- | --- |
+| 1 | Parse Kiro Q response JSON | If parse fails: log ERROR, return 500 to client |
+| 2 | For each content block where type == “tool\_use”: extract id, name, input | If id is missing/empty: log ERROR, reject response (BR-3) |
+| 3 | Create SSE content\_block\_start event with content\_block.id = <original id> | — |
+| 4 | Stream tool input as content\_block\_delta events | — |
+| 5 | Store assistant message in conversation history with the SAME id value | If storage fails: log ERROR, stream continues but continuation will fail |
+| 6 | Send message\_stop event | — |
+
+**Critical Invariant:** At step 3 and step 5, the id value MUST be the exact string from step 2. No new ID generation, no mapping table, no format conversion.
+
+### 6.2 Continuation Processing (Extension → Kiro Q)
+
+**Trigger:** Extension sends continuation request with toolResult **Input:** JSON request with toolResult.toolUseId and toolResult.content **Output:** Formatted request to Kiro Q API
+
+**Processing Steps:**
+
+| Step | Description | Error Handling |
+| --- | --- | --- |
+| 1 | Extract toolResult.toolUseId from continuation request | If missing: return 400 “toolUseId is required” |
+| 2 | Search conversation history for matching tool\_use\_id | If not found: log WARN with diagnostic info (BR-6, BR-7), return descriptive error (BR-8) |
+| 3 | Construct tool\_result content block referencing the matched tool\_use | — |
+| 4 | Append tool\_result to conversation history | — |
+| 5 | Build complete messages array for Kiro Q API request | — |
+| 6 | Send request to Kiro Q API | If API returns error: forward error to client |
+
+### 6.3 tool\_use\_id State Diagram
+
+State - tool\_use\_id Lifecycle [*Edit in draw.io*](diagrams/state-tool-use-id.drawio)
+
+## 7. Security Requirements
+
+### 7.1 Authentication & Authorization
+
+| Role | Permissions | Screens/Features |
+| --- | --- | --- |
+| Developer (authenticated) | Read/Write | Chat Panel tool-calling |
+| kiro-ts Service | System | Proxy requests to Kiro Q API using service credentials |
+
+No changes to authentication model. The fix is internal to the conversion logic.
+
+### 7.2 Data Sensitivity Classification
+
+| Data Type | Classification | Business Requirement |
+| --- | --- | --- |
+| tool\_use\_id | Internal | Correlation identifier only — no PII |
+| Tool input/output | Internal | May contain file paths or code snippets — already within user’s workspace |
+| Conversation history | Internal | Ephemeral in-memory — cleared on session end |
+
+### 7.3 Audit Trail
+
+| Event | Logged Fields | Retention | Business Reason |
+| --- | --- | --- | --- |
+| tool\_use\_id mismatch | received\_id, stored\_ids, turn\_number | Session log | Debugging and regression detection |
+| tool\_use streamed | tool\_use\_id, tool\_name | Trace log | Performance monitoring |
+
+## 8. Non-Functional Requirements
+
+| Category | Business Requirement | Acceptance Criteria |
+| --- | --- | --- |
+| Performance | No additional latency from the fix | Response streaming latency must not increase by more than 1ms |
+| Reliability | 100% ID consistency | Every tool\_use\_id must match across all three locations — zero intermittent failures |
+| Observability | Trace-level logging at transformation points | tool\_use\_id logged at: (1) API receive, (2) stream emit, (3) history store, (4) continuation match |
+| Backward Compatibility | No breaking changes to streaming format | Extension client requires zero changes to work with the fix |
+| Concurrency | Thread-safe history access | Multiple concurrent tool\_use blocks within one response must not race on history writes |
+
+## 9. Error Handling (User-Facing)
+
+### 9.1 Error Scenarios
+
+| Scenario | Severity | User Message | Expected Behavior |
+| --- | --- | --- | --- |
+| tool\_use\_id mismatch | Warning | “Tool call failed: could not match tool result to conversation. Please try again.” | User can retry the message. Diagnostic info in kiro-ts logs. |
+| Malformed API response | Critical | “Received invalid response from AI service. Please retry.” | kiro-ts rejects response, does not corrupt history |
+| History storage failure | Critical | “Internal error during tool processing. Please restart chat.” | Session may be corrupted — suggest new session |
+| Network timeout to API | Warning | “AI service did not respond in time. Please retry.” | Retryable by user |
+
+### 9.2 Notification Requirements
+
+| Event | Who is Notified | Channel | Timing |
+| --- | --- | --- | --- |
+| tool\_use\_id mismatch | Developer | Chat Panel error message | Immediate |
+| Repeated mismatches (>3 in session) | Engineering team | kiro-ts application logs | Immediate (log aggregation) |
+
+## 10. Testing Considerations
+
+### 10.1 Test Scenarios
+
+| ID | Scenario | Input | Expected Output | Priority |
+| --- | --- | --- | --- | --- |
+| TC-1 | Single tool\_use — ID preserved in stream | API returns tool\_use with id=tooluse\_ABC | SSE stream contains content\_block.id=tooluse\_ABC | High |
+| TC-2 | Single tool\_use — ID preserved in history | API returns tool\_use with id=tooluse\_ABC | Conversation history contains tool\_use\_id=tooluse\_ABC | High |
+| TC-3 | Continuation matches history | Extension sends toolResult.toolUseId=tooluse\_ABC | kiro-ts finds match in history, constructs valid API request | High |
+| TC-4 | Full ReAct loop — no 400 error | Complete flow: chat → tool\_use → tool\_result → continuation | Loop completes successfully, model returns final text | High |
+| TC-5 | Multiple tool\_use blocks | API returns 3 tool\_use blocks with different IDs | All 3 IDs preserved independently in stream and history | High |
+| TC-6 | Mismatch diagnostic — ID not found | Extension sends toolResult.toolUseId=tooluse\_WRONG | WARN log with received ID + stored IDs; descriptive error returned | Medium |
+| TC-7 | Empty tool\_use\_id from API | API returns tool\_use with id="" | kiro-ts rejects, logs ERROR, returns error to client | Medium |
+| TC-8 | Missing id field from API | API returns tool\_use without id field | kiro-ts rejects, logs ERROR | Medium |
+| TC-9 | Concurrent tool calls | Two tool\_use blocks processed simultaneously | Both IDs stored correctly without race conditions | High |
+| TC-10 | Regression — no new ID generation | Converter processes tool\_use response | No calls to ID generation functions (uuid, random, etc.) | High |
+
+## 11. Appendix
+
+### Diagram Index
+
+| # | Diagram | Image | Source (editable) |
+| --- | --- | --- | --- |
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Sequence - ReAct Tool Loop | [sequence-react-loop.png](diagrams/sequence-react-loop.png) | [sequence-react-loop.drawio](diagrams/sequence-react-loop.drawio) |
+| 3 | State - tool\_use\_id Lifecycle | [state-tool-use-id.png](diagrams/state-tool-use-id.png) | [state-tool-use-id.drawio](diagrams/state-tool-use-id.drawio) |
+
+### Change Log from BRD
+
+* BRD Story 1 → FSD UC-1 (full use case with main/alt/exception flows)
+* BRD Story 2 → FSD BR-1, BR-2 (ID passthrough rules integrated into UC-1)
+* BRD Story 3 → FSD UC-2 (diagnostic error use case)
+* BRD validation rules → FSD BR-3, BR-4 (data specifications)
+* All BRD acceptance criteria mapped to FSD Test Scenarios (TC-1 through TC-10)

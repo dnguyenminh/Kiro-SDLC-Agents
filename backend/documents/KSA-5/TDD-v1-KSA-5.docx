@@ -1,0 +1,619 @@
+# Technical Design Document (TDD)
+
+## Kiro SDLC Agents Extension — KSA-5: Auto-detect Runtime & Run Indexer
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-5 |
+| Title | Auto-detect Runtime & Run Indexer |
+| Author | SA Agent |
+| Version | 1.0 |
+| Date | 2025-07-10 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-5.docx |
+| Related FSD | FSD-v1-KSA-5.docx |
+
+## Author Tracking
+
+|  |  |  |
+| --- | --- | --- |
+| Role | Name - Position | Responsibility |
+| Author | SA Agent – Solution Architect | Create document |
+| Peer Reviewer | TA Agent – Technical Analyst | Review document |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2025-07-10 | SA Agent | Initiate document — auto-generated from BRD and FSD |
+
+## Sign-Off
+
+|  |  |
+| --- | --- |
+| Name | Signature and date |
+|  | ☐ I agree and confirm the technical design in this TDD |
+|  | ☐ I agree and confirm the technical design in this TDD |
+
+## 1. Introduction
+
+**Scope Boundary:** This TDD specifies HOW to implement the Auto-detect Runtime & Run Indexer feature. It does NOT repeat functional requirements, business rules, or use cases — refer to the FSD for those. This document focuses on: technology choices, architecture decisions, implementation patterns, and code structure.
+
+### 1.1 Purpose
+
+This TDD provides the technical design for implementing the runtime auto-detection and indexer execution feature in the Kiro SDLC Agents VS Code extension. It covers the internal architecture of indexer.ts, the command-building strategy, process management, and error handling patterns.
+
+### 1.2 Scope
+
+Technical scope covers: - src/indexer.ts module — all functions - Configuration entries in src/config.ts (INDEXER\_SCRIPTS) - Configuration contribution in package.json (kiroSdlc.preferredIndexer) - Integration with src/extension.ts (command handler) - Child process management and output streaming
+
+### 1.3 Technology Stack
+
+|  |  |  |
+| --- | --- | --- |
+| Layer | Technology | Version |
+| Language | TypeScript | 5.4+ |
+| Runtime | Node.js (VS Code Extension Host) | 20+ |
+| Framework | VS Code Extension API | 1.85+ |
+| Process Management | Node.js child\_process | Built-in |
+| Path Resolution | Node.js path | Built-in |
+| Build Tool | TypeScript Compiler (tsc) | 5.4+ |
+| Package Manager | npm | 10+ |
+
+### 1.4 Design Principles
+
+* **Single Responsibility** — each function does one thing (detect, build, execute)
+* **Fail-fast with graceful degradation** — detect failures early, fall back to platform defaults
+* **No external dependencies** — uses only Node.js built-ins and VS Code API
+* **Platform-aware** — handles Windows/Unix differences in path separators and shell commands
+* **Observable** — all operations produce visible output via Output Channel
+
+### 1.5 Constraints
+
+* Must work within VS Code Extension Host (no native modules)
+* Cannot use spawn with streaming (VS Code exec callback pattern is simpler for this use case)
+* Must handle paths with spaces (common on Windows: C:\Program Files\...)
+* Timeout must be configurable in future but hardcoded to 120s for now
+* No network access required (all operations are local)
+
+### 1.6 References
+
+|  |  |
+| --- | --- |
+| Document | Location |
+| BRD | BRD-v1-KSA-5.docx |
+| FSD | FSD-v1-KSA-5.docx |
+| VS Code Extension API | https://code.visualstudio.com/api |
+| Node.js child\_process | https://nodejs.org/api/child\_process.html |
+
+## 2. System Architecture
+
+### 2.1 Architecture Overview
+
+The indexer module is a single TypeScript file (src/indexer.ts) that exports one public function runIndexer(). Internally it delegates to three private functions: detectAvailableIndexer(), buildCommand(), and executeIndexer(). The module depends on VS Code APIs and Node.js built-ins only.
+
+Architecture Diagram
+
+Architecture Diagram
+
+### 2.2 Component Diagram
+
+Component Diagram
+
+Component Diagram
+
+|  |  |  |
+| --- | --- | --- |
+| Component | Responsibility | Technology |
+| extension.ts | Command registration, calls runIndexer() | VS Code Extension API |
+| indexer.ts | Runtime detection, command building, execution | Node.js child\_process |
+| config.ts | Static configuration (INDEXER\_SCRIPTS, labels) | TypeScript constants |
+| VS Code Settings | Stores preferredIndexer value | VS Code Configuration API |
+| Output Channel | Displays indexer output to user | VS Code Output Channel API |
+
+### 2.3 Deployment Architecture
+
+This is a VS Code extension — deployed as a .vsix package installed in the user’s VS Code instance. No server-side deployment.
+
+|  |  |
+| --- | --- |
+| Environment | Description |
+| Development | npm run watch → TypeScript compiled to out/ → F5 launches Extension Development Host |
+| Production | vsce package → .vsix file → installed via VS Code marketplace or manual install |
+
+### 2.4 Communication Patterns
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| From | To | Protocol | Pattern | Description |
+| extension.ts | indexer.ts | Function call | Sync (async/await) | handleRunIndex() calls runIndexer() |
+| indexer.ts | VS Code Config | API call | Sync | getConfiguration().get() |
+| indexer.ts | OS Shell | child\_process.exec | Async (callback) | Spawns probe/indexer processes |
+| indexer.ts | Output Channel | API call | Sync | channel.appendLine() |
+| indexer.ts | VS Code Window | API call | Async | showInformationMessage() / showErrorMessage() |
+
+## 3. API Design
+
+**Note:** This is an internal module API (TypeScript functions), not a REST API.
+
+### 3.1 API Overview
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Function | Visibility | Description | Source |
+| 1 | runIndexer(workspaceRoot) | Public (exported) | Entry point — orchestrates full flow | UC-01, UC-02, UC-03 |
+| 2 | detectAvailableIndexer() | Private | Probes runtimes in priority order | UC-01 |
+| 3 | buildCommand(key, workspaceRoot) | Private | Constructs shell command | UC-02 |
+| 4 | executeIndexer(command, cwd, key) | Private | Spawns process, streams output | UC-03 |
+| 5 | commandExists(cmd) | Private | Checks if command is available | UC-01 (helper) |
+| 6 | isWindows() | Private | Platform detection utility | UC-02 (helper) |
+
+### 3.2 Function: runIndexer
+
+**Implements:** UC-01, UC-02, UC-03, UC-04
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | async function runIndexer(workspaceRoot: string): Promise<boolean> |
+| Exported | Yes |
+| Called by | extension.ts → handleRunIndex() |
+
+**Parameters:**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Parameter | Type | Required | Description |
+| workspaceRoot | string | Yes | Absolute path to workspace root directory |
+
+**Return Value:**
+
+|  |  |
+| --- | --- |
+| Type | Description |
+| Promise<boolean> | true if indexer ran successfully, false otherwise |
+
+**Algorithm:**
+
+export async function runIndexer(workspaceRoot: string): Promise<boolean> {
+ // 1. Read preferred indexer setting
+ const preferred = vscode.workspace
+ .getConfiguration("kiroSdlc")
+ .get<string>("preferredIndexer", "auto");
+
+ // 2. Determine indexer key
+ const indexerKey = preferred === "auto"
+ ? await detectAvailableIndexer()
+ : preferred as IndexerKey;
+
+ // 3. Handle no runtime found
+ if (!indexerKey) {
+ vscode.window.showWarningMessage(
+ "No compatible runtime found. Install Python, Java, or Node.js."
+ );
+ return false;
+ }
+
+ // 4. Build command
+ const command = buildCommand(indexerKey, workspaceRoot);
+ if (!command) { return false; }
+
+ // 5. Execute
+ return await executeIndexer(command, workspaceRoot, indexerKey);
+}
+
+### 3.3 Function: detectAvailableIndexer
+
+**Implements:** UC-01
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | async function detectAvailableIndexer(): Promise<IndexerKey \| null> |
+| Exported | No (private) |
+
+**Algorithm:**
+
+async function detectAvailableIndexer(): Promise<IndexerKey | null> {
+ const priority: IndexerKey[] = ["python", "java", "nodejs", "powershell", "bash"];
+ for (const key of priority) {
+ const script = INDEXER\_SCRIPTS[key];
+ const checkCmd = "check" in script ? script.check : null;
+ if (checkCmd && await commandExists(checkCmd)) {
+ return key;
+ }
+ }
+ // Platform fallback
+ return isWindows() ? "powershell" : "bash";
+}
+
+**Error Handling:**
+
+|  |  |
+| --- | --- |
+| Condition | Behavior |
+| Probe times out (> 5s) | commandExists resolves false, moves to next |
+| Probe throws error | commandExists resolves false, moves to next |
+| All probes fail | Returns platform default (never returns null in practice) |
+
+### 3.4 Function: buildCommand
+
+**Implements:** UC-02
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | function buildCommand(key: IndexerKey, workspaceRoot: string): string \| null |
+| Exported | No (private) |
+
+**Algorithm:**
+
+function buildCommand(key: IndexerKey, workspaceRoot: string): string | null {
+ switch (key) {
+ case "python":
+ return `python ${path.join(workspaceRoot, ".analysis/code-intelligence/scripts/python/main.py")} "${workspaceRoot}"`;
+ case "java":
+ if (isWindows()) {
+ return `"${path.join(workspaceRoot, ".analysis\\code-intelligence\\scripts\\java\\run.bat")}" "${workspaceRoot}"`;
+ }
+ return `bash "${path.join(workspaceRoot, ".analysis/code-intelligence/scripts/java/run.sh")}" "${workspaceRoot}"`;
+ case "nodejs":
+ const nodeDir = path.join(workspaceRoot, ".analysis/code-intelligence/scripts/nodejs");
+ return `cd "${nodeDir}" && npm install && npx tsx src/full-indexer.ts "${workspaceRoot}"`;
+ case "powershell":
+ const psScript = path.join(workspaceRoot, ".analysis\\code-intelligence\\scripts\\powershell\\full-indexer.ps1");
+ return `powershell -ExecutionPolicy Bypass -File "${psScript}" -RootDir "${workspaceRoot}"`;
+ case "bash":
+ const bashScript = path.join(workspaceRoot, ".analysis/code-intelligence/scripts/bash/full-indexer.sh");
+ return `bash "${bashScript}" "${workspaceRoot}"`;
+ default:
+ return null;
+ }
+}
+
+**Platform Handling:**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Platform | Path Separator | Shell | Notes |
+| Windows | \ | cmd.exe (via exec) | Uses .bat for Java, backslash paths |
+| Linux/Mac | / | /bin/sh (via exec) | Uses bash for Java, forward slash paths |
+
+### 3.5 Function: executeIndexer
+
+**Implements:** UC-03
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | async function executeIndexer(command: string, cwd: string, key: IndexerKey): Promise<boolean> |
+| Exported | No (private) |
+
+**Algorithm:**
+
+async function executeIndexer(command: string, cwd: string, key: IndexerKey): Promise<boolean> {
+ return new Promise((resolve) => {
+ const channel = vscode.window.createOutputChannel("Kiro Code Indexer");
+ channel.show();
+ channel.appendLine(`[Kiro] Running ${INDEXER\_SCRIPTS[key].label} indexer...`);
+ channel.appendLine(`[Kiro] Command: ${command}`);
+ channel.appendLine("");
+
+ cp.exec(command, { cwd, timeout: 120000 }, (err, stdout, stderr) => {
+ if (stdout) { channel.appendLine(stdout); }
+ if (stderr) { channel.appendLine(stderr); }
+ if (err) {
+ channel.appendLine(`[Kiro] ERROR: ${err.message}`);
+ vscode.window.showErrorMessage(`Indexer failed: ${err.message}`);
+ resolve(false);
+ } else {
+ channel.appendLine("[Kiro] ✅ Indexing complete!");
+ vscode.window.showInformationMessage("Code indexing complete!");
+ resolve(true);
+ }
+ });
+ });
+}
+
+**Timeout Behavior:**
+
+When timeout: 120000 is exceeded, Node.js exec kills the child process and calls the callback with an error whose killed property is true and signal is SIGTERM.
+
+### 3.6 Function: commandExists
+
+**Implements:** Helper for UC-01
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | function commandExists(cmd: string): Promise<boolean> |
+| Exported | No (private) |
+
+**Algorithm:**
+
+function commandExists(cmd: string): Promise<boolean> {
+ return new Promise((resolve) => {
+ cp.exec(cmd, { timeout: 5000 }, (err) => resolve(!err));
+ });
+}
+
+### 3.7 Function: isWindows
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Signature | function isWindows(): boolean |
+| Exported | No (private) |
+
+function isWindows(): boolean {
+ return process.platform === "win32";
+}
+
+## 4. Database Design
+
+Not applicable — this feature has no database. All data is in-memory (configuration) or file-system (scripts).
+
+## 5. Class / Module Design
+
+### 5.1 Package Structure
+
+kiro-sdlc-agents/src/
+├── extension.ts ← Entry point, command registration
+├── indexer.ts ← Runtime detection + execution (THIS FEATURE)
+├── config.ts ← INDEXER\_SCRIPTS, INDEXER\_OPTIONS constants
+├── injector.ts ← File copy logic (KSA-3)
+└── checksum.ts ← File integrity verification (KSA-11)
+
+### 5.2 Type Definitions
+
+// In config.ts
+export const INDEXER\_SCRIPTS = {
+ python: { check: "python --version", label: "Python" },
+ java: { check: "java --version", label: "Java" },
+ nodejs: { check: "node --version", label: "Node.js" },
+ powershell: { check: "powershell -Command \"$PSVersionTable.PSVersion\"", label: "PowerShell" },
+ bash: { check: "bash --version", label: "Bash" }
+};
+
+// Derived type
+type IndexerKey = keyof typeof INDEXER\_SCRIPTS;
+// = "python" | "java" | "nodejs" | "powershell" | "bash"
+
+### 5.3 Design Patterns
+
+|  |  |  |
+| --- | --- | --- |
+| Pattern | Where Used | Rationale |
+| Strategy | buildCommand() switch | Each runtime has different command construction strategy |
+| Chain of Responsibility | detectAvailableIndexer() loop | Probes are tried in order until one succeeds |
+| Promise wrapping | executeIndexer(), commandExists() | Wraps callback-based cp.exec in async/await |
+| Null Object | buildCommand() returns null | Signals invalid key without throwing |
+
+### 5.4 Error Handling
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Error Condition | Function | Behavior | User Impact |
+| No runtime detected | detectAvailableIndexer | Returns platform default | Transparent fallback |
+| Platform default unavailable | runIndexer | Shows warning toast | User sees “No compatible runtime” |
+| Invalid IndexerKey | buildCommand | Returns null | runIndexer returns false silently |
+| Process fails (exit ≠ 0) | executeIndexer | Shows error in channel + toast | User sees error details |
+| Process timeout (> 120s) | executeIndexer | Process killed, error shown | User sees timeout message |
+| Probe timeout (> 5s) | commandExists | Resolves false | Transparent, moves to next |
+
+## 6. Integration Design
+
+### 6.1 Integration: Extension Command System
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Protocol | TypeScript function call |
+| Entry Point | extension.ts → handleRunIndex() |
+| Trigger | User command kiroSdlc.runIndex or auto-trigger after injection |
+
+**Sequence Diagram:**
+
+API Sequence
+
+API Sequence
+
+### 6.2 Integration: VS Code Configuration
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Protocol | VS Code Configuration API |
+| Namespace | kiroSdlc |
+| Property | preferredIndexer |
+| Read Pattern | vscode.workspace.getConfiguration("kiroSdlc").get<string>("preferredIndexer", "auto") |
+
+### 6.3 Integration: Node.js child\_process
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Protocol | Node.js built-in module |
+| Function | child\_process.exec() |
+| Options | { cwd: workspaceRoot, timeout: 120000 } for execution; { timeout: 5000 } for probes |
+| Callback | (error, stdout, stderr) => void |
+
+## 7. Security Design
+
+### 7.1 Command Injection Prevention
+
+Commands are constructed from: 1. Static templates (hardcoded in buildCommand()) 2. workspaceRoot — from vscode.workspace.workspaceFolders[0].uri.fsPath (trusted VS Code API) 3. No user-supplied arbitrary strings in commands
+
+**Risk Assessment:** Low — no untrusted input enters command construction.
+
+### 7.2 Execution Policy
+
+* PowerShell: -ExecutionPolicy Bypass is scoped to the single script invocation
+* This does NOT change the system-wide execution policy
+* The script being executed is one the user explicitly injected into their workspace
+
+### 7.3 Process Permissions
+
+* Child process inherits the VS Code process permissions (user-level)
+* No privilege escalation
+* No network access required by the indexer
+
+## 8. Performance & Scalability
+
+### 8.1 Performance Targets
+
+|  |  |  |
+| --- | --- | --- |
+| Operation | Target | Measurement |
+| Runtime detection (all probes) | < 10s worst case | 5 probes × 5s timeout |
+| Runtime detection (typical) | < 2s | First probe succeeds |
+| Indexer execution | < 120s | Timeout kills at 120s |
+| Command building | < 1ms | Synchronous string operations |
+
+### 8.2 Resource Usage
+
+|  |  |  |
+| --- | --- | --- |
+| Resource | Usage | Limit |
+| Child processes | 1 at a time (sequential probes, then 1 indexer) | Max 1 concurrent |
+| Memory | Minimal (stdout/stderr buffered by exec) | Default exec buffer (1MB) |
+| CPU | Delegated to child process | User’s machine resources |
+| Disk I/O | Indexer reads source files | Workspace size dependent |
+
+## 9. Monitoring & Observability
+
+### 9.1 Logging
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Log Event | Level | Fields | Destination |
+| Indexer started | INFO | runtime label, command | Output Channel |
+| Indexer output | INFO | stdout/stderr lines | Output Channel |
+| Indexer success | INFO | completion message | Output Channel + Toast |
+| Indexer error | ERROR | error message | Output Channel + Toast |
+| No runtime found | WARN | warning message | Toast |
+
+### 9.2 Output Channel Format
+
+[Kiro] Running Python indexer...
+[Kiro] Command: python /path/to/.analysis/code-intelligence/scripts/python/main.py "/workspace"
+
+... indexer output lines ...
+
+[Kiro] ✅ Indexing complete!
+
+Or on error:
+
+[Kiro] Running Python indexer...
+[Kiro] Command: python /path/to/script.py "/workspace"
+
+... partial output ...
+... stderr output ...
+
+[Kiro] ERROR: Command failed with exit code 1
+
+## 10. Deployment Considerations
+
+### 10.1 Extension Configuration Contribution
+
+In package.json:
+
+{
+ "contributes": {
+ "configuration": {
+ "properties": {
+ "kiroSdlc.preferredIndexer": {
+ "type": "string",
+ "enum": ["auto", "python", "java", "nodejs", "powershell", "bash"],
+ "default": "auto",
+ "description": "Preferred indexer script (auto = detect from environment)"
+ }
+ }
+ }
+ }
+}
+
+### 10.2 Build & Compile
+
+# Development
+npm run watch # TypeScript watch mode
+
+# Production
+npm run compile # tsc -p ./
+vsce package # Creates .vsix
+
+### 10.3 Testing Strategy
+
+|  |  |  |
+| --- | --- | --- |
+| Test Type | Tool | Scope |
+| Unit Tests | Jest + mock VS Code API | commandExists, buildCommand, isWindows |
+| Integration Tests | VS Code Extension Test Runner | Full runIndexer() flow with real processes |
+| Manual Testing | Extension Development Host (F5) | End-to-end with real runtimes |
+
+## 11. Implementation Checklist
+
+### Files to Create/Modify
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | File | Action | Description |
+| 1 | src/indexer.ts | Verify/Update | Main implementation — already exists, verify matches spec |
+| 2 | src/config.ts | Verify | INDEXER\_SCRIPTS constant — already exists |
+| 3 | package.json | Verify | kiroSdlc.preferredIndexer configuration — already exists |
+| 4 | src/extension.ts | Verify | handleRunIndex() calls runIndexer() — already exists |
+
+### Implementation Notes
+
+1. **Current code already implements this feature** — src/indexer.ts contains the full implementation matching this TDD
+2. The existing code uses cp.exec with callback pattern (not streaming) — stdout/stderr are appended after process completes, not in real-time
+3. **Potential improvement:** Use cp.spawn for real-time streaming (future enhancement, not in scope for KSA-5)
+4. The commandExists function uses the check command directly (e.g., python --version) which may produce output — this is acceptable as the output is discarded
+
+### Acceptance Verification
+
+|  |  |  |
+| --- | --- | --- |
+| # | Criterion | How to Verify |
+| 1 | Detect Python | Install Python, set preferredIndexer=auto, run indexer → should detect Python |
+| 2 | Detect Java | Uninstall Python, install Java, run indexer → should detect Java |
+| 3 | Preferred override | Set preferredIndexer=nodejs, run indexer → should use Node.js directly |
+| 4 | Output Channel | Run indexer → “Kiro Code Indexer” channel appears with output |
+| 5 | Success toast | Indexer completes → “Code indexing complete!” toast appears |
+| 6 | Error handling | Remove all runtimes → warning message appears |
+| 7 | Timeout | Create script that sleeps 130s → process killed after 120s |
+
+## 12. Appendix
+
+### Glossary
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| IndexerKey | TypeScript type: "python" \| "java" \| "nodejs" \| "powershell" \| "bash" |
+| Probe | A lightweight command (e.g., python --version) to check runtime availability |
+| Output Channel | VS Code read-only text panel for displaying process output |
+| exec | Node.js child\_process.exec() — spawns shell, buffers output, calls callback |
+| spawn | Node.js child\_process.spawn() — spawns process, streams output (not used here) |
+
+### Open Questions
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Question | Status | Answer |
+| 1 | Should we use spawn for real-time streaming? | Resolved | No — exec is simpler and sufficient for this use case. Real-time streaming is a future enhancement. |
+| 2 | Should python3 be tried as fallback on Linux? | Open | Currently only tries python. Could add python3 fallback in future. |
+| 3 | Should timeout be configurable? | Resolved | No — hardcoded 120s is sufficient. Can be made configurable in future if needed. |
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Architecture Overview | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
+| 2 | Component Diagram | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
+| 3 | API Sequence — Run Indexer | [api-sequence-run-indexer.png](diagrams/api-sequence-run-indexer.png) | [api-sequence-run-indexer.drawio](diagrams/api-sequence-run-indexer.drawio) |

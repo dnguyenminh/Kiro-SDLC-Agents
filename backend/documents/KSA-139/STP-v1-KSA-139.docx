@@ -1,0 +1,96 @@
+# Software Test Plan (STP)
+
+## MCP Code Intelligence — KSA-139: 2-Level Agent Tool Cache Registry
+
+## Document Information
+
+| Field | Value |
+| --- | --- |
+| Jira Ticket | KSA-139 |
+| Title | 2-Level Agent Tool Cache Registry — KB-based tool discovery cache |
+| Author | QA Agent |
+| Version | 1.0 |
+| Date | 2026-05-23 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-139.docx |
+| Related FSD | FSD-v1-KSA-139.docx |
+| Related TDD | TDD-v1-KSA-139.docx |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This test plan defines the testing strategy, scope, schedule, and resources for the 2-Level Agent Tool Cache Registry feature (KSA-139).
+
+### 1.2 Test Objectives
+
+* Verify the lookup cascade (L2 → L1 → find\_tools) works correctly per FSD UC-01
+* Validate automatic cache population on successful tool execution per UC-02
+* Confirm cache invalidation on permanent failures while preserving cache on transient errors per UC-03
+* Verify startup injection of top-N tools into sub-agent prompts per UC-04
+* Validate configuration management with hot-reload per UC-05
+* Ensure all 23 business rules (BR-01 to BR-23) are enforced
+* Verify non-functional requirements: KB lookup < 100ms, non-blocking writes, persistence across restarts
+
+## 2. Test Strategy
+
+### 2.1 Test Levels
+
+| Level | Scope | Automation | Tools |
+| --- | --- | --- | --- |
+| PBT | Correctness properties | Automated | pytest + hypothesis |
+| UT | Unit/edge case tests | Automated | pytest + pytest-asyncio |
+| IT | Integration tests with real KB | Automated | pytest + SQLite |
+| E2E-API | Full server E2E | Automated | pytest + httpx |
+| SIT | Manual exploratory | Manual | Python REPL |
+
+### 2.2 Test Cases Summary
+
+| Level | Count | Automated | Manual |
+| --- | --- | --- | --- |
+| PBT | 6 | 6 | 0 |
+| UT | 24 | 24 | 0 |
+| IT | 12 | 12 | 0 |
+| E2E-API | 10 | 10 | 0 |
+| SIT | 5 | 0 | 5 |
+| **Total** | **57** | **52 (91%)** | **5 (9%)** |
+
+## 3. Test Scope
+
+### 3.1 Features In Scope
+
+| # | Feature | Priority | FSD Reference |
+| --- | --- | --- | --- |
+| 1 | Lookup Cascade | High | UC-01, BR-01 to BR-05 |
+| 2 | Auto Cache Population | High | UC-02, BR-06 to BR-10 |
+| 3 | Cache Invalidation | High | UC-03, BR-11 to BR-14 |
+| 4 | Startup Injection | High | UC-04, BR-15 to BR-19 |
+| 5 | Configuration | Medium | UC-05, BR-20 to BR-23 |
+| 6 | Persistence | High | Story 7, AC6 |
+| 7 | Graceful Degradation | High | BR-05, FSD 9.1 |
+| 8 | Performance | High | BR-04, FSD 8 |
+
+## 4. Test Environment
+
+| Environment | Configuration | Purpose |
+| --- | --- | --- |
+| Local Dev | Python 3.11+, FastMCP, SQLite | UT, IT, PBT |
+| Test Server | Full MCP stack, SQLite | E2E-API, SIT |
+
+## 5. Risk & Mitigation
+
+| # | Risk | Impact | Mitigation |
+| --- | --- | --- | --- |
+| 1 | KB latency > 100ms | High | Local SQLite, benchmark early |
+| 2 | Async writes hard to verify | Medium | Await option for test mode |
+| 3 | Mock servers mismatch | Medium | Integration tests with real KB |
+| 4 | Race conditions | Medium | Test with asyncio.gather() |
+
+## 6. Defect Management
+
+| Severity | Definition | SLA |
+| --- | --- | --- |
+| Critical | System crash, data corruption | 4 hours |
+| Major | Feature not working | 1 business day |
+| Minor | Non-critical issue | 3 business days |
+| Trivial | Cosmetic | Next release |

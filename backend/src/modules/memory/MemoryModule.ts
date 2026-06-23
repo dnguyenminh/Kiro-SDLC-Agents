@@ -12,6 +12,7 @@ import { MemoryEngine } from './MemoryEngine.js';
 import { MemoryToolDispatcher } from './MemoryToolDispatcher.js';
 import { MEMORY_TOOL_DEFINITIONS } from './MemoryToolDefinitions.js';
 import { loadConfig } from '../../engine/config.js';
+import { QueryLayer } from '../../engine/query/query-layer.js';
 
 export class MemoryModule implements IModule {
   readonly name = 'memory';
@@ -40,7 +41,8 @@ export class MemoryModule implements IModule {
       // Start session for context tracking
       this.engine.startSession('kiro-backend');
       
-      this.dispatcher = new MemoryToolDispatcher(this.engine, config.workspace);
+      const queryLayer = new QueryLayer(this.dbManager);
+      this.dispatcher = new MemoryToolDispatcher(this.engine, config.workspace, queryLayer);
       
       this._status = 'ready';
     } catch (error) {

@@ -1,8 +1,5 @@
-/**
- * Backend configuration management.
- * Reads from environment variables and config file with sensible defaults.
- */
 import { z } from 'zod';
+export declare function getWorkspacePath(): string;
 declare const BackendConfigSchema: z.ZodObject<{
     port: z.ZodDefault<z.ZodNumber>;
     host: z.ZodDefault<z.ZodString>;
@@ -28,6 +25,8 @@ declare const BackendConfigSchema: z.ZodObject<{
     orchestrationConfigPath?: string | undefined;
     logLevel?: "debug" | "info" | "warn" | "error" | undefined;
 }>;
-export type BackendConfig = z.infer<typeof BackendConfigSchema>;
+export type BackendConfig = z.infer<typeof BackendConfigSchema> & {
+    workspace: string;
+};
 export declare function loadConfig(overrides?: Partial<BackendConfig>): BackendConfig;
 export {};

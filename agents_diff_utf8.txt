@@ -1,0 +1,2146 @@
+﻿diff --git a/kiro-sdlc-agents/src/auth/AuthManager.ts b/kiro-sdlc-agents/src/auth/AuthManager.ts
+index 1461b4fd..3fe0c8dd 100644
+--- a/kiro-sdlc-agents/src/auth/AuthManager.ts
++++ b/kiro-sdlc-agents/src/auth/AuthManager.ts
+@@ -25,6 +25,7 @@ export class AuthManager implements vscode.Disposable {
+   private state: AuthState = "UNAUTHENTICATED";
+   private refreshTimer: TokenRefreshTimer;
+   private tokenExpiresAt: number | null = null;
++  private cachedToken: string | null = null;
+   private _onStateChange = new vscode.EventEmitter<AuthState>();
+   readonly onStateChange: vscode.Event<AuthState> = this._onStateChange.event;
+ 
+@@ -49,11 +50,19 @@ export class AuthManager implements vscode.Disposable {
+   async initialize(): Promise<void> {
+     const token = await this.secrets.get(SECRET_ACCESS_TOKEN);
+     if (token && !this.isExpired()) {
++      this.cachedToken = token;
+       this.transitionTo("AUTHENTICATED");
+       this.refreshTimer.start();
+     }
+   }
+ 
++  /**
++   * Get current access token synchronously from memory cache.
++   */
++  getTokenSync(): string {
++    return this.cachedToken || "";
++  }
++
+   /**
+    * Get current access token (auto-refreshes if near expiry).
+    */
+@@ -67,8 +76,10 @@ export class AuthManager implements vscode.Disposable {
+     if (this.isExpired()) {
+       await this.refreshToken();
+       const refreshed = await this.secrets.get(SECRET_ACCESS_TOKEN);
++      this.cachedToken = refreshed ?? null;
+       return refreshed ?? null;
+     }
++    this.cachedToken = token;
+     return token;
+   }
+ 
+@@ -91,6 +102,7 @@ export class AuthManager implements vscode.Disposable {
+       }
+       const data = await response.json() as { token: string; user: unknown; expiresAt: string };
+       await this.secrets.store(SECRET_ACCESS_TOKEN, data.token);
++      this.cachedToken = data.token;
+       // expiresAt is ISO string — store as epoch ms
+       this.tokenExpiresAt = new Date(data.expiresAt).getTime();
+       this.transitionTo("AUTHENTICATED");
+@@ -123,6 +135,7 @@ export class AuthManager implements vscode.Disposable {
+       }
+       const data = await response.json() as { token: string; expiresAt?: string };
+       await this.secrets.store(SECRET_ACCESS_TOKEN, data.token);
++      this.cachedToken = data.token;
+       if (data.expiresAt) {
+         this.tokenExpiresAt = new Date(data.expiresAt).getTime();
+       }
+@@ -137,6 +150,7 @@ export class AuthManager implements vscode.Disposable {
+   async logout(): Promise<void> {
+     await this.secrets.delete(SECRET_ACCESS_TOKEN);
+     await this.secrets.delete(SECRET_REFRESH_TOKEN);
++    this.cachedToken = null;
+     this.tokenExpiresAt = null;
+     this.refreshTimer.stop();
+     this.transitionTo("UNAUTHENTICATED");
+diff --git a/kiro-sdlc-agents/src/extension.ts b/kiro-sdlc-agents/src/extension.ts
+index 7d43f188..edf85be3 100644
+--- a/kiro-sdlc-agents/src/extension.ts
++++ b/kiro-sdlc-agents/src/extension.ts
+@@ -24,18 +24,22 @@ import { registerAIContextCommands } from "./ai-context-commands";
+ import { handleIndexSalesforceProject } from "./sf-indexer";
+ import { SecurityPanel } from "./panels/security-panel";
+ import { showImpactAnalysis } from "./panels/impact-panel";
+-import { NativeAddonManager } from "./native-addon-manager";
+-import { OnnxAddonManager } from "./onnx-addon-manager";
++// import { NativeAddonManager } from "./native-addon-manager";
++// import { OnnxAddonManager } from "./onnx-addon-manager";
+ import { KbEventBus } from "./kb-event-bus";
+ import { ChatPanelProvider } from "./chat-panel/chat-panel-provider";
+ import { SettingsPanel } from "./panels/settings-panel";
++import { AuthManager } from "./auth/AuthManager";
++import { LoginPanel } from "./panels/login-panel";
+ 
+ let mcpManager: McpServerManager | undefined;
+ let panelManager: WebviewPanelManager | undefined;
+ let configWatcher: ConfigWatcher | undefined;
+-let nativeAddonManager: NativeAddonManager | undefined;
+-let onnxAddonManager: OnnxAddonManager | undefined;
++// let nativeAddonManager: NativeAddonManager | undefined;
++// let onnxAddonManager: OnnxAddonManager | undefined;
+ let kbEventBus: KbEventBus | undefined;
++let treeProvider: KiroTreeViewProvider | undefined;
++let authManager: AuthManager | undefined;
+ 
+ export async function activate(context: vscode.ExtensionContext) {
+     const statusBar = createStatusBar();
+@@ -50,13 +54,9 @@ export async function activate(context: vscode.ExtensionContext) {
+         mcpManager = new McpServerManager(context.extensionPath, workspaceRoot, outputChannel);
+         context.subscriptions.push(mcpManager);
+ 
+-        // Initialize NativeAddonManager for prebuilt binary resolution (KSA-175)
+-        nativeAddonManager = new NativeAddonManager(context, outputChannel);
+-        mcpManager.setNativeAddonManager(nativeAddonManager);
+-
+-        // Initialize OnnxAddonManager for prebuilt ONNX Runtime resolution
+-        onnxAddonManager = new OnnxAddonManager(context, outputChannel);
+-        mcpManager.setOnnxAddonManager(onnxAddonManager);
++        // Addon managers removed — the extension is now a pure proxy
++        // nativeAddonManager = new NativeAddonManager(context, outputChannel);
++        // mcpManager.setNativeAddonManager(nativeAddonManager);
+ 
+         // Initialize KbEventBus for real-time panel updates via SSE
+         kbEventBus = new KbEventBus(outputChannel);
+@@ -65,9 +65,37 @@ export async function activate(context: vscode.ExtensionContext) {
+         panelManager = new WebviewPanelManager(mcpManager, context.extensionUri, kbEventBus);
+         context.subscriptions.push(panelManager);
+ 
+-        // Register tree view (use createTreeView for badge support)
+-        const treeProvider = new KiroTreeViewProvider(mcpManager);
+-        const treeView = vscode.window.createTreeView("kiroSdlcTree", { treeDataProvider: treeProvider });
++        // Initialize AuthManager
++        const mcpConfig = vscode.workspace.getConfiguration("kiroSdlc");
++        const backendUrl = mcpConfig.get<string>("backend.url") || "http://127.0.0.1:48721";
++        authManager = new AuthManager(context.secrets, backendUrl);
++        await authManager.initialize();
++        
++        // Provide token to webview panels
++        const { BasePanel } = require("./panels/base-panel");
++        BasePanel.authTokenProvider = () => authManager?.getTokenSync() || "";
++        
++        // Initialize sidebar tree view
++        treeProvider = new KiroTreeViewProvider(mcpManager);
++        
++        // Setup auth state syncing
++        authManager.onStateChange((state) => {
++            if (state === "AUTHENTICATED") {
++                treeProvider?.setAuthenticated(true, "admin");
++            } else if (state === "UNAUTHENTICATED") {
++                treeProvider?.setAuthenticated(false);
++            }
++        });
++        
++        // Initial auth state check
++        if (authManager.isAuthenticated) {
++            treeProvider.setAuthenticated(true, "admin");
++        }
++
++        const treeView = vscode.window.createTreeView("kiroSdlcTree", {
++            treeDataProvider: treeProvider,
++            showCollapseAll: true,
++        });
+         treeProvider.setTreeView(treeView);
+         context.subscriptions.push(treeView);
+ 
+@@ -152,6 +180,32 @@ export async function activate(context: vscode.ExtensionContext) {
+         configWatcher = new ConfigWatcher(workspaceRoot, mcpManager, outputChannel);
+         context.subscriptions.push(configWatcher);
+ 
++        // Watch workspace config changes for MCP wrapper port updates
++        context.subscriptions.push(vscode.workspace.onDidChangeConfiguration((event) => {
++            if (!event.affectsConfiguration("kiroSdlc.mcpServerPort") || !mcpManager) {
++                return;
++            }
++
++            const config = vscode.workspace.getConfiguration("kiroSdlc");
++            const serverEnabled = config.get<boolean>("enableMcpServer", true);
++            outputChannel.appendLine("[Config] kiroSdlc.mcpServerPort changed — updating MCP wrapper server...");
++
++            if (!serverEnabled) {
++                outputChannel.appendLine("[Config] MCP wrapper server is disabled; port saved but server will not start.");
++                return;
++            }
++
++            if (mcpManager.status === "running") {
++                mcpManager.restart().catch((err) => {
++                    outputChannel.appendLine(`[Config] Restart failed: ${(err as Error).message}`);
++                });
++            } else {
++                mcpManager.spawn().catch((err) => {
++                    outputChannel.appendLine(`[Config] Spawn failed after port change: ${(err as Error).message}`);
++                });
++            }
++        }));
++
+         // Broadcast server status to all panels
+         mcpManager.onStatusChange((status) => {
+             const webviewStatus = status === "running" ? "connected" : status === "crashed" ? "failed" : "disconnected";
+@@ -193,8 +247,17 @@ export async function activate(context: vscode.ExtensionContext) {
+         vscode.commands.registerCommand("kiroSdlc.update", () => handleUpdate(context)),
+         vscode.commands.registerCommand("kiroSdlc.status", () => handleStatus(context)),
+         vscode.commands.registerCommand("kiroSdlc.indexWorkspace", () => handleIndexWorkspace()),
+-        vscode.commands.registerCommand("kiroSdlc.downloadModel", () => handleDownloadModel()),
+         vscode.commands.registerCommand("kiroSdlc.indexSalesforceProject", () => handleIndexSalesforceProject()),
++        vscode.commands.registerCommand("kiroSdlc.login", async () => {
++            if (!authManager) return;
++            const loginPanel = new LoginPanel(authManager, context.extensionUri);
++            loginPanel.show();
++        }),
++        vscode.commands.registerCommand("kiroSdlc.logout", async () => {
++            if (!authManager) return;
++            await authManager.logout();
++            vscode.window.showInformationMessage("Logged out successfully.");
++        }),
+     );
+ 
+     // Register KB panel commands
+@@ -212,7 +275,6 @@ export async function activate(context: vscode.ExtensionContext) {
+         vscode.commands.registerCommand("kiroSdlc.restartMcpServer", () => handleRestartServer()),
+         vscode.commands.registerCommand("kiroSdlc.stopMcpServer", () => handleStopServer()),
+         vscode.commands.registerCommand("kiroSdlc.openKbBrowser", () => handleOpenKbBrowser()),
+-        vscode.commands.registerCommand("kiroSdlc.changePort", () => handleChangePort()),
+         vscode.commands.registerCommand("kiroSdlc.editConfig", () => handleEditConfig()),
+         vscode.commands.registerCommand("kiroSdlc.changeConfig", () => handleChangeConfig()),
+     );
+@@ -295,25 +357,7 @@ async function handleStopServer(): Promise<void> {
+     }
+ }
+ 
+-async function handleChangePort(): Promise<void> {
+-    const config = vscode.workspace.getConfiguration("kiroSdlc");
+-    const currentPort = config.get<number>("mcpServerPort", 9180);
+-    const input = await vscode.window.showInputBox({
+-        prompt: "Enter MCP server port",
+-        value: String(currentPort),
+-        validateInput: (v) => {
+-            const n = parseInt(v, 10);
+-            if (isNaN(n) || n < 1 || n > 65535) { return "Port must be 1-65535"; }
+-            return null;
+-        },
+-    });
+-    if (!input) { return; }
+-    const newPort = parseInt(input, 10);
+-    if (newPort === currentPort) { return; }
+-    await config.update("mcpServerPort", newPort, vscode.ConfigurationTarget.Workspace);
+-    vscode.window.showInformationMessage(`Port changed to ${newPort}. Restarting server...`);
+-    await handleRestartServer();
+-}
++
+ 
+ async function handleEditConfig(): Promise<void> {
+     const root = getWorkspaceRoot();
+diff --git a/kiro-sdlc-agents/src/indexer.ts b/kiro-sdlc-agents/src/indexer.ts
+index 126608de..77e76805 100644
+--- a/kiro-sdlc-agents/src/indexer.ts
++++ b/kiro-sdlc-agents/src/indexer.ts
+@@ -306,58 +306,63 @@ function resolveViewerPort(root: string): number {
+     return 3200; // default
+ }
+ 
+-/** Call MCP server HTTP API to ingest documents. */
++/** Call Backend MCP server to ingest documents via mem_ingest_file tool. */
+ async function ingestDocumentsViaHttp(
+     docs: Array<{ path: string; type: string; ticket: string; content?: string }>,
+     report: vscode.Progress<{ message?: string }>
+ ): Promise<string> {
+-    const root = getWorkspaceRoot();
+-    if (!root) { return "❌ No workspace root"; }
+-
+-    const port = resolveViewerPort(root);
+-    const url = `http://localhost:${port}/api/memory/ingest-file`;
++    const backendUrl = vscode.workspace.getConfiguration("kiroSdlc").get<string>("backend.url");
++    if (!backendUrl) { return "❌ Backend URL not configured in settings."; }
+ 
+-    const payload = {
+-        files: docs.map(d => ({
+-            file_path: d.path,
+-            type: d.type,
+-            format: "markdown",
+-            ...(d.content ? { content: d.content } : {})
+-        }))
+-    };
++    const url = `${backendUrl}/mcp/tools/call`;
++    let ingested = 0;
++    let errors = 0;
+ 
+     try {
+         const http = await import("http");
+-        const body = JSON.stringify(payload);
+-
+-        const result = await new Promise<string>((resolve, reject) => {
+-            const req = http.request(url, {
+-                method: "POST",
+-                headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+-            }, (res) => {
+-                let data = "";
+-                res.on("data", chunk => { data += chunk; });
+-                res.on("end", () => {
+-                    if (res.statusCode === 200) {
+-                        try {
+-                            const json = JSON.parse(data);
+-                            resolve(`✅ Indexed: ${json.ingested} files, skipped: ${json.skipped} (unchanged)`);
+-                        } catch {
+-                            resolve(`✅ Server responded: ${data.substring(0, 200)}`);
++        
++        for (let i = 0; i < docs.length; i++) {
++            const d = docs[i];
++            if (i % 10 === 0) {
++                report.report({ message: `Ingesting ${i + 1}/${docs.length} files...` });
++            }
++
++            const payload = {
++                tool_name: "mem_ingest_file",
++                arguments: {
++                    file_path: d.path,
++                    type: d.type,
++                    format: "markdown",
++                    ...(d.content ? { content: d.content } : {})
++                }
++            };
++
++            const body = JSON.stringify(payload);
++            const result = await new Promise<boolean>((resolve) => {
++                const req = http.request(url, {
++                    method: "POST",
++                    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
++                }, (res) => {
++                    let data = "";
++                    res.on("data", chunk => { data += chunk; });
++                    res.on("end", () => {
++                        if (res.statusCode === 200) {
++                            resolve(true);
++                        } else {
++                            resolve(false);
+                         }
+-                    } else {
+-                        resolve(`⚠️ Server returned ${res.statusCode}: ${data.substring(0, 200)}`);
+-                    }
++                    });
+                 });
++                req.on("error", () => resolve(false));
++                req.write(body);
++                req.end();
+             });
+-            req.on("error", (err) => {
+-                resolve(`❌ Cannot reach MCP server at port ${port}: ${err.message}\n   Ensure server is running. Fallback: ask agent "Index all documents"`);
+-            });
+-            req.write(body);
+-            req.end();
+-        });
+ 
+-        return result;
++            if (result) ingested++;
++            else errors++;
++        }
++
++        return `✅ Indexed: ${ingested} files` + (errors > 0 ? `, ⚠️ Failed: ${errors}` : ``);
+     } catch (err: any) {
+         return `❌ HTTP request failed: ${err.message}`;
+     }
+diff --git a/kiro-sdlc-agents/src/langgraph/checkpointer.ts b/kiro-sdlc-agents/src/langgraph/checkpointer.ts
+index ed194dcb..b46e04ee 100644
+--- a/kiro-sdlc-agents/src/langgraph/checkpointer.ts
++++ b/kiro-sdlc-agents/src/langgraph/checkpointer.ts
+@@ -147,8 +147,7 @@ export class WorkspaceCheckpointer extends BaseCheckpointSaver {
+     }
+   }
+ 
+-  async delete(config: RunnableConfig): Promise<void> {
+-    const threadId = config.configurable?.thread_id as string | undefined;
++  async deleteThread(threadId: string): Promise<void> {
+     if (!threadId) { return; }
+ 
+     const filePath = path.join(this.stateDir, `${threadId}.json`);
+@@ -157,6 +156,13 @@ export class WorkspaceCheckpointer extends BaseCheckpointSaver {
+     }
+   }
+ 
++  async delete(config: RunnableConfig): Promise<void> {
++    const threadId = config.configurable?.thread_id as string | undefined;
++    if (threadId) {
++      return this.deleteThread(threadId);
++    }
++  }
++
+   /** List all persisted pipelines for resume UI */
+   listPersistedPipelines(): PersistedPipelineInfo[] {
+     if (!fs.existsSync(this.stateDir)) { return []; }
+diff --git a/kiro-sdlc-agents/src/mcp-server-inprocess.ts b/kiro-sdlc-agents/src/mcp-server-inprocess.ts
+index a8362508..bbbbb9a9 100644
+--- a/kiro-sdlc-agents/src/mcp-server-inprocess.ts
++++ b/kiro-sdlc-agents/src/mcp-server-inprocess.ts
+@@ -1,15 +1,9 @@
+ "use strict";
+ 
+ /**
+- * McpServerInProcess — Runs the MCP Code Intelligence server IN-PROCESS.
+- *
+- * KSA-260: Instead of spawning child processes (which depend on system Node.js),
+- * this directly requires and runs the MCP server logic within the extension host.
+- * Benefits:
+- *  - No external Node.js dependency (uses Kiro IDE's built-in runtime)
+- *  - Single process = less memory, faster startup
+- *  - No NODE_MODULE_VERSION mismatch issues
+- *  - Native addons load in the same V8 isolate
++ * McpServerInProcess — Pure Proxy to Backend.
++ * KSA-260: Removed local engine (better-sqlite3, tree-sitter).
++ * Proxies all requests to the central Backend server.
+  */
+ 
+ import * as vscode from "vscode";
+@@ -20,43 +14,16 @@ import * as net from "net";
+ import {
+   ServerStatus,
+   IServerManager,
+-  McpRequest,
+-  McpResponse,
+-  McpServerNotRunningError,
+-  McpTimeoutError,
+-  McpBundleMissingError,
+   SERVER_CONSTANTS,
+ } from "./types";
+-import { NativeAddonManager } from "./native-addon-manager";
+-import { OnnxAddonManager } from "./onnx-addon-manager";
+-
+-/**
+- * In-process server state. Holds references to the MCP engine internals
+- * loaded from `mcp-server/index.js`.
+- */
+-interface McpEngine {
+-  handleRequest(method: string, id: number, params: Record<string, unknown>): Promise<McpJsonRpcResponse | null>;
+-  cleanup(): void;
+-}
+-
+-interface McpJsonRpcResponse {
+-  jsonrpc: "2.0";
+-  id: number | null;
+-  result?: unknown;
+-  error?: { code: number; message: string };
+-}
+ 
+ export class McpServerManager implements IServerManager, vscode.Disposable {
+   private _status: ServerStatus = "stopped";
+   private _port: number | null = null;
+   private httpServer: http.Server | null = null;
+-  private engine: McpEngine | null = null;
+-  private nativeAddonManager: NativeAddonManager | undefined;
+-  private onnxAddonManager: OnnxAddonManager | undefined;
+   private requestId = 0;
+   private isDisposing = false;
+ 
+-  // SSE connections for real-time panel updates
+   private sseConnections = new Set<http.ServerResponse>();
+ 
+   private readonly _onStatusChange = new vscode.EventEmitter<ServerStatus>();
+@@ -68,129 +35,44 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+     private readonly outputChannel: vscode.OutputChannel
+   ) {}
+ 
+-  setNativeAddonManager(manager: NativeAddonManager): void {
+-    this.nativeAddonManager = manager;
+-  }
+-
+-  setOnnxAddonManager(manager: OnnxAddonManager): void {
+-    this.onnxAddonManager = manager;
+-  }
+-
+-  get status(): ServerStatus {
+-    return this._status;
+-  }
+-
+-  get pid(): number | null {
+-    // In-process — PID is extension host's PID
+-    return process.pid;
+-  }
+-
+-  get port(): number | null {
+-    return this._port;
+-  }
+-
+-  get viewerPort(): number | null {
+-    return this._port;
+-  }
+-
+-  // ─── Public API ────────────────────────────────────────────────────────────
++  get status(): ServerStatus { return this._status; }
++  get pid(): number | null { return process.pid; }
++  get port(): number | null { return this._port; }
++  get viewerPort(): number | null { return this._port; }
+ 
+   async spawn(): Promise<void> {
+-    if (this._status === "running") {
+-      return;
+-    }
+-
++    if (this._status === "running") return;
+     this.setStatus("starting");
+ 
+     const configuredPort = this.getConfiguredPort();
+ 
+-    // Check if port is already in use → external server running
+     if (await this.isPortListening(configuredPort)) {
+-      this.outputChannel.appendLine(`[MCP-InProcess] Port ${configuredPort} already in use — connecting to existing server.`);
++      this.outputChannel.appendLine(`[MCP-Proxy] Port ${configuredPort} already in use — connecting to existing server.`);
+       this._port = configuredPort;
+       this.setStatus("running");
+       this.updateMcpJson();
+       return;
+     }
+ 
+-    // Ensure native addon is available
+-    let nativeBindingPath: string | undefined;
+-    if (this.nativeAddonManager) {
+-      const addonPath = await this.nativeAddonManager.ensure();
+-      if (!addonPath) {
+-        this.setStatus("stopped");
+-        this.outputChannel.appendLine("[MCP-InProcess] Native addon unavailable. Server not started.");
+-        return;
+-      }
+-      nativeBindingPath = addonPath;
+-      this.outputChannel.appendLine(`[MCP-InProcess] Native addon resolved: ${addonPath}`);
+-    }
+-
+-    // Ensure ONNX Runtime is available (optional)
+-    let onnxRuntimePath: string | undefined;
+-    if (this.onnxAddonManager) {
+-      const onnxPath = await this.onnxAddonManager.ensure();
+-      if (onnxPath) {
+-        onnxRuntimePath = onnxPath;
+-        this.outputChannel.appendLine(`[MCP-InProcess] ONNX Runtime resolved: ${onnxPath}`);
+-      } else {
+-        this.outputChannel.appendLine("[MCP-InProcess] ONNX Runtime unavailable — embedding features disabled.");
+-      }
+-    }
+-
+-    // Verify bundle exists
+-    const serverDir = path.join(this.extensionPath, "mcp-server");
+-    const indexPath = path.join(serverDir, "index.js");
+-    if (!fs.existsSync(indexPath)) {
+-      this.setStatus("stopped");
+-      throw new McpBundleMissingError();
+-    }
+-
+-    // Set environment variables BEFORE requiring the module
+-    if (nativeBindingPath) {
+-      process.env.BETTER_SQLITE3_BINDING = nativeBindingPath;
+-    }
+-    if (onnxRuntimePath) {
+-      process.env.ONNX_RUNTIME_PATH = onnxRuntimePath;
+-      // Add ONNX parent dir to NODE_PATH for resolution
+-      const onnxParent = path.dirname(onnxRuntimePath);
+-      process.env.NODE_PATH = [onnxParent, process.env.NODE_PATH].filter(Boolean).join(path.delimiter);
+-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+-      require("module").Module._initPaths();
+-    }
+-    process.env.DISABLE_VIEWER = "1";
+-    process.env.CODE_INTEL_VIEWER_PORT = "0";
+-
+-    this.outputChannel.appendLine(`[MCP-InProcess] Loading MCP engine in-process (Node ${process.versions.node})...`);
+-
+     try {
+-      // Load the MCP engine modules directly
+-      this.engine = await this.loadEngine(serverDir);
+-
+-      // Start HTTP server
+-      await this.startHttpServer(configuredPort, serverDir);
+-
++      await this.startHttpServer(configuredPort);
+       this.setStatus("running");
+-      this.outputChannel.appendLine(`[MCP-InProcess] Server running in-process on port ${this._port} (PID: ${process.pid})`);
++      this.outputChannel.appendLine(`[MCP-Proxy] Proxy Server running on port ${this._port}`);
+       this.updateMcpJson();
+     } catch (err: unknown) {
+       this.setStatus("crashed");
+-      const msg = (err as Error).message || String(err);
+-      this.outputChannel.appendLine(`[MCP-InProcess] Failed to start: ${msg}`);
++      this.outputChannel.appendLine(`[MCP-Proxy] Failed to start: ${(err as Error).message}`);
+       throw err;
+     }
+   }
+ 
+   async kill(): Promise<void> {
+-    this.outputChannel.appendLine("[MCP-InProcess] Stopping server...");
+-
+-    // Close all SSE connections
++    this.outputChannel.appendLine("[MCP-Proxy] Stopping proxy server...");
+     for (const res of this.sseConnections) {
+       try { res.end(); } catch { /* ignore */ }
+     }
+     this.sseConnections.clear();
+ 
+-    // Close HTTP server
+     if (this.httpServer) {
+       await new Promise<void>((resolve) => {
+         this.httpServer!.close(() => resolve());
+@@ -199,39 +81,34 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+       this.httpServer = null;
+     }
+ 
+-    // Cleanup engine
+-    if (this.engine) {
+-      try { this.engine.cleanup(); } catch { /* ignore */ }
+-      this.engine = null;
+-    }
+-
+     this._port = null;
+     this.setStatus("stopped");
+   }
+ 
+   async restart(): Promise<void> {
+-    this.outputChannel.appendLine("[MCP-InProcess] Restarting...");
+     await this.kill();
+     await this.spawn();
+   }
+ 
+   async invokeTool(name: string, args: Record<string, unknown>): Promise<string> {
+-    if (this._status !== "running" || !this._port) {
+-      throw new McpServerNotRunningError();
+-    }
++    const backendUrl = vscode.workspace.getConfiguration("kiroSdlc").get<string>("backend.url");
++    if (!backendUrl) throw new Error("Backend URL is not configured");
+ 
+-    // Direct in-process call — no HTTP roundtrip needed!
+-    if (this.engine) {
+-      const response = await this.engine.handleRequest("tools/call", ++this.requestId, { name, arguments: args });
+-      if (response?.error) {
+-        throw new Error(`MCP error (${response.error.code}): ${response.error.message}`);
+-      }
+-      const result = response?.result as { content?: Array<{ type: string; text: string }> } | undefined;
+-      return result?.content?.[0]?.text ?? "";
++    const url = `${backendUrl}/mcp/tools/call`;
++    try {
++      const response = await fetch(url, {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ tool_name: name, arguments: args })
++      });
++      if (!response.ok) throw new Error(`HTTP ${response.status}`);
++      const data = await response.json() as any;
++      if (data.error) throw new Error(data.error.message);
++      const content = data.content || data.result?.content;
++      return content?.[0]?.text ?? JSON.stringify(data);
++    } catch (e) {
++      throw new Error(`Cannot connect to backend server: ${e}`);
+     }
+-
+-    // Fallback: HTTP call (if engine not loaded but port is open — external server)
+-    return this.invokeToolViaHttp(name, args);
+   }
+ 
+   dispose(): void {
+@@ -240,125 +117,8 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+     this._onStatusChange.dispose();
+   }
+ 
+-  // ─── Private: Engine Loading ───────────────────────────────────────────────
+-
+-  private async loadEngine(serverDir: string): Promise<McpEngine> {
+-    const configMod = require(path.join(serverDir, "config.js"));
+-    const dbMod = require(path.join(serverDir, "db", "database-manager.js"));
+-    const indexerMod = require(path.join(serverDir, "indexer", "indexing-engine.js"));
+-    const toolsMod = require(path.join(serverDir, "tools", "register-tools.js"));
+-    const toolCallIngestMod = require(path.join(serverDir, "tools", "tool-call-ingest.js"));
+-    const memoryMod = require(path.join(serverDir, "memory", "memory-engine.js"));
+-    const embeddingMod = require(path.join(serverDir, "memory", "embedding", "index.js"));
+-    const orchConfigMod = require(path.join(serverDir, "orchestration", "config.js"));
+-    const orchEngineMod = require(path.join(serverDir, "orchestration", "engine.js"));
+-
+-    // Pre-resolve native binding
+-    await dbMod.DatabaseManager.preResolveBinding();
+-
+-    // Load config with workspace
+-    let config = configMod.loadConfig();
+-    config = configMod.setWorkspace(config, this.workspaceFolder);
+-    this.outputChannel.appendLine(`[MCP-InProcess] Workspace: ${config.workspace}`);
+-    this.outputChannel.appendLine(`[MCP-InProcess] DB path: ${config.dbPath}`);
+-
+-    // Initialize DB
+-    const db = new dbMod.DatabaseManager(config.dbPath);
+-    db.initialize();
+-
+-    // Initialize indexer
+-    const indexer = new indexerMod.IndexingEngine(db, config);
+-
+-    // Initialize memory engine
+-    const memEngine = new memoryMod.MemoryEngine(db.getDb());
+-    memEngine.startSession("kiro-extension-host");
+-
+-    // Initialize embedding
+-    const embeddingService = embeddingMod.EmbeddingFactory.create(config, memEngine.vectors);
+-    this.outputChannel.appendLine(
+-      embeddingService
+-        ? "[MCP-InProcess] EmbeddingService initialized — vectors enabled"
+-        : "[MCP-InProcess] EmbeddingService not available — using BM25 only"
+-    );
+-
+-    // Initialize memory dispatcher
+-    toolsMod.initMemoryDispatcher(memEngine, config.workspace, embeddingService);
+-    const memDispatcher = toolsMod.getMemoryDispatcherInstance();
+-    if (memDispatcher) {
+-      toolCallIngestMod.setIngestDispatcher(memDispatcher);
+-    }
+-
+-    // Initialize orchestration
+-    const ocp = configMod.resolveOrchestrationConfigPath();
+-    const oc = ocp
+-      ? orchConfigMod.loadOrchestrationConfigFromPath(ocp)
+-      : orchConfigMod.loadOrchestrationConfig(config.workspace);
+-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-    let orchEngine: any = null;
+-    if (oc) {
+-      orchEngine = new orchEngineMod.OrchestrationEngine(oc, memEngine, config);
+-      await orchEngine.start();
+-      toolsMod.initOrchestration(orchEngine);
+-      this.outputChannel.appendLine("[MCP-InProcess] OrchestrationEngine started");
+-    } else {
+-      this.outputChannel.appendLine("[MCP-InProcess] No orchestration.json — orchestration disabled");
+-    }
+-
+-    // Background indexing
+-    indexer.startBackgroundIndexing().catch((e: Error) => {
+-      this.outputChannel.appendLine(`[MCP-InProcess] Indexing error: ${e.message}`);
+-    });
+-
+-    this.outputChannel.appendLine("[MCP-InProcess] Engine initialization complete");
+-
+-    // Return engine interface
+-    return {
+-      handleRequest: async (method: string, id: number, params: Record<string, unknown>) => {
+-        switch (method) {
+-          case "tools/list":
+-            return { jsonrpc: "2.0" as const, id, result: { tools: toolsMod.getToolDefinitions() } };
+-          case "tools/call": {
+-            const toolName = (params.name as string) ?? "";
+-            const toolArgs = (params.arguments as Record<string, unknown>) ?? {};
+-            if (memEngine) {
+-              const details = `${toolName}(${JSON.stringify(toolArgs).substring(0, 150)})`;
+-              memEngine.audit.log("TOOL_CALL", undefined, memEngine.getSessionId() ?? undefined, details);
+-            }
+-            const text = await toolsMod.dispatchTool(toolName, toolArgs, db, indexer, config.workspace);
+-            toolCallIngestMod.maybeIngestToolCall(toolName, toolArgs, text);
+-
+-            // Emit SSE event for write operations
+-            if (this.sseConnections.size > 0) {
+-              const eventType = this.inferKbEvent(toolName, toolArgs);
+-              if (eventType) this.emitSseEvent(eventType, { tool: toolName, action: toolArgs.action });
+-            }
+-
+-            return { jsonrpc: "2.0" as const, id, result: { content: [{ type: "text", text }] } };
+-          }
+-          case "initialize":
+-            return {
+-              jsonrpc: "2.0" as const, id,
+-              result: { protocolVersion: "2024-11-05", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "mcp-code-intelligence", version: "0.2.0" } },
+-            };
+-          case "ping":
+-            return { jsonrpc: "2.0" as const, id, result: {} };
+-          default:
+-            return { jsonrpc: "2.0" as const, id, error: { code: -32601, message: `Method not found: ${method}` } };
+-        }
+-      },
+-      cleanup: () => {
+-        if (orchEngine?.stop) orchEngine.stop();
+-        if (memEngine) memEngine.endSession();
+-      },
+-    };
+-  }
+-
+-  // ─── Private: HTTP Server ──────────────────────────────────────────────────
+-
+-  private startHttpServer(port: number, serverDir: string): Promise<void> {
++  private startHttpServer(port: number): Promise<void> {
+     return new Promise((resolve, reject) => {
+-      const viewerDir = path.join(serverDir, "viewer");
+-
+       const server = http.createServer(async (req, res) => {
+         const url = new URL(req.url || "/", "http://localhost");
+         res.setHeader("Access-Control-Allow-Origin", "*");
+@@ -369,16 +129,11 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+         const p = url.pathname;
+         try {
+           if (p === "/mcp") { await this.handleMcpRequest(req, res); return; }
+-          if (p === "/health") { res.writeHead(200, { "Content-Type": "application/json" }); res.end('{"status":"ok","mode":"in-process"}'); return; }
++          if (p === "/health") { res.writeHead(200, { "Content-Type": "application/json" }); res.end('{"status":"ok","mode":"proxy"}'); return; }
+           if (p === "/api/events") { this.handleSse(req, res); return; }
+-          if (p.startsWith("/api/")) { await this.handleViewerApi(url, res); return; }
+-          if (p === "/" || p === "/index.html") { this.serveFile(viewerDir, "index.html", res); return; }
+-          if (p === "/dashboard") { this.serveFile(viewerDir, "dashboard.html", res); return; }
+-          if (p === "/tags") { this.serveFile(viewerDir, "tags.html", res); return; }
+-          if (p === "/quality") { this.serveFile(viewerDir, "quality.html", res); return; }
+-          if (p === "/analytics") { this.serveFile(viewerDir, "analytics.html", res); return; }
+-          if (p.startsWith("/modules/") || p.startsWith("/config/")) { this.serveFile(viewerDir, p.slice(1), res); return; }
+-          if (p.match(/\.(js|css|png|svg|json)$/)) { this.serveFile(viewerDir, path.basename(p), res); return; }
++          
++          // Forward viewer/dashboard routes to backend? Or just serve local UI? 
++          // For now, let's just 404 to encourage using the new standalone UI.
+           res.writeHead(404, { "Content-Type": "application/json" }); res.end('{"error":"Not found"}');
+         } catch (err: unknown) {
+           if (!res.headersSent) { res.writeHead(500, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: (err as Error).message })); }
+@@ -404,15 +159,118 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+       res.end('{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}');
+       return;
+     }
++    
+     if (jsonRpc.id === undefined) jsonRpc.id = ++this.requestId;
+-    if (!this.engine) {
+-      res.writeHead(503, { "Content-Type": "application/json" });
+-      res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32002, message: "Engine not ready" } }));
++    const backendUrl = vscode.workspace.getConfiguration("kiroSdlc").get<string>("backend.url");
++    if (!backendUrl) {
++      res.writeHead(500, { "Content-Type": "application/json" });
++      res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32000, message: "Backend URL not configured" } }));
++      return;
++    }
++
++    if (jsonRpc.method === "initialize") {
++      res.writeHead(200, { "Content-Type": "application/json" });
++      res.end(JSON.stringify({
++        jsonrpc: "2.0", id: jsonRpc.id,
++        result: { protocolVersion: "2024-11-05", capabilities: { tools: { listChanged: false } }, serverInfo: { name: "kiro-sdlc-proxy", version: "2.0.0" } }
++      }));
++      return;
++    }
++
++    if (jsonRpc.method === "tools/list") {
++      try {
++        const response = await fetch(`${backendUrl}/mcp/tools/list`);
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        const data = await response.json() as { tools: any[] };
++        
++        // Inject local tools
++        const localTools = [{
++          name: "embed_images",
++          description: "Embed images as base64 in a markdown file",
++          inputSchema: {
++            type: "object",
++            properties: {
++              file_path: { type: "string", description: "Input markdown file path" },
++              output_path: { type: "string", description: "Output markdown file path" }
++            },
++            required: ["file_path", "output_path"]
++          }
++        }];
++        
++        res.writeHead(200, { "Content-Type": "application/json" });
++        res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, result: { tools: [...data.tools, ...localTools] } }));
++      } catch (e) {
++        res.writeHead(500, { "Content-Type": "application/json" });
++        res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32000, message: `Cannot connect to backend server: ${e}` } }));
++      }
+       return;
+     }
+-    const response = await this.engine.handleRequest(jsonRpc.method, jsonRpc.id, jsonRpc.params || {});
++
++    if (jsonRpc.method === "tools/call") {
++      const toolName = jsonRpc.params?.name as string;
++      const toolArgs = (jsonRpc.params?.arguments || {}) as Record<string, unknown>;
++
++      if (toolName === "embed_images") {
++        try {
++          const result = this.executeLocalEmbedImages(toolArgs);
++          res.writeHead(200, { "Content-Type": "application/json" });
++          res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, result }));
++        } catch (e) {
++          res.writeHead(500, { "Content-Type": "application/json" });
++          res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32000, message: `Local tool execution failed: ${e}` } }));
++        }
++        return;
++      }
++
++      try {
++        const response = await fetch(`${backendUrl}/mcp/tools/call`, {
++          method: "POST", headers: { "Content-Type": "application/json" },
++          body: JSON.stringify({ tool_name: toolName, arguments: toolArgs })
++        });
++        if (!response.ok) throw new Error(`HTTP ${response.status}`);
++        const data = await response.json();
++        res.writeHead(200, { "Content-Type": "application/json" });
++        res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, result: data }));
++      } catch (e) {
++        res.writeHead(500, { "Content-Type": "application/json" });
++        res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32000, message: `Cannot connect to backend server: ${e}` } }));
++      }
++      return;
++    }
++
++    // Default fallback - proxy to backend
+     res.writeHead(200, { "Content-Type": "application/json" });
+-    res.end(JSON.stringify(response));
++    res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32601, message: `Method not found: ${jsonRpc.method}` } }));
++  }
++
++  private executeLocalEmbedImages(args: Record<string, unknown>): { content: Array<{ type: string, text: string }>, isError: boolean } {
++    const filePath = args.file_path as string;
++    const outputPath = args.output_path as string;
++    const root = this.workspaceFolder || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
++    if (!root) { return { content: [{ type: "text", text: "No workspace folder open" }], isError: true }; }
++
++    const absInput = path.join(root, filePath);
++    const absOutput = path.join(root, outputPath);
++    if (!fs.existsSync(absInput)) { return { content: [{ type: "text", text: "File not found: " + filePath }], isError: true }; }
++
++    let markdown = fs.readFileSync(absInput, "utf-8");
++    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
++    let match: RegExpExecArray | null;
++    while ((match = imgRegex.exec(markdown)) !== null) {
++      const imgPath = match[2];
++      if (imgPath.startsWith("data:") || imgPath.startsWith("http")) { continue; }
++      const absImgPath = path.resolve(path.dirname(absInput), imgPath);
++      if (fs.existsSync(absImgPath)) {
++        const ext = path.extname(absImgPath).replace(".", "");
++        const mime = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/" + ext;
++        const data = fs.readFileSync(absImgPath).toString("base64");
++        markdown = markdown.replace(match[0], "![" + match[1] + "](data:" + mime + ";base64," + data + ")");
++      }
++    }
++
++    fs.mkdirSync(path.dirname(absOutput), { recursive: true });
++    fs.writeFileSync(absOutput, markdown, "utf-8");
++    return { content: [{ type: "text", text: "Embedded images written to: " + absOutput }], isError: false };
+   }
+ 
+   private handleSse(req: http.IncomingMessage, res: http.ServerResponse): void {
+@@ -429,51 +287,6 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+     res.on("error", cleanup);
+   }
+ 
+-  private async handleViewerApi(url: URL, res: http.ServerResponse): Promise<void> {
+-    const apiPath = url.pathname.replace("/api/", "");
+-    if (!this.engine) { res.writeHead(503, { "Content-Type": "application/json" }); res.end('{"error":"Engine not ready"}'); return; }
+-    try {
+-      if (apiPath === "memory/status" || apiPath === "kb/status") {
+-        const text = await this.callToolDirect("mem_admin", { action: "status" });
+-        const totalEntries = parseInt((text.match(/Total entries:\s*(\d+)/) || [])[1] || "0", 10);
+-        const totalEdges = parseInt((text.match(/Total edges:\s*(\d+)/) || [])[1] || "0", 10);
+-        const totalVectors = parseInt((text.match(/Total vectors:\s*(\d+)/) || [])[1] || "0", 10);
+-        this.sendJson(res, { totalEntries, totalEdges, totalVectors });
+-      } else if (apiPath === "memory/graph/data") {
+-        const limit = parseInt(url.searchParams.get("limit") || "15000", 10);
+-        const text = await this.callToolDirect("mem_graph", { action: "graph_data", limit });
+-        this.sendJson(res, JSON.parse(text));
+-      } else if (apiPath === "kb/dashboard") {
+-        this.sendJson(res, JSON.parse(await this.callToolDirect("mem_admin", { action: "dashboard" })));
+-      } else if (apiPath === "kb/tags") {
+-        this.sendJson(res, JSON.parse(await this.callToolDirect("mem_tags", { action: "taxonomy" })));
+-      } else if (apiPath === "memory/entries") {
+-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+-        this.sendJson(res, JSON.parse(await this.callToolDirect("mem_crud", { action: "list", limit })));
+-      } else if (apiPath === "memory/search") {
+-        const q = url.searchParams.get("q") || "";
+-        const text = await this.callToolDirect("mem_search", { query: q, limit: 20, detail: true });
+-        try { this.sendJson(res, JSON.parse(text)); } catch { this.sendJson(res, []); }
+-      } else {
+-        res.writeHead(404, { "Content-Type": "application/json" }); res.end('{"error":"Not found"}');
+-      }
+-    } catch (err: unknown) {
+-      if (!res.headersSent) { res.writeHead(500, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: (err as Error).message })); }
+-    }
+-  }
+-
+-  private async callToolDirect(name: string, args: Record<string, unknown>): Promise<string> {
+-    if (!this.engine) throw new Error("Engine not ready");
+-    const response = await this.engine.handleRequest("tools/call", ++this.requestId, { name, arguments: args });
+-    if (response?.error) throw new Error(response.error.message);
+-    const result = response?.result as { content?: Array<{ type: string; text: string }> } | undefined;
+-    const text = result?.content?.[0]?.text ?? "{}";
+-    if (text.startsWith("Unknown tool:")) throw new Error(text);
+-    return text;
+-  }
+-
+-  // ─── Private: Utilities ────────────────────────────────────────────────────
+-
+   private readBody(req: http.IncomingMessage): Promise<string> {
+     return new Promise((resolve, reject) => {
+       const chunks: Buffer[] = []; let size = 0; const MAX = 4 * 1024 * 1024;
+@@ -483,50 +296,6 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+     });
+   }
+ 
+-  private sendJson(res: http.ServerResponse, data: unknown): void {
+-    res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify(data));
+-  }
+-
+-  private serveFile(viewerDir: string, relPath: string, res: http.ServerResponse): void {
+-    if (relPath.includes("..")) { res.writeHead(404); res.end(); return; }
+-    const filePath = path.join(viewerDir, relPath);
+-    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end('{"error":"Not found"}'); return; }
+-    const MIME: Record<string, string> = { ".html": "text/html", ".js": "application/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml" };
+-    const ext = path.extname(filePath);
+-    res.writeHead(200, { "Content-Type": (MIME[ext] || "application/octet-stream") + "; charset=utf-8", "Cache-Control": "no-cache" });
+-    fs.createReadStream(filePath).pipe(res);
+-  }
+-
+-  private emitSseEvent(eventType: string, data: Record<string, unknown>): void {
+-    const payload = JSON.stringify({ type: eventType, timestamp: Date.now(), data });
+-    for (const res of this.sseConnections) { if (res.writable) res.write(`event: ${eventType}\ndata: ${payload}\n\n`); }
+-  }
+-
+-  private inferKbEvent(toolName: string, args: Record<string, unknown>): string | null {
+-    switch (toolName) {
+-      case "mem_ingest": case "mem_ingest_file": return "kb_entry_added";
+-      case "mem_crud": return args?.action === "delete" ? "kb_entry_deleted" : args?.action === "update" ? "kb_entry_updated" : null;
+-      case "mem_tags": { const a = args?.action; return a === "create" ? "tag_created" : a === "delete" ? "tag_deleted" : (a === "tag" || a === "untag") ? "tag_updated" : null; }
+-      case "mem_consolidate": return "consolidation_complete";
+-      default: return null;
+-    }
+-  }
+-
+-  private async invokeToolViaHttp(name: string, args: Record<string, unknown>): Promise<string> {
+-    const request: McpRequest = { jsonrpc: "2.0", id: ++this.requestId, method: "tools/call", params: { name, arguments: args } };
+-    const url = `http://127.0.0.1:${this._port}/mcp`;
+-    const controller = new AbortController();
+-    const timeout = setTimeout(() => controller.abort(), SERVER_CONSTANTS.REQUEST_TIMEOUT_MS);
+-    try {
+-      const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request), signal: controller.signal });
+-      clearTimeout(timeout);
+-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+-      const data = (await response.json()) as McpResponse;
+-      if (data.error) throw new Error(`MCP error (${data.error.code}): ${data.error.message}`);
+-      return data.result?.content?.[0]?.text ?? "";
+-    } catch (err: unknown) { clearTimeout(timeout); if ((err as Error).name === "AbortError") throw new McpTimeoutError(name, SERVER_CONSTANTS.REQUEST_TIMEOUT_MS); throw err; }
+-  }
+-
+   private setStatus(status: ServerStatus): void {
+     if (this._status !== status) { this._status = status; this._onStatusChange.fire(status); }
+   }
+@@ -559,7 +328,7 @@ export class McpServerManager implements IServerManager, vscode.Disposable {
+       servers["code-intelligence"] = { ...existing, type: "httpStream", url: `http://127.0.0.1:${this._port}/mcp` };
+       config.mcpServers = servers;
+       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2), "utf-8");
+-      this.outputChannel.appendLine(`[MCP-InProcess] Updated mcp.json → http://127.0.0.1:${this._port}/mcp`);
+-    } catch (err) { this.outputChannel.appendLine(`[MCP-InProcess] Warning: could not update mcp.json: ${(err as Error).message}`); }
++      this.outputChannel.appendLine(`[MCP-Proxy] Updated mcp.json → http://127.0.0.1:${this._port}/mcp`);
++    } catch (err) { this.outputChannel.appendLine(`[MCP-Proxy] Warning: could not update mcp.json: ${(err as Error).message}`); }
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/panels/analytics-panel.ts b/kiro-sdlc-agents/src/panels/analytics-panel.ts
+index fc880fba..fda97492 100644
+--- a/kiro-sdlc-agents/src/panels/analytics-panel.ts
++++ b/kiro-sdlc-agents/src/panels/analytics-panel.ts
+@@ -15,105 +15,17 @@ export class AnalyticsPanel extends BasePanel {
+ 
+   constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri, eventBus?: KbEventBus) {
+     super("analytics", mcpManager, extensionUri);
+-    this.startFallbackPolling();
+-    if (eventBus) {
+-      this.eventSubscription = eventBus.onAnalyticsChange(() => {
+-        if (this.isAlive && this.mcpManager.status === "running") {
+-          this.loadData().catch(() => {});
+-        }
+-      });
+-    }
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const body = `
+-    <div id="analytics-panel" style="padding:16px;">
+-      <div class="loading" id="loading">Loading analytics...</div>
+-      <div id="content" style="display:none;">
+-        <div id="time-range" style="margin-bottom:12px;">
+-          <select id="range-select"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
+-        </div>
+-        <div style="margin-bottom:16px;"><canvas id="volume-chart" width="500" height="180" style="width:100%;max-width:100%;"></canvas></div>
+-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+-          <div><h3>Popular Queries</h3><ol id="popular-list"></ol></div>
+-          <div><h3>Knowledge Gaps</h3><ul id="gaps-list"></ul></div>
+-        </div>
+-        <div id="recommendations" style="margin-top:16px;"><h3>Recommendations</h3><div id="rec-cards"></div></div>
+-      </div>
+-    </div>`;
+-    return this.getBaseHtml(webview, body, ["analytics.js"], ["ui-tokens.css", "panel-common.css"]);
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+-    try {
+-      // Parallel calls to reduce total wait time
+-      const [trendRes, popRes, gapsRes, zeroRes, recRes] = await Promise.allSettled([
+-        this.mcpManager.invokeTool("mem_admin", { action: "trends", days: 30 }),
+-        this.mcpManager.invokeTool("mem_admin", { action: "popular", limit: 15 }),
+-        this.mcpManager.invokeTool("mem_admin", { action: "gaps" }),
+-        this.mcpManager.invokeTool("mem_admin", { action: "zero_results" }),
+-        this.mcpManager.invokeTool("mem_admin", { action: "recommendations" }),
+-      ]);
+-
+-      const trendData = trendRes.status === "fulfilled" ? JSON.parse(trendRes.value) : {};
+-      const popData = popRes.status === "fulfilled" ? JSON.parse(popRes.value) : [];
+-      const gapsData = gapsRes.status === "fulfilled" ? JSON.parse(gapsRes.value) : {};
+-      const zeroData = zeroRes.status === "fulfilled" ? JSON.parse(zeroRes.value) : [];
+-      const recData = recRes.status === "fulfilled" ? JSON.parse(recRes.value) : [];
+-
+-      // Volume: from trends → search_volume [{date, count}] → map to [{date, searches}]
+-      const searchVol = trendData.search_volume || trendData.searchVolume || [];
+-      const volume = searchVol.map((v: any) => ({ date: v.date, searches: v.count || v.searches || 0 }));
+-
+-      // Popular: [{query, hit_count, avg_results}] → map to [{query, count}]
+-      const popularArr = Array.isArray(popData) ? popData : (popData.queries || []);
+-      const popular = popularArr.map((q: any) => ({ query: q.query || q.term || "", count: q.hit_count || q.count || 0 }));
+-
+-      // Gaps
+-      const gapsArr = Array.isArray(gapsData) ? gapsData : (Array.isArray(gapsData.top_gaps) ? gapsData.top_gaps : []);
+-      const zeroArr = Array.isArray(zeroData) ? zeroData : (Array.isArray(zeroData.queries) ? zeroData.queries : []);
+-      const gaps = [...gapsArr, ...zeroArr].map((g: any) => ({ query: g.query || g.term || "", count: g.hit_count || g.count || 0, suggestion: g.suggestion }));
+-
+-      // Recommendations
+-      const recommendations = Array.isArray(recData) ? recData : (recData.recommendations || []);
+-
+-      this.sendMessage({
+-        type: "analyticsData",
+-        volume,
+-        popular,
+-        gaps,
+-        recommendations,
+-      });
+-    } catch (err) {
+-      this.sendMessage({ type: "error", message: `Analytics load failed: ${(err as Error).message}`, retryable: true });
+-    }
++    // No-op
+   }
+ 
+   async handleMessage(msg: WebviewToExtMessage): Promise<void> {
+-    switch (msg.type) {
+-      case "ready": case "refresh": await this.loadData(); break;
+-      case "createEntry":
+-        if (msg.type === "createEntry") {
+-          try { await this.mcpManager.invokeTool("mem_ingest", { content: msg.content, type: msg.entryType, summary: msg.title }); await this.loadData(); } catch {}
+-        }
+-        break;
+-      case "manualRetry":
+-        try { await this.mcpManager.restart(); } catch { this.sendMessage({ type: "serverStatus", status: "failed" }); }
+-        break;
+-    }
+-  }
+-
+-  private startFallbackPolling(): void {
+-    this.refreshTimer = setInterval(() => {
+-      if (this.isAlive && this.mcpManager.status === "running") {
+-        this.loadData().catch(() => {});
+-      }
+-    }, SERVER_CONSTANTS.PANEL_FALLBACK_REFRESH_MS);
+-  }
+-
+-  dispose(): void {
+-    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = undefined; }
+-    this.eventSubscription?.dispose();
+-    super.dispose();
++    // No-op
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/panels/base-panel.ts b/kiro-sdlc-agents/src/panels/base-panel.ts
+index 9fa40428..b6dd7fbc 100644
+--- a/kiro-sdlc-agents/src/panels/base-panel.ts
++++ b/kiro-sdlc-agents/src/panels/base-panel.ts
+@@ -13,8 +13,10 @@ import {
+   PANEL_TITLES,
+ } from "../types";
+ import { McpServerManager, getNonce } from "../mcp-server-manager";
++export { getNonce };
+ 
+ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
++  public static authTokenProvider?: () => string;
+   protected _panel: vscode.WebviewPanel | undefined;
+   private _disposables: vscode.Disposable[] = [];
+   private _onDisposeEmitter = new vscode.EventEmitter<void>();
+@@ -124,6 +126,49 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
+     return webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, ...pathSegments));
+   }
+ 
++    /**
++     * Generates an iframe that embeds the backend server's UI for this panel.
++     */
++    protected getIframeHtml(): string {
++      const config = vscode.workspace.getConfiguration("kiroSdlc");
++      const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
++      
++      const token = BasePanel.authTokenProvider ? BasePanel.authTokenProvider() : "";
++      
++      const pageMapping: Record<string, string> = {
++        dashboard: "dashboard",
++        graph: "graph",
++        tags: "tags",
++        quality: "quality",
++        analytics: "analytics",
++        workflow: "workflow",
++      };
++      
++      const page = pageMapping[this.panelType] || "dashboard";
++      const src = `${backendUrl}/admin?embed=true&page=${page}&token=${token}`;
++      
++      return `<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src * http://127.0.0.1:* http://localhost:* https://*; style-src 'unsafe-inline';">
++    <title>${PANEL_TITLES[this.panelType]}</title>
++    <style>
++      body { padding: 0; margin: 0; height: 100vh; width: 100vw; overflow: hidden; background-color: var(--vscode-editor-background); }
++      iframe { border: none; width: 100%; height: 100%; display: block; }
++    </style>
++</head>
++<body>
++    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--vscode-descriptionForeground); text-align: center; z-index: -1;">
++        <p>Loading Dashboard UI from backend...</p>
++        <p style="font-size: 0.8em; opacity: 0.7;">If this message persists, the backend server may be down or your security settings may be blocking the iframe.</p>
++    </div>
++    <iframe src="${src}" allow="clipboard-read; clipboard-write"></iframe>
++</body>
++</html>`;
++    }
++
+   /**
+    * Generate the base HTML wrapper with CSP headers.
+    */
+diff --git a/kiro-sdlc-agents/src/panels/dashboard-panel.ts b/kiro-sdlc-agents/src/panels/dashboard-panel.ts
+index cc9293b2..84104d21 100644
+--- a/kiro-sdlc-agents/src/panels/dashboard-panel.ts
++++ b/kiro-sdlc-agents/src/panels/dashboard-panel.ts
+@@ -13,94 +13,17 @@ export class DashboardPanel extends BasePanel {
+ 
+   constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri) {
+     super("dashboard", mcpManager, extensionUri);
+-    this.startAutoRefresh();
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const body = `
+-    <div id="dashboard" style="padding:16px;">
+-      <div class="loading" id="loading">Loading dashboard...</div>
+-      <div id="content" style="display:none;">
+-        <div id="health-section" class="section">
+-          <h2>Health Score</h2>
+-          <div class="gauge-container"><svg viewBox="0 0 120 120" id="gauge"></svg></div>
+-          <div id="health-label" class="health-label"></div>
+-        </div>
+-        <div id="metrics-section" class="grid-metrics"></div>
+-        <div id="recs-section" class="section">
+-          <h2>Recommendations</h2>
+-          <ul class="recs-list" id="recs-list"></ul>
+-        </div>
+-        <div id="trend-section" class="section">
+-          <h2>Trends (7 days)</h2>
+-          <div class="trend-container">
+-            <canvas id="chart-search" width="300" height="140"></canvas>
+-            <canvas id="chart-ingest" width="300" height="140"></canvas>
+-          </div>
+-        </div>
+-      </div>
+-    </div>`;
+-    return this.getBaseHtml(webview, body, ["dashboard.js"], ["ui-tokens.css", "panel-common.css", "dashboard.css"]);
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+-    try {
+-      const dashRaw = await this.mcpManager.invokeTool("mem_admin", { action: "dashboard" });
+-      if (dashRaw.startsWith("Unknown tool")) {
+-        this.sendMessage({ type: "dashboardData", healthScore: 0, totalEntries: 0, qualityAvg: 0, staleCount: 0, unownedCount: 0, recommendations: [], tierBreakdown: {}, typeBreakdown: {} } as any);
+-        return;
+-      }
+-      const dash = JSON.parse(dashRaw);
+-
+-      // New unified format returns top-level fields directly
+-      const healthScore = dash.health_score ?? 0;
+-      const totalEntries = dash.total_entries ?? (dash.metrics?.total_entries ?? 0);
+-      const qualityAvg = dash.quality_avg ?? (dash.metrics?.quality_avg ?? 0);
+-      const staleCount = dash.stale_count ?? (dash.metrics?.stale_count ?? 0);
+-      const unownedCount = dash.unowned_count ?? (dash.metrics?.unowned_count ?? 0);
+-
+-      this.sendMessage({
+-        type: "dashboardData",
+-        healthScore,
+-        totalEntries,
+-        qualityAvg,
+-        staleCount,
+-        unownedCount,
+-        recommendations: dash.recommendations || [],
+-        reviews: [],
+-        types: {},
+-        tiers: {},
+-        trends: dash.trends || {},
+-        trend: [],
+-        recent: [],
+-      } as any);
+-    } catch (err) {
+-      this.sendMessage({ type: "error", message: `Dashboard load failed: ${(err as Error).message}`, retryable: true });
+-    }
++    // No-op: Data is loaded natively by the iframe
+   }
+ 
+   async handleMessage(msg: WebviewToExtMessage): Promise<void> {
+-    switch (msg.type) {
+-      case "ready":
+-      case "refresh":
+-        await this.loadData();
+-        break;
+-      case "manualRetry":
+-        try { await this.mcpManager.restart(); } catch { this.sendMessage({ type: "serverStatus", status: "failed" }); }
+-        break;
+-    }
+-  }
+-
+-  private startAutoRefresh(): void {
+-    this.refreshTimer = setInterval(() => {
+-      if (this.isAlive && this.mcpManager.status === "running") {
+-        this.loadData().catch(() => {});
+-      }
+-    }, SERVER_CONSTANTS.DASHBOARD_REFRESH_MS);
+-  }
+-
+-  dispose(): void {
+-    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = undefined; }
+-    super.dispose();
++    // No-op: Webview communication is handled inside the iframe
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/panels/graph-panel.ts b/kiro-sdlc-agents/src/panels/graph-panel.ts
+index 23fe7fd0..ba7078dd 100644
+--- a/kiro-sdlc-agents/src/panels/graph-panel.ts
++++ b/kiro-sdlc-agents/src/panels/graph-panel.ts
+@@ -14,28 +14,7 @@ export class GraphPanel extends BasePanel {
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const port = this.mcpManager.port || 9181;
+-    const cspSource = webview.cspSource;
+-    return `<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src http://127.0.0.1:* http://localhost:*; style-src ${cspSource} 'unsafe-inline';">
+-    <title>KB Graph</title>
+-    <style>
+-      body { padding: 0; margin: 0; overflow: hidden; height: 100vh; }
+-      iframe { width: 100%; height: 100%; border: none; }
+-    </style>
+-</head>
+-<body>
+-    <iframe id="kb-graph-frame" 
+-      src="http://127.0.0.1:${port}/" 
+-      style="width:100%;height:100vh;border:none;"
+-      sandbox="allow-scripts allow-same-origin allow-popups">
+-    </iframe>
+-</body>
+-</html>`;
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+diff --git a/kiro-sdlc-agents/src/panels/quality-panel.ts b/kiro-sdlc-agents/src/panels/quality-panel.ts
+index dc2e6afa..e380ec68 100644
+--- a/kiro-sdlc-agents/src/panels/quality-panel.ts
++++ b/kiro-sdlc-agents/src/panels/quality-panel.ts
+@@ -15,88 +15,17 @@ export class QualityPanel extends BasePanel {
+ 
+   constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri, eventBus?: KbEventBus) {
+     super("quality", mcpManager, extensionUri);
+-    this.startFallbackPolling();
+-    if (eventBus) {
+-      this.eventSubscription = eventBus.onQualityChange(() => {
+-        if (this.isAlive && this.mcpManager.status === "running") {
+-          this.loadData().catch(() => {});
+-        }
+-      });
+-    }
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const body = `
+-    <div id="quality-panel" style="padding:16px;">
+-      <div class="loading" id="loading">Loading quality data...</div>
+-      <div id="content" style="display:none;">
+-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+-          <div id="histogram-wrap"><canvas id="quality-histogram" width="300" height="160"></canvas></div>
+-          <div id="confidence-wrap"><canvas id="confidence-chart" width="300" height="160"></canvas></div>
+-        </div>
+-        <div id="low-quality-section"><h3>Low Quality Entries</h3><table id="low-quality-table"></table></div>
+-        <div id="unreliable-section" style="margin-top:16px;"><h3>Unreliable Entries</h3><table id="unreliable-table"></table></div>
+-      </div>
+-    </div>`;
+-    return this.getBaseHtml(webview, body, ["quality.js"], ["ui-tokens.css", "panel-common.css"]);
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+-    try {
+-      const statsRaw = await this.mcpManager.invokeTool("mem_scoring", { action: "quality_stats" });
+-      const lowRaw = await this.mcpManager.invokeTool("mem_scoring", { action: "low_quality", threshold: 40, limit: 20 });
+-      const confRaw = await this.mcpManager.invokeTool("mem_scoring", { action: "confidence_stats" });
+-
+-      let stats: any, lowQuality: any[], confidence: any, unreliable: any[];
+-      try { stats = JSON.parse(statsRaw); } catch { stats = {}; }
+-      try { const lq = JSON.parse(lowRaw); lowQuality = Array.isArray(lq) ? lq : (lq.entries || []); } catch { lowQuality = []; }
+-      try { confidence = JSON.parse(confRaw); } catch { confidence = {}; }
+-      unreliable = [];
+-
+-      this.sendMessage({
+-        type: "qualityData",
+-        stats,
+-        lowQuality,
+-        confidence,
+-        unreliable,
+-      });
+-    } catch (err) {
+-      this.sendMessage({ type: "error", message: `Quality load failed: ${(err as Error).message}`, retryable: true });
+-    }
++    // No-op
+   }
+ 
+   async handleMessage(msg: WebviewToExtMessage): Promise<void> {
+-    switch (msg.type) {
+-      case "ready": case "refresh": await this.loadData(); break;
+-      case "bulkAction":
+-        if (msg.type === "bulkAction") {
+-          for (const id of msg.entryIds) {
+-            try {
+-              if (msg.action === "archive") { await this.mcpManager.invokeTool("mem_lifecycle", { action: "archive", entry_id: id }); }
+-              else if (msg.action === "delete") { await this.mcpManager.invokeTool("mem_crud", { action: "delete", id }); }
+-              else if (msg.action === "review") { await this.mcpManager.invokeTool("mem_lifecycle", { action: "mark_reviewed", entry_id: id }); }
+-            } catch { /* continue */ }
+-          }
+-          await this.loadData();
+-        }
+-        break;
+-      case "manualRetry":
+-        try { await this.mcpManager.restart(); } catch { this.sendMessage({ type: "serverStatus", status: "failed" }); }
+-        break;
+-    }
+-  }
+-
+-  private startFallbackPolling(): void {
+-    this.refreshTimer = setInterval(() => {
+-      if (this.isAlive && this.mcpManager.status === "running") {
+-        this.loadData().catch(() => {});
+-      }
+-    }, SERVER_CONSTANTS.PANEL_FALLBACK_REFRESH_MS);
+-  }
+-
+-  dispose(): void {
+-    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = undefined; }
+-    this.eventSubscription?.dispose();
+-    super.dispose();
++    // No-op
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/panels/settings-panel.ts b/kiro-sdlc-agents/src/panels/settings-panel.ts
+index 8b618939..172e7508 100644
+--- a/kiro-sdlc-agents/src/panels/settings-panel.ts
++++ b/kiro-sdlc-agents/src/panels/settings-panel.ts
+@@ -22,16 +22,23 @@ export type SettingsWebviewToExtMsg =
+   | { type: "saveApiKey"; provider: string; key: string }
+   | { type: "clearApiKey"; provider: string }
+   | { type: "testOllamaConnection"; url: string }
+-  | { type: "testLlm" };
++  | { type: "testLlm" }
++  | { type: "setBackendUrl"; url: string }
++  | { type: "testBackendConnection"; url: string }
++  | { type: "setMcpServerPort"; port: number }
++  | { type: "setEnableMcpServer"; enabled: boolean }
++  | { type: "restartMcpServer" };
+ 
+ /** Messages FROM extension TO webview */
+ export type SettingsExtToWebviewMsg =
+-  | { type: "state"; provider: string; model: string; ollamaUrl: string; baseUrl: string; hasAnthropicKey: boolean; hasOpenaiKey: boolean }
++  | { type: "state"; provider: string; model: string; ollamaUrl: string; baseUrl: string; hasAnthropicKey: boolean; hasOpenaiKey: boolean; backendUrl: string; mcpServerPort: number; enableMcpServer: boolean }
+   | { type: "models"; provider: string; models: ChatModelEntry[]; selected: string; defaultModel: string }
+   | { type: "keySaved"; provider: string; success: boolean; error?: string }
+   | { type: "keyCleared"; provider: string }
+   | { type: "ollamaTestResult"; success: boolean; message: string }
+-  | { type: "llmTestResult"; success: boolean; message: string; latencyMs?: number; model?: string };
++  | { type: "llmTestResult"; success: boolean; message: string; latencyMs?: number; model?: string }
++  | { type: "backendTestResult"; success: boolean; message: string; latencyMs?: number }
++  | { type: "mcpServerRestarted"; success: boolean; message: string };
+ 
+ /** Secret storage keys */
+ const SECRET_KEYS: Record<string, string> = {
+@@ -148,6 +155,30 @@ export class SettingsPanel implements vscode.Disposable {
+       case "testLlm":
+         await this.handleTestLlm();
+         break;
++
++      case "setBackendUrl":
++        await vscode.workspace.getConfiguration("kiroSdlc").update("backend.url", msg.url, vscode.ConfigurationTarget.Workspace);
++        break;
++
++      case "testBackendConnection":
++        await this.handleTestBackendConnection(msg.url);
++        break;
++
++      case "setMcpServerPort": {
++        const cfg = vscode.workspace.getConfiguration("kiroSdlc");
++        await cfg.update("mcpServerPort", msg.port, vscode.ConfigurationTarget.Workspace);
++        break;
++      }
++
++      case "setEnableMcpServer": {
++        const cfg = vscode.workspace.getConfiguration("kiroSdlc");
++        await cfg.update("enableMcpServer", msg.enabled, vscode.ConfigurationTarget.Workspace);
++        break;
++      }
++
++      case "restartMcpServer":
++        await this.handleRestartMcpServer();
++        break;
+     }
+   }
+ 
+@@ -159,6 +190,9 @@ export class SettingsPanel implements vscode.Disposable {
+     const anthropicBaseUrl = config.get<string>("anthropicBaseUrl", "");
+     const openaiBaseUrl = config.get<string>("openaiBaseUrl", "");
+     const baseUrl = provider === "anthropic" ? anthropicBaseUrl : openaiBaseUrl;
++    const backendUrl = config.get<string>("backend.url", "http://127.0.0.1:48721");
++    const mcpServerPort = config.get<number>("mcpServerPort", 9181);
++    const enableMcpServer = config.get<boolean>("enableMcpServer", true);
+ 
+     const anthropicKey = await this.secrets.get(SECRET_KEYS.anthropic);
+     const openaiKey = await this.secrets.get(SECRET_KEYS.openai);
+@@ -171,6 +205,9 @@ export class SettingsPanel implements vscode.Disposable {
+       baseUrl: baseUrl || "",
+       hasAnthropicKey: !!anthropicKey,
+       hasOpenaiKey: !!openaiKey,
++      backendUrl,
++      mcpServerPort,
++      enableMcpServer,
+     });
+ 
+     // Push the provider-aware model catalog to the webview (single source of
+@@ -415,6 +452,43 @@ export class SettingsPanel implements vscode.Disposable {
+     }
+   }
+ 
++  private async handleTestBackendConnection(url: string): Promise<void> {
++    const start = Date.now();
++    try {
++      const controller = new AbortController();
++      const timeout = setTimeout(() => controller.abort(), 5000);
++      const response = await fetch(`${url}/health`, { signal: controller.signal });
++      clearTimeout(timeout);
++      const latencyMs = Date.now() - start;
++      if (!response.ok) {
++        this.postMessage({ type: "backendTestResult", success: false, message: `HTTP ${response.status}: ${response.statusText}`, latencyMs });
++        return;
++      }
++      const data = await response.json() as { status?: string; mode?: string };
++      this.postMessage({
++        type: "backendTestResult",
++        success: true,
++        message: `Connected — status: ${data.status || "ok"}, mode: ${data.mode || "unknown"}`,
++        latencyMs,
++      });
++    } catch (err) {
++      const latencyMs = Date.now() - start;
++      const message = (err as Error).name === "AbortError"
++        ? "Connection timed out (5s)"
++        : `Cannot reach backend: ${(err as Error).message}`;
++      this.postMessage({ type: "backendTestResult", success: false, message, latencyMs });
++    }
++  }
++
++  private async handleRestartMcpServer(): Promise<void> {
++    try {
++      await vscode.commands.executeCommand("kiroSdlc.restartMcpServer");
++      this.postMessage({ type: "mcpServerRestarted", success: true, message: "MCP wrapper server restarted successfully." });
++    } catch (err) {
++      this.postMessage({ type: "mcpServerRestarted", success: false, message: `Restart failed: ${(err as Error).message}` });
++    }
++  }
++
+   private postMessage(msg: SettingsExtToWebviewMsg): void {
+     this.panel.webview.postMessage(msg);
+   }
+@@ -443,72 +517,122 @@ export class SettingsPanel implements vscode.Disposable {
+     <div id="settings-root">
+         <header class="settings-header">
+             <h1>&#9881; SDLC Pipeline Settings</h1>
+-            <p class="subtitle">Configure LLM provider for agent pipeline</p>
++            <p class="subtitle">Configure LLM provider and server connections</p>
+         </header>
+ 
+-        <section class="card" id="provider-section">
+-            <h2>&#129302; LLM Provider</h2>
+-            <div class="provider-select-group">
+-                <label for="provider-select">Choose provider</label>
+-                <select id="provider-select">
+-                    <option value="anthropic">Anthropic — Claude models (recommended)</option>
+-                    <option value="openai">OpenAI — GPT models</option>
+-                    <option value="ollama">Ollama — Local models (no API key needed)</option>
+-                    <option value="onnx">ONNX — CPU-only local (Phi-3, SmolLM2)</option>
+-                </select>
+-            </div>
+-        </section>
+-
+-        <section class="card" id="api-section" style="display:none;">
+-            <h2>&#128273; API Configuration</h2>
+-            <div class="form-group">
+-                <label for="api-key-input">API Key</label>
+-                <div class="input-with-toggle">
+-                    <input type="password" id="api-key-input" placeholder="Enter API key..." autocomplete="off">
+-                    <button class="icon-btn" id="toggle-key-visibility" title="Show/Hide" aria-label="Toggle API key visibility">&#128065;</button>
++        <!-- Tab Navigation -->
++        <div class="tab-bar" role="tablist">
++            <button class="tab-btn active" id="tab-llm" data-tab="pane-llm" role="tab" aria-selected="true">&#129302; LLM Provider</button>
++            <button class="tab-btn" id="tab-server" data-tab="pane-server" role="tab" aria-selected="false">&#127760; Server Settings</button>
++        </div>
++
++        <!-- Tab 1: LLM Provider -->
++        <div class="tab-pane active" id="pane-llm" role="tabpanel">
++
++            <section class="card" id="provider-section">
++                <h2>&#129302; LLM Provider</h2>
++                <div class="provider-select-group">
++                    <label for="provider-select">Choose provider</label>
++                    <select id="provider-select">
++                        <option value="anthropic">Anthropic — Claude models (recommended)</option>
++                        <option value="openai">OpenAI — GPT models</option>
++                        <option value="ollama">Ollama — Local models (no API key needed)</option>
++                        <option value="onnx">ONNX — CPU-only local (Phi-3, SmolLM2)</option>
++                    </select>
++                </div>
++            </section>
++
++            <section class="card" id="api-section" style="display:none;">
++                <h2>&#128273; API Configuration</h2>
++                <div class="form-group">
++                    <label for="api-key-input">API Key</label>
++                    <div class="input-with-toggle">
++                        <input type="password" id="api-key-input" placeholder="Enter API key..." autocomplete="off">
++                        <button class="icon-btn" id="toggle-key-visibility" title="Show/Hide" aria-label="Toggle API key visibility">&#128065;</button>
++                    </div>
++                    <div id="key-status" class="status-indicator"></div>
++                </div>
++                <div class="form-group">
++                    <label for="base-url-input">Base URL <span style="opacity:0.6">(optional — for custom endpoints)</span></label>
++                    <input type="text" id="base-url-input" placeholder="Leave empty for official API">
+                 </div>
+-                <div id="key-status" class="status-indicator"></div>
+-            </div>
+-            <div class="form-group">
+-                <label for="base-url-input">Base URL <span style="opacity:0.6">(optional — for custom endpoints)</span></label>
+-                <input type="text" id="base-url-input" placeholder="Leave empty for official API">
+-            </div>
+-            <div class="form-group">
+-                <label for="model-input">Model</label>
+-                <select id="model-input">
+-                    <option value="">— Select model —</option>
+-                </select>
+-            </div>
+-            <div class="btn-row">
+-                <button id="save-key-btn" class="btn primary" disabled>Save API Key</button>
+-                <button id="clear-key-btn" class="btn danger-outline">Clear Key</button>
+-            </div>
+-        </section>
+-
+-        <section class="card" id="ollama-section" style="display:none;">
+-            <h2>&#129433; Ollama Configuration</h2>
+-            <div class="form-group">
+-                <label for="ollama-url-input">Server URL</label>
+-                <input type="text" id="ollama-url-input" value="http://localhost:11434">
+-            </div>
+-            <div class="form-group">
+-                <label for="ollama-model-input">Model</label>
+-                <input type="text" id="ollama-model-input" placeholder="llama3.1">
+-            </div>
+-            <div class="btn-row">
+-                <button id="test-ollama-btn" class="btn secondary">Test Connection</button>
+-            </div>
+-            <div id="ollama-status" class="status-indicator"></div>
+-        </section>
+-
+-        <section class="card" id="test-section">
+-            <h2>&#129514; Connection Test</h2>
+-            <p class="card-desc">Send a test prompt to verify your LLM configuration works end-to-end.</p>
+-            <div class="btn-row">
+-                <button id="test-llm-btn" class="btn primary">Test LLM</button>
+-            </div>
+-            <div id="test-result" class="test-result" style="display:none;"></div>
+-        </section>
++                <div class="form-group">
++                    <label for="model-input">Model</label>
++                    <select id="model-input">
++                        <option value="">— Select model —</option>
++                    </select>
++                </div>
++                <div class="btn-row">
++                    <button id="save-key-btn" class="btn primary" disabled>Save API Key</button>
++                    <button id="clear-key-btn" class="btn danger-outline">Clear Key</button>
++                </div>
++            </section>
++
++            <section class="card" id="ollama-section" style="display:none;">
++                <h2>&#129433; Ollama Configuration</h2>
++                <div class="form-group">
++                    <label for="ollama-url-input">Server URL</label>
++                    <input type="text" id="ollama-url-input" value="http://localhost:11434">
++                </div>
++                <div class="form-group">
++                    <label for="ollama-model-input">Model</label>
++                    <input type="text" id="ollama-model-input" placeholder="llama3.1">
++                </div>
++                <div class="btn-row">
++                    <button id="test-ollama-btn" class="btn secondary">Test Connection</button>
++                </div>
++                <div id="ollama-status" class="status-indicator"></div>
++            </section>
++
++            <section class="card" id="test-section">
++                <h2>&#129514; Connection Test</h2>
++                <p class="card-desc">Send a test prompt to verify your LLM configuration works end-to-end.</p>
++                <div class="btn-row">
++                    <button id="test-llm-btn" class="btn primary">Test LLM</button>
++                </div>
++                <div id="test-result" class="test-result" style="display:none;"></div>
++            </section>
++
++        </div>
++
++        <!-- Tab 2: Server Settings -->
++        <div class="tab-pane" id="pane-server" role="tabpanel">
++
++            <section class="card" id="backend-mcp-section">
++                <h2>&#127760; Backend MCP Server</h2>
++                <p class="card-desc">Configure the remote backend server URL that this extension forwards all MCP tool requests to.</p>
++                <div class="form-group">
++                    <label for="backend-url-input">Backend URL</label>
++                    <input type="text" id="backend-url-input" placeholder="http://127.0.0.1:48721">
++                </div>
++                <div class="btn-row">
++                    <button id="save-backend-url-btn" class="btn primary">Save URL</button>
++                    <button id="test-backend-btn" class="btn secondary">Test Connection</button>
++                </div>
++                <div id="backend-test-result" class="status-indicator"></div>
++            </section>
++
++            <section class="card" id="wrapper-mcp-section">
++                <h2>&#9881; MCP Wrapper Server (Local)</h2>
++                <p class="card-desc">Configure the local MCP wrapper server port that the IDE connects to. This in-process server forwards requests to the backend above.</p>
++                <div class="form-group">
++                    <label for="mcp-port-input">Wrapper Server Port</label>
++                    <input type="number" id="mcp-port-input" min="1" max="65535" placeholder="9181">
++                </div>
++                <div class="form-group checkbox-group">
++                    <label>
++                        <input type="checkbox" id="enable-mcp-server-chk">
++                        Enable MCP wrapper server on startup
++                    </label>
++                </div>
++                <div class="btn-row">
++                    <button id="save-wrapper-btn" class="btn primary">Save</button>
++                    <button id="restart-mcp-btn" class="btn secondary">Restart Wrapper Server</button>
++                </div>
++                <div id="wrapper-result" class="status-indicator"></div>
++            </section>
++
++        </div>
+     </div>
+ 
+     <script nonce="${nonce}" src="${jsUri}"></script>
+diff --git a/kiro-sdlc-agents/src/panels/tags-panel.ts b/kiro-sdlc-agents/src/panels/tags-panel.ts
+index a0e62cb1..5d3e5a76 100644
+--- a/kiro-sdlc-agents/src/panels/tags-panel.ts
++++ b/kiro-sdlc-agents/src/panels/tags-panel.ts
+@@ -15,104 +15,17 @@ export class TagsPanel extends BasePanel {
+ 
+   constructor(mcpManager: McpServerManager, extensionUri: vscode.Uri, eventBus?: KbEventBus) {
+     super("tags", mcpManager, extensionUri);
+-    this.startFallbackPolling();
+-    if (eventBus) {
+-      this.eventSubscription = eventBus.onTagsChange(() => {
+-        if (this.isAlive && this.mcpManager.status === "running") {
+-          this.loadData().catch(() => {});
+-        }
+-      });
+-    }
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const body = `
+-    <div id="tags-panel" style="padding:16px;">
+-      <div class="loading" id="loading">Loading tags...</div>
+-      <div id="content" style="display:none;">
+-        <div class="section">
+-          <h2>Popular Tags</h2>
+-          <div id="tag-cloud" style="line-height:2;"></div>
+-        </div>
+-        <div class="section">
+-          <h2>Tag Taxonomy</h2>
+-          <div id="tag-tree"></div>
+-        </div>
+-        <div class="section">
+-          <h2>Search by Tag</h2>
+-          <input id="tag-search" type="text" placeholder="Type a tag name..."
+-            style="width:100%;max-width:300px;padding:6px 10px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:3px;font-size:12px;margin-bottom:12px;" />
+-          <div id="entries-list"></div>
+-        </div>
+-      </div>
+-    </div>`;
+-    return this.getBaseHtml(webview, body, ["tags.js"], ["ui-tokens.css", "panel-common.css"]);
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+-    try {
+-      const taxRaw = await this.mcpManager.invokeTool("mem_tags", { action: "taxonomy" });
+-      const popRaw = await this.mcpManager.invokeTool("mem_tags", { action: "popular", limit: 50 });
+-
+-      let taxonomy: any;
+-      let popular: any;
+-      try { taxonomy = JSON.parse(taxRaw); } catch { taxonomy = []; }
+-      try { popular = JSON.parse(popRaw); } catch { popular = []; }
+-
+-      // Normalize: taxonomy can be array or {categories: {...}}
+-      if (taxonomy && taxonomy.categories) taxonomy = taxonomy.categories;
+-      // popular can be array or {tags: [...]}
+-      if (popular && popular.tags) popular = popular.tags;
+-      if (!Array.isArray(popular)) popular = [];
+-
+-      this.sendMessage({ type: "tagsData", taxonomy, popular });
+-    } catch (err) {
+-      this.sendMessage({ type: "error", message: `Tags load failed: ${(err as Error).message}`, retryable: true });
+-    }
++    // No-op
+   }
+ 
+   async handleMessage(msg: WebviewToExtMessage): Promise<void> {
+-    switch (msg.type) {
+-      case "ready": case "refresh": await this.loadData(); break;
+-      case "filterByTag":
+-        if (msg.type === "filterByTag") {
+-          try {
+-            const r = await this.mcpManager.invokeTool("mem_tags", { action: "search", tags: msg.tag, limit: 500 });
+-            let entries: any[];
+-            try { const parsed = JSON.parse(r); entries = Array.isArray(parsed) ? parsed : (parsed.entries || []); }
+-            catch { entries = []; }
+-            const offset = msg.offset || 0;
+-              const limit = msg.limit || 20;
+-              const total = entries.length;
+-              const page = entries.slice(offset, offset + limit);
+-              this.sendMessage({ type: "filteredEntries", entries: page, total });
+-          } catch (err) {
+-            this.sendMessage({ type: "filteredEntries", entries: [] });
+-          }
+-        }
+-        break;
+-      case "createTag":
+-        if (msg.type === "createTag") {
+-          try { await this.mcpManager.invokeTool("mem_tags", { action: "create", tag: msg.tag, category: msg.category }); await this.loadData(); } catch {}
+-        }
+-        break;
+-      case "manualRetry":
+-        try { await this.mcpManager.restart(); } catch { this.sendMessage({ type: "serverStatus", status: "failed" }); }
+-        break;
+-    }
+-  }
+-
+-  private startFallbackPolling(): void {
+-    this.refreshTimer = setInterval(() => {
+-      if (this.isAlive && this.mcpManager.status === "running") {
+-        this.loadData().catch(() => {});
+-      }
+-    }, SERVER_CONSTANTS.PANEL_FALLBACK_REFRESH_MS);
+-  }
+-
+-  dispose(): void {
+-    if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = undefined; }
+-    this.eventSubscription?.dispose();
+-    super.dispose();
++    // No-op
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/panels/workflow-panel.ts b/kiro-sdlc-agents/src/panels/workflow-panel.ts
+index 281a6f86..7cd5adde 100644
+--- a/kiro-sdlc-agents/src/panels/workflow-panel.ts
++++ b/kiro-sdlc-agents/src/panels/workflow-panel.ts
+@@ -16,65 +16,14 @@ export class WorkflowPanel extends BasePanel {
+   }
+ 
+   getHtml(webview: vscode.Webview): string {
+-    const nonce = this.getNonce();
+-    const cspSource = webview.cspSource;
+-    const threeUri = this.getWebviewUri(webview, "webview-assets", "three.min.js");
+-    const forceGraphUri = this.getWebviewUri(webview, "webview-assets", "3d-force-graph.min.js");
+-    const cssUri = this.getWebviewUri(webview, "webview-assets", "workflow-graph.css");
+-    const jsUri = this.getWebviewUri(webview, "webview-assets", "workflow-graph.js");
+-
+-    return `<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}' 'unsafe-eval'; style-src ${cspSource} 'unsafe-inline'; img-src ${cspSource} data: blob:; connect-src 'none';">
+-    <title>SDLC Workflow Graph</title>
+-    <link rel="stylesheet" href="${cssUri}">
+-</head>
+-<body>
+-    <div id="toolbar">
+-      <button id="refresh-btn" title="Refresh">&#x21BB; Refresh</button>
+-    </div>
+-    <div id="phase-bar"></div>
+-    <div id="graph-3d"></div>
+-    <div id="node-info" class="hidden"></div>
+-    <div id="graph-container" style="display:none"></div>
+-    <div id="path-section" class="hidden" style="display:none"><div id="path-header"><span id="path-title"></span><button id="path-close"></button></div><div id="path-graph"></div></div>
+-    <div id="node-detail" class="hidden" style="display:none"><div id="detail-header"><span id="detail-title"></span><button id="detail-close"></button></div><div id="detail-body"></div></div>
+-
+-    <script nonce="${nonce}" src="${threeUri}"></script>
+-    <script nonce="${nonce}" src="${forceGraphUri}"></script>
+-    <script nonce="${nonce}">
+-      const vscode = acquireVsCodeApi();
+-      window.addEventListener('message', (event) => {
+-        const msg = event.data;
+-        if (typeof handlePanelMessage === 'function') handlePanelMessage(msg);
+-      });
+-      vscode.postMessage({ type: 'ready' });
+-    </script>
+-    <script nonce="${nonce}" src="${jsUri}"></script>
+-</body>
+-</html>`;
++    return this.getIframeHtml();
+   }
+ 
+   async loadData(): Promise<void> {
+-    this.sendMessage({
+-      type: "workflowData",
+-      nodes: SDLC_GRAPH_DEFINITION.nodes,
+-      edges: SDLC_GRAPH_DEFINITION.edges,
+-      metadata: SDLC_GRAPH_DEFINITION.metadata,
+-    } as any);
++    // No-op
+   }
+ 
+   async handleMessage(msg: WebviewToExtMessage): Promise<void> {
+-    switch (msg.type) {
+-      case "ready":
+-        await this.loadData();
+-        break;
+-      case "refresh":
+-        await this.loadData();
+-        break;
+-    }
++    // No-op
+   }
+ }
+diff --git a/kiro-sdlc-agents/src/proxy/ToolProxy.ts b/kiro-sdlc-agents/src/proxy/ToolProxy.ts
+index db6b2045..8efb9e51 100644
+--- a/kiro-sdlc-agents/src/proxy/ToolProxy.ts
++++ b/kiro-sdlc-agents/src/proxy/ToolProxy.ts
+@@ -15,7 +15,7 @@ export interface ToolDefinition {
+ }
+ 
+ export class ToolProxy {
+-  private localTools = new Set(["embed_images"]);
++  private localTools = new Set<string>();
+   private toolRegistry: Map<string, ToolDefinition> = new Map();
+ 
+   constructor(private readonly httpClient: HttpClient) {}
+@@ -42,37 +42,6 @@ export class ToolProxy {
+   }
+ 
+   private async executeLocal(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+-    if (name === "embed_images") { return this.embedImages(args); }
+     return { content: [{ type: "text", text: "Unknown local tool: " + name }] };
+   }
+-
+-  private embedImages(args: Record<string, unknown>): ToolResult {
+-    const filePath = args.file_path as string;
+-    const outputPath = args.output_path as string;
+-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+-    if (!root) { return { content: [{ type: "text", text: "No workspace folder open" }] }; }
+-
+-    const absInput = path.join(root, filePath);
+-    const absOutput = path.join(root, outputPath);
+-    if (!fs.existsSync(absInput)) { return { content: [{ type: "text", text: "File not found: " + filePath }] }; }
+-
+-    let markdown = fs.readFileSync(absInput, "utf-8");
+-    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+-    let match: RegExpExecArray | null;
+-    while ((match = imgRegex.exec(markdown)) !== null) {
+-      const imgPath = match[2];
+-      if (imgPath.startsWith("data:") || imgPath.startsWith("http")) { continue; }
+-      const absImgPath = path.resolve(path.dirname(absInput), imgPath);
+-      if (fs.existsSync(absImgPath)) {
+-        const ext = path.extname(absImgPath).replace(".", "");
+-        const mime = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/" + ext;
+-        const data = fs.readFileSync(absImgPath).toString("base64");
+-        markdown = markdown.replace(match[0], "![" + match[1] + "](data:" + mime + ";base64," + data + ")");
+-      }
+-    }
+-
+-    fs.mkdirSync(path.dirname(absOutput), { recursive: true });
+-    fs.writeFileSync(absOutput, markdown, "utf-8");
+-    return { content: [{ type: "text", text: "Embedded images written to: " + absOutput }] };
+-  }
+ }
+diff --git a/kiro-sdlc-agents/src/sidebar/tree-view-provider.ts b/kiro-sdlc-agents/src/sidebar/tree-view-provider.ts
+index 9bd6927d..af256186 100644
+--- a/kiro-sdlc-agents/src/sidebar/tree-view-provider.ts
++++ b/kiro-sdlc-agents/src/sidebar/tree-view-provider.ts
+@@ -33,6 +33,9 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+     this.updateBadge();
+   }
+ 
++  private isAuthenticated = false;
++  private username = "";
++
+   /** Update Activity Bar badge based on server status. */
+   private updateBadge(): void {
+     if (!this.treeView) { return; }
+@@ -48,6 +51,12 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+     return this.serverStatus === "stopped" || this.serverStatus === "crashed";
+   }
+ 
++  setAuthenticated(isAuthenticated: boolean, username = ""): void {
++    this.isAuthenticated = isAuthenticated;
++    this.username = username;
++    this.refresh();
++  }
++
+   refresh(): void {
+     this._onDidChangeTreeData.fire(undefined);
+   }
+@@ -65,9 +74,12 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+     // Show warning banner when KB system is inactive
+     const items: KiroTreeItem[] = [];
+ 
++    const config = vscode.workspace.getConfiguration("kiroSdlc");
++    const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
++    
+     if (this.isKbInactive()) {
+       const warningItem = new KiroTreeItem(
+-        "\u26A0\uFE0F KB System Inactive",
++        "⚠️ KB System Inactive",
+         vscode.TreeItemCollapsibleState.None
+       );
+       warningItem.iconPath = new vscode.ThemeIcon("warning", new vscode.ThemeColor("problemsWarningIcon.foreground"));
+@@ -75,13 +87,26 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+       warningItem.command = { command: "kiroSdlc.restartMcpServer", title: "Restart Server", arguments: [] };
+       items.push(warningItem);
+     } else {
+-      const runningItem = new KiroTreeItem(
+-        "\u2705 Running",
++      const backendRootItem = new KiroTreeItem(
++        "Backend Target",
++        vscode.TreeItemCollapsibleState.Expanded
++      );
++      backendRootItem.iconPath = new vscode.ThemeIcon("globe");
++      backendRootItem.description = backendUrl;
++      
++      const authItem = new KiroTreeItem(
++        this.isAuthenticated ? `Logged in as ${this.username}` : "Login Required",
+         vscode.TreeItemCollapsibleState.None
+       );
+-      runningItem.iconPath = new vscode.ThemeIcon("check", new vscode.ThemeColor("testing.iconPassed"));
+-      runningItem.description = this.mcpManager.port ? `Port ${this.mcpManager.port}` : "";
+-      items.push(runningItem);
++      authItem.iconPath = new vscode.ThemeIcon(this.isAuthenticated ? "account" : "key");
++      authItem.command = { 
++        command: this.isAuthenticated ? "kiroSdlc.logout" : "kiroSdlc.login", 
++        title: this.isAuthenticated ? "Logout" : "Login", 
++        arguments: [] 
++      };
++      
++      backendRootItem.children = [authItem];
++      items.push(backendRootItem);
+     }
+ 
+     const kbSection = new KiroTreeItem("Knowledge Base", vscode.TreeItemCollapsibleState.Expanded);
+@@ -94,27 +119,19 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+       this.createCommandItem("Workflow", "kiroSdlc.openWorkflowGraph", "circuit-board"),
+     ];
+ 
+-    const serverSection = new KiroTreeItem("MCP Server", vscode.TreeItemCollapsibleState.Expanded);
++    const serverSection = new KiroTreeItem("MCP Wrapper Server", vscode.TreeItemCollapsibleState.Expanded);
++    
++    const serverChildren = [];
++    
+     const statusItem = new KiroTreeItem(`Status: ${this.getStatusLabel()}`, vscode.TreeItemCollapsibleState.None);
+     statusItem.iconPath = new vscode.ThemeIcon(this.getStatusIcon());
+     statusItem.description = this.mcpManager.port ? `Port ${this.mcpManager.port}` : "";
+-    const restartItem = this.createCommandItem("Restart Server", "kiroSdlc.restartMcpServer", "debug-restart");
+-    const serverChildren = [statusItem, restartItem];
+-
+-    // Show Start or Stop based on current state
+-    if (this.isKbInactive()) {
+-      serverChildren.push(this.createCommandItem("Start Server", "kiroSdlc.restartMcpServer", "play"));
+-    } else {
+-      serverChildren.push(this.createCommandItem("Stop Server", "kiroSdlc.stopMcpServer", "debug-stop"));
+-    }
+-    serverChildren.push(this.createCommandItem("Change Port...", "kiroSdlc.changePort", "settings-gear"));
++    serverChildren.push(statusItem);
++    
+     serverChildren.push(this.createCommandItem("Edit Config", "kiroSdlc.editConfig", "json"));
+     serverChildren.push(this.createCommandItem("Change Config...", "kiroSdlc.changeConfig", "folder-opened"));
+     serverSection.children = serverChildren;
+ 
+-    const modelSection = new KiroTreeItem("Embedding Model", vscode.TreeItemCollapsibleState.Expanded);
+-    modelSection.children = this.getModelItems();
+-
+     const actionsSection = new KiroTreeItem("Quick Actions", vscode.TreeItemCollapsibleState.Collapsed);
+     actionsSection.children = [
+       this.createCommandItem("Inject All Agents", "kiroSdlc.injectAll", "cloud-download"),
+@@ -123,7 +140,7 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+       this.createCommandItem("Open KB in Browser", "kiroSdlc.openKbBrowser", "globe"),
+     ];
+ 
+-    items.push(kbSection, serverSection, modelSection, actionsSection);
++    items.push(kbSection, serverSection, actionsSection);
+     return items;
+   }
+ 
+@@ -153,44 +170,6 @@ export class KiroTreeViewProvider implements vscode.TreeDataProvider<KiroTreeIte
+     }
+   }
+ 
+-  private getModelItems(): KiroTreeItem[] {
+-    const modelsDir = path.join(
+-      process.env.HOME ?? process.env.USERPROFILE ?? "~", ".code-intel", "models"
+-    );
+-    const registryPath = path.join(modelsDir, "registry.json");
+-    let activeModel = "none";
+-    let hasModel = false;
+-
+-    try {
+-      if (fs.existsSync(registryPath)) {
+-        const reg = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+-        activeModel = reg.active_model ?? "none";
+-      }
+-      const modelFile = path.join(modelsDir, activeModel, "model.onnx");
+-      hasModel = fs.existsSync(modelFile);
+-    } catch { /* ignore */ }
+-
+-    const items: KiroTreeItem[] = [];
+-
+-    if (hasModel) {
+-      const statusItem = new KiroTreeItem(
+-        `\u2705 ${activeModel}`, vscode.TreeItemCollapsibleState.None
+-      );
+-      statusItem.iconPath = new vscode.ThemeIcon("check", new vscode.ThemeColor("testing.iconPassed"));
+-      statusItem.description = "Active";
+-      items.push(statusItem);
+-    } else {
+-      const missingItem = new KiroTreeItem(
+-        "\u274C No model installed", vscode.TreeItemCollapsibleState.None
+-      );
+-      missingItem.iconPath = new vscode.ThemeIcon("warning", new vscode.ThemeColor("problemsWarningIcon.foreground"));
+-      missingItem.description = "Semantic search disabled";
+-      items.push(missingItem);
+-    }
+-
+-    items.push(this.createCommandItem("Download / Switch Model...", "kiroSdlc.downloadModel", "cloud-download"));
+-    return items;
+-  }
+ }
+ 
+ export class KiroTreeItem extends vscode.TreeItem {

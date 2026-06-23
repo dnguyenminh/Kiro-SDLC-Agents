@@ -1,0 +1,274 @@
+# Functional Specification Document (FSD)
+
+## MCP Code Intelligence — KSA-169: [Infra] Full-body Embedding + Persistent Graph + Ignore
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-169 |
+| Title | [Infra] Full-body Embedding + Persistent Graph + Ignore |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-06-07 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-169.docx |
+
+## 1. Use Cases
+
+### UC-169-01: Full-body Embedding During Indexing
+
+**Actor:** System (Indexer)
+
+**Main Flow:** 1. Indexer encounters a new/modified source file 2. Parse file with tree-sitter to extract function/method AST nodes 3. For each function: extract full body text from AST 4. If body <= 512 tokens: generate single embedding vector 5. If body > 512 tokens: chunk with 128-token overlap, embed each chunk 6. Store embeddings in vector index (sqlite-vec) with node\_id reference 7. Update graph node with embedding metadata (chunk\_count, total\_tokens)
+
+**Alternative Flows:** - 2a. File exceeds max\_file\_size → skip entirely, log warning - 3a. Function body is empty (abstract/interface) → embed signature only - 5a. Body > 10K tokens → truncate to first 10K, log warning
+
+### UC-169-02: Semantic Search with Body Embeddings
+
+**Actor:** AI Agent / Developer
+
+**Main Flow:** 1. User calls code\_search with natural language query 2. System generates query embedding 3. Search both signature vectors AND body vectors 4. Compute combined score: 0.3 \* sig\_similarity + 0.7 \* body\_similarity 5. Rank results by combined score 6. Return top-K results with file, function, similarity score
+
+**Alternative Flows:** - 3a. Function has no body embedding (abstract) → use signature only (weight 1.0) - 4a. Query is short (< 5 tokens) → weight signature higher (0.6 sig + 0.4 body)
+
+### UC-169-03: Persistent Graph Load on Startup
+
+**Actor:** System (Server)
+
+**Main Flow:** 1. Server process starts 2. Check for persistent graph database at .code-intel/index.db 3. Load graph metadata (version, last\_checkpoint, total\_nodes) 4. Verify graph version compatibility 5. Load graph into memory (nodes + edges + file index) 6. Server ready for queries (< 500ms total)
+
+**Alternative Flows:** - 2a. No persistent graph exists → perform cold start (full index) - 4a. Graph version incompatible → discard, perform cold start - 5a. Graph corrupted (checksum fail) → discard, perform cold start, log error
+
+### UC-169-04: Incremental Update on Startup
+
+**Actor:** System (Indexer)
+
+**Main Flow:** 1. After loading persistent graph, scan workspace files 2. For each file: compare mtime against stored file\_index 3. If mtime changed: compute content hash (FNV-1a) 4. If hash differs: mark file for re-indexing 5. Re-parse marked files, update graph nodes/edges 6. Re-embed modified functions (full-body) 7. Remove nodes for deleted files 8. Save updated graph checkpoint
+
+**Alternative Flows:** - 3a. mtime same → skip (no change) - 4a. Hash same despite mtime change (touch) → skip - 7a. File renamed (same hash, new path) → update path, keep embeddings
+
+### UC-169-05: .codeintelignore Filtering
+
+**Actor:** System (Scanner)
+
+**Main Flow:** 1. Before scanning a directory, check for .codeintelignore file 2. Parse ignore patterns (gitignore syntax) 3. Merge with parent directory patterns (cascading) 4. For each file in directory: check against merged patterns 5. If file matches ignore pattern → skip entirely (no parse, no embed, no graph) 6. If file matches negation pattern → include despite parent ignore
+
+**Alternative Flows:** - 1a. No .codeintelignore in directory → use parent patterns + defaults - 2a. Parse error in .codeintelignore → log warning, use defaults only
+
+## 2. Business Rules
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Rule | Rationale |
+| BR-169-01 | Body embedding weight = 0.7, signature weight = 0.3 for search ranking | Bodies contain more semantic information |
+| BR-169-02 | Chunk size = 512 tokens with 128-token overlap | Optimal for MiniLM model context window |
+| BR-169-03 | Warm startup must complete in < 500ms | User experience — instant availability |
+| BR-169-04 | Content hash (FNV-1a) determines file change, not mtime alone | Handles touch/copy without content change |
+| BR-169-05 | Default ignores always applied even without .codeintelignore | Common patterns (node\_modules, .git) should never be indexed |
+| BR-169-06 | Child .codeintelignore overrides parent patterns | More specific rules take precedence |
+| BR-169-07 | Graph checkpoint every 5 minutes during active indexing | Balance between durability and performance |
+| BR-169-08 | Max body size for embedding = 10K tokens | Prevent memory issues with generated code |
+| BR-169-09 | Functions < 3 lines get signature-only embedding | Trivial functions don’t benefit from body embedding |
+| BR-169-10 | WAL mode required for concurrent read during write | Queries must work during incremental update |
+
+## 3. Data Specifications
+
+### 3.1 Embedding Storage Schema
+
+**Table: embeddings**
+
+|  |  |  |
+| --- | --- | --- |
+| Column | Type | Description |
+| id | INTEGER PK | Auto-increment |
+| node\_id | INTEGER FK | Reference to graph\_nodes |
+| vector\_type | TEXT | “signature” or “body” |
+| chunk\_index | INTEGER | 0 for single, 0..N for chunked |
+| embedding | BLOB | Float32 vector (384 dimensions for MiniLM) |
+| token\_count | INTEGER | Tokens in this chunk |
+| created\_at | TEXT | ISO timestamp |
+
+**Table: file\_index**
+
+|  |  |  |
+| --- | --- | --- |
+| Column | Type | Description |
+| path | TEXT PK | Relative file path |
+| mtime | INTEGER | File modification time (epoch) |
+| content\_hash | TEXT | FNV-1a hash of file content |
+| size\_bytes | INTEGER | File size |
+| last\_indexed | TEXT | ISO timestamp of last indexing |
+| symbol\_count | INTEGER | Number of symbols extracted |
+
+**Table: graph\_meta**
+
+|  |  |  |
+| --- | --- | --- |
+| Column | Type | Description |
+| key | TEXT PK | Metadata key |
+| value | TEXT | Metadata value |
+
+Keys: version, last\_checkpoint, total\_nodes, total\_edges, schema\_version
+
+### 3.2 .codeintelignore Format
+
+# Comments start with #
+# Glob patterns (gitignore syntax)
+node\_modules/
+build/
+dist/
+\*.min.js
+
+# Negation (include despite parent ignore)
+!build/generated-api/
+
+# Directory-only pattern (trailing slash)
+\_\_pycache\_\_/
+
+# Wildcard patterns
+\*.generated.\*
+\*\*/vendor/\*\*
+
+### 3.3 Chunking Algorithm
+
+Input: body\_text (string), max\_tokens=512, overlap=128
+Output: chunks (list of strings)
+
+1. tokenize(body\_text) → tokens
+2. if len(tokens) <= max\_tokens: return [body\_text]
+3. chunks = []
+4. start = 0
+5. while start < len(tokens):
+ end = min(start + max\_tokens, len(tokens))
+ chunk = detokenize(tokens[start:end])
+ chunks.append(chunk)
+ start = end - overlap # overlap with previous chunk
+6. return chunks
+
+## 4. API Specifications
+
+### 4.1 Enhanced code\_search Tool
+
+**Endpoint:** MCP tool code\_search
+
+**Input (unchanged interface, enhanced behavior):**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Parameter | Type | Required | Description |
+| query | string | Yes | Natural language search query |
+| limit | integer | No | Max results (default: 20) |
+| file\_filter | string | No | Glob pattern to filter files |
+| kind\_filter | string | No | Symbol kind filter (function, class, etc.) |
+
+**Output (enhanced with body similarity):**
+
+|  |  |  |
+| --- | --- | --- |
+| Field | Type | Description |
+| results[].file | string | File path |
+| results[].symbol | string | Symbol name |
+| results[].kind | string | Symbol kind |
+| results[].score | float | Combined similarity score |
+| results[].sig\_score | float | Signature similarity |
+| results[].body\_score | float | Body similarity (new) |
+| results[].preview | string | First 3 lines of body |
+
+### 4.2 New reindex Tool
+
+**Endpoint:** MCP tool reindex
+
+**Input:**
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Parameter | Type | Required | Description |
+| force | boolean | No | Force full re-index (ignore persistent graph) |
+| path | string | No | Re-index specific path only |
+
+**Output:**
+
+|  |  |  |
+| --- | --- | --- |
+| Field | Type | Description |
+| files\_scanned | integer | Total files checked |
+| files\_updated | integer | Files re-indexed |
+| files\_skipped | integer | Files unchanged |
+| files\_ignored | integer | Files excluded by .codeintelignore |
+| duration\_ms | integer | Total time |
+| symbols\_total | integer | Total symbols in graph |
+
+## 5. Processing Logic
+
+### 5.1 Startup Sequence
+
+|  |  |  |
+| --- | --- | --- |
+| Step | Action | Max Duration |
+| 1 | Open SQLite database | 10ms |
+| 2 | Read graph\_meta | 5ms |
+| 3 | Verify schema version | 1ms |
+| 4 | Load file\_index into memory | 50ms |
+| 5 | Load graph nodes (lazy) | 100ms |
+| 6 | Load graph edges (lazy) | 100ms |
+| 7 | Server ready | Total < 300ms |
+| 8 | Background: incremental scan | Async (non-blocking) |
+
+### 5.2 Incremental Update Algorithm
+
+1. loaded\_files = read file\_index from DB
+2. disk\_files = scan workspace (respecting .codeintelignore)
+3. to\_update = []
+4. to\_delete = []
+5. to\_add = []
+
+6. for file in disk\_files:
+ if file not in loaded\_files: to\_add.append(file)
+ elif file.mtime != loaded\_files[file].mtime:
+ hash = fnv1a(file.content)
+ if hash != loaded\_files[file].content\_hash:
+ to\_update.append(file)
+
+7. for file in loaded\_files:
+ if file not in disk\_files: to\_delete.append(file)
+
+8. Process to\_delete: remove nodes, edges, embeddings
+9. Process to\_update: re-parse, update nodes/edges, re-embed
+10. Process to\_add: parse, add nodes/edges, embed
+11. Save checkpoint
+
+## 6. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| Category | Requirement | Metric |
+| Startup | Warm start | < 500ms for 50K symbols |
+| Indexing | Full-body embedding throughput | >= 30 functions/sec |
+| Search | Query response time | < 200ms |
+| Storage | Disk usage | < 5x signature-only |
+| Reliability | Crash recovery | No data loss (WAL) |
+| Concurrency | Read during write | Supported (WAL mode) |
+
+## 7. Error Handling
+
+|  |  |  |
+| --- | --- | --- |
+| Scenario | Severity | Behavior |
+| Corrupt graph database | Critical | Discard, full re-index, log error |
+| File too large for embedding | Warning | Skip body embedding, use signature only |
+| .codeintelignore parse error | Warning | Use defaults, log parse error |
+| Embedding model OOM | Critical | Reduce batch size, retry |
+| Disk full during checkpoint | Critical | Abort checkpoint, keep in-memory state |
+
+## 8. Appendix
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | System Context | [system-context.png](diagrams/system-context.png) | [system-context.drawio](diagrams/system-context.drawio) |
+| 2 | Startup Sequence | [sequence-startup.png](diagrams/sequence-startup.png) | [sequence-startup.drawio](diagrams/sequence-startup.drawio) |
+| 3 | Embedding State | [state-embedding.png](diagrams/state-embedding.png) | [state-embedding.drawio](diagrams/state-embedding.drawio) |

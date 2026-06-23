@@ -1,0 +1,312 @@
+# Functional Specification Document (FSD)
+
+## MCP Code Intelligence — KSA-105: Bug Fix — Extension Model Download Without MCP Server
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-105 |
+| Title | Bug Fix: Extension Model Download Fails When MCP Server Not Running |
+| Author | BA Agent + TA Agent |
+| Version | 1.0 |
+| Date | 2026-05-21 |
+| Status | Final (Retroactive) |
+| Related BRD | BRD-v1-KSA-105.docx |
+| Related Tickets | KSA-104 (parent feature), KSA-102 (infrastructure) |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-21 | BA + TA Agent | Created retroactively from implemented fix |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This FSD specifies the functional changes required to fix the bug where the VS Code extension’s “Download Embedding Model” command fails when the MCP server is not running. Two fixes are specified:
+
+1. **Extension self-contained download** — remove HTTP API dependency, download directly from HuggingFace
+2. **ModelRegistry cache invalidation** — re-read registry.json on every access instead of caching at startup
+
+### 1.2 Scope
+
+|  |  |
+| --- | --- |
+| Component | Change Type |
+| kiro-sdlc-agents/src/model-downloader.ts | Rewrite (self-contained download) |
+| mcp-code-intelligence-python/.../model\_registry.py | Modify (cache invalidation) |
+| mcp-code-intelligence-nodejs/.../model-registry.ts | Modify (cache invalidation) |
+| mcp-code-intelligence-kotlin/.../ModelRegistry.kt | Modify (cache invalidation) |
+
+### 1.3 Definitions
+
+|  |  |
+| --- | --- |
+| Term | Definition |
+| Self-contained download | Extension downloads model files directly without relying on any external server |
+| Cache invalidation | Reading fresh data from disk instead of using in-memory cached copy |
+| Registry | JSON file (~/.code-intel/models/registry.json) tracking model state |
+
+## 2. System Context
+
+### 2.1 Before Fix (Broken)
+
+![System Context — Before](data:image/png;base64...) [*Edit in draw.io*](diagrams/system-context-before.drawio)
+
+Developer → Extension → MCP Server HTTP API → HuggingFace
+ ↑
+ FAILS if not running
+
+### 2.2 After Fix (Working)
+
+![System Context — After](data:image/png;base64...) [*Edit in draw.io*](diagrams/system-context-after.drawio)
+
+Developer → Extension → HuggingFace (direct)
+ ↓
+ registry.json (direct write)
+ ↓
+ MCP Server reads fresh (no cache)
+
+## 3. Use Cases
+
+### 3.1 UC-01: Download Model (Self-Contained)
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| ID | UC-01 |
+| Actor | Developer |
+| Precondition | VS Code extension active, internet available |
+| Trigger | Developer invokes “Kiro SDLC: Download Embedding Model” |
+
+**Main Flow:**
+
+|  |  |  |
+| --- | --- | --- |
+| Step | Actor | System |
+| 1 | Invokes command | — |
+| 2 | — | Reads model catalog from hardcoded MODELS constant |
+| 3 | — | Reads ~/.code-intel/models/registry.json to determine download/active status |
+| 4 | — | Displays QuickPick with models + status icons |
+| 5 | Selects model (not downloaded) | — |
+| 6 | — | Shows progress notification: “Downloading {name}…” |
+| 7 | — | Downloads model.onnx from HuggingFace via HTTPS |
+| 8 | — | Downloads vocab file (vocab.txt or sentencepiece.bpe.model) |
+| 9 | — | Writes model files to ~/.code-intel/models/{model-name}/ |
+| 10 | — | Updates registry.json: adds model entry, sets as active |
+| 11 | — | Shows success: “✅ Model downloaded and activated: {name}” |
+
+**Alternative Flows:**
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Condition | Action |
+| AF-01a | Network error during download | Show error: “❌ Download failed: {message}”. Clean up partial files. |
+| AF-01b | Model already downloaded | Show option to switch active model (no re-download) |
+| AF-01c | Model already active | Show info: “Model is already active” |
+| AF-01d | Disk write fails | Show error: “❌ Cannot write model files. Check disk space.” |
+
+**Postcondition:** Model files on disk, registry.json updated, model active
+
+### 3.2 UC-02: Switch Active Model (Self-Contained)
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| ID | UC-02 |
+| Actor | Developer |
+| Precondition | Model already downloaded |
+| Trigger | Developer selects a downloaded (non-active) model in QuickPick |
+
+**Main Flow:**
+
+|  |  |  |
+| --- | --- | --- |
+| Step | Actor | System |
+| 1 | Selects downloaded model | — |
+| 2 | — | Asks “Activate this model?” |
+| 3 | Confirms | — |
+| 4 | — | Updates registry.json: sets active\_model to selected model |
+| 5 | — | Shows success: “✅ Active model switched to: {name}” |
+
+**Postcondition:** registry.json updated, MCP server (if running) sees change on next read
+
+### 3.3 UC-03: MCP Server Reads Fresh Registry
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| ID | UC-03 |
+| Actor | MCP Server (internal) |
+| Precondition | Server running, registry.json modified externally |
+| Trigger | Any code path accesses activeModel or calls getModel() |
+
+**Main Flow:**
+
+|  |  |
+| --- | --- |
+| Step | System |
+| 1 | Code accesses ModelRegistry.activeModel property |
+| 2 | Property getter reads registry.json from disk (no cache) |
+| 3 | Parses JSON, returns current active\_model value |
+
+**Key Change:** Previously, registry was read once at construction time and cached. Now, every property access triggers a fresh disk read.
+
+## 4. Business Rules
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Rule | Change from KSA-104 |
+| BR-01 | Extension MUST NOT depend on MCP server for model download | **NEW** — previously required server |
+| BR-02 | Extension reads model catalog from local constant (not server API) | **NEW** — previously called /api/models/list |
+| BR-03 | Extension writes registry.json directly after download | **NEW** — previously server wrote it |
+| BR-04 | ModelRegistry MUST re-read registry.json on every activeModel access | **CHANGED** — previously cached at startup |
+| BR-05 | ModelRegistry MUST re-read on every isDownloaded() check | **CHANGED** — previously cached |
+| BR-06 | All 3 MCP modules must implement identical cache invalidation | **NEW** |
+
+## 5. Data Specifications
+
+### 5.1 Model Catalog (Hardcoded in Extension)
+
+const MODELS: Record<string, ModelInfo> = {
+ "all-MiniLM-L6-v2": {
+ displayName: "English (Small, Fast)",
+ sizeMb: 90,
+ languages: ["en"],
+ files: {
+ model: "onnx/model.onnx",
+ vocab: "vocab.txt"
+ },
+ baseUrl: "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main"
+ },
+ "paraphrase-multilingual-MiniLM-L12-v2": {
+ displayName: "Multilingual (50+ languages)",
+ sizeMb: 470,
+ languages: ["en", "vi", "zh", "ja", "ko", "fr", "de", "es", "ar", "ru"],
+ files: {
+ model: "onnx/model.onnx",
+ vocab: "sentencepiece.bpe.model"
+ },
+ baseUrl: "https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main"
+ }
+};
+
+### 5.2 Registry.json (Written by Extension)
+
+Same format as KSA-104 — no schema change:
+
+{
+ "active\_model": "all-MiniLM-L6-v2",
+ "last\_updated": "2026-05-21T12:00:00Z",
+ "models": {
+ "all-MiniLM-L6-v2": {
+ "path": "~/.code-intel/models/all-MiniLM-L6-v2",
+ "downloaded\_at": "2026-05-21T12:00:00Z",
+ "size\_bytes": 94371840
+ }
+ }
+}
+
+## 6. Sequence Diagram
+
+### 6.1 Download Flow (After Fix)
+
+![Sequence — Download](data:image/png;base64...) [*Edit in draw.io*](diagrams/sequence-download.drawio)
+
+Developer → Extension: Invoke "Download Embedding Model"
+Extension → Extension: Read MODELS catalog (local constant)
+Extension → Disk: Read ~/.code-intel/models/registry.json
+Extension → Developer: Show QuickPick (models + status)
+Developer → Extension: Select model (not downloaded)
+Extension → Developer: Show progress notification
+Extension → HuggingFace: GET model.onnx (HTTPS direct)
+HuggingFace → Extension: Stream file bytes
+Extension → Disk: Write ~/.code-intel/models/{name}/model.onnx
+Extension → HuggingFace: GET vocab.txt (HTTPS direct)
+HuggingFace → Extension: Stream file bytes
+Extension → Disk: Write ~/.code-intel/models/{name}/vocab.txt
+Extension → Disk: Update registry.json (add model, set active)
+Extension → Developer: "✅ Model downloaded and activated"
+
+### 6.2 Cache Invalidation Flow
+
+Extension → Disk: Write registry.json (new model downloaded)
+...later...
+MCP Server → ModelRegistry: access activeModel property
+ModelRegistry → Disk: Read registry.json (FRESH read, no cache)
+ModelRegistry → MCP Server: Return new active\_model value
+
+## 7. State Diagram
+
+### 7.1 Extension Download States
+
+![State — Download](data:image/png;base64...) [*Edit in draw.io*](diagrams/state-download.drawio)
+
+States:
+- IDLE: Waiting for user command
+- SHOWING\_PICKER: QuickPick displayed
+- DOWNLOADING: File download in progress
+- WRITING\_REGISTRY: Updating registry.json
+- SUCCESS: Download complete
+- ERROR: Download failed
+
+Transitions:
+- IDLE → SHOWING\_PICKER: User invokes command
+- SHOWING\_PICKER → DOWNLOADING: User selects model
+- SHOWING\_PICKER → IDLE: User cancels
+- DOWNLOADING → WRITING\_REGISTRY: Files downloaded successfully
+- DOWNLOADING → ERROR: Network/disk error
+- WRITING\_REGISTRY → SUCCESS: Registry updated
+- ERROR → IDLE: Error shown, user acknowledges
+- SUCCESS → IDLE: Success shown
+
+## 8. Error Handling
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Error | Source | User Message | Recovery |
+| Network timeout | HuggingFace unreachable | “❌ Download failed: Connection timed out” | Retry manually |
+| HTTP 404 | Model URL invalid | “❌ Download failed: Model file not found” | Report bug |
+| Disk full | Write fails | “❌ Cannot write model files. Check disk space.” | Free space, retry |
+| Permission denied | Directory not writable | “❌ Cannot write to ~/.code-intel/models/” | Fix permissions |
+| JSON parse error | Corrupted registry.json | Silently reset to defaults | Auto-recovery |
+| Partial download | Interrupted | Clean up partial files, show error | Retry downloads full file |
+
+## 9. Non-Functional Requirements
+
+|  |  |  |
+| --- | --- | --- |
+| ID | Requirement | Target |
+| NFR-01 | Download works without MCP server | 100% — zero server dependency |
+| NFR-02 | Registry re-read latency | < 1ms (file < 1KB, OS page cache) |
+| NFR-03 | No breaking changes to registry.json format | Backward compatible |
+| NFR-04 | All 3 MCP modules updated consistently | Identical behavior |
+| NFR-05 | Extension download timeout | 60s per file (configurable) |
+
+## 10. Integration Requirements
+
+### 10.1 Extension → File System
+
+* Write model files to ~/.code-intel/models/{model-name}/
+* Write/update registry.json atomically (write temp → rename)
+* Create directories if not exist (mkdirSync with recursive: true)
+
+### 10.2 MCP Server → File System
+
+* Read registry.json on every activeModel / isDownloaded() access
+* Handle file-not-found gracefully (return defaults)
+* Handle JSON parse errors gracefully (return defaults)
+
+## Appendix: Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | System Context — Before | [system-context-before.png](diagrams/system-context-before.png) | [system-context-before.drawio](diagrams/system-context-before.drawio) |
+| 2 | System Context — After | [system-context-after.png](diagrams/system-context-after.png) | [system-context-after.drawio](diagrams/system-context-after.drawio) |
+| 3 | Sequence — Download | [sequence-download.png](diagrams/sequence-download.png) | [sequence-download.drawio](diagrams/sequence-download.drawio) |
+| 4 | State — Download | [state-download.png](diagrams/state-download.png) | [state-download.drawio](diagrams/state-download.drawio) |

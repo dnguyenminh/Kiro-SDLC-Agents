@@ -1,0 +1,98 @@
+```json
+{
+  "ticket": "KSA-191",
+  "title": "Tich hop Salesforce Intelligence vao FEC_CR_Builder - Extend Existing Tools (v2)",
+  "approach": "v2 - Extend existing tools: add Apex grammar + SFDX parsers + SF graph relationships into existing mcp-code-intelligence servers",
+  "approachDetail": {
+    "library": "mcp-salesforce-intelligence/ (shared npm library with parsers, graph, indexer logic)",
+    "noNewTools": true,
+    "changes": [
+      "Add Apex tree-sitter grammar (.wasm) to grammar-registry",
+      "Add apex-parser.ts to src/parsers/languages/",
+      "Add Flow/Object/LWC XML parsers to indexer",
+      "Detect SFDX project in indexer (sfdx-project.json)",
+      "Add SF relationship types to graph (triggers->object, flow->apex, lwc->apex)",
+      "Extension: add Index Salesforce Project command"
+    ],
+    "consumers": [
+      "kiro-sdlc-agents/ (extension command)",
+      "mcp-code-intelligence-nodejs/ (parsers + graph + indexer)",
+      "mcp-code-intelligence-kotlin/ (parsers + graph - future)",
+      "mcp-code-intelligence-python/ (parsers + graph - future)"
+    ],
+    "existingToolsEnhanced": [
+      "code_index_status (+ SFDX indexing)",
+      "code_search (+ Apex/Flow/Object symbols)",
+      "code_symbols (+ Apex class/method extraction)",
+      "code_dependencies (+ SF dependencies)",
+      "code_impact (+ SF impact analysis)",
+      "code_callers/code_callees (+ SF call graph)",
+      "mem_ingest_file (+ .cls, .trigger, .flow-meta.xml support)"
+    ]
+  },
+  "currentPhase": "done",
+  "phases": {
+    "requirements": {
+      "status": "done",
+      "file": "BRD.md",
+      "version": 2,
+      "completedAt": "2026-06-01T06:00:00Z",
+      "note": "Rewritten for v2 approach (extend existing tools, no new MCP servers)"
+    },
+    "specification": {
+      "status": "done",
+      "file": "FSD.md",
+      "version": 2,
+      "completedAt": "2026-06-01T08:00:00Z",
+      "note": "FSD v2 created (BA draft + TA enrichment)"
+    },
+    "design": {
+      "status": "done",
+      "file": "TDD.md",
+      "version": 2,
+      "completedAt": "2026-06-02T10:00:00Z",
+      "note": "TDD v2 created for extend-existing-tools approach"
+    },
+    "feedback_loop": {
+      "status": "done",
+      "iterations": 0,
+      "maxIterations": 5,
+      "note": "No discrepancies found - TDD aligns with BRD v2 + FSD v2"
+    },
+    "test_planning": {
+      "file": "STP.md",
+      "version": 2,
+      "note": "STP v2 + STC v2 created for extend-existing-tools approach",
+      "status": "done",
+      "review": "approved",
+      "completedAt": "2026-06-02T12:00:00Z"
+    },
+    "implementation": {
+      "status": "done",
+      "completedAt": "2026-06-02T07:13:50.000Z",
+      "note": "DEV implemented: Phase A (shared lib v2), Phase C (indexer SFDX stats), Phase D (graph SF kinds), Phase E (code-index-status SFDX section). Phase B+F already done."
+    },
+    "user_guide": {
+      "status": "done",
+      "file": "UG.md",
+      "version": 2,
+      "completedAt": "2026-06-02T08:30:00.000Z",
+      "note": "UG v2 written by DEV, BA reviewed (9/9 BRD stories covered), QA verified (instructions accurate)"
+    },
+    "testing": {
+      "status": "done",
+      "completedAt": "2026-06-02T09:45:00.000Z",
+      "note": "All automated tests PASS. 148 total: mcp-salesforce-intelligence (44 vitest), mcp-code-intelligence-nodejs vitest (39), java-parser node:test (19), salesforce-meta-parser node:test (17), graph-services node:test (29). TypeScript compile clean. Quality review PASS."
+    },
+    "deployment": {
+      "status": "done",
+      "completedAt": "2026-06-02T11:00:00.000Z",
+      "note": "Version bumped to v1.15.0 (minor). All package.json + README files updated. Git tag v1.15.0 created. Local commit only (not pushed)."
+    }
+  },
+  "architecturePattern": "plugin",
+  "lastUpdated": "2026-06-02T11:00:00.000Z",
+  "updatedBy": "SM Agent - Phase 7 Deployment done"
+}
+
+```

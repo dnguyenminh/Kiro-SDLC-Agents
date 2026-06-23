@@ -1,0 +1,592 @@
+# Technical Design Document (TDD)
+
+## MCP Code Intelligence — KSA-102: Adaptive Token Cache + Model Manager
+
+## Document Information
+
+|  |  |
+| --- | --- |
+| Field | Value |
+| Jira Ticket | KSA-102 |
+| Title | Adaptive Token Cache + Model Manager for multilingual find\_tools |
+| Author | SA Agent |
+| Version | 1.0 |
+| Date | 2026-05-21 |
+| Status | Draft |
+| Related BRD | BRD-v1-KSA-102.docx |
+| Related FSD | FSD-v1-KSA-102.docx |
+
+## Revision History
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Version | Date | Author | Changes |
+| 1.0 | 2026-05-21 | SA Agent | Initiate document from BRD + FSD |
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+This TDD specifies the technical implementation of the Adaptive Token Cache and Model Manager for the MCP Code Intelligence Python server. It covers architecture, module design, data structures, and integration patterns.
+
+### 1.2 Scope
+
+* New module: orchestration/cache/ — Adaptive Token Cache
+* New module: orchestration/models/ — Model Manager
+* Modified: orchestration/meta/find\_tools.py — integrate cache + embedding tiers
+* Modified: memory/embedding/model\_downloader.py — support multiple models
+
+### 1.3 Technology Stack
+
+|  |  |  |
+| --- | --- | --- |
+| Layer | Technology | Version |
+| Language | Python | 3.11+ |
+| Runtime | ONNX Runtime | 1.16+ |
+| Embedding Model | all-MiniLM-L6-v2 | latest |
+| Storage | JSON files | N/A |
+| Build Tool | pip / pyproject.toml | N/A |
+| CI/CD | GitHub Actions | N/A |
+
+### 1.4 Design Principles
+
+* **Zero external deps** for cache module (stdlib only)
+* **Graceful degradation** — system works without ONNX/model
+* **Single Responsibility** — each file < 200 lines, each function < 20 lines
+* **Lazy initialization** — model loaded only when needed
+* **Non-blocking** — downloads and persistence never block find\_tools
+
+### 1.5 Constraints
+
+* Max 200 lines per file (workspace code standard)
+* Max 20 lines per function
+* ONNX Runtime is optional dependency
+* No network calls during search (only during model download)
+* Must work on Windows, macOS, Linux
+
+### 1.6 References
+
+|  |  |
+| --- | --- |
+| Document | Location |
+| BRD | BRD-v1-KSA-102.docx |
+| FSD | FSD-v1-KSA-102.docx |
+
+## 2. System Architecture
+
+### 2.1 Architecture Overview
+
+![Architecture Diagram](data:image/png;base64...)
+
+Architecture Diagram
+
+The feature adds two new subsystems to the existing orchestration layer:
+
+1. **AdaptiveTokenCache** — in-memory cache with JSON persistence, sits between registry search and embedding search
+2. **ModelManager** — MCP tool + model lifecycle management, wraps existing model\_downloader
+3. **EmbeddingSearcher** — adapter connecting find\_tools to OnnxEmbeddingProvider with timeout
+
+### 2.2 Component Diagram
+
+![Component Diagram](data:image/png;base64...)
+
+Component Diagram
+
+|  |  |  |
+| --- | --- | --- |
+| Component | Responsibility | Technology |
+| AdaptiveTokenCache | Store/lookup learned query→tool mappings | Python dict + JSON |
+| CachePersistence | Debounced file I/O for cache | threading.Timer |
+| ModelManager | MCP tool for model CRUD | MCP tool pattern |
+| ModelRegistry | Track downloaded models | JSON file |
+| EmbeddingSearcher | Compute embeddings + cosine similarity | numpy + ONNX |
+| ToolEmbeddingIndex | Pre-computed embeddings for all tools | numpy array |
+
+### 2.3 Communication Patterns
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| From | To | Protocol | Pattern | Description |
+| find\_tools | AdaptiveTokenCache | In-process | Sync | Cache lookup/add |
+| find\_tools | EmbeddingSearcher | In-process | Sync (timeout) | Embedding search with 100ms timeout |
+| ModelManager | ModelDownloader | In-process | Async (background) | Download model files |
+| CachePersistence | Filesystem | File I/O | Async (debounced) | Write cache to disk |
+| EmbeddingSearcher | OnnxProvider | In-process | Sync | ONNX inference |
+
+## 3. API Design
+
+### 3.1 API Overview
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| # | Tool | Method | Description | Source |
+| 1 | find\_tools | execute | Enhanced with cache + embedding tiers | UC-1 |
+| 2 | mem\_model\_manager | execute | Model lifecycle management | UC-2,3,4 |
+
+### 3.2 Tool: mem\_model\_manager
+
+**Implements:** UC-2, UC-3, UC-4
+
+|  |  |
+| --- | --- |
+| Attribute | Value |
+| Tool Name | mem\_model\_manager |
+| Registration | Registered in MCP server tool list |
+| Auth | None (local tool) |
+
+**Input Schema:**
+
+{
+ "type": "object",
+ "properties": {
+ "action": {
+ "type": "string",
+ "enum": ["list", "download", "status", "switch"],
+ "description": "Action to perform"
+ },
+ "model\_name": {
+ "type": "string",
+ "description": "Model identifier (required for download/switch)"
+ }
+ },
+ "required": ["action"]
+}
+
+**Response — action=list:**
+
+{
+ "models": [
+ {
+ "name": "all-MiniLM-L6-v2",
+ "display\_name": "English (Small, Fast)",
+ "size\_mb": 90,
+ "languages": ["en"],
+ "vocab\_size": 30522,
+ "dimensions": 384,
+ "downloaded": true,
+ "active": true
+ },
+ {
+ "name": "paraphrase-multilingual-MiniLM-L12-v2",
+ "display\_name": "Multilingual (50+ languages)",
+ "size\_mb": 470,
+ "languages": ["en", "vi", "zh", "ja", "ko", "fr", "de", "es", "..."],
+ "vocab\_size": 250002,
+ "dimensions": 384,
+ "downloaded": false,
+ "active": false
+ }
+ ]
+}
+
+**Response — action=status:**
+
+{
+ "active\_model": "all-MiniLM-L6-v2",
+ "model\_path": "/home/user/.code-intel/models/all-MiniLM-L6-v2",
+ "dimensions": 384,
+ "languages": ["en"],
+ "cache\_entries": 42,
+ "cache\_hit\_rate": 0.73
+}
+
+**Error Responses:**
+
+|  |  |  |
+| --- | --- | --- |
+| Condition | Error Code | Message |
+| Invalid action | INVALID\_ACTION | “Invalid action. Use: list, download, status, switch” |
+| Unknown model | MODEL\_NOT\_FOUND | “Unknown model: {name}. Use action=‘list’” |
+| Download failed | DOWNLOAD\_FAILED | “Download failed: {error}” |
+| Switch without download | MODEL\_NOT\_DOWNLOADED | “Model not downloaded. Use action=‘download’ first” |
+
+## 4. Data Design
+
+### 4.1 File: token-cache.json
+
+**Location:** {workspace}/.code-intel/token-cache.json
+
+{
+ "version": 1,
+ "registry\_hash": "a1b2c3d4",
+ "entries": [
+ {
+ "tokens": ["issues", "jira", "search"],
+ "tool\_name": "jira\_search",
+ "score": 0.87,
+ "timestamp": "2026-05-21T10:00:00Z",
+ "hit\_count": 15,
+ "last\_hit": "2026-05-21T14:30:00Z",
+ "tool\_version": "a1b2c3d4"
+ }
+ ]
+}
+
+**Size estimate:** ~500 bytes per entry × 10,000 max = ~5MB max
+
+### 4.2 File: registry.json (Model Registry)
+
+**Location:** ~/.code-intel/models/registry.json
+
+{
+ "active\_model": "all-MiniLM-L6-v2",
+ "models": {
+ "all-MiniLM-L6-v2": {
+ "path": "~/.code-intel/models/all-MiniLM-L6-v2",
+ "downloaded\_at": "2026-05-21T10:00:00Z",
+ "size\_bytes": 94000000,
+ "vocab\_size": 30522
+ }
+ },
+ "last\_updated": "2026-05-21T10:00:00Z"
+}
+
+## 5. Class / Module Design
+
+### 5.1 Package Structure
+
+mcp\_code\_intel/
+├── orchestration/
+│ ├── cache/
+│ │ ├── \_\_init\_\_.py
+│ │ ├── adaptive\_cache.py # AdaptiveTokenCache class
+│ │ ├── cache\_entry.py # CacheEntry dataclass
+│ │ ├── persistence.py # DebouncedPersistence (file I/O)
+│ │ └── invalidation.py # Cache invalidation logic
+│ ├── models/
+│ │ ├── \_\_init\_\_.py
+│ │ ├── model\_manager.py # ModelManager MCP tool
+│ │ ├── model\_catalog.py # Known models catalog
+│ │ └── model\_registry.py # Registry file management
+│ ├── embedding/
+│ │ ├── \_\_init\_\_.py
+│ │ ├── embedding\_searcher.py # EmbeddingSearcher (find\_tools adapter)
+│ │ └── tool\_index.py # ToolEmbeddingIndex (pre-computed vectors)
+│ └── meta/
+│ └── find\_tools.py # MODIFIED: integrate cache + embedding
+├── memory/
+│ └── embedding/
+│ ├── model\_downloader.py # MODIFIED: support multiple models
+│ └── onnx\_provider.py # UNCHANGED
+
+### 5.2 Key Interfaces
+
+# orchestration/cache/adaptive\_cache.py
+class AdaptiveTokenCache:
+ """Self-learning token cache with fuzzy matching."""
+
+ def find\_fuzzy(self, tokens: set[str], threshold: float = 0.80) -> CacheEntry | None:
+ """Find cache entry with ≥threshold token overlap."""
+
+ def add(self, tokens: set[str], tool\_name: str, score: float, registry\_hash: str) -> None:
+ """Add new cache entry from embedding result."""
+
+ def invalidate\_stale(self, current\_hash: str) -> int:
+ """Mark entries with mismatched registry\_hash as stale. Returns count."""
+
+ def load(self) -> None:
+ """Load cache from disk (lazy, called on first access)."""
+
+ @property
+ def size(self) -> int:
+ """Current number of active entries."""
+
+# orchestration/embedding/embedding\_searcher.py
+class EmbeddingSearcher:
+ """Adapter: find\_tools → ONNX embedding search with timeout."""
+
+ def search(self, query: str, timeout\_ms: int = 100) -> tuple[str, float] | None:
+ """Search tools by embedding similarity. Returns (tool\_name, score) or None."""
+
+ def rebuild\_index(self) -> None:
+ """Rebuild tool embedding index (after model switch or new tools)."""
+
+ @property
+ def is\_available(self) -> bool:
+ """True if ONNX model is loaded and ready."""
+
+# orchestration/models/model\_manager.py
+class ModelManager:
+ """MCP tool: mem\_model\_manager — model lifecycle management."""
+
+ def execute(self, args: dict) -> str:
+ """Handle action: list/download/status/switch."""
+
+ def get\_active\_model(self) -> str:
+ """Return current active model name."""
+
+ def auto\_download\_if\_needed(self) -> None:
+ """Background download of default model on first need."""
+
+### 5.3 Design Patterns
+
+|  |  |  |
+| --- | --- | --- |
+| Pattern | Where Used | Rationale |
+| Strategy | EmbeddingSearcher (swappable model) | Support model switching without restart |
+| Observer | CachePersistence (debounced write) | Decouple cache updates from file I/O |
+| Lazy Init | AdaptiveTokenCache.load() | Don’t read file until first cache access |
+| Adapter | EmbeddingSearcher wraps OnnxProvider | Isolate find\_tools from embedding internals |
+| Singleton | ToolEmbeddingIndex (per server) | One index shared across all find\_tools calls |
+
+### 5.4 Error Handling
+
+|  |  |  |
+| --- | --- | --- |
+| Exception | Behavior | When Thrown |
+| JSONDecodeError (cache load) | Log warning, start with empty cache | Corrupted token-cache.json |
+| TimeoutError (embedding) | Return None, fall through | ONNX inference > 100ms |
+| ImportError (onnxruntime) | Disable embedding tier | ONNX not installed |
+| OSError (file write) | Log error, skip persist | Disk full or permissions |
+| NetworkError (download) | Return error message | Model download fails |
+
+## 6. Integration Design
+
+### 6.1 Integration: find\_tools Enhancement
+
+The existing find\_tools.py execute() function is modified to insert cache + embedding tiers:
+
+# MODIFIED find\_tools.py execute() — new flow
+def execute(engine, args):
+ query = args.get("query")
+
+ # Tier 1: Registry search (EXISTING — unchanged)
+ registry\_results = engine.get\_registry().search(query)
+ if registry\_results:
+ return json.dumps([t.definition for t in registry\_results[:10]])
+
+ # Tier 1.5: Retry failed servers (EXISTING — unchanged)
+ recovered = \_retry\_failed\_servers(engine)
+ if recovered:
+ registry\_results = engine.get\_registry().search(query)
+ if registry\_results:
+ return json.dumps([t.definition for t in registry\_results[:10]])
+
+ # Tier 2: Adaptive Token Cache (NEW)
+ cache = engine.get\_token\_cache()
+ tokens = tokenize(query)
+ cached = cache.find\_fuzzy(tokens)
+ if cached:
+ tool = engine.get\_registry().find(cached.tool\_name)
+ if tool:
+ cached.hit\_count += 1
+ cache.schedule\_persist()
+ return json.dumps([tool.definition])
+
+ # Tier 3: Embedding Search (NEW)
+ searcher = engine.get\_embedding\_searcher()
+ if searcher and searcher.is\_available:
+ result = searcher.search(query, timeout\_ms=100)
+ if result:
+ tool\_name, score = result
+ tool = engine.get\_registry().find(tool\_name)
+ if tool and score > 0.75:
+ cache.add(tokens, tool\_name, score, engine.get\_registry().version\_hash())
+ cache.schedule\_persist()
+ # Check multilingual hint
+ hint = \_check\_multilingual\_hint(engine, query)
+ definitions = [tool.definition]
+ if hint:
+ definitions[0] = {\*\*definitions[0], "\_hint": hint}
+ return json.dumps(definitions)
+ elif not searcher or not searcher.is\_available:
+ # Trigger auto-download in background
+ engine.get\_model\_manager().auto\_download\_if\_needed()
+
+ # Tier 4: Delegate to nested (EXISTING — unchanged)
+ delegates = engine.get\_find\_tools\_delegates()
+ nested\_results = \_delegate\_to\_nested(engine, query) if delegates else []
+
+ # Tier 5: KB fallback (EXISTING — unchanged)
+ # ... existing code ...
+
+### 6.2 Integration: OrchestrationEngine Extensions
+
+New methods added to OrchestrationEngine:
+
+class OrchestrationEngine:
+ # ... existing code ...
+
+ def get\_token\_cache(self) -> AdaptiveTokenCache:
+ """Lazy-init adaptive token cache."""
+ if self.\_token\_cache is None:
+ cache\_path = self.\_workspace / ".code-intel" / "token-cache.json"
+ self.\_token\_cache = AdaptiveTokenCache(cache\_path)
+ return self.\_token\_cache
+
+ def get\_embedding\_searcher(self) -> EmbeddingSearcher | None:
+ """Get embedding searcher (None if ONNX unavailable)."""
+ if self.\_embedding\_searcher is None:
+ try:
+ self.\_embedding\_searcher = EmbeddingSearcher(
+ model\_manager=self.get\_model\_manager(),
+ registry=self.get\_registry()
+ )
+ except ImportError:
+ return None
+ return self.\_embedding\_searcher
+
+ def get\_model\_manager(self) -> ModelManager:
+ """Get model manager instance."""
+ if self.\_model\_manager is None:
+ self.\_model\_manager = ModelManager()
+ return self.\_model\_manager
+
+## 7. Security Design
+
+### 7.1 Authentication
+
+No authentication — all tools are local, running on user’s machine.
+
+### 7.2 Data Protection
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Data Type | At Rest | In Transit | In Logs |
+| Token cache | Plain JSON (local file) | N/A (local) | Query tokens logged |
+| Model files | Plain binary (local) | HTTPS (download) | Download URL logged |
+| Registry | Plain JSON (local) | N/A | No sensitive data |
+
+### 7.3 Input Validation
+
+|  |  |  |
+| --- | --- | --- |
+| Field | Validation | Sanitization |
+| query (find\_tools) | Non-empty, max 500 chars | Strip whitespace |
+| action (model\_manager) | Must be in enum set | Lowercase |
+| model\_name | Must match catalog entry | Exact match only |
+
+## 8. Performance & Scalability
+
+### 8.1 Caching Strategy
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Cache | What | TTL | Eviction | Technology |
+| Token Cache | query→tool mappings | No TTL (LRU) | LRU at 10K entries | Python dict |
+| Tool Embedding Index | tool→vector mappings | Until registry change | Full rebuild | numpy array |
+| Model (ONNX session) | Loaded model | Until switch | Replace on switch | onnxruntime |
+
+### 8.2 Performance Targets
+
+|  |  |  |
+| --- | --- | --- |
+| Operation | Target | Measurement |
+| Cache lookup (hit) | < 1ms | time.perf\_counter |
+| Cache lookup (miss) | < 1ms | time.perf\_counter |
+| Embedding search | < 100ms | Hard timeout |
+| Cache persist (debounced) | < 50ms | Background, non-blocking |
+| Model load (first use) | < 2s | One-time cost |
+| find\_tools total (cache hit) | < 2ms | End-to-end |
+| find\_tools total (embedding hit) | < 150ms | End-to-end |
+
+### 8.3 Scalability
+
+* Cache: O(n) scan for fuzzy match on 10K entries ≈ < 1ms (Python set operations)
+* Tool index: O(n) cosine similarity on ~100 tools ≈ < 10ms (numpy vectorized)
+* File I/O: Debounced to max 1 write/5s regardless of cache update frequency
+
+## 9. Monitoring & Observability
+
+### 9.1 Logging
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Log Event | Level | Fields | Destination |
+| Cache hit | DEBUG | query, tool\_name, hit\_count | stderr |
+| Cache miss → embedding | DEBUG | query | stderr |
+| Embedding hit + learn | INFO | query, tool\_name, score | stderr |
+| Cache invalidation | INFO | stale\_count, total\_count | stderr |
+| Model download start | INFO | model\_name, size\_mb | stderr |
+| Model download complete | INFO | model\_name, duration | stderr |
+| Model switch | INFO | from\_model, to\_model | stderr |
+| Cache persist | DEBUG | entry\_count, file\_size | stderr |
+| Embedding timeout | WARN | query, elapsed\_ms | stderr |
+| Cache corrupted | WARN | file\_path, error | stderr |
+
+### 9.2 Metrics (in-memory counters)
+
+|  |  |  |
+| --- | --- | --- |
+| Metric | Type | Description |
+| cache\_hits | Counter | Total cache hits |
+| cache\_misses | Counter | Total cache misses |
+| embedding\_searches | Counter | Total embedding searches |
+| embedding\_timeouts | Counter | Embedding searches that timed out |
+| cache\_size | Gauge | Current cache entry count |
+| cache\_hit\_rate | Gauge | hits / (hits + misses) |
+
+## 10. Deployment Considerations
+
+### 10.1 Configuration
+
+No environment-specific config needed. All paths are derived: - Cache: {workspace}/.code-intel/token-cache.json - Models: ~/.code-intel/models/ - Registry: ~/.code-intel/models/registry.json
+
+### 10.2 Feature Flags
+
+|  |  |  |
+| --- | --- | --- |
+| Flag | Default | Description |
+| EMBEDDING\_ENABLED | true | Enable/disable embedding search tier |
+| CACHE\_ENABLED | true | Enable/disable adaptive cache |
+| AUTO\_DOWNLOAD | true | Auto-download model on first need |
+| CACHE\_MAX\_SIZE | 10000 | Maximum cache entries |
+| EMBEDDING\_TIMEOUT\_MS | 100 | Embedding search timeout |
+| CACHE\_PERSIST\_DEBOUNCE\_S | 5 | Seconds between cache file writes |
+
+### 10.3 Rollback Strategy
+
+1. Set EMBEDDING\_ENABLED=false and CACHE\_ENABLED=false → reverts to original find\_tools behavior
+2. Delete .code-intel/token-cache.json → fresh cache start
+3. No database migrations — all data is in JSON files that can be deleted safely
+
+## 11. Implementation Checklist
+
+### Files to Create
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | File | Lines (est.) | Description |
+| 1 | orchestration/cache/\_\_init\_\_.py | 5 | Package init |
+| 2 | orchestration/cache/adaptive\_cache.py | 120 | Main cache class |
+| 3 | orchestration/cache/cache\_entry.py | 40 | CacheEntry dataclass |
+| 4 | orchestration/cache/persistence.py | 80 | Debounced file I/O |
+| 5 | orchestration/cache/invalidation.py | 60 | Invalidation logic |
+| 6 | orchestration/models/\_\_init\_\_.py | 5 | Package init |
+| 7 | orchestration/models/model\_manager.py | 150 | MCP tool implementation |
+| 8 | orchestration/models/model\_catalog.py | 50 | Known models list |
+| 9 | orchestration/models/model\_registry.py | 100 | Registry file management |
+| 10 | orchestration/embedding/\_\_init\_\_.py | 5 | Package init |
+| 11 | orchestration/embedding/embedding\_searcher.py | 120 | Embedding search adapter |
+| 12 | orchestration/embedding/tool\_index.py | 100 | Pre-computed tool vectors |
+
+### Files to Modify
+
+|  |  |  |
+| --- | --- | --- |
+| # | File | Changes |
+| 1 | orchestration/meta/find\_tools.py | Add Tier 2 (cache) + Tier 3 (embedding) |
+| 2 | orchestration/engine.py | Add get\_token\_cache(), get\_embedding\_searcher(), get\_model\_manager() |
+| 3 | memory/embedding/model\_downloader.py | Support configurable model path + multiple models |
+
+### Estimated Total: ~835 lines new code, ~50 lines modified
+
+## Appendix
+
+### Diagram Index
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Diagram | Image | Source (editable) |
+| 1 | Architecture Overview | [architecture.png](diagrams/architecture.png) | [architecture.drawio](diagrams/architecture.drawio) |
+| 2 | Component Diagram | [component.png](diagrams/component.png) | [component.drawio](diagrams/component.drawio) |
+| 3 | Class Diagram | [class-diagram.png](diagrams/class-diagram.png) | [class-diagram.drawio](diagrams/class-diagram.drawio) |
+
+### Open Questions
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| # | Question | Status | Answer |
+| 1 | Should cache be shared across MCP server restarts within same session? | Resolved | Yes — persisted to file |
+| 2 | Should tool embeddings be pre-computed at startup or lazy? | Resolved | Lazy — computed on first embedding search |
+| 3 | What if two queries resolve to same tool with different scores? | Resolved | Keep highest score entry, merge tokens |

@@ -58,7 +58,7 @@ export class HttpServer {
     // Routes
     const healthRoute = createHealthRoute(this.options.registry, this.options.version);
     const toolsRoute = createToolsRoute(toolRouter, this.logger);
-    const apiRoute = createApiRoute(this.logger);
+    const apiRoute = createApiRoute(this.options.registry, this.logger);
     const adminRoute = createAdminRoute(this.logger);
 
     app.route('/', healthRoute);
