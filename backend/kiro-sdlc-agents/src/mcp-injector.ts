@@ -8,6 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { MCP_VARIANTS, MCP_SERVERS_DIR, GITHUB_RELEASE_REPO, McpVariant } from "./config";
+import { debugError } from "./debug-logger";
 
 /** Migrate legacy scripts folder and report what was cleaned up. */
 export function migrateLegacyScripts(root: string): { removed: boolean } {
@@ -124,8 +125,8 @@ export function hasMcpConfig(workspaceRoot: string): boolean {
 }
 
 /**
- * Write HTTP Streamable MCP config after bundled server starts.
- * Called by McpServerManager once the dynamic port is known.
+ * Write HTTP Streamable MCP config for the remote backend.
+ * Called by McpServerManager once a backend connection is established.
  */
 export function writeBundledMcpConfig(workspaceRoot: string, port: number): void {
     const serverConfig = {
@@ -141,15 +142,20 @@ export function writeBundledMcpConfig(workspaceRoot: string, port: number): void
  * Called when server is intentionally stopped.
  */
 export function removeBundledMcpConfig(workspaceRoot: string): void {
-    const mcpConfigPath = path.join(workspaceRoot, ".kiro", "settings", "mcp.json");
-    if (!fs.existsSync(mcpConfigPath)) { return; }
+  const mcpConfigPath = path.join(workspaceRoot, ".kiro", "settings", "mcp.json");
+  if (!fs.existsSync(mcpConfigPath)) { return; }
     try {
         const config = JSON.parse(fs.readFileSync(mcpConfigPath, "utf-8"));
         if (config?.mcpServers?.["code-intelligence"]) {
-            config.mcpServers["code-intelligence"].disabled = true;
+            delete config.mcpServers["code-intelligence"];
+            if (Object.keys(config.mcpServers).length === 0) {
+              delete config.mcpServers;
+            }
             fs.writeFileSync(mcpConfigPath, JSON.stringify(config, null, 2));
         }
-    } catch { /* non-fatal */ }
+    } catch (err) {
+        debugError("[McpInjector] Failed to remove bundled mcp config", err as Error);
+    }
 }
 
 /** Resolve ${mcpServersDir} placeholder in config args. */
@@ -210,7 +216,8 @@ function writeMcpConfig(root: string, serverConfig: Record<string, unknown>): vo
         try {
             config = JSON.parse(fs.readFileSync(mcpConfigPath, "utf-8"));
             config.mcpServers = config.mcpServers || {};
-        } catch {
+        } catch (err) {
+            debugError("[McpInjector] Failed to parse existing mcp.json, resetting", err as Error);
             config = { mcpServers: {} };
         }
     }
@@ -279,14 +286,25 @@ async function downloadFile(url: string, dest: string): Promise<void> {
     fs.writeFileSync(dest, buffer);
 }
 
-/** Extract a zip file to a directory using Node.js child_process. */
+/** Extract a zip file to a directory safely without shell injection. */
 async function extractZip(zipPath: string, destDir: string): Promise<void> {
-    const { execSync } = await import("child_process");
-    fs.mkdirSync(destDir, { recursive: true });
-    // Use PowerShell Expand-Archive on Windows, unzip on Unix
-    if (process.platform === "win32") {
-        execSync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`, { stdio: "ignore" });
-    } else {
-        execSync(`unzip -o "${zipPath}" -d "${destDir}"`, { stdio: "ignore" });
+  fs.mkdirSync(destDir, { recursive: true });
+  const resolvedZip = path.resolve(zipPath);
+  const resolvedDest = path.resolve(destDir);
+
+  if (process.platform === "win32") {
+    const scriptPath = path.join(os.tmpdir(), `extract-${Date.now()}-${path.basename(resolvedZip, ".zip")}.ps1`);
+    const escapedZip = resolvedZip.replace(/'/g, "''");
+    const escapedDest = resolvedDest.replace(/'/g, "''");
+    fs.writeFileSync(scriptPath, `Expand-Archive -LiteralPath '${escapedZip}' -DestinationPath '${escapedDest}' -Force`, "utf-8");
+    try {
+      const { execFileSync } = await import("child_process");
+      execFileSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath], { stdio: "ignore" });
+    } finally {
+      try { fs.unlinkSync(scriptPath); } catch { /* ignore cleanup failure */ }
     }
+  } else {
+    const { execFileSync } = await import("child_process");
+    execFileSync("unzip", ["-o", resolvedZip, "-d", resolvedDest], { stdio: "ignore" });
+  }
 }

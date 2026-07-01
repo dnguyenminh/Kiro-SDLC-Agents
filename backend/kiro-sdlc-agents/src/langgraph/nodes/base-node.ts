@@ -15,6 +15,7 @@ import {
   type HookDefinition,
 } from "../hook-loader";
 import { WorkflowExecutor, type WorkflowNodeContext } from "../workflow-executor";
+import { debugError } from "../../debug-logger";
 
 /** Maximum node execution time (300s per TDD Section 5.4) */
 const NODE_TIMEOUT_MS = 300_000;
@@ -437,7 +438,8 @@ export abstract class BaseNode {
       } catch { /* ignore cleanup failure */ }
 
       return result || `${docxFileName}.docx`;
-    } catch {
+    } catch (err) {
+      debugError(`[BaseNode] DOCX export failed for ${mdRelativePath}`, err as Error);
       return null;
     }
   }
@@ -452,7 +454,8 @@ export abstract class BaseNode {
         file_path: drawioRelativePath,
       }, EXPORT_TIMEOUT_MS);
       return !result.includes("error") && !result.includes("Error");
-    } catch {
+    } catch (err) {
+      debugError(`[BaseNode] draw.io export failed for ${drawioRelativePath}`, err as Error);
       return false;
     }
   }
@@ -639,8 +642,8 @@ export abstract class BaseNode {
       for (const hook of matching) {
         await this.executeHookAction(hook, state, output);
       }
-    } catch {
-      // Hook execution failure is non-blocking
+    } catch (err) {
+      debugError(`[BaseNode] agentStop hook failed for node ${this.nodeId}`, err as Error);
     }
   }
 
@@ -656,7 +659,8 @@ export abstract class BaseNode {
       return matching
         .filter(h => h.then.type === "askAgent" && h.then.prompt)
         .map(h => h.then.prompt!);
-    } catch {
+    } catch (err) {
+      debugError(`[BaseNode] preToolUse hook failed for category ${toolCategory}`, err as Error);
       return [];
     }
   }
@@ -677,8 +681,8 @@ export abstract class BaseNode {
       for (const hook of matching) {
         await this.executeHookAction(hook, state, "", filePath);
       }
-    } catch {
-      // Hook execution failure is non-blocking
+    } catch (err) {
+      debugError(`[BaseNode] file hook failed for ${eventType} on ${filePath}`, err as Error);
     }
   }
 
@@ -714,8 +718,8 @@ export abstract class BaseNode {
           await this.kbSearch("drawio procedure styles edges containers");
         }
       }
-    } catch {
-      // Individual hook failure is non-blocking
+    } catch (err) {
+      debugError(`[BaseNode] hook action failed for ${hook.name}`, err as Error);
     }
   }
 
@@ -810,7 +814,8 @@ export abstract class BaseNode {
         if (visited.size >= maxTickets) break;
         await this.traverseJiraLinks(linkedKey, currentDepth + 1, maxDepth, maxTickets, visited, results);
       }
-    } catch {
+    } catch (err) {
+      debugError(`[BaseNode] Jira traversal failed for ${issueKey}`, err as Error);
       // Single ticket fetch failure is non-blocking
       results.push(`## ${issueKey} — [fetch failed]`);
     }
@@ -822,8 +827,8 @@ export abstract class BaseNode {
    */
   private extractLinkedKeys(issueData: string, selfKey: string): string[] {
     const keys: string[] = [];
-    // Match Jira issue key pattern in the response
-    const keyPattern = /\b([A-Z][A-Z0-9]+-\d+)\b/g;
+    // Match Jira issue keys: project key (2-10 uppercase alphanumeric) + hyphen + digits
+    const keyPattern = /\b([A-Z][A-Z0-9]{1,9}-\d+)\b/g;
     let match: RegExpExecArray | null;
 
     while ((match = keyPattern.exec(issueData)) !== null) {

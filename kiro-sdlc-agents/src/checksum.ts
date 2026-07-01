@@ -1,8 +1,4 @@
-/**
- * Checksum management — tracks per-file version and detects modifications.
- * Workspace manifest stores version of each injected file individually.
- */
-
+// Checksum management --- per-file version tracking and modification detection
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";

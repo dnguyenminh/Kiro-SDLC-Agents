@@ -291,3 +291,56 @@ export const SERVER_CONSTANTS = {
   PANEL_FALLBACK_REFRESH_MS: 300000,
   GRAPH_MAX_NODES: 500,
 };
+
+/** Check whether the currently-selected LLM provider can actually talk to its API. */
+export async function checkLlmAvailability(
+  secrets?: vscode.SecretStorage,
+  configKey: string = "kiroSdlc"
+): Promise<boolean> {
+  const config = vscode.workspace.getConfiguration(configKey);
+  const providerType = config.get<string>("llmProvider", "anthropic");
+
+  switch (providerType) {
+    case "ollama":
+      // Ollama: no API key needed — just check local URL is reachable
+      try {
+        await fetch("http://localhost:11434/api/tags", { signal: AbortSignal.timeout(2000) });
+        return true;
+      } catch {
+        return false;
+      }
+    case "openai": {
+      const key = secrets ? (await secrets.get("kiroSdlc.openaiApiKey")) : undefined;
+      if (!key) return false;
+      try {
+        await fetch("https://api.openai.com/v1/models", {
+          headers: { Authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(2000),
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    case "anthropic":
+    default: {
+      const key = secrets ? (await secrets.get("kiroSdlc.anthropicApiKey")) : undefined;
+      if (!key) return false;
+      try {
+        await fetch("https://api.anthropic.com/v1/models", {
+          headers: { Authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(2000),
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+}
+
+export function mapServerStatusToWebview(status: ServerStatus): "connected" | "disconnected" | "failed" {
+  if (status === "running") return "connected";
+  if (status === "crashed") return "failed";
+  return "disconnected";
+}

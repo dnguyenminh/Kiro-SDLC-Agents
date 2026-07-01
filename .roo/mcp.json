@@ -4,7 +4,9 @@
 			"url": "http://127.0.0.1:9182/mcp",
 			"type": "streamable-http",
 			"disabled": false,
-			"alwaysAllow": []
+			"alwaysAllow": [
+				"find_tools"
+			]
 		}
 	}
 }

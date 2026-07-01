@@ -24,6 +24,10 @@ export { buildCodeReviewSubgraph } from "./graphs/code-review-graph";
 export { buildDocsSubgraph } from "./graphs/docs-graph";
 export { buildSecurityAuditSubgraph } from "./graphs/security-audit-graph";
 
+// Factory pattern
+export { GraphFactory } from "./graphs/GraphFactory";
+export type { GraphDependencies, CompiledGraph } from "./graphs/GraphFactory";
+
 export type {
   PipelineState,
   SDLCPhase,

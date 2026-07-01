@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@postman/postman-mcp-server": "^2.3.7",
+    "vitest": "^4.1.9",
     "vsce": "^1.25.1"
   },
   "bundleDependencies": [],

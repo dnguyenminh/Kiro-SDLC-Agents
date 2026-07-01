@@ -43,7 +43,7 @@ export interface LlmResponse {
   toolCalls?: LlmToolCall[];
 }
 
-export type LlmProviderType = "anthropic" | "openai" | "ollama" | "kiro";
+export type LlmProviderType = "anthropic" | "openai" | "ollama" | "kiro" | "lmstudio" | "openrouter";
 
 /**
  * Unified LLM provider interface.

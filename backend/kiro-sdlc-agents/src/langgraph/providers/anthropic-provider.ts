@@ -12,7 +12,7 @@ import { ConversationHistory } from "../../history/conversation";
 
 /** Secret key used in VS Code SecretStorage */
 export const ANTHROPIC_SECRET_KEY = "kiroSdlc.anthropicApiKey";
-const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_MODEL = "claude-sonnet-4-latest";
 const DEFAULT_MAX_TOKENS = 4096;
 
 export class AnthropicProvider implements LlmProvider {

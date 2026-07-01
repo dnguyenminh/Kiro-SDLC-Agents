@@ -86,7 +86,6 @@ export class RemoteBackendClient implements vscode.Disposable {
       });
       
       await this.mcpClient.connect(transport);
-      
       await this.startLocalServer();
 
       this.setStatus("running");
@@ -203,6 +202,18 @@ export class RemoteBackendClient implements vscode.Disposable {
     }
     this.setStatus("stopped");
     this.outputChannel.appendLine(`[RemoteBackendClient] Disconnected.`);
+  }
+
+  async spawn(): Promise<void> {
+    await this.connect();
+  }
+
+  async kill(): Promise<void> {
+    await this.disconnect();
+  }
+
+  async restart(): Promise<void> {
+    await this.reconnect();
   }
 
   async reconnect(): Promise<void> {

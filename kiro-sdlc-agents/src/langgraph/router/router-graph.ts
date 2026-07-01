@@ -1,17 +1,4 @@
-/**
- * Router Graph — Multi-Graph Architecture
- * Parent graph that classifies intent and routes to the appropriate subgraph.
- *
- * Flow:
- *   __start__ → classify_intent → [route by intent]:
- *     sdlc → sdlc_subgraph
- *     hotfix → hotfix_subgraph
- *     code_review → code_review_subgraph
- *     docs → docs_subgraph
- *     security_audit → security_audit_subgraph
- *     chat → chat_subgraph
- */
-
+// Router Graph --- Multi-Graph Architecture --- classifies intent and routes to subgraphs
 import { StateGraph, END } from "@langchain/langgraph";
 import { PipelineAnnotation, PipelineState, PipelineIntent } from "../state";
 import { McpBridge } from "../mcp-bridge";
@@ -21,9 +8,6 @@ import type { LlmProvider } from "../llm-provider";
 import type { HookEngine } from "../hook-engine";
 import { classifyIntent } from "./intent-classifier";
 
-/**
- * Build the router graph that classifies intent and delegates to subgraphs.
- */
 export async function buildRouterGraph(
   mcpBridge: McpBridge,
   streamHandler: StreamHandler,
@@ -184,9 +168,6 @@ export async function buildRouterGraph(
   return graph.compile({ checkpointer });
 }
 
-/**
- * Route from classify_intent to the appropriate subgraph node.
- */
 function routeByIntent(state: PipelineState): string {
   switch (state.intent) {
     case "sdlc":

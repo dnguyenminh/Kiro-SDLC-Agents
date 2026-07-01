@@ -1,13 +1,1 @@
-# Technical Design Document (TDD)
-
-## KSA-190: Auto-Linking Logic on KB Ingest
-
-## Architecture: Strategy Pattern with 4 linking strategies
-
-## New Files: auto-linker.ts, auto-link-config.ts, 4 strategy files
-
-## Modified: ingest-pipeline.ts, graph-repo.ts, vector-repo.ts, mem-graph-tool.ts
-
-## Implementation: 16 tasks, ~18h estimated
-
-Full document: see TDD.md in documents/KSA-190/
+Tool convert_to_markdown not found or not ready.

@@ -1,14 +1,4 @@
-/**
- * SteeringLoader — KSA-217, KSA-242
- * Parses .kiro/steering/ files (including subdirectories) recursively,
- * extracts front-matter, and injects relevant steering rules into LLM agent prompts.
- * Supports `targets` field: "kiro" | "langgraph" | "all" (default).
- *
- * KSA-242 fixes:
- * - Recursive scan: now includes subdirectories (e.g., patterns/)
- * - inclusion: "auto" treated as "always" for langgraph target
- */
-
+// SteeringLoader --- KSA-217, KSA-242 --- Parses .kiro/steering/ files recursively
 import * as vscode from "vscode";
 import * as path from "path";
 
@@ -36,16 +26,8 @@ export interface SteeringMeta {
 
 const FRONT_MATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 
-/**
- * Inclusion strategies that qualify for automatic injection into langgraph prompts.
- * "always" = always inject; "auto" = inject automatically (same behavior for pipeline).
- */
 const AUTO_INJECT_INCLUSIONS: Set<string> = new Set(["always", "auto"]);
 
-/**
- * Load all steering rules from .kiro/steering/ directory (recursively).
- * Filters by target ("langgraph" or "all") for pipeline injection.
- */
 export async function loadSteeringRules(
   workspaceRoot: string,
   target: "kiro" | "langgraph" = "langgraph"
@@ -61,15 +43,10 @@ export async function loadSteeringRules(
 
     return rules;
   } catch {
-    // Directory doesn't exist or read failed
     return [];
   }
 }
 
-/**
- * Recursively scan a directory for .md steering files.
- * KSA-242: Supports subdirectories (e.g., .kiro/steering/patterns/).
- */
 async function scanDirectoryRecursive(
   currentDir: string,
   rootSteeringDir: string,
@@ -101,7 +78,6 @@ async function scanDirectoryRecursive(
         path.join(rootSteeringDir, ".."), // parent of steering = .kiro
         fullPath
       ).replace(/\\/g, "/");
-      // Result: "steering/patterns/ai-agent.md" → prefix with .kiro/
       const filePath = `.kiro/${relativePath}`;
 
       const parsed = parseSteeringFile(content, filePath);
@@ -109,7 +85,6 @@ async function scanDirectoryRecursive(
 
       // Filter by target
       if (parsed.meta.targets === "all" || parsed.meta.targets === target) {
-        // KSA-242: Accept "always" AND "auto" for automatic injection
         if (AUTO_INJECT_INCLUSIONS.has(parsed.meta.inclusion)) {
           rules.push(parsed);
         }
@@ -118,26 +93,30 @@ async function scanDirectoryRecursive(
   }
 }
 
-/**
- * Inject steering rules into a system prompt.
- * Appends steering content after the base system prompt.
- */
 export function injectSteering(basePrompt: string, rules: SteeringRule[]): string {
   if (rules.length === 0) return basePrompt;
 
-  const steeringBlock = rules
-    .map((r) => {
-      const header = r.meta.title ? `## ${r.meta.title}` : `## ${r.filePath}`;
-      return `${header}\n\n${r.content}`;
-    })
-    .join("\n\n---\n\n");
+  // Budget: limit total steering injection to ~4000 chars (~1000 tokens)
+  // to leave room for user messages in small context models
+  const MAX_STEERING_CHARS = 4000;
 
+  let totalChars = 0;
+  const includedBlocks: string[] = [];
+
+  for (const r of rules) {
+    const header = r.meta.title ? `## ${r.meta.title}` : `## ${r.filePath}`;
+    const block = `${header}\n\n${r.content}`;
+    if (totalChars + block.length > MAX_STEERING_CHARS) { break; }
+    includedBlocks.push(block);
+    totalChars += block.length;
+  }
+
+  if (includedBlocks.length === 0) return basePrompt;
+
+  const steeringBlock = includedBlocks.join("\n\n---\n\n");
   return `${basePrompt}\n\n# Steering Rules (auto-injected)\n\n${steeringBlock}`;
 }
 
-/**
- * Parse a steering file into metadata and content.
- */
 export function parseSteeringFile(raw: string, filePath: string): SteeringRule | null {
   const match = raw.match(FRONT_MATTER_REGEX);
 
@@ -162,10 +141,6 @@ export function parseSteeringFile(raw: string, filePath: string): SteeringRule |
   };
 }
 
-/**
- * Parse YAML-like front-matter into SteeringMeta.
- * Simple key: value parsing (no full YAML library needed).
- */
 function parseFrontMatter(raw: string): SteeringMeta {
   const meta: SteeringMeta = {
     targets: "all",
@@ -206,9 +181,6 @@ function parseFrontMatter(raw: string): SteeringMeta {
   return meta;
 }
 
-/**
- * Read file content as UTF-8 string.
- */
 async function readFileContent(filePath: string): Promise<string | null> {
   try {
     const uri = vscode.Uri.file(filePath);

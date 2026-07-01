@@ -1,0 +1,9 @@
+{
+    "servers": {
+        "codeIntelMCP": {
+            "url": "http://localhost:9182/mcp",
+            "type": "http"
+        }
+    },
+    "inputs": []
+}

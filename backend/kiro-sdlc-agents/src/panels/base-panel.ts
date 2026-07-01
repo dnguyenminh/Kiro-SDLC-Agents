@@ -11,6 +11,7 @@ import {
   PanelType,
   PANEL_VIEW_TYPES,
   PANEL_TITLES,
+  mapServerStatusToWebview,
 } from "../types";
 import { McpServerManager, getNonce } from "../mcp-server-manager";
 export { getNonce };
@@ -102,7 +103,7 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
     // Subscribe to server status changes
     this.mcpManager.onStatusChange(
       (status) => {
-        const webviewStatus = status === "running" ? "connected" : status === "crashed" ? "failed" : "disconnected";
+        const webviewStatus = mapServerStatusToWebview(status);
         this.sendMessage({ type: "serverStatus", status: webviewStatus });
       },
       null,
@@ -112,6 +113,12 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
 
   reveal(): void {
     this._panel?.reveal();
+  }
+
+  reload(): void {
+    if (this._panel) {
+      this._panel.webview.html = this.getHtml(this._panel.webview);
+    }
   }
 
   sendMessage(msg: ExtToWebviewMessage): void {
@@ -146,7 +153,8 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
       const backendUrl = config.get<string>("backend.url") || "http://127.0.0.1:48721";
       
       const token = BasePanel.authTokenProvider ? BasePanel.authTokenProvider() : "";
-      
+
+      const encodedToken = encodeURIComponent(token);
       const pageMapping: Record<string, string> = {
         dashboard: "dashboard",
         graph: "graph",
@@ -155,16 +163,18 @@ export abstract class BasePanel implements IKbPanel, vscode.Disposable {
         analytics: "analytics",
         workflow: "workflow",
       };
-      
+
       const page = pageMapping[this.panelType] || "dashboard";
-      const src = `${backendUrl}/admin?embed=true&page=${page}&token=${token}`;
-      
+      const backendOrigin = new URL(backendUrl).origin;
+      const src = `${backendUrl}/admin?embed=true&page=${page}&token=${encodedToken}`;
+
       return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src * http://127.0.0.1:* http://localhost:* https://*; style-src 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src ${backendOrigin}; style-src 'unsafe-inline';">
     <title>${PANEL_TITLES[this.panelType]}</title>
     <style>
       body { padding: 0; margin: 0; height: 100vh; width: 100vw; overflow: hidden; background-color: var(--vscode-editor-background); }

@@ -1,21 +1,11 @@
-/**
- * AnthropicAdapter — KSA-231
- * Maps between the extension's LlmMessage[] format and Kiro API's Anthropic-compatible
- * request/response format. Handles system prompt extraction, tool message conversion,
- * and response parsing.
- *
- * NOTE: This is a NEW file for Kiro-specific adaptation — separate from anthropic-provider.ts.
- */
-
+// AnthropicAdapter --- KSA-231 --- Maps between LlmMessage and Kiro API format
 import type { LlmMessage, LlmOptions, LlmResponse, LlmToolCall } from "../llm-provider";
 import type { McpToolDefinition } from "../tool-registry";
 
-// ─── Constants ──────────────────────────────────────────────────────────────
 
 /** Default local kiro-ts gateway port (kiroSdlc.mcpServerPort default). */
 const DEFAULT_GATEWAY_PORT = 9181;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface KiroRequestBody {
   model: string;
@@ -27,7 +17,6 @@ export interface KiroRequestBody {
   tools?: Array<{ name: string; description: string; input_schema: any }>;
 }
 
-// ─── AnthropicAdapter ─────────────────────────────────────────────────────────
 
 export class AnthropicAdapter {
   private readonly defaultModel: string;
@@ -38,10 +27,6 @@ export class AnthropicAdapter {
     this.defaultMaxTokens = defaultMaxTokens;
   }
 
-  /**
-   * Build the request body for Kiro API (Anthropic Messages format).
-   * Extracts system messages, maps tool results, and applies options.
-   */
   buildRequestBody(
     messages: LlmMessage[],
     options?: LlmOptions,
@@ -74,9 +59,6 @@ export class AnthropicAdapter {
     return body;
   }
 
-  /**
-   * Build request headers for Kiro API.
-   */
   buildRequestHeaders(accessToken: string, modelId: string): Record<string, string> {
     return {
       "Content-Type": "application/json",
@@ -86,9 +68,6 @@ export class AnthropicAdapter {
     };
   }
 
-  /**
-   * Build non-streaming request headers (no Accept: text/event-stream).
-   */
   buildNonStreamHeaders(accessToken: string, modelId: string): Record<string, string> {
     return {
       "Content-Type": "application/json",
@@ -97,9 +76,6 @@ export class AnthropicAdapter {
     };
   }
 
-  /**
-   * Parse a non-streaming JSON response into LlmResponse.
-   */
   parseNonStreamResponse(json: any): LlmResponse {
     if (!json.content || !Array.isArray(json.content)) {
       return { type: "text", text: "" };
@@ -125,35 +101,16 @@ export class AnthropicAdapter {
     return { type: "text", text };
   }
 
-  /**
-   * Get the Kiro API endpoint URL for chat (Anthropic Messages format).
-   *
-   * KSA-237: the legacy host `kiro.api.{region}.amazonaws.com` is DEAD (no
-   * DNS). Chat now flows through the local kiro-ts gateway, which signs/forwards
-   * to the real CodeWhisperer backend. A region string is accepted for backward
-   * compatibility but ignored; pass the gateway port (number) instead.
-   */
   getEndpointUrl(portOrRegion?: number | string): string {
     const port = typeof portOrRegion === "number" ? portOrRegion : DEFAULT_GATEWAY_PORT;
     return `http://127.0.0.1:${port}/v1/messages`;
   }
 
-  /**
-   * Get the model listing endpoint URL.
-   *
-   * KSA-237: SINGLE SOURCE OF TRUTH — the local kiro-ts gateway `/v1/models`.
-   * The old `kiro.api.{region}.amazonaws.com/v1/models` host never resolved.
-   */
   getModelsEndpointUrl(port: number = DEFAULT_GATEWAY_PORT): string {
     return `http://127.0.0.1:${port}/v1/models`;
   }
 
-  // ─── Internal ─────────────────────────────────────────────────────────────
 
-  /**
-   * Split system messages from user/assistant/tool messages.
-   * Anthropic API expects system prompt separate from messages array.
-   */
   private splitMessages(messages: LlmMessage[]): {
     systemPrompt: string | undefined;
     userMessages: LlmMessage[];
@@ -166,10 +123,6 @@ export class AnthropicAdapter {
     return { systemPrompt, userMessages };
   }
 
-  /**
-   * Format messages for Kiro API.
-   * Handles tool result messages and assistant tool_use messages.
-   */
   private formatMessages(messages: LlmMessage[]): Array<{ role: string; content: string | any[] }> {
     const formatted: Array<{ role: string; content: string | any[] }> = [];
 
@@ -200,10 +153,6 @@ export class AnthropicAdapter {
     return formatted;
   }
 
-  /**
-   * Try to parse assistant content as tool_use blocks array.
-   * Returns parsed array if valid, null otherwise.
-   */
   private tryParseToolUseBlocks(content: string): any[] | null {
     try {
       const parsed = JSON.parse(content);

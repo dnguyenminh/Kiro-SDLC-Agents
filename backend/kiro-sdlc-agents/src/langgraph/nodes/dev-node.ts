@@ -8,6 +8,7 @@
 import { BaseNode } from "./base-node";
 import { PipelineState, AgentOutput, DocumentState } from "../state";
 import { loadSteeringRules, injectSteering } from "../steering-loader";
+import { debugError } from "../../debug-logger";
 
 /** Template path for User Guide */
 const UG_TEMPLATE = "documents/templates/UG-TEMPLATE.md";
@@ -61,7 +62,7 @@ export class DevNode extends BaseNode {
 
       // Step 2: Search KB for context
       let kbContext = "";
-      try { kbContext = await this.kbSearch(`${state.ticketKey} TDD implementation design`); } catch { /* */ }
+      try { kbContext = await this.kbSearch(`${state.ticketKey} TDD implementation design`); } catch (err) { debugError(`[DevNode] KB search failed for ${state.ticketKey}`, err as Error); }
 
       // Step 3: Generate code via LLM
       this.streamHandler.emitToken(this.nodeId, `  → Step 2: Generating implementation...`, state.currentStreamId);
@@ -123,7 +124,7 @@ Ensure code compiles and all tests pass.`;
             "langgraph-dev-implementation",
             [state.ticketKey, "implementation", "code", "langgraph"]
           );
-        } catch { /* non-blocking */ }
+        } catch (err) { debugError(`[DevNode] KB ingest fallback failed for ${state.ticketKey}`, err as Error); }
       }
     }
 
@@ -148,7 +149,7 @@ Ensure code compiles and all tests pass.`;
       const ugTemplate = await this.readWorkspaceFile(UG_TEMPLATE) || "[UG template not found]";
       const codeIntel = await this.readCodeIntelligence() || "";
       let kbContext = "";
-      try { kbContext = await this.kbSearch(`${state.ticketKey} BRD FSD TDD features`); } catch { /* */ }
+      try { kbContext = await this.kbSearch(`${state.ticketKey} BRD FSD TDD features`); } catch (err) { debugError(`[DevNode] KB search failed for ${state.ticketKey}`, err as Error); }
 
       // Step 2: Generate via LLM
       this.streamHandler.emitToken(this.nodeId, `  → Step 2: Generating User Guide...`, state.currentStreamId);

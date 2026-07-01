@@ -1,18 +1,16 @@
 /**
  * MemoryDatabaseManager — initializes memory schema on a dedicated SQLite DB.
- * Uses index-backend.db (same as extension) for data portability.
+ * Uses config-driven path (same as admin-db) for data portability.
  */
 
 import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
-import { fileURLToPath } from 'url';
 import { MEMORY_SCHEMA } from './schema.js';
+import { loadConfig, getWorkspacePath } from '../../config/BackendConfig.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const DB_PATH = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
+const config = loadConfig();
+const DB_PATH = path.resolve(getWorkspacePath(), config.dataDir, config.sqliteDbPath);
 
 let memDb: Database.Database | null = null;
 

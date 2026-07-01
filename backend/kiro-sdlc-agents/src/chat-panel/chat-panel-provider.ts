@@ -15,6 +15,7 @@ import { MessageHandler } from "./message-handler";
 import { ChatWebviewToExtMessage, ChatExtToWebviewMessage } from "./message-protocol";
 import { getStaticModels, getDefaultModel, fetchGatewayModels } from "./chat-models";
 import { ContextUsageTracker } from "./context-usage-tracker";
+import { mapServerStatusToWebview } from "../types";
 
 export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   public static readonly viewType = "kiroChatPanel";
@@ -71,9 +72,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
         // On ready, send initial MCP server status
         if (msg.type === "ready") {
           const currentStatus = this.mcpManager.status;
-          const webviewStatus = currentStatus === "running" ? "connected"
-            : currentStatus === "crashed" ? "failed"
-            : "disconnected";
+          const webviewStatus = mapServerStatusToWebview(currentStatus);
           this.sendToWebview({ type: "serverStatus", status: webviewStatus });
           // Send the provider-aware model list to populate the dropdown
           void this.sendModels();
@@ -104,9 +103,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 
     // Subscribe to MCP server status changes
     this.mcpManager.onStatusChange((status) => {
-      const webviewStatus = status === "running" ? "connected"
-        : status === "crashed" ? "failed"
-        : "disconnected";
+      const webviewStatus = mapServerStatusToWebview(status);
       this.sendToWebview({ type: "serverStatus", status: webviewStatus });
     }, undefined, this.disposables);
 
@@ -258,8 +255,8 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
               }
               // front-matter present but no inclusion field -> default manual (exclude)
             }
-          } catch {
-            // If read fails, exclude by default
+          } catch (err) {
+            debugError(`[ChatPanel] Failed to read steering file ${file}`, err as Error);
           }
 
           if (shouldInclude) {
@@ -272,8 +269,8 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
       if (rules.length > 0) {
         this.sendToWebview({ type: "chat:steeringLoaded", rules });
       }
-    } catch {
-      // Non-fatal
+    } catch (err) {
+      debugError("[ChatPanel] sendSteeringInfo failed", err as Error);
     }
   }
 
@@ -338,9 +335,12 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
    */
   private async handleSetModel(model: string): Promise<void> {
     const config = vscode.workspace.getConfiguration("kiroSdlc");
-    const value = model === "auto" ? "" : model;
     try {
-      await config.update("llmModel", value, vscode.ConfigurationTarget.Global);
+      if (model === "auto") {
+        await config.update("llmModel", undefined, vscode.ConfigurationTarget.Global);
+      } else {
+        await config.update("llmModel", model, vscode.ConfigurationTarget.Global);
+      }
     } catch {
       // Non-fatal — selection still applies for the session via MessageHandler.
     }

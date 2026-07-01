@@ -36,6 +36,9 @@ qa-*.png
 # Log files
 *.log
 
+# Debug/scratch scripts
+backend/scripts/debug/
+
 # Workspace-level code-intel DB
 ${workspaceFolder}/
 

@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const config = loadConfig();
 
-// DB location: .code-intel/admin.db (separate from index-backend.db)
+// DB location: .code-intel/admin.db (separate from index.db)
 const DB_PATH = path.resolve(getWorkspacePath(), config.dataDir, 'admin.db');
 
 function getIndexDbPath(): string {
@@ -637,7 +637,7 @@ export function checkPromotionCooldown(entryId: string): { onCooldown: boolean; 
   return { onCooldown: false };
 }
 
-// --- KB search with real index-backend.db data (STORY 9) ---
+// --- KB search with real index.db data (STORY 9) ---
 
 export function searchKbEntries(query: string): { items: any[]; total: number } {
   try {
@@ -645,7 +645,7 @@ export function searchKbEntries(query: string): { items: any[]; total: number } 
     if (!fs.existsSync(indexDbPath)) return { items: [], total: 0 };
     const indexDb = new Database(indexDbPath, { readonly: true });
 
-    // Check for knowledge_entries table (actual table name in index-backend.db)
+    // Check for knowledge_entries table (actual table name in index.db)
     const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
     if (!tableExists || tableExists.cnt === 0) {
       indexDb.close();
@@ -887,7 +887,7 @@ export function getKbEntryById(entryId: string): any | null {
   }
 }
 
-// --- KB Entry Count (from index-backend.db knowledge_entries table) ---
+// --- KB Entry Count (from index.db knowledge_entries table) ---
 
 export function getKbEntryCount(): number {
   try {

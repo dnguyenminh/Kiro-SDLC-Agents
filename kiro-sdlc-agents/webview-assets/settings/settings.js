@@ -35,6 +35,7 @@
   const toggleKeyBtn = document.getElementById("toggle-key-visibility");
   const modelInput = document.getElementById("model-input");
   const baseUrlInput = document.getElementById("base-url-input");
+  const useDefaultUrlChk = document.getElementById("use-default-url-chk");
   const saveKeyBtn = document.getElementById("save-key-btn");
   const clearKeyBtn = document.getElementById("clear-key-btn");
   const keyStatus = document.getElementById("key-status");
@@ -63,6 +64,40 @@
   let currentProvider = "anthropic";
   let savedState = { hasAnthropicKey: false, hasOpenaiKey: false };
 
+  // Per-provider state — each provider stores its own config
+  var providerState = {};
+  function getProviderState(p) {
+    if (!providerState[p]) {
+      providerState[p] = { useDefaultUrl: true, baseUrl: "", model: "", testResult: null };
+    }
+    return providerState[p];
+  }
+  function saveCurrentProviderState() {
+    var s = getProviderState(currentProvider);
+    s.useDefaultUrl = useDefaultUrlChk.checked;
+    s.baseUrl = baseUrlInput.value;
+    s.model = modelInput.value;
+  }
+  function restoreProviderState(provider) {
+    var s = getProviderState(provider);
+    useDefaultUrlChk.checked = s.useDefaultUrl;
+    if (s.useDefaultUrl) {
+      baseUrlInput.value = defaultUrls[provider] || "";
+      baseUrlInput.disabled = true;
+    } else {
+      baseUrlInput.value = s.baseUrl || "";
+      baseUrlInput.disabled = false;
+    }
+    // Restore test result
+    if (s.testResult) {
+      testResult.style.display = "block";
+      testResult.className = "test-result " + (s.testResult.success ? "success" : "error");
+      testResult.innerHTML = s.testResult.html;
+    } else {
+      testResult.style.display = "none";
+    }
+  }
+
   // Model catalog — KSA-237: NO hardcoded list. The extension is the single
   // source of truth and pushes a `models` message per provider (when base URL
   // points to gateway, it fetches /v1/models which returns the real model list).
@@ -72,10 +107,19 @@
   // ─── Provider Selection ───────────────────────────────────────────────────
 
   providerSelect.addEventListener("change", function (e) {
+    // Save current provider state before switching
+    saveCurrentProviderState();
     var provider = e.target.value;
     currentProvider = provider;
+    // Restore the new provider's state
+    restoreProviderState(provider);
     updateSections(provider);
     vscode.postMessage({ type: "setProvider", provider: provider });
+    // Auto-save default URL when checkbox is checked
+    var s = getProviderState(provider);
+    if (s.useDefaultUrl && defaultUrls[provider]) {
+      vscode.postMessage({ type: "setBaseUrl", provider: provider, url: defaultUrls[provider] });
+    }
     vscode.postMessage({ type: "getModels", provider: provider });
   });
 
@@ -87,19 +131,72 @@
     return modelsByProvider[provider] || [];
   }
 
+  // Providers that DON'T need API key (local servers)
+  var localProviders = ["ollama", "lmstudio", "onnx"];
+
   function updateSections(provider) {
     if (provider === "ollama") {
       apiSection.style.display = "none";
       ollamaSection.style.display = "block";
+      updateOllamaModelOptions(provider);
     } else {
       apiSection.style.display = "block";
       ollamaSection.style.display = "none";
       modelInput.placeholder = defaultModelFor(provider);
-      if (apiKeyInput) { apiKeyInput.placeholder = "Enter API key..."; }
-      if (baseUrlInput) { baseUrlInput.placeholder = "Leave empty for official API"; }
+
+      // Hide API Key row for local providers
+      var keyRow = apiKeyInput ? apiKeyInput.closest(".form-group") : null;
+      var btnRow = saveKeyBtn ? saveKeyBtn.closest(".btn-row") : null;
+      if (localProviders.indexOf(provider) !== -1) {
+        if (keyRow) keyRow.style.display = "none";
+        if (btnRow) btnRow.style.display = "none";
+        if (keyStatus) keyStatus.style.display = "none";
+      } else {
+        if (keyRow) keyRow.style.display = "";
+        if (btnRow) btnRow.style.display = "";
+        if (keyStatus) keyStatus.style.display = "";
+        if (apiKeyInput) { apiKeyInput.placeholder = "Enter API key..."; }
+      }
+
+      // Update default URL checkbox and input state
+      if (useDefaultUrlChk.checked) {
+        baseUrlInput.value = defaultUrls[provider] || "";
+        baseUrlInput.disabled = true;
+      } else {
+        baseUrlInput.disabled = false;
+      }
+      if (baseUrlInput) {
+        if (provider === "lmstudio") {
+          baseUrlInput.placeholder = "http://localhost:1234/v1";
+        } else if (provider === "openrouter") {
+          baseUrlInput.placeholder = "https://openrouter.ai/api/v1";
+        } else {
+          baseUrlInput.placeholder = "Leave empty for official API";
+        }
+      }
       updateKeyStatus(provider);
     }
     updateModelOptions(provider);
+  }
+
+  function updateOllamaModelOptions(provider) {
+    var select = document.getElementById("ollama-model-input");
+    if (!select) return;
+    var currentVal = select.value;
+    select.innerHTML = "";
+    var models = modelsFor("ollama");
+    models.forEach(function (m) {
+      var opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.name;
+      select.appendChild(opt);
+    });
+    var ids = models.map(function (m) { return m.id; });
+    if (currentVal && ids.indexOf(currentVal) !== -1) {
+      select.value = currentVal;
+    } else if (models.length > 0) {
+      select.value = models[0].id;
+    }
   }
 
   function updateModelOptions(provider) {
@@ -204,6 +301,34 @@
     updateModelDescription(modelInput.value, modelsFor(currentProvider));
   });
 
+  // Default URLs per provider
+  var defaultUrls = {
+    anthropic: "https://api.anthropic.com",
+    openai: "https://api.openai.com/v1",
+    lmstudio: "http://localhost:1234/v1",
+    openrouter: "https://openrouter.ai/api/v1",
+    ollama: "http://localhost:11434",
+    onnx: ""
+  };
+
+  // Use default URL checkbox
+  useDefaultUrlChk.addEventListener("change", function () {
+    var s = getProviderState(currentProvider);
+    if (useDefaultUrlChk.checked) {
+      baseUrlInput.disabled = true;
+      baseUrlInput.value = defaultUrls[currentProvider] || "";
+      s.useDefaultUrl = true;
+      s.baseUrl = baseUrlInput.value;
+      vscode.postMessage({ type: "setBaseUrl", provider: currentProvider, url: baseUrlInput.value });
+    } else {
+      baseUrlInput.disabled = false;
+      baseUrlInput.value = s.baseUrl || "";
+      s.useDefaultUrl = false;
+      baseUrlInput.focus();
+    }
+    updateKeyStatus(currentProvider);
+  });
+
   // Base URL change (debounced) — also toggle gateway info visibility
   var baseUrlTimeout = null;
   baseUrlInput.addEventListener("input", function () {
@@ -225,11 +350,8 @@
   });
 
   var ollamaModelTimeout = null;
-  ollamaModelInput.addEventListener("input", function () {
-    clearTimeout(ollamaModelTimeout);
-    ollamaModelTimeout = setTimeout(function () {
-      vscode.postMessage({ type: "setModel", model: ollamaModelInput.value.trim() });
-    }, 500);
+  ollamaModelInput.addEventListener("change", function () {
+    vscode.postMessage({ type: "setModel", model: ollamaModelInput.value });
   });
 
   testOllamaBtn.addEventListener("click", function () {
@@ -249,7 +371,12 @@
     testLlmBtn.classList.add("loading");
     testLlmBtn.disabled = true;
     testResult.style.display = "none";
-    vscode.postMessage({ type: "testLlmConnection" });
+    vscode.postMessage({
+      type: "testLlmConnection",
+      provider: currentProvider,
+      baseUrl: baseUrlInput.value.trim(),
+      model: modelInput.value || (ollamaModelInput ? ollamaModelInput.value : "")
+    });
   });
 
   // ─── Server Settings Events ───────────────────────────────────────────────
@@ -317,9 +444,25 @@
 
     updateModelOptions(msg.provider);
     if (msg.model) { modelInput.value = msg.model; }
-    ollamaModelInput.value = msg.model || "";
+    if (msg.model) { ollamaModelInput.value = msg.model; }
 
     baseUrlInput.value = msg.baseUrl || "";
+    // Set checkbox state — checked if URL matches default or is empty
+    var defUrl = defaultUrls[msg.provider] || "";
+    if (!msg.baseUrl || msg.baseUrl === defUrl) {
+      useDefaultUrlChk.checked = true;
+      baseUrlInput.value = defUrl;
+      baseUrlInput.disabled = true;
+    } else {
+      useDefaultUrlChk.checked = false;
+      baseUrlInput.value = msg.baseUrl;
+      baseUrlInput.disabled = false;
+    }
+    // Initialize per-provider state from loaded config
+    var s = getProviderState(msg.provider);
+    s.useDefaultUrl = useDefaultUrlChk.checked;
+    s.baseUrl = baseUrlInput.value;
+    s.model = msg.model || "";
 
     ollamaUrlInput.value = msg.ollamaUrl || "http://localhost:11434";
 
@@ -394,9 +537,10 @@
     testLlmBtn.classList.remove("loading");
     testLlmBtn.disabled = false;
     testResult.style.display = "block";
+    var html;
     if (msg.success) {
       testResult.className = "test-result success";
-      testResult.innerHTML =
+      html =
         '<div class="result-label">\u2705 Success</div>' +
         '<div class="result-body">' + escapeHtml(msg.message) + "</div>" +
         '<div class="result-meta">' +
@@ -405,11 +549,15 @@
         "</div>";
     } else {
       testResult.className = "test-result error";
-      testResult.innerHTML =
+      html =
         '<div class="result-label">\u274C Failed</div>' +
-        '<div class="result-body">' + escapeHtml(msg.message) + "</div>" +
+        '<div class="result-body">' + escapeHtml(msg.error || msg.message) + "</div>" +
         (msg.latencyMs ? '<div class="result-meta">Latency: ' + msg.latencyMs + "ms</div>" : "");
     }
+    testResult.innerHTML = html;
+    // Save per-provider
+    var s = getProviderState(currentProvider);
+    s.testResult = { success: msg.success, html: html };
   }
 
   function escapeHtml(str) {

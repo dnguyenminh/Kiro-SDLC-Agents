@@ -1,264 +1,148 @@
 /**
- * OpenAIProvider — KSA-210
- * LLM provider using OpenAI Chat Completions API via fetch().
- * Uses raw fetch to minimize bundle size (no openai SDK dependency).
- * API key stored in VS Code SecretStorage.
- * Supports function calling for ReAct agent loop.
+ * OpenAIProvider — KSA-210. LLM provider using OpenAI Chat Completions API via fetch().
+ * Extends BaseLlmProvider for shared availability check and streaming.
  */
-
-import type { LlmProvider, LlmMessage, LlmOptions, LlmResponse, LlmToolCall } from "../llm-provider";
+import type { LlmMessage, LlmOptions, LlmResponse, LlmToolCall } from "../llm-provider";
 import type { McpToolDefinition } from "../tool-registry";
+import { BaseLlmProvider } from "./BaseLlmProvider";
+import { formatMessages, formatMessagesForTools, buildHeaders } from "./openai-helpers";
 
 export const OPENAI_SECRET_KEY = "kiroSdlc.openaiApiKey";
 const DEFAULT_MODEL = "gpt-4o";
 const DEFAULT_MAX_TOKENS = 4096;
 const DEFAULT_API_BASE = "https://api.openai.com/v1";
 
-export class OpenAIProvider implements LlmProvider {
+export class OpenAIProvider extends BaseLlmProvider {
   readonly type = "openai" as const;
   private readonly getApiKey: () => Promise<string | undefined>;
   private readonly apiBase: string;
 
   constructor(getApiKey: () => Promise<string | undefined>, baseUrl?: string) {
+    super();
     this.getApiKey = getApiKey;
     this.apiBase = (baseUrl || DEFAULT_API_BASE).replace(/\/$/, "");
   }
 
   async chat(messages: LlmMessage[], options?: LlmOptions): Promise<string> {
     const apiKey = await this.requireApiKey();
-    const model = options?.model || DEFAULT_MODEL;
-
-    const body: Record<string, unknown> = {
-      model,
-      messages: this.formatMessages(messages),
-      max_tokens: options?.maxTokens || DEFAULT_MAX_TOKENS,
-    };
-    if (options?.temperature !== undefined) {
-      body.temperature = options.temperature;
-    }
-
+    const body = this.buildChatBody(messages, options, false);
     const response = await fetch(`${this.apiBase}/chat/completions`, {
-      method: "POST",
-      headers: this.buildHeaders(apiKey),
-      body: JSON.stringify(body),
-      signal: options?.signal,
+      method: "POST", headers: buildHeaders(apiKey),
+      body: JSON.stringify(body), signal: options?.signal,
     });
-
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
+      throw new Error(`OpenAI API error ${response.status}: ${await response.text().catch(() => "Unknown")}`);
     }
-
-    const data = await response.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
+    const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     return data.choices?.[0]?.message?.content || "";
   }
 
   async *chatStream(messages: LlmMessage[], options?: LlmOptions): AsyncGenerator<string> {
     const apiKey = await this.requireApiKey();
-    const model = options?.model || DEFAULT_MODEL;
-
-    const body: Record<string, unknown> = {
-      model,
-      messages: this.formatMessages(messages),
-      max_tokens: options?.maxTokens || DEFAULT_MAX_TOKENS,
-      stream: true,
-    };
-    if (options?.temperature !== undefined) {
-      body.temperature = options.temperature;
-    }
-
+    const body = this.buildChatBody(messages, options, true);
     const response = await fetch(`${this.apiBase}/chat/completions`, {
-      method: "POST",
-      headers: this.buildHeaders(apiKey),
-      body: JSON.stringify(body),
-      signal: options?.signal,
+      method: "POST", headers: buildHeaders(apiKey),
+      body: JSON.stringify(body), signal: options?.signal,
     });
-
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
+      throw new Error(`OpenAI API error ${response.status}: ${await response.text().catch(() => "Unknown")}`);
     }
-
-    if (!response.body) {
-      throw new Error("OpenAI response has no body for streaming");
-    }
-
-    // Parse SSE stream
-    const reader = (response.body as any).getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) { break; }
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) { continue; }
-
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") { return; }
-
-          try {
-            const parsed = JSON.parse(data) as {
-              choices?: Array<{ delta?: { content?: string } }>;
-            };
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              yield content;
-            }
-          } catch {
-            // Skip malformed SSE data
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
+    yield* this.readStream(response, (parsed) => {
+      return parsed.choices?.[0]?.delta?.content || null;
+    });
   }
 
-  /**
-   * Chat with tool calling support using OpenAI function calling.
-   * Tools are passed as `tools` parameter in the request.
-   */
-  async chatWithTools(
-    messages: LlmMessage[],
-    tools: McpToolDefinition[],
-    options?: LlmOptions
-  ): Promise<LlmResponse> {
+  async chatWithTools(messages: LlmMessage[], tools: McpToolDefinition[], options?: LlmOptions): Promise<LlmResponse> {
     const apiKey = await this.requireApiKey();
-    const model = options?.model || DEFAULT_MODEL;
-
-    // Convert tools to OpenAI format
-    const openaiTools = tools.map((t) => ({
+    const openaiTools = tools.map(t => ({
       type: "function" as const,
-      function: {
-        name: t.name,
-        description: t.description,
-        parameters: t.inputSchema,
-      },
+      function: { name: t.name, description: t.description, parameters: t.inputSchema },
     }));
-
     const body: Record<string, unknown> = {
-      model,
-      messages: this.formatMessagesForTools(messages),
+      model: options?.model || DEFAULT_MODEL,
+      messages: formatMessagesForTools(messages),
       max_tokens: options?.maxTokens || DEFAULT_MAX_TOKENS,
       tools: openaiTools,
     };
-    if (options?.temperature !== undefined) {
-      body.temperature = options.temperature;
-    }
-
+    if (options?.temperature !== undefined) { body.temperature = options.temperature; }
     const response = await fetch(`${this.apiBase}/chat/completions`, {
-      method: "POST",
-      headers: this.buildHeaders(apiKey),
-      body: JSON.stringify(body),
-      signal: options?.signal,
+      method: "POST", headers: buildHeaders(apiKey),
+      body: JSON.stringify(body), signal: options?.signal,
     });
-
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
+      throw new Error(`OpenAI API error ${response.status}: ${await response.text().catch(() => "Unknown")}`);
     }
-
     const data = await response.json() as {
-      choices?: Array<{
-        message?: {
-          content?: string | null;
-          tool_calls?: Array<{
-            id: string;
-            function: { name: string; arguments: string };
-          }>;
-        };
-        finish_reason?: string;
-      }>;
+      choices?: Array<{ message?: { content?: string | null; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> } }>
     };
-
-    const choice = data.choices?.[0];
-    const toolCalls = choice?.message?.tool_calls;
-
+    const toolCalls = data.choices?.[0]?.message?.tool_calls;
     if (toolCalls && toolCalls.length > 0) {
-      const calls: LlmToolCall[] = toolCalls.map((tc) => {
+      const calls: LlmToolCall[] = toolCalls.map(tc => {
         let args: Record<string, unknown> = {};
-        try {
-          args = JSON.parse(tc.function.arguments);
-        } catch {
-          // If arguments parsing fails, use empty object
-        }
-        return {
-          id: tc.id,
-          name: tc.function.name,
-          arguments: args,
-        };
+        try { args = JSON.parse(tc.function.arguments); } catch { /* empty */ }
+        return { id: tc.id, name: tc.function.name, arguments: args };
       });
       return { type: "tool_use", toolCalls: calls };
     }
-
-    // Text response
-    return { type: "text", text: choice?.message?.content || "" };
+    return { type: "text", text: data.choices?.[0]?.message?.content || "" };
   }
 
-  async isAvailable(): Promise<boolean> {
-    try {
-      const key = await this.getApiKey();
-      // Available if key exists OR custom base URL is configured (no key needed for local)
-      return !!key || this.apiBase !== DEFAULT_API_BASE;
-    } catch {
-      return false;
+  dispose(): void { /* stateless */ }
+
+  // --- Template Method hooks ---
+
+  protected async isConfigured(): Promise<boolean> {
+    const key = await this.getApiKey();
+    return !!(key || this.apiBase !== DEFAULT_API_BASE);
+  }
+
+  protected getHealthCheckUrl(): string {
+    const isLocal = this.isLocalServer();
+    return isLocal ? `${this.apiBase}/models` : `${this.apiBase}/chat/completions`;
+  }
+
+  protected getHealthCheckRequest() {
+    if (this.isLocalServer()) {
+      return { method: "GET" };
     }
+    return {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: "hi" }],
+        max_tokens: 1,
+      }),
+    };
   }
 
-  dispose(): void {
-    // No persistent resources — stateless fetch calls
+  protected isHealthyStatus(status: number): boolean {
+    if (this.isLocalServer()) return status === 200;
+    return status === 200 || status === 429;
+  }
+
+  // --- Private helpers ---
+
+  private isLocalServer(): boolean {
+    return this.apiBase !== DEFAULT_API_BASE;
+  }
+
+  private buildChatBody(messages: LlmMessage[], options: LlmOptions | undefined, stream: boolean): Record<string, unknown> {
+    const body: Record<string, unknown> = {
+      model: options?.model || DEFAULT_MODEL,
+      messages: formatMessages(messages),
+      max_tokens: options?.maxTokens || DEFAULT_MAX_TOKENS,
+      stream,
+    };
+    if (options?.temperature !== undefined) { body.temperature = options.temperature; }
+    return body;
   }
 
   private async requireApiKey(): Promise<string> {
     const key = await this.getApiKey();
     if (!key && this.apiBase === DEFAULT_API_BASE) {
-      throw new Error(
-        "OpenAI API key not configured. Run 'Kiro SDLC: Set LLM API Key' command."
-      );
+      throw new Error("OpenAI API key not configured.");
     }
     return key || "";
-  }
-
-  /** Build request headers — skip Authorization if key is empty (custom local endpoints) */
-  private buildHeaders(apiKey: string): Record<string, string> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
-    }
-    return headers;
-  }
-
-  /**
-   * Format messages for basic chat (no tools).
-   */
-  private formatMessages(messages: LlmMessage[]): Array<{ role: string; content: string }> {
-    return messages.map(m => ({ role: m.role, content: m.content }));
-  }
-
-  /**
-   * Format messages for OpenAI tool calling.
-   * Converts tool result messages into OpenAI's expected format.
-   */
-  private formatMessagesForTools(messages: LlmMessage[]): any[] {
-    return messages.map((msg) => {
-      if (msg.role === "tool") {
-        return {
-          role: "tool",
-          tool_call_id: msg.toolCallId || "unknown",
-          content: msg.content,
-        };
-      }
-      return { role: msg.role, content: msg.content };
-    });
   }
 }

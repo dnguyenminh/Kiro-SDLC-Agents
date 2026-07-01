@@ -262,7 +262,7 @@ class SettingsPanel {
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000);
-            const response = await fetch(`${url}/api/health`, {
+            const response = await fetch(`${url}/health`, {
                 signal: controller.signal,
             });
             clearTimeout(timeout);

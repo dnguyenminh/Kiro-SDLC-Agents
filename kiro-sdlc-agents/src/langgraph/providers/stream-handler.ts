@@ -1,25 +1,12 @@
-/**
- * StreamHandler — KSA-231
- * Parses Server-Sent Events (SSE) from Kiro API responses into structured events.
- * Implements AsyncGenerator pattern for backpressure-friendly streaming.
- * Zero dependencies — pure TypeScript processing of text/event-stream.
- */
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+// StreamHandler --- KSA-231 --- SSE parser for Kiro API streaming responses
 
 export type StreamEvent =
   | { type: "text"; text: string }
   | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
   | { type: "message_stop"; usage?: { input_tokens: number; output_tokens: number } };
 
-// ─── StreamHandler ────────────────────────────────────────────────────────────
 
 export class StreamHandler {
-  /**
-   * Process SSE response into text-only stream.
-   * Yields text deltas from content_block_delta events.
-   * Supports abort via AbortSignal.
-   */
   async *processStream(
     response: Response,
     signal?: AbortSignal
@@ -79,10 +66,6 @@ export class StreamHandler {
     }
   }
 
-  /**
-   * Process SSE response with full event types (text + tool_use).
-   * Used for chatWithTools to capture tool call blocks.
-   */
   async *processStreamWithToolUse(
     response: Response,
     signal?: AbortSignal
@@ -186,7 +169,6 @@ export class StreamHandler {
     }
   }
 
-  // ─── Internal ─────────────────────────────────────────────────────────────
 
   private extractTextDelta(parsed: any): string | null {
     if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
@@ -196,7 +178,6 @@ export class StreamHandler {
   }
 }
 
-// ─── Error Class ──────────────────────────────────────────────────────────────
 
 export class KiroStreamError extends Error {
   constructor(message: string, options?: ErrorOptions) {

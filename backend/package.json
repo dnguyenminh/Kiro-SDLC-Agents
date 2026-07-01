@@ -13,14 +13,16 @@
     "test:unit": "vitest run src/",
     "test:integration": "vitest run tests/integration/",
     "test:e2e-api": "vitest run tests/e2e/",
-    "test:e2e-ui": "npx playwright test",
-    "lint": "eslint src/"
+    "test:e2e-ui": "npx playwright test"
+  },
+  "engines": {
+    "node": ">=18.14.1"
   },
   "dependencies": {
     "@hono/node-server": "^1.12.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@xenova/transformers": "^2.0.1",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^11.10.0",
     "chokidar": "^5.0.0",
     "hono": "^4.0.0",
     "onnxruntime-node": "^1.18.0",

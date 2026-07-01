@@ -2,6 +2,7 @@
 import { DashboardHealth } from '../types/admin.types.js';
 import * as os from 'os';
 import * as fs from 'fs';
+import { getKbEntryCount } from '../admin-db.js';
 
 export class DashboardService {
   private startTime = Date.now();
@@ -19,13 +20,20 @@ export class DashboardService {
     const alerts: DashboardHealth['alerts'] = [];
     if (memUsage.heapUsed / (1024*1024) > 80 * 0.01 * os.totalmem() / (1024*1024)) alerts.push({ severity: 'warning', message: 'Memory usage > 80%', since: new Date().toISOString() });
 
+    // MCP servers from orchestrator
+    const servers = this.mcpOrchestrator?.getServers?.() || [];
+    const onlineCount = servers.filter((s: any) => s.status === 'RUNNING').length;
+
+    // KB entries from index.db
+    const kbTotal = getKbEntryCount();
+
     return {
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
       memoryUsageMB: Math.round(memUsage.heapUsed / (1024 * 1024)),
       cpuPercent: Math.round(cpuPercent * 10) / 10,
       sqliteFileSizeMB: Math.round(sqliteSize * 10) / 10,
-      mcpServers: { online: 0, total: 0 }, // TODO: get from orchestrator
-      kbEntryCount: { user: 0, project: 0, shared: 0 }, // TODO: get from KB engine
+      mcpServers: { online: onlineCount, total: servers.length },
+      kbEntryCount: { user: 0, project: 0, shared: kbTotal },
       activeUsers: activeSessions,
       alerts,
     };
