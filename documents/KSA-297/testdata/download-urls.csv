@@ -1,0 +1,6 @@
+url,filename,size_bytes,blocked,reason
+https://httpbin.org/bytes/1024,test-1kb.bin,1024,false,
+https://httpbin.org/bytes/10240,test-10kb.bin,10240,false,
+https://example.com/malware.exe,malware.exe,5000,true,blocked_extension
+https://example.com/script.bat,script.bat,200,true,blocked_extension
+https://example.com/hack.ps1,hack.ps1,300,true,blocked_extension

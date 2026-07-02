@@ -1,0 +1,60 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Component Diagram — WebModule Handlers&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="imodule" value="&lt;b&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/b&gt;&#10;IModule" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="300" y="60" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="web_mod" value="&lt;b&gt;WebModule&lt;/b&gt;&#10;initialize() / shutdown()&#10;getToolHandlers()&#10;getToolDefinitions()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="280" y="170" width="200" height="80" as="geometry"/>
+    </mxCell>
+    <mxCell id="handler_if" value="&lt;b&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/b&gt;&#10;WebToolHandler&#10;handle(args): ToolResult" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="280" y="300" width="200" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="fetch" value="FetchUrlHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="60" y="420" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="search" value="WebSearchHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="210" y="420" width="140" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="git" value="GitBrowseHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="370" y="420" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="download" value="DownloadFileHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="520" y="420" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="api" value="ApiCallHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="130" y="490" width="130" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="webpage" value="ReadWebpageHandler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="490" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_impl" value="" style="endArrow=block;endSize=12;endFill=0;html=1;rounded=1;" edge="1" source="web_mod" target="imodule" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_uses" value="uses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;fontSize=10;" edge="1" source="web_mod" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i1" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="fetch" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i2" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="search" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i3" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="git" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i4" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="download" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i5" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="api" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_i6" style="endArrow=block;endSize=12;endFill=0;html=1;" edge="1" source="webpage" target="handler_if" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

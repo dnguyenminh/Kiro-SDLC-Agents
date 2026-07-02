@@ -1,0 +1,57 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Architecture — WebModule (KSA-297)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="220" y="10" width="350" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="WebModule" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="680" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="web_module" value="&lt;b&gt;WebModule&lt;/b&gt;&#10;(IModule)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="80" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ssrf" value="&lt;b&gt;SsrfGuard&lt;/b&gt;&#10;IP Blocklist&#10;DNS Check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="100" y="180" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ratelimit" value="&lt;b&gt;RateLimiter&lt;/b&gt;&#10;Token Bucket&#10;10 req/min" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="310" y="180" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="truncator" value="&lt;b&gt;ContentTruncator&lt;/b&gt;&#10;100KB limit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="520" y="180" width="140" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="fetch_h" value="&lt;b&gt;FetchUrl&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="310" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="search_h" value="&lt;b&gt;WebSearch&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="200" y="310" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="git_h" value="&lt;b&gt;GitBrowse&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="320" y="310" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="download_h" value="&lt;b&gt;Download&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="440" y="310" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="api_h" value="&lt;b&gt;ApiCall&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="310" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="webpage_h" value="&lt;b&gt;ReadWebpage&lt;/b&gt;&#10;Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="320" y="420" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="playwright" value="&lt;b&gt;Playwright&lt;/b&gt;&#10;Chromium" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="340" y="520" width="100" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="web_module" target="ssrf" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="web_module" target="ratelimit" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="web_module" target="truncator" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="webpage_h" target="playwright" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

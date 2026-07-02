@@ -1,0 +1,54 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;System Context — KSA-297 WebModule&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="250" y="10" width="350" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="boundary" value="Backend MCP Server" style="rounded=1;dashed=1;dashPattern=5 5;fillColor=none;strokeColor=#0288d1;verticalAlign=top;fontSize=12;arcSize=8;html=1;" vertex="1" parent="1">
+      <mxGeometry x="220" y="140" width="400" height="350" as="geometry"/>
+    </mxCell>
+    <mxCell id="actor_agent" value="LangGraph&#10;Agent" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#e1f5fe;strokeColor=#0288d1;html=1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="50" y="260" width="30" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="web_module" value="&lt;b&gt;WebModule&lt;/b&gt;&#10;Internet/Network Tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="200" width="180" height="70" as="geometry"/>
+    </mxCell>
+    <mxCell id="ssrf_guard" value="&lt;b&gt;SSRF Guard&lt;/b&gt;&#10;IP Blocklist + DNS Check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="270" y="310" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="rate_limiter" value="&lt;b&gt;Rate Limiter&lt;/b&gt;&#10;Token Bucket (10/min)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="450" y="310" width="150" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="playwright" value="&lt;b&gt;Playwright&lt;/b&gt;&#10;Headless Chromium" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="350" y="410" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_web" value="&lt;b&gt;Public Web&lt;/b&gt;&#10;Target URLs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="160" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_search" value="&lt;b&gt;SearXNG&lt;/b&gt;&#10;Search Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="250" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="ext_git" value="&lt;b&gt;GitHub/GitLab&lt;/b&gt;&#10;REST API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="700" y="340" width="140" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="e1" value="MCP (JSON-RPC)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="actor_agent" target="web_module" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e2" value="HTTP/HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="web_module" target="ext_web" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e3" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="web_module" target="ext_search" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e4" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" source="web_module" target="ext_git" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="web_module" target="ssrf_guard" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="web_module" target="rate_limiter" parent="1">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>

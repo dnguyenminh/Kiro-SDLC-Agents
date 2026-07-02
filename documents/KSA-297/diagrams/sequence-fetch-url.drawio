@@ -1,0 +1,57 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence — fetch_url&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="200" y="10" width="250" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_agent" value="Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=16;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="80" y="60" width="80" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_web" value="WebModule" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=16;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="240" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_ssrf" value="SSRFGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=16;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="410" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="ll_http" value="HTTP Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;size=16;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="580" y="60" width="100" height="500" as="geometry"/>
+    </mxCell>
+    <mxCell id="m1" value="fetch_url(url, mode)" style="html=1;endSize=6;rounded=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="120" y="130" as="sourcePoint"/>
+        <mxPoint x="290" y="130" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="validateSSRF(url)" style="html=1;endSize=6;rounded=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="170" as="sourcePoint"/>
+        <mxPoint x="460" y="170" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="ok (IP safe)" style="html=1;endSize=6;rounded=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="460" y="210" as="sourcePoint"/>
+        <mxPoint x="290" y="210" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m4" value="GET url" style="html=1;endSize=6;rounded=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="260" as="sourcePoint"/>
+        <mxPoint x="630" y="260" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="response (body, headers)" style="html=1;endSize=6;rounded=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="630" y="320" as="sourcePoint"/>
+        <mxPoint x="290" y="320" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="{ content, metadata }" style="html=1;endSize=6;rounded=1;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="290" y="380" as="sourcePoint"/>
+        <mxPoint x="120" y="380" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
