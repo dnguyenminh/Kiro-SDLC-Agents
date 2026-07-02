@@ -7,7 +7,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/tools-60+-teal?style=for-the-badge" alt="Tools">
+  <img src="https://img.shields.io/badge/tools-66+-teal?style=for-the-badge" alt="Tools">
   <img src="https://img.shields.io/badge/node-%3E%3D18-green?style=for-the-badge" alt="Node">
 </p>
 
@@ -115,10 +115,12 @@ curl -X POST http://localhost:48721/mcp/tools/call \
 | Module | Tool Count | Key Tools |
 |--------|-----------|-----------|
 | **Memory** | 17 | `mem_search`, `mem_ingest`, `mem_ingest_file`, `mem_graph`, `mem_consolidate`, `mem_promote` |
+| **Masking** | 3 | Read-time PII/credential/business logic redaction with role-based access control |
 | **Code Intel** | 15 | `code_search`, `code_symbols`, `code_callers`, `code_impact`, `code_dependencies` |
 | **Orchestration** | 6 | `find_tools`, `execute_dynamic_tool`, `orchestration_status`, `toggle_tool` |
 | **Analytics** | 5 | `complexity_analysis`, `find_hot_paths`, `find_duplicates`, `find_dead_code` |
 | **KB Graph** | 5 | `mem_map`, `mem_discover`, `git_search`, `git_index` |
+| **Web** | 6 | `fetch_url`, `web_search`, `git_clone_browse`, `download_file`, `api_call`, `read_webpage` |
 | **Utility** | 4 | `stream_write_file`, `drawio_auto_layout`, `drawio_export_png`, `agent_log` |
 
 ---
@@ -137,7 +139,9 @@ backend/
 │   ├── modules/
 │   │   ├── ModuleRegistry.ts     # Module lifecycle manager
 │   │   ├── memory/               # SQLite + ONNX embeddings, mem_* tools
+│   │   │   └── masking/         # KSA-296: Sensitive data masking middleware
 │   │   ├── code-intel/           # AST indexing, search, symbols
+│   │   ├── web/                   # KSA-297: Internet/network tools (fetch, search, browse, download, API, render)
 │   │   ├── orchestration/        # Child MCP server management
 │   │   ├── analytics/            # Quality scoring, metrics
 │   │   ├── kb-graph/             # Knowledge graph operations
@@ -176,6 +180,7 @@ backend/
 - Localhost-only middleware rejects non-local requests
 - No authentication required (local tool, same machine)
 - Process isolation from IDE (separate PID/memory)
+- **KB Sensitive Data Masking** (KSA-296): Read-time redaction of PII, credentials, and business-sensitive content based on requester role. Credentials always masked (fail-closed), PII masked for non-admin (fail-open). Audit trail for all masking events.
 
 ---
 
@@ -221,6 +226,16 @@ The embedding model is expected at `.code-intel/models/model.onnx`. Download it:
 - [Extension](../kiro-sdlc-agents/) — The IDE extension that connects to this server
 - [Orchestration Config](../.code-intel/orchestration.json) — Child MCP server inventory
 - [Root README](../README.md) — Full platform overview
+
+---
+
+## Changelog
+
+| Version | Date | Ticket | Changes |
+|---------|------|--------|---------|
+| 1.1.0 | 2026-07-03 | KSA-297 | WebModule — 6 internet/network tools: fetch_url, web_search, git_clone_browse, download_file, api_call, read_webpage. SSRF guard, rate limiter, content truncation. |
+| 1.0.1 | 2026-07-02 | KSA-296 | Sensitive Data Masking — PII/credential/business logic redaction middleware |
+| 1.0.0 | 2026-06-15 | — | Initial release — Code Intelligence, Memory, Orchestration |
 
 ---
 
