@@ -1,5 +1,5 @@
 {
-    "kiroSdlc.mcpServerPort": 9182,
+    "kiroSdlc.mcpServerPort": 9181,
     "kiroSdlc.backend.url": "http://localhost:48721",
     "kiroSdlc.enableMcpServer": true
 }

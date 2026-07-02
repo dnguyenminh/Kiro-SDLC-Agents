@@ -38,28 +38,50 @@ async function readFile(args: Record<string, unknown>, workspaceRoot: string): P
 async function listDirectory(args: Record<string, unknown>, workspaceRoot: string): Promise<string> {
   const dirPath = (args.path as string) || ".";
   const recursive = args.recursive as boolean || false;
+  const depth = (args.depth as number) || (recursive ? 2 : 1);
   const fullPath = path.isAbsolute(dirPath) ? dirPath : path.join(workspaceRoot, dirPath);
-  const EXCLUDE = new Set([".git", "node_modules", "out", "dist", ".code-intel", ".pytest_cache", "__pycache__"]);
+  const EXCLUDE = new Set([".git", "node_modules", "out", "dist", ".code-intel", ".pytest_cache", "__pycache__", ".vscode", ".github", ".kiro", ".antigravity", ".kilo", ".roo", ".gemini"]);
   const EXCLUDE_EXT = new Set([".log", ".vsix"]);
-  try {
-    const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(fullPath));
+  const SOURCE_DIRS = new Set(["src", "lib", "app", "backend", "frontend", "packages", "services"]);
+
+  async function listRecursive(dir: string, currentDepth: number, prefix: string): Promise<string[]> {
+    if (currentDepth > depth) return [];
     const results: string[] = [];
-    for (const [name, type] of entries) {
-      if (EXCLUDE.has(name)) continue;
-      if (type === vscode.FileType.File && EXCLUDE_EXT.has(path.extname(name).toLowerCase())) continue;
-      results.push(`${type === vscode.FileType.Directory ? "d" : "f"} ${name}`);
-      if (recursive && type === vscode.FileType.Directory) {
-        try {
-          const subEntries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(path.join(fullPath, name)));
-          for (const [sn, st] of subEntries) {
-            if (EXCLUDE.has(sn)) continue;
-            results.push(`  ${st === vscode.FileType.Directory ? "d" : "f"} ${name}/${sn}`);
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(dir));
+      for (const [name, type] of entries) {
+        if (EXCLUDE.has(name)) continue;
+        if (type === vscode.FileType.File && EXCLUDE_EXT.has(path.extname(name).toLowerCase())) continue;
+        const rel = prefix ? `${prefix}/${name}` : name;
+        results.push(`${type === vscode.FileType.Directory ? "d" : "f"} ${rel}`);
+        // Auto-expand source directories or when recursive requested
+        if (type === vscode.FileType.Directory && currentDepth < depth) {
+          const shouldExpand = recursive || (currentDepth === 1 && SOURCE_DIRS.has(name));
+          if (shouldExpand) {
+            const sub = await listRecursive(path.join(dir, name), currentDepth + 1, rel);
+            results.push(...sub);
           }
-        } catch { /* skip */ }
+        }
       }
+    } catch { /* skip */ }
+    return results;
+  }
+
+  try {
+    const results = await listRecursive(fullPath, 1, "");
+    const limit = (args.limit as number) || 30;
+    const offset = (args.offset as number) || 0;
+    const total = results.length;
+    const page = results.slice(offset, offset + limit);
+    const remaining = total - offset - page.length;
+    let output = page.join("\n") || "(empty directory)";
+    if (remaining > 0) {
+      output += `\n\n[${remaining} more entries. Use offset=${offset + limit} to see next page.]`;
     }
-    if (results.length > 100) return results.slice(0, 100).join("\n") + `\n\n[... ${results.length - 100} more ...]`;
-    return results.join("\n") || "(empty directory)";
+    if (offset > 0) {
+      output = `[Showing entries ${offset + 1}-${offset + page.length} of ${total}]\n` + output;
+    }
+    return output;
   } catch (error) { return `Error listing '${dirPath}': ${(error as Error).message}`; }
 }
 

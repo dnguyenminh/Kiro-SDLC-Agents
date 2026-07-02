@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { ToolRouter } from '../../tools/ToolRouter.js';
+import type { ToolRouter } from '../../tool-router/ToolRouter.js';
 import type { Logger } from 'pino';
 
 const ToolCallSchema = z.object({

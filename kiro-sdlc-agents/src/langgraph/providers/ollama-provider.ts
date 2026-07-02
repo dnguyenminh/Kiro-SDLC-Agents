@@ -20,6 +20,25 @@ export class OllamaProvider extends BaseLlmProvider {
     super();
     this.baseUrl = (baseUrl || DEFAULT_BASE_URL).replace(/\/$/, "");
     this.defaultModel = defaultModel || DEFAULT_MODEL;
+    this.contextWindowTokens = 8192; // Conservative default for Ollama models
+  }
+
+  /** Fetch actual context window from Ollama /api/show endpoint */
+  async detectContextWindow(): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/show`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: this.defaultModel }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        const data = await response.json() as { model_info?: Record<string, unknown> };
+        const ctxLen = data.model_info?.["context_length"] as number
+          || data.model_info?.["llama.context_length"] as number;
+        if (ctxLen && ctxLen > 0) { this.contextWindowTokens = ctxLen; }
+      }
+    } catch { /* keep default */ }
   }
 
   async chat(messages: LlmMessage[], options?: LlmOptions): Promise<string> {

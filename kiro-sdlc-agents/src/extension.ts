@@ -41,7 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
   configWatcher?.dispose();
-  mcpManager?.kill().catch(() => {});
+  mcpManager?.kill().catch((err) => console.error("[Kiro] Deactivate kill failed:", (err as Error).message));
   panelManager?.disposeAll();
 }
 
@@ -115,8 +115,8 @@ function setupConfigWatcher(context: vscode.ExtensionContext, workspaceRoot: str
     if (!event.affectsConfiguration("kiroSdlc.mcpServerPort") || !mcpManager) { return; }
     const cfg = vscode.workspace.getConfiguration("kiroSdlc");
     if (!cfg.get<boolean>("enableMcpServer", true)) { return; }
-    if (mcpManager.status === "running") { mcpManager.restart().catch(() => {}); }
-    else { mcpManager.spawn().catch(() => {}); }
+    if (mcpManager.status === "running") { mcpManager.restart().then(() => vscode.window.showInformationMessage("MCP Server restarted")).catch((err) => vscode.window.showErrorMessage(`MCP Server restart failed: ${(err as Error).message}`)); }
+    else { mcpManager.spawn().catch((err) => vscode.window.showErrorMessage(`MCP Server start failed: ${(err as Error).message}`)); }
   }));
 }
 

@@ -17,6 +17,14 @@ export abstract class BaseLlmProvider implements LlmProvider {
 
   chatWithTools?(messages: LlmMessage[], tools: McpToolDefinition[], options?: LlmOptions): Promise<LlmResponse>;
 
+  /** Context window in tokens. Override in subclasses for accurate values. Default: 0 (unknown). */
+  protected contextWindowTokens = 0;
+
+  /** Get context window size in tokens. Returns 0 if unknown (no budget limit applied). */
+  getContextWindow(): number {
+    return this.contextWindowTokens;
+  }
+
   /**
    * Template Method for availability check.
    * Subclasses override `getHealthCheckUrl()` and `isConfigured()`.

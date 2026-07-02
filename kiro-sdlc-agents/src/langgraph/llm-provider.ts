@@ -66,6 +66,12 @@ export interface LlmProvider {
   dispose(): void;
 
   /**
+   * Get the context window size (in tokens) for the current model.
+   * Used for dynamic context budgeting. Returns 0 if unknown.
+   */
+  getContextWindow(): number;
+
+  /**
    * Chat with tool calling support. Returns structured response.
    * Optional — providers that don't support tools leave this undefined.
    */

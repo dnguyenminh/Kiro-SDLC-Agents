@@ -34,7 +34,8 @@ export class FolderPicker {
     let folders: FolderTreeNode[];
     try {
       folders = await this.bridge.getFolderTree();
-    } catch {
+    } catch (error) {
+      console.error('[FolderPicker] Failed to load folder tree:', (error as Error).message);
       folders = [];
     }
 

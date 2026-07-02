@@ -13,7 +13,7 @@ export class DashboardService {
     const cpuPercent = cpus.reduce((acc, cpu) => { const total = Object.values(cpu.times).reduce((a, b) => a + b, 0); return acc + ((total - cpu.times.idle) / total) * 100; }, 0) / cpus.length;
 
     let sqliteSize = 0;
-    try { const stat = fs.statSync(this.db.name); sqliteSize = stat.size / (1024 * 1024); } catch {}
+    try { const stat = fs.statSync(this.db.name); sqliteSize = stat.size / (1024 * 1024); } catch (error) { console.warn('[Dashboard] Cannot stat DB file:', (error as Error).message); }
 
     const activeSessions = this.db.prepare('SELECT COUNT(*) as cnt FROM sessions WHERE is_active = 1').get()?.cnt || 0;
     const alerts: DashboardHealth['alerts'] = [];

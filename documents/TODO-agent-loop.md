@@ -7,41 +7,42 @@ Chat agent (SDLC Pipeline) không chain multiple tool calls. Khi user hỏi "rev
 2. Nhận kết quả → nhưng KHÔNG gọi `read_file` tiếp → trả text hỏi user ❌
 3. `verify_response` node detect "INCOMPLETE" → nhưng graph KHÔNG loop lại ❌
 
-## Root Cause
+## Root Cause (IDENTIFIED & FIXED)
 
-`graph.invoke()` trong LangGraph JS chạy single-pass. Mặc dù có conditional edges tạo cycle (`verify_response → agent_step`), graph execution kết thúc sau khi verify node trả state update.
+**State reducer bug:** `agentOutputs` và `agentScratchpad` dùng append reducer `(e, u) => [...e, ...u]`. Khi verify-node trả `agentOutputs: []` (muốn clear) → append empty = KHÔNG clear → `routeAfterVerify` thấy outputs vẫn còn → route `__end__`.
 
-Possible causes:
-- LangGraph `StateGraph` compile() không tạo cycle đúng cách
-- `agentOutputs: []` (clear) trong verify node không trigger re-execution
-- `invoke()` cần `recursionLimit` config để cho phép cycles
-
-## Evidence from Logs
-
-```
-[LLM-RES] type=tool_use, calls=list_directory({"path":"."})
-[graph] routeAgentStep: 1 toolCalls -> execute_tools
-[LLM-REQ] iteration=1, messages=5, tools=69
-[LLM-RES] type=text, length=590  ← MODEL RESPONDS TEXT INSTEAD OF TOOL
-[graph] routeAgentStep: text response -> verify_response
-[VERIFY-RES] raw="INCOMPLETE: Agent must use tools instead of asking user"
-handleUserMessage: invokeChat RETURNED  ← GRAPH ENDED, NO RETRY
-```
+**Fix applied:**
+- `agentOutputs` reducer → replace: `(_e, u) => u` (clear works)
+- `agentScratchpad` reducer → replace: `(_e, u) => u` (verify feedback replaces)
+- `execute_tools` node → manually accumulates scratchpad before returning
+- `verify_response` node → manually accumulates feedback into existing scratchpad
 
 ## Tasks
 
-1. Fix LangGraph Cycle Execution (verify → agent_step loop)
-2. Fix Scratchpad Accumulation Between Iterations
-3. Improve Model Prompting for Tool Chain (limit to 10 tools)
-4. Fix list_directory to show relevant source folders
+1. ✅ Fix LangGraph Cycle Execution (verify → agent_step loop)
+   - Changed agentOutputs reducer from append to replace
+   - Changed agentScratchpad reducer from append to replace  
+   - Now verify returning `agentOutputs: []` actually clears → routes to `agent_step`
 
-## Files
+2. ✅ Fix Scratchpad Accumulation Between Iterations
+   - execute_tools spreads existing scratchpad: `[...state.agentScratchpad, ...newEntries]`
+   - verify_response appends feedback: `[...state.agentScratchpad, feedbackMsg]`
 
-- `src/langgraph/graphs/chat-graph.ts`
-- `src/langgraph/graphs/chat-graph-nodes.ts`
-- `src/langgraph/graphs/verify-node.ts`
-- `src/langgraph/vscode-tools.ts`
-- `src/langgraph/engine-chat-handler.ts`
+3. ✅ Improve Model Prompting for Tool Chain (limit to 10 tools)
+   - Reduced tool limit from 15 to 10 in agent_step
+   - Fewer tools = less confusion for model
 
-## Priority: HIGH
+4. ✅ Fix list_directory to show relevant source folders
+   - Added SOURCE_DIRS auto-expand (src, lib, app, backend, frontend, packages, services)
+   - Added depth parameter support
+   - Expanded EXCLUDE set for IDE/config folders
+
+## Files Modified
+
+- `src/langgraph/state.ts` — reducer changes
+- `src/langgraph/graphs/chat-graph-nodes.ts` — scratchpad accumulation + tool limit
+- `src/langgraph/graphs/verify-node.ts` — scratchpad accumulation on retry
+- `src/langgraph/vscode-tools.ts` — improved list_directory
+
+## Status: ✅ COMPLETED
 ## Created: 2026-07-01

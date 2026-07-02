@@ -21,9 +21,11 @@ export class MemoryModule implements IModule {
   private dbManager!: DatabaseManager;
   private engine!: MemoryEngine;
   private dispatcher!: MemoryToolDispatcher;
+  private readonly sessionName: string;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, sessionName?: string) {
     this.logger = logger.child({ module: this.name });
+    this.sessionName = sessionName || `kiro-backend-${process.pid}`;
   }
 
   get status(): ModuleStatus {
@@ -38,8 +40,8 @@ export class MemoryModule implements IModule {
       this.dbManager.initialize();
       
       this.engine = new MemoryEngine(this.dbManager.getDb());
-      // Start session for context tracking
-      this.engine.startSession('kiro-backend');
+      // Start session with configurable name (unique per instance)
+      this.engine.startSession(this.sessionName);
       
       const queryLayer = new QueryLayer(this.dbManager);
       this.dispatcher = new MemoryToolDispatcher(this.engine, config.workspace, queryLayer);

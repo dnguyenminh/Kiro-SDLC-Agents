@@ -21,6 +21,26 @@ export class OpenAIProvider extends BaseLlmProvider {
     super();
     this.getApiKey = getApiKey;
     this.apiBase = (baseUrl || DEFAULT_API_BASE).replace(/\/$/, "");
+    // Set context window based on whether this is a local server (LM Studio) or cloud
+    this.contextWindowTokens = this.isLocalServer() ? 8192 : 128000;
+  }
+
+  /** Detect context window from /v1/models endpoint (LM Studio / local servers) */
+  async detectContextWindow(): Promise<void> {
+    if (!this.isLocalServer()) return; // Cloud providers have known limits
+    try {
+      const response = await fetch(`${this.apiBase}/models`, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        const data = await response.json() as { data?: Array<{ id: string; context_length?: number }> };
+        const model = data.data?.[0];
+        if (model?.context_length && model.context_length > 0) {
+          this.contextWindowTokens = model.context_length;
+        }
+      }
+    } catch { /* keep default */ }
   }
 
   async chat(messages: LlmMessage[], options?: LlmOptions): Promise<string> {

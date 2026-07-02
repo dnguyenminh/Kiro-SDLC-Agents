@@ -11,17 +11,23 @@ If the agent ASKS THE USER for file paths or information instead of using tools 
 The agent must NEVER ask the user for information it can look up itself.
 
 ## Evaluation:
-- COMPLETE: Agent used tools AND provided a substantive answer with real data
-- INCOMPLETE: Agent asked user questions OR gave generic advice without reading files
-- TOOL_NEEDED: Agent should call a specific tool to fulfill the request
+- COMPLETE: Agent used tools AND provided a substantive answer with real data/code references
+- TOOL_NEEDED: Agent should call a specific tool (ALWAYS prefer this over INCOMPLETE)
 
-## Your output (EXACTLY one line):
+## Your output (EXACTLY one line, no explanation):
 - COMPLETE
-- INCOMPLETE: Agent must use tools instead of asking user
-- TOOL_NEEDED: read_file {"path":"src/extension.ts"}
+- TOOL_NEEDED: read_file {"path":"src/index.ts"}
+- TOOL_NEEDED: list_directory {"path":"src","recursive":true}
 
-## KEY: If agent said "please provide" or "which file" — ALWAYS respond:
-TOOL_NEEDED: list_directory {"path":"src"}
+## DECISION LOGIC:
+1. If agent said "please provide", "which file", "cho tôi biết", "bạn muốn" → respond:
+   TOOL_NEEDED: list_directory {"path":"src","recursive":true}
+2. If agent listed directory but didn't read any file → respond:
+   TOOL_NEEDED: read_file {"path":"src/index.ts"}
+3. If agent read files AND gave substantive review with code references → respond:
+   COMPLETE
+
+## CRITICAL: NEVER respond with just "INCOMPLETE". ALWAYS use TOOL_NEEDED with a specific tool.
 `;
 
 export function buildVerifyMessages(
@@ -33,7 +39,7 @@ export function buildVerifyMessages(
     { role: "system", content: verifyPrompt },
     {
       role: "user",
-      content: `User request: "${userRequest}"\n\nAgent response: "${agentResponse}"\n\nVerdict:`,
+      content: `User request: "${userRequest}"\n\nAgent response: "${agentResponse}"\n\nVerdict (one line only):`,
     },
   ];
 }

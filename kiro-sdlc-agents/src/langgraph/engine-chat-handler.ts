@@ -9,7 +9,7 @@ import { ChatExtToWebviewMessage } from "../chat-panel/message-protocol";
 import { StreamHandler } from "./stream-handler";
 import { PipelineState, ChatMessage } from "./state";
 
-const CHAT_GRAPH_TIMEOUT_MS = 240_000;
+const CHAT_GRAPH_TIMEOUT_MS = 600_000;
 
 export async function executeChat(
   chatInput: string,
@@ -40,7 +40,7 @@ export async function executeChat(
   try {
     const graphPromise = graph.invoke(initialState, { configurable: { thread_id: threadId }, recursionLimit: 100 });
     const timeoutPromise = new Promise<never>((_, reject) => {
-      const t = setTimeout(() => reject(new Error("Chat timed out (4 min).")), CHAT_GRAPH_TIMEOUT_MS);
+      const t = setTimeout(() => reject(new Error("Chat timed out (10 min).")), CHAT_GRAPH_TIMEOUT_MS);
       if (t.unref) t.unref();
     });
     const result = await Promise.race([graphPromise, timeoutPromise]);

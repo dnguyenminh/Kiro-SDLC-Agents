@@ -79,7 +79,8 @@ export class ListPicker {
         label: name,
         icon: '\u{1F4C4}',
       }));
-    } catch {
+    } catch (error) {
+      console.error('[ListPicker] Failed to load specs:', (error as Error).message);
       return [];
     }
   }
@@ -92,7 +93,8 @@ export class ListPicker {
         label: name.replace(/\.md$/, ''),
         icon: '\u{1F3AF}',
       }));
-    } catch {
+    } catch (error) {
+      console.error('[ListPicker] Failed to load steering files:', (error as Error).message);
       return [];
     }
   }
@@ -106,7 +108,8 @@ export class ListPicker {
         description: `${r.server} - ${r.type}`,
         icon: '\u{1F48E}',
       }));
-    } catch {
+    } catch (error) {
+      console.error('[ListPicker] Failed to load MCP resources:', (error as Error).message);
       return [];
     }
   }

@@ -34,7 +34,8 @@ export class FilePicker {
     let files: FileTreeNode[];
     try {
       files = await this.bridge.getFileTree();
-    } catch {
+    } catch (error) {
+      console.error('[FilePicker] Failed to load file tree:', (error as Error).message);
       files = [];
     }
 

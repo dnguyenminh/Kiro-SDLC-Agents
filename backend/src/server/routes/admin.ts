@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import Database from 'better-sqlite3';
 import type { Logger } from 'pino';
 import {
   getAdminDb,
@@ -83,7 +84,7 @@ export function createAdminRoute(logger: Logger): Hono {
   getAdminDb();
 
   // Resolve SPA file path
-  const spaPath = path.resolve(__dirname, '../../admin-ui/dist/index.html');
+  const spaPath = path.resolve(__dirname, '../../viewer/admin/index.html');
 
   // Admin SPA
   app.get('/admin', (c) => {
@@ -110,22 +111,22 @@ export function createAdminRoute(logger: Logger): Hono {
 
   // Serve LOD scripts for KB Graph
   app.get('/admin/kb-graph-renderer.js', (c) => {
-    const fp = path.resolve(__dirname, '../../admin-ui/dist/kb-graph-renderer.js');
+    const fp = path.resolve(__dirname, '../../viewer/admin/kb-graph-renderer.js');
     if (fs.existsSync(fp)) return new Response(fs.readFileSync(fp, 'utf-8'), { headers: { 'Content-Type': 'application/javascript', 'Cache-Control': 'no-cache' } });
     return c.text('Not found', 404);
   });
   app.get('/admin/lod-clustering.js', (c) => {
-    const fp = path.resolve(__dirname, '../../admin-ui/dist/lod-clustering.js');
+    const fp = path.resolve(__dirname, '../../viewer/admin/lod-clustering.js');
     if (fs.existsSync(fp)) return new Response(fs.readFileSync(fp, 'utf-8'), { headers: { 'Content-Type': 'application/javascript' } });
     return c.text('Not found', 404);
   });
   app.get('/admin/lod-manager.js', (c) => {
-    const fp = path.resolve(__dirname, '../../admin-ui/dist/lod-manager.js');
+    const fp = path.resolve(__dirname, '../../viewer/admin/lod-manager.js');
     if (fs.existsSync(fp)) return new Response(fs.readFileSync(fp, 'utf-8'), { headers: { 'Content-Type': 'application/javascript' } });
     return c.text('Not found', 404);
   });
   app.get('/admin/lod-animation.js', (c) => {
-    const fp = path.resolve(__dirname, '../../admin-ui/dist/lod-animation.js');
+    const fp = path.resolve(__dirname, '../../viewer/admin/lod-animation.js');
     if (fs.existsSync(fp)) return new Response(fs.readFileSync(fp, 'utf-8'), { headers: { 'Content-Type': 'application/javascript' } });
     return c.text('Not found', 404);
   });
@@ -370,8 +371,34 @@ export function createAdminRoute(logger: Logger): Hono {
     const mem = process.memoryUsage();
     const recentActivity = getRecentActivity(10);
 
+    // Count code symbols from index.db (real-time source)
+    let codeSymbols = 0;
+    try {
+      const indexDbPath = path.resolve(getWorkspacePath(), '.code-intel', 'index.db');
+      if (fs.existsSync(indexDbPath)) {
+        const indexDb = new Database(indexDbPath, { readonly: true });
+        const row = indexDb.prepare("SELECT COUNT(*) as cnt FROM symbols WHERE kind IN ('function','class','interface','method','type','enum','constructor')").get() as any;
+        codeSymbols = row?.cnt || 0;
+        indexDb.close();
+      }
+    } catch {}
+
+    // Graph breakdown from graph_nodes (same source as Graph page)
+    let graphTotalNodes = 0;
+    let graphKbNodes = 0;
+    let graphCodeNodes = 0;
+    try {
+      graphTotalNodes = (d.prepare('SELECT COUNT(*) as cnt FROM graph_nodes').get() as any).cnt || 0;
+      graphCodeNodes = (d.prepare("SELECT COUNT(*) as cnt FROM graph_nodes WHERE type IN ('FUNCTION','METHOD','CLASS','INTERFACE','TYPE','CONSTRUCTOR','ENUM','CONSTANT','VARIABLE')").get() as any).cnt || 0;
+      graphKbNodes = graphTotalNodes - graphCodeNodes;
+    } catch {}
+
     return c.json({
       kbEntries,
+      codeSymbols,
+      graphTotalNodes: kbEntries + codeSymbols,
+      graphKbNodes: kbEntries,
+      graphCodeNodes: codeSymbols,
       users: userCount,
       mcpServers: mcpCount,
       uptime: {
@@ -1273,6 +1300,22 @@ export function createAdminRoute(logger: Logger): Hono {
     if (kbPermCheck instanceof Response) return kbPermCheck;
     const allowedTiers = (kbPermCheck.roleData as any)?.allowedTiers;
 
+    // Real-time counts from source tables (single source of truth)
+    let kbCount = 0;
+    let codeCount = 0;
+    try {
+      kbCount = getKbEntryCount();
+    } catch {}
+    try {
+      const indexDbPath = path.resolve(getWorkspacePath(), '.code-intel', 'index.db');
+      if (fs.existsSync(indexDbPath)) {
+        const indexDb = new Database(indexDbPath, { readonly: true });
+        const row = indexDb.prepare("SELECT COUNT(*) as cnt FROM symbols WHERE kind IN ('function','class','interface','method','type','enum','constructor')").get() as any;
+        codeCount = row?.cnt || 0;
+        indexDb.close();
+      }
+    } catch {}
+
     const graphService = (globalThis as any).__sqliteGraphService;
     if (graphService && graphService.ready) {
       try {
@@ -1282,6 +1325,9 @@ export function createAdminRoute(logger: Logger): Hono {
           result.nodes = result.nodes.filter((n: any) => allowedTiers.includes(n.tier));
           result.total = result.nodes.length;
         }
+        // Attach real-time counts
+        result.kbCount = kbCount;
+        result.codeCount = codeCount;
         return c.json(result);
       } catch (err: any) {
         logger.warn({ error: err.message }, 'getAllPositions failed');
@@ -1503,7 +1549,7 @@ export function createAdminRoute(logger: Logger): Hono {
     }
 
     // Quality scores — filter by allowedTiers
-    const allEntries = getKbEntries(1, 10000, 'created_at', 'desc');
+    const allEntries = getKbEntries(1, 100000, 'created_at', 'desc');
     let filteredEntries = allEntries.items;
     if (Array.isArray(allowedTiers)) {
       filteredEntries = filteredEntries.filter((e: any) => {
@@ -1546,7 +1592,7 @@ export function createAdminRoute(logger: Logger): Hono {
     });
 
     const summary = {
-      totalEntries: filteredEntries.length,
+      totalEntries: getKbEntryCount(),
       avgQuality: 0.78,
       avgQueryTime: queryStats.avgResponseTime || 0,
       totalQueries: queryStats.totalQueries,
@@ -1696,7 +1742,7 @@ export function createAdminRoute(logger: Logger): Hono {
     const permCheck = requirePermission(c, user.userId, 'KB_IMPORT_EXPORT');
     if (permCheck instanceof Response) return permCheck;
 
-    const result = getKbEntries(1, 10000, 'created_at', 'desc');
+    const result = getKbEntries(1, 100000, 'created_at', 'desc');
 
     // Enforce allowedTiers — filter exported entries by user's allowed tiers
     const allowedTiers = (permCheck.roleData as any)?.allowedTiers;
@@ -1730,7 +1776,7 @@ export function createAdminRoute(logger: Logger): Hono {
       }
 
       // Check for conflicts (entries with same ID that already exist)
-      const existingEntries = getKbEntries(1, 10000, 'created_at', 'desc');
+      const existingEntries = getKbEntries(1, 100000, 'created_at', 'desc');
       const existingIds = new Set(existingEntries.items.map((e: any) => e.id || e.entry_id));
 
       const conflicts: any[] = [];
@@ -1805,7 +1851,7 @@ export function createAdminRoute(logger: Logger): Hono {
     const sortBy = c.req.query('sortBy') || 'quality_score';
     const sortDir = (c.req.query('sortDir') || 'desc') as 'asc' | 'desc';
 
-    const result = getKbEntries(1, 10000, 'created_at', 'desc');
+    const result = getKbEntries(1, 100000, 'created_at', 'desc');
     let entries = result.items.map((e: any) => ({
       id: e.id || e.entry_id,
       source: e.source || e.title || 'Untitled',

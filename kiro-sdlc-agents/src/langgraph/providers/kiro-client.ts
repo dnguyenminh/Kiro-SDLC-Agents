@@ -106,6 +106,11 @@ export class KiroClient implements LlmProvider {
   getModelRegistry(): ModelRegistry { return this.modelRegistry; }
   getTokenManager(): TokenManager { return this.tokenManager; }
 
+  getContextWindow(): number {
+    // Kiro API uses Claude models — 200K context. Future: read from ModelRegistry per selected model.
+    return 200000;
+  }
+
   private async ensureInitialized(): Promise<void> {
     if (this.initialized) { return; }
     this.initialized = true;

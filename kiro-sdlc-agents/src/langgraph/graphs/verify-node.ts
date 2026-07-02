@@ -9,7 +9,7 @@ import type { LlmProvider, LlmMessage } from "../llm-provider";
 import { DEFAULT_VERIFY_PROMPT, buildVerifyMessages } from "./verify-prompt";
 import { debugLog } from "../../debug-logger";
 
-const MAX_VERIFY_RETRIES = 3;
+const MAX_VERIFY_RETRIES = 5;
 const VERIFY_TIMEOUT_MS = 15000;
 
 export interface VerifyResult {
@@ -106,8 +106,11 @@ export function createVerifyResponseNode(
         content: `[SYSTEM REVIEW: Your response was incomplete. ${result.feedback}. Please try again using tools.]`,
       };
 
+      // Append feedback to existing scratchpad (reducer replaces, so we accumulate here)
+      const updatedScratchpad: LlmMessage[] = [...(state.agentScratchpad || []), feedbackMsg];
+
       return {
-        agentScratchpad: [feedbackMsg],
+        agentScratchpad: updatedScratchpad,
         agentOutputs: [],
         agentIterations: verifyCount + 1,
         lastUpdatedAt: new Date().toISOString(),
@@ -133,16 +136,21 @@ function parseVerdict(raw: string): VerifyResult {
       try { toolArgs = JSON.parse(rest.slice(spaceIdx + 1)); } catch { /* empty */ }
       return { verdict: "tool_needed", toolName, toolArgs };
     }
-    return { verdict: "tool_needed", toolName: rest, toolArgs: {} };
+    return { verdict: "tool_needed", toolName: rest || "list_directory", toolArgs: { path: "src", recursive: true } };
   }
-  if (upper.startsWith("INCOMPLETE:")) {
-    return { verdict: "incomplete", feedback: raw.slice("INCOMPLETE:".length).trim() };
+  if (upper.startsWith("INCOMPLETE")) {
+    // Treat INCOMPLETE as TOOL_NEEDED with list_directory fallback
+    return { verdict: "tool_needed", toolName: "list_directory", toolArgs: { path: "src", recursive: true } };
   }
   // Default: treat as complete (don't infinite loop)
   return { verdict: "complete" };
 }
 
 export function routeAfterVerify(state: PipelineState): string {
+  // If LLM failed (server down), stop immediately — don't loop back
+  if (state.pipelineStatus === "failed" || (state.errors && state.errors.length > 0)) {
+    return "__end__";
+  }
   if (state.toolCalls && state.toolCalls.length > 0) {
     return "execute_tools";
   }

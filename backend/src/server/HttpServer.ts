@@ -10,7 +10,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import type { Logger } from 'pino';
 import type { ModuleRegistry } from '../modules/ModuleRegistry.js';
-import { ToolRouter } from '../tools/ToolRouter.js';
+import { ToolRouter } from '../tool-router/ToolRouter.js';
 import { createHealthRoute } from './routes/health.js';
 import { createToolsRoute } from './routes/tools.js';
 import { createApiRoute } from './routes/api.js';

@@ -76,7 +76,7 @@ export function registerAdminModule(app: Express, deps: AdminModuleDependencies)
   app.use('/api/admin', adminRouter);
 
   // SPA static files
-  const spaPath = path.join(__dirname, '../../admin-ui/dist');
+  const spaPath = path.join(__dirname, '../../viewer/admin');
   app.get('/admin/*', (_req, res) => { res.sendFile(path.join(spaPath, 'index.html'), (err) => { if (err) res.status(404).send('Admin Portal not built yet'); }); });
 
   console.log('[KSA-286] Admin Portal registered: /api/admin/* + /admin/*');

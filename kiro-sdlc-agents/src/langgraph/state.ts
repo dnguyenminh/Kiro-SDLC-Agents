@@ -27,7 +27,7 @@ export const PipelineAnnotation = Annotation.Root({
   pipelineStatus: Annotation<PipelineStatus>,
   resumePoint: Annotation<string | null>,
   documents: Annotation<Record<string, DocumentState>>,
-  agentOutputs: Annotation<AgentOutput[]>({ reducer: (existing, update) => [...existing, ...update].slice(-50), default: () => [] }),
+  agentOutputs: Annotation<AgentOutput[]>({ reducer: (_existing, update) => update, default: () => [] }),
   currentStreamId: Annotation<string | null>,
   approvalRequired: Annotation<boolean>,
   approvalDecision: Annotation<ApprovalDecision | null>,
@@ -47,7 +47,7 @@ export const PipelineAnnotation = Annotation.Root({
   qualityGateResults: Annotation<Record<string, QualityGateResult>>({ reducer: (e, u) => ({ ...e, ...u }), default: () => ({}) }),
   toolCalls: Annotation<LlmToolCall[] | null>({ reducer: (_e, u) => u, default: () => null }),
   toolResults: Annotation<Array<{ toolCallId: string; name: string; content: string }>>({ reducer: (e, u) => [...e, ...u], default: () => [] }),
-  agentScratchpad: Annotation<LlmMessage[]>({ reducer: (e, u) => [...e, ...u], default: () => [] }),
+  agentScratchpad: Annotation<LlmMessage[]>({ reducer: (_e, u) => u, default: () => [] }),
   agentIterations: Annotation<number>({ reducer: (_e, u) => u, default: () => 0 }),
   verifyPassed: Annotation<boolean>({ reducer: (_e, u) => u, default: () => true }),
   verifyFeedback: Annotation<string | null>({ reducer: (_e, u) => u, default: () => null }),
@@ -55,6 +55,7 @@ export const PipelineAnnotation = Annotation.Root({
   maxVerifyAttempts: Annotation<number>({ reducer: (_e, u) => u, default: () => 2 }),
   activeStrategy: Annotation<Record<string, string>>({ reducer: (e, u) => ({ ...e, ...u }), default: () => ({}) }),
   strategyHistory: Annotation<StrategyEvent[]>({ reducer: (e, u) => [...e, ...u].slice(-20), default: () => [] }),
+  maxContextTokens: Annotation<number>({ reducer: (_e, u) => u, default: () => 0 }),
 });
 
 export type PipelineState = typeof PipelineAnnotation.State;

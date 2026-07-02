@@ -142,7 +142,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
 
   private getMessageHandler(): MessageHandler {
     if (!this.messageHandler) {
-      this.messageHandler = new MessageHandler(() => this.getEngine(), (msg) => this.sendToWebview(msg), (ct) => this.handlePickContext(ct), () => this.handlePickAttachment(), (code) => this.handleApplyCode(code), (code) => this.handleInsertCode(code), (model) => this.handleSetModel(model));
+      this.messageHandler = new MessageHandler(() => this.getEngine(), (msg) => this.sendToWebview(msg), (ct) => this.handlePickContext(ct), () => this.handlePickAttachment(), (code, filePath) => this.handleApplyCode(code, filePath), (code) => this.handleInsertCode(code), (model) => this.handleSetModel(model));
     }
     return this.messageHandler;
   }
@@ -177,10 +177,35 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider, vscode.Dis
     for (const uri of uris) { this.sendToWebview({ type: "chat:contextPicked", item: { type: "file", label: vscode.workspace.asRelativePath(uri), path: uri.fsPath } }); }
   }
 
-  private async handleApplyCode(code: string): Promise<void> {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) { vscode.window.showWarningMessage("No active editor."); return; }
-    await editor.edit((eb) => { editor.selection.isEmpty ? eb.insert(editor.selection.active, code) : eb.replace(editor.selection, code); });
+  private async handleApplyCode(code: string, filePath?: string): Promise<void> {
+    let editor = vscode.window.activeTextEditor;
+
+    // If no active editor but filePath provided, open that file
+    if (!editor && filePath) {
+      const wsRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+      const fullPath = require("path").isAbsolute(filePath) ? filePath : require("path").join(wsRoot, filePath);
+      try {
+        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(fullPath));
+        editor = await vscode.window.showTextDocument(doc);
+      } catch {
+        vscode.window.showWarningMessage(`Cannot open file: ${filePath}`);
+        return;
+      }
+    }
+
+    if (!editor) {
+      vscode.window.showWarningMessage("No active editor. Open the target file first, then click Apply.");
+      return;
+    }
+
+    // Replace entire file content if selection is empty and code looks like full file
+    const hasImports = code.trimStart().startsWith("import ") || code.trimStart().startsWith("package ");
+    if (editor.selection.isEmpty && hasImports) {
+      const fullRange = new vscode.Range(0, 0, editor.document.lineCount, 0);
+      await editor.edit((eb) => { eb.replace(fullRange, code); });
+    } else {
+      await editor.edit((eb) => { editor!.selection.isEmpty ? eb.insert(editor!.selection.active, code) : eb.replace(editor!.selection, code); });
+    }
   }
 
   private async handleInsertCode(code: string): Promise<void> {

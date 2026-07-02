@@ -9,6 +9,15 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z } from "zod";
 import { executeLocalTool, wrapToolArguments } from "./backend-local-tools";
 
+/** Tools that execute locally without forwarding to backend */
+const LOCAL_TOOLS = new Set(["stream_write_file", "embed_image"]);
+
+/** Maximum body size accepted by wrapper server (1MB) */
+const MAX_BODY_SIZE = 1024 * 1024;
+
+/** Health check timeout in milliseconds */
+const HEALTH_TIMEOUT_MS = 5000;
+
 export class RemoteBackendClient implements vscode.Disposable {
   private _status: ServerStatus = "stopped";
   private _port: number | null = null;
@@ -33,7 +42,7 @@ export class RemoteBackendClient implements vscode.Disposable {
 
   private extractPort(url: string): number | null {
     try { const p = new URL(url); return p.port ? parseInt(p.port, 10) : (p.protocol === "https:" ? 443 : 80); }
-    catch { return null; }
+    catch (err) { this.outputChannel.appendLine(`[RemoteBackendClient] Invalid backend URL: ${(err as Error).message}`); return null; }
   }
 
   private setStatus(status: ServerStatus) {
@@ -79,7 +88,10 @@ export class RemoteBackendClient implements vscode.Disposable {
           if (!res.headersSent) { res.writeHead(500); res.end(JSON.stringify({ error: (err as Error).message })); }
         }
       });
-      server.on("error", reject);
+      server.on("error", (err) => {
+        this.outputChannel.appendLine(`[WrapperServer] Error: ${err.message}`);
+        if (!this.httpServer) { reject(err); }
+      });
       server.listen(port, "127.0.0.1", () => {
         this._wrapperPort = (server.address() as import("net").AddressInfo).port;
         this.httpServer = server;
@@ -91,22 +103,36 @@ export class RemoteBackendClient implements vscode.Disposable {
 
   private readBody(req: http.IncomingMessage): Promise<string> {
     return new Promise((resolve, reject) => {
-      let body = ""; req.on("data", c => body += c.toString()); req.on("end", () => resolve(body)); req.on("error", reject);
+      const chunks: Buffer[] = [];
+      let size = 0;
+      req.on("data", (chunk: Buffer) => {
+        size += chunk.length;
+        if (size > MAX_BODY_SIZE) {
+          req.destroy();
+          reject(new Error(`Request body exceeds maximum size (${MAX_BODY_SIZE} bytes)`));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+      req.on("error", reject);
     });
   }
 
   private async handleMcpRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     if (req.method !== "POST") { res.writeHead(405); res.end('{"error":"Method not allowed"}'); return; }
+    const contentType = req.headers["content-type"] || "";
+    if (!contentType.includes("application/json")) { res.writeHead(415); res.end('{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Unsupported Content-Type, expected application/json"}}'); return; }
     const body = await this.readBody(req);
     let jsonRpc: any;
-    try { jsonRpc = JSON.parse(body); } catch { res.writeHead(400); res.end('{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}'); return; }
+    try { jsonRpc = JSON.parse(body); } catch (err) { this.outputChannel.appendLine(`[WrapperServer] JSON parse error: ${(err as Error).message}`); res.writeHead(400); res.end('{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}'); return; }
     if (jsonRpc.id === undefined) jsonRpc.id = ++this.requestId;
     if (!this.mcpClient) { res.writeHead(503); res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, error: { code: -32002, message: "Backend not connected" } })); return; }
     try {
       if (jsonRpc.method === "tools/call" && jsonRpc.params) {
         const name = jsonRpc.params.name as string;
         const args = (jsonRpc.params.arguments || {}) as Record<string, unknown>;
-        if (name === "stream_write_file" || name === "embed_image") {
+        if (LOCAL_TOOLS.has(name)) {
           const result = await executeLocalTool(name, args);
           res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify({ jsonrpc: "2.0", id: jsonRpc.id, result })); return;
         }
@@ -120,7 +146,10 @@ export class RemoteBackendClient implements vscode.Disposable {
   }
 
   async disconnect(): Promise<void> {
-    if (this.httpServer) { this.httpServer.close(); this.httpServer = null; }
+    if (this.httpServer) {
+      await new Promise<void>((resolve) => this.httpServer!.close(() => resolve()));
+      this.httpServer = null;
+    }
     if (this.mcpClient) { await this.mcpClient.close(); this.mcpClient = null; }
     this.setStatus("stopped");
   }
@@ -136,7 +165,7 @@ export class RemoteBackendClient implements vscode.Disposable {
         if (res.statusCode === 200) { resolve(); } else { reject(new Error(`Health check failed: ${res.statusCode}`)); }
       });
       req.on("error", reject);
-      req.setTimeout(5000, () => { req.destroy(); reject(new Error("Health check timed out")); });
+      req.setTimeout(HEALTH_TIMEOUT_MS, () => { req.destroy(); reject(new Error("Health check timed out")); });
     });
   }
 

@@ -22,6 +22,7 @@ export class AnthropicProvider extends BaseLlmProvider {
     super();
     this.getApiKey = getApiKey;
     this.baseUrl = (baseUrl || DEFAULT_BASE_URL).replace(/\/$/, "");
+    this.contextWindowTokens = 200000; // Claude models have 200K context
   }
 
   async chat(messages: LlmMessage[], options?: LlmOptions): Promise<string> {

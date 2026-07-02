@@ -41,7 +41,9 @@ export class WorkspaceSyncService implements vscode.Disposable {
       this.log('Workspace synced: ' + tree.files.length + ' files');
       this.startWatching();
     } catch (error) {
-      this.log('Sync failed: ' + (error as Error).message);
+      const msg = (error as Error).message;
+      this.log('Sync failed: ' + msg);
+      vscode.window.showWarningMessage('Workspace sync failed: ' + msg);
     }
   }
 
@@ -76,8 +78,8 @@ export class WorkspaceSyncService implements vscode.Disposable {
           path: relativePath,
           timestamp: new Date().toISOString(),
         });
-      } catch {
-        // Silently fail — non-critical operation
+      } catch (error) {
+        this.log('File notify failed (' + event + '): ' + (error as Error).message);
       }
     }, 1000);
   }

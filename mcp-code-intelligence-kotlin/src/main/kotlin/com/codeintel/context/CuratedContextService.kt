@@ -79,7 +79,10 @@ class CuratedContextService(
             }
 
             miniRRF(ftsItems, symbolItems).take(20)
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            System.err.println("[CuratedContext] Code search failed: ${e.message}")
+            emptyList()
+        }
     }
 
     private fun searchMemory(analysis: QueryAnalysis): List<Map<String, Any?>> {
@@ -102,7 +105,10 @@ class CuratedContextService(
                 ))
             }
             results
-        } catch (_: Exception) { emptyList() }
+        } catch (e: Exception) {
+            System.err.println("[CuratedContext] Memory search failed: ${e.message}")
+            emptyList()
+        }
     }
 
     private fun expandGraph(topSymbols: List<Map<String, Any?>>): List<Map<String, Any?>> {
@@ -128,7 +134,10 @@ class CuratedContextService(
                         "relationship" to "${r.edgeType} $name",
                     ))
                 }
-            } catch (_: Exception) { continue }
+            } catch (e: Exception) {
+                System.err.println("[CuratedContext] Graph expand failed for ${symbol["name"]}: ${e.message}")
+                continue
+            }
         }
         return expanded
     }

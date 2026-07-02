@@ -12,8 +12,8 @@ export const VSCODE_TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: "list_directory",
-    description: "List files and directories at the given path.",
-    inputSchema: { type: "object", properties: { path: { type: "string", description: "Directory path relative to workspace root" }, recursive: { type: "boolean", description: "Whether to list recursively (default false, max depth 2)" } }, required: ["path"] },
+    description: "List files and directories at the given path. Returns max 30 entries per page. Use offset to paginate.",
+    inputSchema: { type: "object", properties: { path: { type: "string", description: "Directory path relative to workspace root" }, recursive: { type: "boolean", description: "Whether to list recursively (default false, max depth 2)" }, limit: { type: "number", description: "Max entries per page (default 30)" }, offset: { type: "number", description: "Skip first N entries (default 0, for pagination)" } }, required: ["path"] },
   },
   {
     name: "search_text",

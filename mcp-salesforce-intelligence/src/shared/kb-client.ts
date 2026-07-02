@@ -89,7 +89,8 @@ export class KBClient {
           try {
             const parsed = JSON.parse(data);
             resolve(parsed.results ?? []);
-          } catch {
+          } catch (error) {
+            console.error('[KBClient] Failed to parse search response:', (error as Error).message);
             resolve([]);
           }
         });

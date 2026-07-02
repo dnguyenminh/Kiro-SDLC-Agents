@@ -134,7 +134,9 @@ export class ToolProxy implements IToolProxy, vscode.Disposable {
       const response = await client.listTools();
       await this.registerTools(response.tools);
     } catch (error) {
-      this.log('Failed to refresh tools: ' + (error as Error).message);
+      const msg = (error as Error).message;
+      this.log('Failed to refresh tools: ' + msg);
+      vscode.window.showWarningMessage('Tool refresh failed: ' + msg);
     }
   }
 

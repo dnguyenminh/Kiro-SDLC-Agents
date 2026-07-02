@@ -168,6 +168,51 @@ interface Pollable { startPolling(): void; stopPolling(): void; }
 - [ ] Không tạo serializer instance inline trong function?
 - [ ] Dùng strong typing thay vì `any`/`Object`/`dynamic`?
 
+## ⛔ Exception Handling bắt buộc
+
+### Quy tắc
+
+1. **KHÔNG ĐƯỢC nuốt exception** — Mọi `catch` block PHẢI có hành động xử lý rõ ràng (log, rethrow, hoặc thông báo user)
+2. **LUÔN thể hiện exception cho user biết** — User phải được thông báo khi có lỗi xảy ra (toast, alert, error message trên UI, hoặc error response)
+
+### Ví dụ
+
+```
+# ❌ CẤM — Nuốt exception
+try {
+    await fetchData();
+} catch (e) {
+    // im lặng, không làm gì
+}
+
+# ❌ CẤM — Chỉ log mà không thông báo user
+try {
+    await fetchData();
+} catch (e) {
+    console.log(e);  // User không biết có lỗi
+}
+
+# ✅ ĐÚNG — Thông báo user + log
+try {
+    await fetchData();
+} catch (e) {
+    logger.error("Failed to fetch data", e);
+    showErrorToast("Không thể tải dữ liệu. Vui lòng thử lại.");
+}
+
+# ✅ ĐÚNG — Rethrow để caller xử lý
+try {
+    await fetchData();
+} catch (e) {
+    throw new AppError("DATA_FETCH_FAILED", "Không thể tải dữ liệu", e);
+}
+```
+
+### Ngoại lệ duy nhất cho phép
+
+- Cleanup code trong `finally` block có thể bỏ qua lỗi phụ (nhưng PHẢI log)
+- Retry logic có thể bắt exception ở vòng lặp nhưng PHẢI thông báo user nếu retry hết lần
+
 ## Checklist khi viết/review code
 
 - [ ] File ≤ 200 dòng?
@@ -179,3 +224,4 @@ interface Pollable { startPolling(): void; stopPolling(): void; }
 - [ ] Interfaces/abstractions cho dependencies?
 - [ ] Naming rõ ràng, tự mô tả (không cần comment giải thích tên)?
 - [ ] Error handling đúng cách (không swallow errors)?
+- [ ] Mọi exception đều được thông báo cho user?

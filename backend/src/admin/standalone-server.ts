@@ -90,7 +90,7 @@ const mcpOrchestrator = {
 const app = express();
 
 // SPA FIRST (before admin API which has catch-all)
-const spaFile = path.join(__dirname, '../admin-ui/dist/index.html');
+const spaFile = path.join(__dirname, '../viewer/admin/index.html');
 console.log('[Admin] SPA:', spaFile, fs.existsSync(spaFile) ? 'OK' : 'MISSING');
 app.get('/admin', (_req, res) => res.sendFile(spaFile));
 app.get('/admin/', (_req, res) => res.sendFile(spaFile));

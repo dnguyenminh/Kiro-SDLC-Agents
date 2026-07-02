@@ -37,6 +37,7 @@ export class OnnxProvider extends BaseLlmProvider {
     super();
     this.modelId = modelId || DEFAULT_MODEL_ID;
     this.modelDir = path.join(workspaceRoot, ".code-intel", "models", "llm", this.modelId);
+    this.contextWindowTokens = MAX_CONTEXT_TOKENS;
   }
 
   async chat(messages: LlmMessage[], options?: LlmOptions): Promise<string> {
