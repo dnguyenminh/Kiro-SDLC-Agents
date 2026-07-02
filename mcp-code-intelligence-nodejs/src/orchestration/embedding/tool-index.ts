@@ -19,18 +19,62 @@ export class ToolEmbeddingIndex {
     if (tools.length === 0) { console.error('[tool-index] No tools to index'); return; }
     const names: string[] = [];
     const vecs: number[][] = [];
-    for (const tool of tools) {
+
+    // Batch embedding: prepare all texts first, then embed in parallel chunks
+    const texts = tools.map(tool => {
       const desc = tool.definition?.description ?? '';
-      const text = `${tool.name} ${desc}`;
-      const vec = embedFn(text);
-      if (vec) { names.push(tool.name); vecs.push(vec); }
+      return { name: tool.name, text: `${tool.name} ${desc}` };
+    });
+
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+      const batch = texts.slice(i, i + BATCH_SIZE);
+      for (const item of batch) {
+        const vec = embedFn(item.text);
+        if (vec) { names.push(item.name); vecs.push(vec); }
+      }
     }
+
     if (vecs.length === 0) { console.error('[tool-index] No embeddings generated'); return; }
     this.toolNames = names;
     this.vectors = vecs;
     this.built = true;
     const elapsed = performance.now() - start;
-    console.error(`[tool-index] Index built: ${names.length} tools in ${elapsed.toFixed(0)}ms`);
+    console.error(`[tool-index] Index built: ${names.length}/${tools.length} tools in ${elapsed.toFixed(0)}ms`);
+  }
+
+  /** Build index asynchronously with parallel embedding (for large toolsets). */
+  async buildAsync(registry: UnifiedRegistry, embedFn: (text: string) => number[] | null): Promise<void> {
+    const start = performance.now();
+    const tools = registry.allChildTools();
+    if (tools.length === 0) { console.error('[tool-index] No tools to index'); return; }
+
+    const texts = tools.map(tool => ({
+      name: tool.name,
+      text: `${tool.name} ${tool.definition?.description ?? ''}`,
+    }));
+
+    const names: string[] = [];
+    const vecs: number[][] = [];
+
+    // Process in parallel batches to avoid blocking event loop
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+      const batch = texts.slice(i, i + BATCH_SIZE);
+      // Yield to event loop between batches
+      await new Promise(resolve => setImmediate(resolve));
+      for (const item of batch) {
+        const vec = embedFn(item.text);
+        if (vec) { names.push(item.name); vecs.push(vec); }
+      }
+    }
+
+    if (vecs.length === 0) { console.error('[tool-index] No embeddings generated'); return; }
+    this.toolNames = names;
+    this.vectors = vecs;
+    this.built = true;
+    const elapsed = performance.now() - start;
+    console.error(`[tool-index] Index built (async): ${names.length}/${tools.length} tools in ${elapsed.toFixed(0)}ms`);
   }
 
   /** Find top-k tools by cosine similarity to query vector. */

@@ -242,13 +242,21 @@ export class OrchestrationEngine {
     if (!this.memoryEngine) return;
     const tools = this.registry.allChildTools();
     if (tools.length === 0) return;
-    const content = tools.map((t) => `${t.name} [${t.source}]: ${t.definition.description ?? ''}`).join('\n');
+
+    // Batch ingestion: single insert with combined content (avoids N individual transactions)
+    const BATCH_SIZE = 50;
+    let ingested = 0;
     try {
-      this.memoryEngine.knowledge.insert({
-        content, summary: `Orchestration child tools registry (${tools.length} tools)`,
-        type: 'CONTEXT', tier: 'WORKING', source: 'orchestration-startup', tags: 'tools,registry,orchestration',
-      });
-      console.error(`[orchestration] Ingested ${tools.length} child tool definitions into KB`);
+      for (let i = 0; i < tools.length; i += BATCH_SIZE) {
+        const batch = tools.slice(i, i + BATCH_SIZE);
+        const content = batch.map((t) => `${t.name} [${t.source}]: ${t.definition.description ?? ''}`).join('\n');
+        this.memoryEngine.knowledge.insert({
+          content, summary: `Orchestration tools batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} tools)`,
+          type: 'CONTEXT', tier: 'WORKING', source: 'orchestration-startup', tags: 'tools,registry,orchestration',
+        });
+        ingested += batch.length;
+      }
+      console.error(`[orchestration] Ingested ${ingested} child tool definitions into KB (${Math.ceil(tools.length / BATCH_SIZE)} batches)`);
     } catch (e: any) {
       console.error(`[orchestration] Failed to ingest tools to KB: ${e.message}`);
     }

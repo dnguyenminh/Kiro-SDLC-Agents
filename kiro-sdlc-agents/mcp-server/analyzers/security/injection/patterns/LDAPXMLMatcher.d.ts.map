@@ -1,1 +1,0 @@
-{"version":3,"file":"LDAPXMLMatcher.d.ts","sourceRoot":"","sources":["../../../../../src/analyzers/security/injection/patterns/LDAPXMLMatcher.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,EAAE,cAAc,EAAE,MAAM,sBAAsB,CAAC;AACtD,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,gBAAgB,CAAC;AAEvD,qBAAa,cAAe,SAAQ,cAAc;IAChD,QAAQ,CAAC,QAAQ,wBAAwB;IACzC,QAAQ,CAAC,QAAQ,EAAE,gBAAgB,EAAE,CAuBnC;CACH"}

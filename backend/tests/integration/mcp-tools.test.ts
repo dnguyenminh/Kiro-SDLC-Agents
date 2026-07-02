@@ -24,7 +24,7 @@ let registry: ModuleRegistry;
 beforeAll(async () => {
   registry = new ModuleRegistry(logger);
   registry.register(new MemoryModule(logger));
-  registry.register(new OrchestrationModule(logger));
+  registry.register(new OrchestrationModule(logger, registry));
   registry.register(new UtilityModule(logger));
   await registry.initializeAll();
 

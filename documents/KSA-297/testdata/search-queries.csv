@@ -1,0 +1,8 @@
+query,category,language,expected_min_results
+nodejs documentation,general,en,3
+typescript generics,code,en,3
+react hooks tutorial,docs,en,3
+,general,en,0
+a,general,en,1
+kubernetes deployment yaml,code,en,3
+python async await,general,en,3

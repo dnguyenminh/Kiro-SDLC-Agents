@@ -10,7 +10,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import type { Logger } from 'pino';
 import type { ModuleRegistry } from '../modules/ModuleRegistry.js';
-import { ToolRouter } from '../tools/ToolRouter.js';
+import { ToolRouter } from '../tool-router/ToolRouter.js';
 import { createHealthRoute } from './routes/health.js';
 import { createToolsRoute } from './routes/tools.js';
 import { createApiRoute } from './routes/api.js';
@@ -19,6 +19,8 @@ import { createRequestLogger } from './middleware/request-logger.js';
 import { createErrorHandler } from './middleware/error-handler.js';
 import { localhostOnly } from './middleware/localhost-only.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
+import { getMcpServer, registerTransport } from './mcpServer.js';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 
 export interface HttpServerOptions {
   port: number;
@@ -56,13 +58,24 @@ export class HttpServer {
     // Routes
     const healthRoute = createHealthRoute(this.options.registry, this.options.version);
     const toolsRoute = createToolsRoute(toolRouter, this.logger);
-    const apiRoute = createApiRoute(this.logger);
+    const apiRoute = createApiRoute(this.options.registry, this.logger);
     const adminRoute = createAdminRoute(this.logger);
 
     app.route('/', healthRoute);
     app.route('/', toolsRoute);
     app.route('/', apiRoute);
     app.route('/', adminRoute);
+
+    // MCP Streamable HTTP endpoint
+    app.all('/mcp', async (c) => {
+      const transport = new WebStandardStreamableHTTPServerTransport();
+      registerTransport(transport);
+      
+      const server = getMcpServer(this.options.registry, this.logger);
+      await server.connect(transport);
+      
+      return transport.handleRequest(c.req.raw);
+    });
 
     return app;
   }

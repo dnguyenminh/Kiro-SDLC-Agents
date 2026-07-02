@@ -1,0 +1,628 @@
+﻿diff --git a/backend/src/admin/admin-db.ts b/backend/src/admin/admin-db.ts
+index 5e453e7d..97d714c5 100644
+--- a/backend/src/admin/admin-db.ts
++++ b/backend/src/admin/admin-db.ts
+@@ -915,3 +915,164 @@ export function getRecentActivity(limit = 10): AuditEntry[] {
+     changes: r.changes, timestamp: r.timestamp, ipAddress: r.ip_address,
+   }));
+ }
++
++// --- KB Tags Management ---
++
++export function getAllKbTags(): Record<string, { count: number; lastUsed: string }> {
++  const tagCounts: Record<string, { count: number; lastUsed: string }> = {};
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return tagCounts;
++    const indexDb = new Database(indexDbPath, { readonly: true });
++    
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const rows = indexDb.prepare("SELECT tags, created_at FROM knowledge_entries WHERE tags IS NOT NULL AND tags != ''").all() as any[];
++      for (const row of rows) {
++        if (!row.tags) continue;
++        const tags = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
++        for (const tag of tags) {
++          if (!tagCounts[tag]) {
++            tagCounts[tag] = { count: 0, lastUsed: row.created_at || new Date().toISOString() };
++          }
++          tagCounts[tag].count++;
++          if (row.created_at && new Date(row.created_at) > new Date(tagCounts[tag].lastUsed)) {
++            tagCounts[tag].lastUsed = row.created_at;
++          }
++        }
++      }
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++  return tagCounts;
++}
++
++export function updateKbEntryTags(entryId: string, tags: string[]): void {
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return;
++    const indexDb = new Database(indexDbPath);
++    
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const tagsStr = tags.join(',');
++      indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?').run(tagsStr, entryId);
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++}
++
++export function renameKbTag(oldName: string, newName: string): number {
++  let renamed = 0;
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return 0;
++    const indexDb = new Database(indexDbPath);
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${oldName}%`) as any[];
++      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
++      for (const row of rows) {
++        if (!row.tags) continue;
++        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
++        const idx = tagArr.indexOf(oldName);
++        if (idx !== -1) {
++          tagArr[idx] = newName.trim();
++          updateStmt.run(tagArr.join(','), row.id);
++          renamed++;
++        }
++      }
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++  return renamed;
++}
++
++export function deleteKbTag(tagName: string): number {
++  let removed = 0;
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return 0;
++    const indexDb = new Database(indexDbPath);
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${tagName}%`) as any[];
++      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
++      for (const row of rows) {
++        if (!row.tags) continue;
++        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
++        const idx = tagArr.indexOf(tagName);
++        if (idx !== -1) {
++          tagArr.splice(idx, 1);
++          updateStmt.run(tagArr.join(','), row.id);
++          removed++;
++        }
++      }
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++  return removed;
++}
++
++export function mergeKbTags(sourceTag: string, targetTag: string): number {
++  let merged = 0;
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return 0;
++    const indexDb = new Database(indexDbPath);
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const rows = indexDb.prepare('SELECT id, tags FROM knowledge_entries WHERE tags LIKE ?').all(`%${sourceTag}%`) as any[];
++      const updateStmt = indexDb.prepare('UPDATE knowledge_entries SET tags = ? WHERE id = ?');
++      for (const row of rows) {
++        if (!row.tags) continue;
++        const tagArr = row.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
++        const idx = tagArr.indexOf(sourceTag);
++        if (idx !== -1) {
++          tagArr.splice(idx, 1);
++          if (!tagArr.includes(targetTag)) {
++            tagArr.push(targetTag);
++          }
++          updateStmt.run(tagArr.join(','), row.id);
++          merged++;
++        }
++      }
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++  return merged;
++}
++
++export function getKbEntriesByTag(tagName: string): any[] {
++  const entries: any[] = [];
++  try {
++    const indexDbPath = path.resolve(__dirname, '../../../.code-intel/index-backend.db');
++    if (!fs.existsSync(indexDbPath)) return entries;
++    const indexDb = new Database(indexDbPath, { readonly: true });
++    const tableExists = indexDb.prepare("SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table' AND name='knowledge_entries'").get() as any;
++    if (tableExists && tableExists.cnt > 0) {
++      const rows = indexDb.prepare('SELECT * FROM knowledge_entries WHERE tags LIKE ?').all(`%${tagName}%`) as any[];
++      for (const row of rows) {
++        if (!row.tags) continue;
++        const tagArr = row.tags.split(',').map((t: string) => t.trim());
++        if (tagArr.includes(tagName)) {
++          entries.push(row);
++        }
++      }
++    }
++    indexDb.close();
++  } catch (e) {
++    // ignore
++  }
++  return entries;
++}
+diff --git a/backend/src/modules/code-intel/CodeIntelModule.ts b/backend/src/modules/code-intel/CodeIntelModule.ts
+index d7d4cb95..3e3a4ad6 100644
+--- a/backend/src/modules/code-intel/CodeIntelModule.ts
++++ b/backend/src/modules/code-intel/CodeIntelModule.ts
+@@ -6,11 +6,18 @@
+ import type { IModule, ModuleStatus } from '../../types/module.js';
+ import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
+ import type { Logger } from 'pino';
++import { DatabaseManager } from '../../engine/db/database-manager.js';
++import { IndexingEngine } from '../../engine/indexer/indexing-engine.js';
++import { loadConfig } from '../../engine/config.js';
++import { CODE_INTEL_TOOL_DEFINITIONS, dispatchCodeIntelTool } from '../../engine/tools/register-tools.js';
+ 
+ export class CodeIntelModule implements IModule {
+   readonly name = 'codeIntel';
+   private _status: ModuleStatus = 'initializing';
+   private logger: Logger;
++  private dbManager!: DatabaseManager;
++  private indexer!: IndexingEngine;
++  private workspace!: string;
+ 
+   constructor(logger: Logger) {
+     this.logger = logger.child({ module: this.name });
+@@ -20,37 +27,54 @@ export class CodeIntelModule implements IModule {
+ 
+   async initialize(): Promise<void> {
+     this.logger.info('Initializing code intelligence module');
+-    this._status = 'ready';
++    try {
++      const config = loadConfig();
++      this.workspace = config.workspace;
++      this.dbManager = new DatabaseManager(config.dbPath);
++      this.dbManager.initialize();
++      this.indexer = new IndexingEngine(this.dbManager, config);
++      this.indexer.startBackgroundIndexing();
++      this._status = 'ready';
++    } catch (error) {
++      this.logger.error({ err: error }, 'Failed to initialize code intelligence module');
++      this._status = 'error';
++    }
+   }
+ 
+-  async shutdown(): Promise<void> { this._status = 'stopped'; }
++  async shutdown(): Promise<void> {
++    this.logger.info('Shutting down code intelligence module');
++    if (this.indexer) {
++      this.indexer.stop();
++    }
++    if (this.dbManager) {
++      this.dbManager.close();
++    }
++    this._status = 'stopped';
++  }
+ 
+   getToolHandlers(): Map<string, ToolHandler> {
+     const handlers = new Map<string, ToolHandler>();
+ 
+-    handlers.set('code_search', async (args) => ({
+-      content: [{ type: 'text', text: JSON.stringify({ results: [], query: args.query }) }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('code_index', async (args) => ({
+-      content: [{ type: 'text', text: `Indexed: ${args.path || 'workspace'}` }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('code_symbols', async (args) => ({
+-      content: [{ type: 'text', text: JSON.stringify({ symbols: [], file: args.file }) }],
+-      isError: false,
+-    }));
++    for (const def of CODE_INTEL_TOOL_DEFINITIONS) {
++      handlers.set(def.name, async (args) => {
++        try {
++          const result = await dispatchCodeIntelTool(def.name, args, this.dbManager, this.indexer, this.workspace);
++          return { content: [{ type: 'text', text: result }], isError: false };
++        } catch (error: any) {
++          return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
++        }
++      });
++    }
+ 
+     return handlers;
+   }
+ 
+   getToolDefinitions(): ToolDefinition[] {
+-    return [
+-      { name: 'code_search', description: 'Search code across indexed files', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] }, category: 'code' },
+-      { name: 'code_index', description: 'Index workspace files for code intelligence', inputSchema: { type: 'object', properties: { path: { type: 'string' } } }, category: 'code' },
+-      { name: 'code_symbols', description: 'Get symbols from a specific file', inputSchema: { type: 'object', properties: { file: { type: 'string' } }, required: ['file'] }, category: 'code' },
+-    ];
++    return CODE_INTEL_TOOL_DEFINITIONS.map(def => ({
++      name: def.name,
++      description: def.description,
++      inputSchema: def.inputSchema as any,
++      category: 'code'
++    }));
+   }
+ }
+diff --git a/backend/src/modules/memory/MemoryEngine.ts b/backend/src/modules/memory/MemoryEngine.ts
+index b451693e..ec8a03fd 100644
+--- a/backend/src/modules/memory/MemoryEngine.ts
++++ b/backend/src/modules/memory/MemoryEngine.ts
+@@ -159,3 +159,4 @@ export class MemoryEngine {
+       'SELECT * FROM memory_audit ORDER BY created_at DESC LIMIT ?'
+     ).all(limit) as any[];
+   }
++}
+diff --git a/backend/src/modules/memory/MemoryModule.ts b/backend/src/modules/memory/MemoryModule.ts
+index 361f45ee..0eddfb8a 100644
+--- a/backend/src/modules/memory/MemoryModule.ts
++++ b/backend/src/modules/memory/MemoryModule.ts
+@@ -7,11 +7,19 @@
+ import type { IModule, ModuleStatus } from '../../types/module.js';
+ import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
+ import type { Logger } from 'pino';
++import { DatabaseManager } from '../../engine/db/database-manager.js';
++import { MemoryEngine } from './MemoryEngine.js';
++import { MemoryToolDispatcher } from './MemoryToolDispatcher.js';
++import { MEMORY_TOOL_DEFINITIONS } from './MemoryToolDefinitions.js';
++import { loadConfig } from '../../engine/config.js';
+ 
+ export class MemoryModule implements IModule {
+   readonly name = 'memory';
+   private _status: ModuleStatus = 'initializing';
+   private logger: Logger;
++  private dbManager!: DatabaseManager;
++  private engine!: MemoryEngine;
++  private dispatcher!: MemoryToolDispatcher;
+ 
+   constructor(logger: Logger) {
+     this.logger = logger.child({ module: this.name });
+@@ -23,99 +31,69 @@ export class MemoryModule implements IModule {
+ 
+   async initialize(): Promise<void> {
+     this.logger.info('Initializing memory module');
+-    // TODO: Initialize SQLite store and ONNX embedding service
+-    this._status = 'ready';
++    try {
++      const config = loadConfig();
++      this.dbManager = new DatabaseManager(config.dbPath);
++      this.dbManager.initialize();
++      
++      this.engine = new MemoryEngine(this.dbManager.getDb());
++      // Start session for context tracking
++      this.engine.startSession('kiro-backend');
++      
++      this.dispatcher = new MemoryToolDispatcher(this.engine, config.workspace);
++      
++      this._status = 'ready';
++    } catch (error) {
++      this.logger.error({ err: error }, 'Failed to initialize memory module');
++      this._status = 'error';
++    }
+   }
+ 
+   async shutdown(): Promise<void> {
++    this.logger.info('Shutting down memory module');
++    if (this.engine) {
++      this.engine.endSession();
++    }
++    if (this.dbManager) {
++      this.dbManager.close();
++    }
+     this._status = 'stopped';
+   }
+ 
+   getToolHandlers(): Map<string, ToolHandler> {
+     const handlers = new Map<string, ToolHandler>();
+ 
+-    handlers.set('mem_search', async (args) => ({
+-      content: [{ type: 'text', text: JSON.stringify({ results: [], query: args.query }) }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_ingest', async (args) => ({
+-      content: [{ type: 'text', text: `Ingested entry: ${args.title || 'untitled'}` }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_ingest_file', async (args) => ({
+-      content: [{ type: 'text', text: `Ingested file: ${args.file_path || 'unknown'}` }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_read', async (args) => ({
+-      content: [{ type: 'text', text: JSON.stringify({ id: args.id, content: '' }) }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_update', async (args) => ({
+-      content: [{ type: 'text', text: `Updated entry: ${args.id}` }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_delete', async (args) => ({
+-      content: [{ type: 'text', text: `Deleted entry: ${args.id}` }],
+-      isError: false,
+-    }));
+-
+-    handlers.set('mem_list', async () => ({
+-      content: [{ type: 'text', text: JSON.stringify({ entries: [] }) }],
+-      isError: false,
+-    }));
++    for (const def of MEMORY_TOOL_DEFINITIONS) {
++      handlers.set(def.name, async (args) => {
++        try {
++          const text = this.dispatcher.dispatch(def.name, args as Record<string, unknown>);
++          if (text === null) {
++            return {
++              content: [{ type: 'text', text: `Unknown tool: ${def.name}` }],
++              isError: true,
++            };
++          }
++          return {
++            content: [{ type: 'text', text }],
++            isError: false,
++          };
++        } catch (error: any) {
++          this.logger.error({ tool: def.name, err: error }, 'Tool execution failed');
++          return {
++            content: [{ type: 'text', text: `Error: ${error.message}` }],
++            isError: true,
++          };
++        }
++      });
++    }
+ 
+     return handlers;
+   }
+ 
+   getToolDefinitions(): ToolDefinition[] {
+-    return [
+-      {
+-        name: 'mem_search',
+-        description: 'Search memory entries by semantic similarity',
+-        inputSchema: { type: 'object', properties: { query: { type: 'string' }, limit: { type: 'number', default: 10 } }, required: ['query'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_ingest',
+-        description: 'Store a new memory entry with embeddings',
+-        inputSchema: { type: 'object', properties: { title: { type: 'string' }, content: { type: 'string' }, tags: { type: 'string' } }, required: ['title', 'content'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_ingest_file',
+-        description: 'Ingest a file into memory',
+-        inputSchema: { type: 'object', properties: { file_path: { type: 'string' } }, required: ['file_path'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_read',
+-        description: 'Read a specific memory entry by ID',
+-        inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_update',
+-        description: 'Update an existing memory entry',
+-        inputSchema: { type: 'object', properties: { id: { type: 'string' }, content: { type: 'string' } }, required: ['id'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_delete',
+-        description: 'Delete a memory entry',
+-        inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+-        category: 'memory',
+-      },
+-      {
+-        name: 'mem_list',
+-        description: 'List all memory entries',
+-        inputSchema: { type: 'object', properties: { limit: { type: 'number' }, offset: { type: 'number' } } },
+-        category: 'memory',
+-      },
+-    ];
++    return MEMORY_TOOL_DEFINITIONS.map(def => ({
++      ...def,
++      category: 'memory'
++    })) as ToolDefinition[];
+   }
+ }
+diff --git a/backend/src/modules/utility/UtilityModule.ts b/backend/src/modules/utility/UtilityModule.ts
+index 907948ec..21a293cb 100644
+--- a/backend/src/modules/utility/UtilityModule.ts
++++ b/backend/src/modules/utility/UtilityModule.ts
+@@ -5,11 +5,15 @@
+ import type { IModule, ModuleStatus } from '../../types/module.js';
+ import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
+ import type { Logger } from 'pino';
++import * as fs from 'fs';
++import * as path from 'path';
++import { loadConfig } from '../../engine/config.js';
+ 
+ export class UtilityModule implements IModule {
+   readonly name = 'utility';
+   private _status: ModuleStatus = 'initializing';
+   private logger: Logger;
++  private workspace!: string;
+ 
+   constructor(logger: Logger) {
+     this.logger = logger.child({ module: this.name });
+@@ -19,6 +23,8 @@ export class UtilityModule implements IModule {
+ 
+   async initialize(): Promise<void> {
+     this.logger.info('Initializing utility module');
++    const config = loadConfig();
++    this.workspace = config.workspace;
+     this._status = 'ready';
+   }
+ 
+diff --git a/backend/src/server/routes/admin.ts b/backend/src/server/routes/admin.ts
+index 2ae5e66c..e6dca539 100644
+--- a/backend/src/server/routes/admin.ts
++++ b/backend/src/server/routes/admin.ts
+@@ -47,6 +47,12 @@ import {
+   searchKbEntries,
+   getKbEmbeddings,
+   getKbEntryById,
++  getAllKbTags,
++  updateKbEntryTags,
++  renameKbTag,
++  deleteKbTag,
++  mergeKbTags,
++  getKbEntriesByTag,
+ } from '../../admin/admin-db.js';
+ import { loadConfig } from '../../config/BackendConfig.js';
+ 
+@@ -1527,6 +1533,7 @@ export function createAdminRoute(logger: Logger): Hono {
+     const { tags } = await c.req.json();
+     if (!Array.isArray(tags)) return c.json({ error: 'tags must be an array' }, 400);
+     kbTags[entryId] = tags;
++    updateKbEntryTags(entryId, tags);
+     recordAudit(user.userId, user.username, 'TAG_ENTRY', 'kb', entryId, JSON.stringify({ tags }));
+     return c.json({ success: true, entryId, tags: kbTags[entryId] });
+   });
+@@ -1538,7 +1545,17 @@ export function createAdminRoute(logger: Logger): Hono {
+     const permCheck = requirePermission(c, user.userId, 'KB_READ');
+     if (permCheck instanceof Response) return permCheck;
+ 
+-    return c.json({ entryId: c.req.param('id'), tags: kbTags[c.req.param('id')] || [] });
++    const entryId = c.req.param('id');
++    let tags = kbTags[entryId] || [];
++    if (tags.length === 0) {
++      const entry = getKbEntryById(entryId);
++      if (entry && entry.tags) {
++        tags = entry.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0);
++        kbTags[entryId] = tags;
++      }
++    }
++
++    return c.json({ entryId, tags });
+   });
+ 
+   // KB Promotion Queue
+@@ -1782,16 +1799,8 @@ export function createAdminRoute(logger: Logger): Hono {
+     const permCheck = requirePermission(c, user.userId, 'KB_READ');
+     if (permCheck instanceof Response) return permCheck;
+ 
+-    const tagCounts: Record<string, { count: number; lastUsed: string }> = {};
+-    for (const [entryId, tags] of Object.entries(kbTags)) {
+-      if (entryId === '__tag_registry__') continue;
+-      for (const tag of tags) {
+-        if (!tagCounts[tag]) {
+-          tagCounts[tag] = { count: 0, lastUsed: new Date().toISOString() };
+-        }
+-        tagCounts[tag].count++;
+-      }
+-    }
++    const tagCounts = getAllKbTags();
++
+     // Include registered tags with 0 count
+     if (kbTags['__tag_registry__']) {
+       for (const tag of kbTags['__tag_registry__']) {
+@@ -1853,9 +1862,12 @@ export function createAdminRoute(logger: Logger): Hono {
+         renamed++;
+       }
+     }
++    
++    const dbRenamed = renameKbTag(oldName, newName.trim());
++    const totalRenamed = renamed + dbRenamed;
+ 
+-    recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: renamed }));
+-    return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: renamed });
++    recordAudit(user.userId, user.username, 'RENAME_TAG', 'kb', undefined, JSON.stringify({ oldName, newName: newName.trim(), entriesAffected: totalRenamed }));
++    return c.json({ success: true, oldName, newName: newName.trim(), entriesAffected: totalRenamed });
+   });
+ 
+   app.delete('/api/admin/kb/tags/:name', (c) => {
+@@ -1875,8 +1887,11 @@ export function createAdminRoute(logger: Logger): Hono {
+       }
+     }
+ 
+-    recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: removed }));
+-    return c.json({ success: true, tag: tagName, entriesAffected: removed });
++    const dbRemoved = deleteKbTag(tagName);
++    const totalRemoved = removed + dbRemoved;
++
++    recordAudit(user.userId, user.username, 'DELETE_TAG', 'kb', undefined, JSON.stringify({ tag: tagName, entriesAffected: totalRemoved }));
++    return c.json({ success: true, tag: tagName, entriesAffected: totalRemoved });
+   });
+ 
+   app.post('/api/admin/kb/tags/merge', async (c) => {
+@@ -1906,8 +1921,11 @@ export function createAdminRoute(logger: Logger): Hono {
+       }
+     }
+ 
+-    recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: merged }));
+-    return c.json({ success: true, sourceTag, targetTag, entriesAffected: merged });
++    const dbMerged = mergeKbTags(sourceTag, targetTag);
++    const totalMerged = merged + dbMerged;
++
++    recordAudit(user.userId, user.username, 'MERGE_TAGS', 'kb', undefined, JSON.stringify({ sourceTag, targetTag, entriesAffected: totalMerged }));
++    return c.json({ success: true, sourceTag, targetTag, entriesAffected: totalMerged });
+   });
+ 
+   app.get('/api/admin/kb/tags/:name/entries', (c) => {
+@@ -1919,11 +1937,13 @@ export function createAdminRoute(logger: Logger): Hono {
+     const allowedTiers = (permCheck.roleData as any)?.allowedTiers;
+ 
+     const tagName = decodeURIComponent(c.req.param('name'));
+-    const entryIds = Object.entries(kbTags)
++    
++    // Memory entries
++    const memEntryIds = Object.entries(kbTags)
+       .filter(([id, tags]) => id !== '__tag_registry__' && tags.includes(tagName))
+       .map(([entryId]) => entryId);
+-
+-    const entries = entryIds.map(id => {
++    
++    const memEntries = memEntryIds.map(id => {
+       const entry = getKbEntryById(id);
+       if (!entry) return null;
+       return {
+@@ -1935,6 +1955,24 @@ export function createAdminRoute(logger: Logger): Hono {
+       };
+     }).filter(Boolean);
+ 
++    // DB entries
++    const dbRows = getKbEntriesByTag(tagName);
++    const dbEntries = dbRows.map((entry: any) => ({
++      id: entry.id || entry.entry_id,
++      source: entry.source || entry.title || 'Untitled',
++      tier: entry.tier || entry.scope || 'SHARED',
++      type: entry.content_type || entry.type || 'document',
++      createdAt: entry.created_at || null,
++    }));
++
++    // Merge and deduplicate
++    const allEntries = [...memEntries, ...dbEntries];
++    const uniqueEntriesMap = new Map();
++    allEntries.forEach((e: any) => {
++      if (e && !uniqueEntriesMap.has(e.id)) uniqueEntriesMap.set(e.id, e);
++    });
++    const entries = Array.from(uniqueEntriesMap.values());
++
+     let filtered = entries;
+     if (Array.isArray(allowedTiers)) {
+       filtered = entries.filter((e: any) => allowedTiers.includes(e.tier));

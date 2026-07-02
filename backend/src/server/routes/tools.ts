@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { ToolRouter } from '../../tools/ToolRouter.js';
+import type { ToolRouter } from '../../tool-router/ToolRouter.js';
 import type { Logger } from 'pino';
 
 const ToolCallSchema = z.object({
@@ -44,6 +44,12 @@ export function createToolsRoute(router: ToolRouter, logger: Logger): Hono {
     }
 
     const { tool_name, arguments: args } = parsed.data;
+
+    // Inject user context for scope-aware tools
+    const userId = c.req.header('X-User-Id') || c.req.header('x-user-id');
+    if (userId) {
+      (args as any).__userId = userId;
+    }
 
     // Check if tool exists
     const tools = router.listTools();

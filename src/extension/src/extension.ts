@@ -177,7 +177,7 @@ function registerCommands(
       const refreshToken = await authManager.getRefreshToken();
       if (refreshToken) {
         const cfg = new ConfigurationManager().getConfiguration();
-        try { await fetch(cfg.url + '/api/admin/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) }); } catch {}
+        try { await fetch(cfg.url + '/api/admin/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) }); } catch (error) { outputChannel.appendLine('[Extension] Logout request failed: ' + (error as Error).message); }
       }
       await authManager.clearTokens();
       tokenRefreshTimer?.stop();

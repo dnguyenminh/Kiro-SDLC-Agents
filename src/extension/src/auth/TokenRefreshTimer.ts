@@ -84,8 +84,9 @@ export class TokenRefreshTimer implements vscode.Disposable {
 
       // Schedule next refresh
       await this.start();
-    } catch {
+    } catch (error) {
       // Network error — retry once after 30s (EF-3)
+      console.error('[TokenRefresh] Refresh failed:', (error as Error).message);
       this.timer = setTimeout(async () => {
         await this.retryRefresh(refreshToken);
       }, RETRY_DELAY_MS);
@@ -112,7 +113,8 @@ export class TokenRefreshTimer implements vscode.Disposable {
         data.expires_in,
       );
       await this.start();
-    } catch {
+    } catch (error) {
+      console.error('[TokenRefresh] Retry failed, clearing tokens:', (error as Error).message);
       await this.authManager.clearTokens();
     }
   }

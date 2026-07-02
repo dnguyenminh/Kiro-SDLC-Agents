@@ -77,10 +77,10 @@ export class HttpClient {
   }
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    return this.post<ToolResult>("/mcp/tools/call", { name, arguments: args }, 300000);
+    return this.post<ToolResult>("/mcp/tools/call", { tool_name: name, arguments: args }, 300000);
   }
 
-  async stream(path: string, body: unknown, timeout?: number): Promise<ReadableStream<Uint8Array>> {
+  async stream(path: string, body: unknown, timeout?: number, _retried = false): Promise<ReadableStream<Uint8Array>> {
     const headers = await this.getAuthHeaders();
     const url = this._baseUrl + path;
     const response = await fetch(url, {
@@ -89,9 +89,9 @@ export class HttpClient {
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeout || 120000),
     });
-    if (response.status === 401) {
+    if (response.status === 401 && !_retried) {
       await this.authManager.refreshToken();
-      return this.stream(path, body, timeout);
+      return this.stream(path, body, timeout, true);
     }
     if (!response.ok) {
       throw new HttpError(response.status, await response.text());

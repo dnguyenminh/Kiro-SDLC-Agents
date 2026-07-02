@@ -20,7 +20,8 @@ export class WebviewDataFetcher {
     try {
       const client = this.connectionManager.getHttpClient();
       return await client.fetchWebviewData<T>(path);
-    } catch {
+    } catch (error) {
+      console.error('[WebviewDataFetcher] Fetch failed for ' + path + ':', (error as Error).message);
       return null;
     }
   }
@@ -33,7 +34,8 @@ export class WebviewDataFetcher {
     try {
       const client = this.connectionManager.getHttpClient();
       return await client.postWebviewData<T>(path, body);
-    } catch {
+    } catch (error) {
+      console.error('[WebviewDataFetcher] Post failed for ' + path + ':', (error as Error).message);
       return null;
     }
   }

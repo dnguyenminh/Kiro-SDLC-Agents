@@ -1,0 +1,12 @@
+{
+	"mcpServers": {
+		"code-intelligence": {
+			"url": "http://127.0.0.1:9182/mcp",
+			"type": "streamable-http",
+			"disabled": false,
+			"alwaysAllow": [
+				"find_tools"
+			]
+		}
+	}
+}

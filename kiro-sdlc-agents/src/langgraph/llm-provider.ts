@@ -43,7 +43,7 @@ export interface LlmResponse {
   toolCalls?: LlmToolCall[];
 }
 
-export type LlmProviderType = "anthropic" | "openai" | "ollama" | "kiro";
+export type LlmProviderType = "anthropic" | "openai" | "ollama" | "kiro" | "lmstudio" | "openrouter";
 
 /**
  * Unified LLM provider interface.
@@ -64,6 +64,12 @@ export interface LlmProvider {
 
   /** Dispose any held resources (connections, timers). */
   dispose(): void;
+
+  /**
+   * Get the context window size (in tokens) for the current model.
+   * Used for dynamic context budgeting. Returns 0 if unknown.
+   */
+  getContextWindow(): number;
 
   /**
    * Chat with tool calling support. Returns structured response.

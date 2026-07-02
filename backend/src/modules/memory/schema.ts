@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS knowledge_entries (
   summary TEXT NOT NULL,
   type TEXT NOT NULL,
   tier TEXT NOT NULL DEFAULT 'WORKING',
+  scope TEXT NOT NULL DEFAULT 'USER',
+  user_id TEXT DEFAULT NULL,
   source TEXT,
   source_ref TEXT,
   tags TEXT NOT NULL DEFAULT '',
@@ -53,7 +55,7 @@ CREATE TABLE IF NOT EXISTS knowledge_vectors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   entry_id INTEGER NOT NULL UNIQUE,
   vector BLOB NOT NULL,
-  model TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2',
+  model TEXT NOT NULL DEFAULT 'paraphrase-multilingual-MiniLM-L12-v2',
   dimensions INTEGER NOT NULL DEFAULT 384,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (entry_id) REFERENCES knowledge_entries(id) ON DELETE CASCADE
@@ -218,6 +220,9 @@ CREATE TABLE IF NOT EXISTS popular_queries (
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ke_tier ON knowledge_entries(tier);
+CREATE INDEX IF NOT EXISTS idx_ke_scope ON knowledge_entries(scope);
+CREATE INDEX IF NOT EXISTS idx_ke_user_id ON knowledge_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_ke_scope_user ON knowledge_entries(scope, user_id);
 CREATE INDEX IF NOT EXISTS idx_ke_type ON knowledge_entries(type);
 CREATE INDEX IF NOT EXISTS idx_ke_source ON knowledge_entries(source);
 CREATE INDEX IF NOT EXISTS idx_ke_confidence ON knowledge_entries(confidence);

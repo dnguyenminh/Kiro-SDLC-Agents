@@ -63,6 +63,10 @@ export class ModuleRegistry {
     return handlers;
   }
 
+  getModule(name: string): IModule | undefined {
+    return this.modules.get(name);
+  }
+
   getAllToolDefinitions(): ToolDefinition[] {
     const definitions: ToolDefinition[] = [];
     for (const module of this.modules.values()) {

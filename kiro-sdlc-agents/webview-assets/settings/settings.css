@@ -25,7 +25,7 @@ body {
 
 /* Header */
 .settings-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--vscode-panel-border, var(--vscode-editorWidget-border, rgba(128,128,128,0.2)));
 }
@@ -39,6 +39,50 @@ body {
 .settings-header .subtitle {
   font-size: 12px;
   opacity: 0.7;
+}
+
+/* ── Tab Bar ─────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--vscode-panel-border, rgba(128,128,128,0.2));
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+  color: var(--vscode-foreground);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.08));
+}
+
+.tab-btn.active {
+  opacity: 1;
+  color: var(--vscode-button-background, #007acc);
+  border-bottom-color: var(--vscode-button-background, #007acc);
+}
+
+/* ── Tab Panes ───────────────────────────── */
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
 }
 
 /* Cards */
@@ -113,7 +157,8 @@ body {
 }
 
 .form-group input[type="text"],
-.form-group input[type="password"] {
+.form-group input[type="password"],
+.form-group input[type="number"] {
   width: 100%;
   padding: 7px 10px;
   font-size: 13px;
@@ -128,6 +173,22 @@ body {
 
 .form-group input:focus {
   border-color: var(--vscode-focusBorder, #007acc);
+}
+
+/* Checkbox group */
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--vscode-button-background, #007acc);
 }
 
 /* Input with toggle (password visibility) */
@@ -293,6 +354,11 @@ body {
 
   .card {
     padding: 14px;
+  }
+
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .radio-option {

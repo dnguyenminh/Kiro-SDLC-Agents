@@ -15,7 +15,7 @@ export interface ToolDefinition {
 }
 
 export class ToolProxy {
-  private localTools = new Set(["embed_images"]);
+  private localTools = new Set<string>();
   private toolRegistry: Map<string, ToolDefinition> = new Map();
 
   constructor(private readonly httpClient: HttpClient) {}
@@ -30,7 +30,18 @@ export class ToolProxy {
 
   async callTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     if (this.localTools.has(name)) { return this.executeLocal(name, args); }
-    return this.httpClient.callTool(name, args);
+    
+    // Wrapper: Read local file content before sending to remote backend
+    const newArgs = { ...args };
+    if (name === "mem_ingest_file" && typeof args.file_path === "string") {
+      try {
+        newArgs.content = fs.readFileSync(args.file_path, "utf-8");
+      } catch (err: any) {
+        return { content: [{ type: "text", text: `Wrapper Error: Cannot read local file ${args.file_path}: ${err.message}` }] };
+      }
+    }
+    
+    return this.httpClient.callTool(name, newArgs);
   }
 
   getAvailableTools(): ToolDefinition[] { return [...this.toolRegistry.values()]; }
@@ -42,37 +53,6 @@ export class ToolProxy {
   }
 
   private async executeLocal(name: string, args: Record<string, unknown>): Promise<ToolResult> {
-    if (name === "embed_images") { return this.embedImages(args); }
     return { content: [{ type: "text", text: "Unknown local tool: " + name }] };
-  }
-
-  private embedImages(args: Record<string, unknown>): ToolResult {
-    const filePath = args.file_path as string;
-    const outputPath = args.output_path as string;
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!root) { return { content: [{ type: "text", text: "No workspace folder open" }] }; }
-
-    const absInput = path.join(root, filePath);
-    const absOutput = path.join(root, outputPath);
-    if (!fs.existsSync(absInput)) { return { content: [{ type: "text", text: "File not found: " + filePath }] }; }
-
-    let markdown = fs.readFileSync(absInput, "utf-8");
-    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-    let match: RegExpExecArray | null;
-    while ((match = imgRegex.exec(markdown)) !== null) {
-      const imgPath = match[2];
-      if (imgPath.startsWith("data:") || imgPath.startsWith("http")) { continue; }
-      const absImgPath = path.resolve(path.dirname(absInput), imgPath);
-      if (fs.existsSync(absImgPath)) {
-        const ext = path.extname(absImgPath).replace(".", "");
-        const mime = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/" + ext;
-        const data = fs.readFileSync(absImgPath).toString("base64");
-        markdown = markdown.replace(match[0], "![" + match[1] + "](data:" + mime + ";base64," + data + ")");
-      }
-    }
-
-    fs.mkdirSync(path.dirname(absOutput), { recursive: true });
-    fs.writeFileSync(absOutput, markdown, "utf-8");
-    return { content: [{ type: "text", text: "Embedded images written to: " + absOutput }] };
   }
 }

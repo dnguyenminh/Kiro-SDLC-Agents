@@ -26,7 +26,12 @@ export function createLlmProvider(secrets?: vscode.SecretStorage): LlmProvider {
   const customModel = config.get<string>("llmModel", "");
   const ollamaUrl = config.get<string>("ollamaUrl", "http://localhost:11434");
   const anthropicBaseUrl = config.get<string>("anthropicBaseUrl", "");
-  const openaiBaseUrl = config.get<string>("openaiBaseUrl", "");
+  // Read per-provider base URLs
+  const openaiBaseUrl = providerType === "lmstudio"
+    ? (config.get<string>("lmstudioBaseUrl", "") || "http://localhost:1234/v1")
+    : providerType === "openrouter"
+    ? (config.get<string>("openrouterBaseUrl", "") || "https://openrouter.ai/api/v1")
+    : config.get<string>("openaiBaseUrl", "");
 
   return createProviderByType(providerType, secrets, customModel, ollamaUrl, anthropicBaseUrl, openaiBaseUrl);
 }
@@ -76,6 +81,24 @@ export function createProviderByType(
       return new AnthropicProvider(
         secrets ? () => secrets.get(SECRET_KEYS.anthropic) : () => Promise.resolve(undefined),
         gatewayUrl
+      );
+    }
+    case "lmstudio": {
+      // LM Studio uses OpenAI-compatible API at localhost:1234
+      const { OpenAIProvider } = require("./openai-provider");
+      const lmStudioUrl = openaiBaseUrl || "http://localhost:1234/v1";
+      return new OpenAIProvider(
+        () => Promise.resolve("not-needed"),
+        lmStudioUrl
+      );
+    }
+    case "openrouter": {
+      // OpenRouter uses OpenAI-compatible API
+      const { OpenAIProvider } = require("./openai-provider");
+      const orUrl = openaiBaseUrl || "https://openrouter.ai/api/v1";
+      return new OpenAIProvider(
+        secrets ? () => secrets.get(SECRET_KEYS.openai) : () => Promise.resolve(undefined),
+        orUrl
       );
     }
     default:

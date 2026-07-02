@@ -1,0 +1,72 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <!-- Title -->
+    <mxCell id="2" value="KSA-295: Module Relationships — Component Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="234" y="20" width="700" height="30" as="geometry" />
+    </mxCell>
+    <!-- MemoryModule -->
+    <mxCell id="10" value="&lt;b&gt;MemoryModule&lt;/b&gt;&#xa;&#xa;- initialize()&#xa;- shutdown()&#xa;- getToolHandlers()&#xa;- getToolDefinitions()&#xa;&#xa;Timer: setInterval(1h)" style="shape=component;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="80" y="80" width="220" height="150" as="geometry" />
+    </mxCell>
+    <!-- MemoryToolDispatcher -->
+    <mxCell id="20" value="&lt;b&gt;MemoryToolDispatcher&lt;/b&gt;&#xa;&#xa;- dispatch(name, args)&#xa;- resolveAlias()&#xa;- setScopeContext()&#xa;- setPromotionService()&#xa;- handleSearch()&#xa;- handleIngest()&#xa;- handlePromote()" style="shape=component;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="400" y="70" width="230" height="170" as="geometry" />
+    </mxCell>
+    <!-- MemoryEngine -->
+    <mxCell id="30" value="&lt;b&gt;MemoryEngine&lt;/b&gt;&#xa;&#xa;- insert()&#xa;- search() [scope-aware]&#xa;- findFiltered() [scope-aware]&#xa;- promoteEntry()&#xa;- demoteEntry()&#xa;- buildScopeClause()&#xa;- recordAccess()&#xa;- auditLog()" style="shape=component;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="80" y="320" width="230" height="190" as="geometry" />
+    </mxCell>
+    <!-- ScopePromotionService -->
+    <mxCell id="40" value="&lt;b&gt;ScopePromotionService&lt;/b&gt;&#xa;&#xa;- scanForPromotionCandidates()&#xa;- evaluateCriteria()&#xa;- queueCandidates()&#xa;- runPromotionCycle()&#xa;- listPending()&#xa;- approve()&#xa;- reject()&#xa;- requestSharedPromotion()&#xa;- promoteOnMerge()" style="shape=component;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="400" y="320" width="260" height="200" as="geometry" />
+    </mxCell>
+    <!-- Models -->
+    <mxCell id="50" value="&lt;b&gt;models.ts&lt;/b&gt;&#xa;&#xa;- KBScope&#xa;- ScopeContext&#xa;- KnowledgeEntry&#xa;- SearchResult&#xa;- PromotionCandidate&#xa;- PromotionConfig" style="shape=note;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="740" y="80" width="200" height="150" as="geometry" />
+    </mxCell>
+    <!-- Schema / DB -->
+    <mxCell id="60" value="&lt;b&gt;schema.ts&lt;/b&gt;&#xa;+ migrations/001-add-scope-columns.ts&#xa;&#xa;Tables:&#xa;- knowledge_entries&#xa;- kb_promotion_queue&#xa;- knowledge_fts (FTS5)&#xa;- citations&#xa;- consolidation_log" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;align=left;spacingLeft=10;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="740" y="320" width="220" height="180" as="geometry" />
+    </mxCell>
+    <!-- HTTP Routes -->
+    <mxCell id="70" value="&lt;b&gt;routes/tools.ts&lt;/b&gt;&#xa;&#xa;POST /mcp/tools/call&#xa;- X-User-Id extraction&#xa;- __userId injection" style="shape=component;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="80" y="570" width="220" height="100" as="geometry" />
+    </mxCell>
+    <!-- Edges -->
+    <mxCell id="100" value="creates" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="10" target="20">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="101" value="creates" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="10" target="30">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="102" value="creates" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" edge="1" parent="1" source="10" target="40">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="103" value="uses" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="20" target="30">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="104" value="delegates" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="20" target="40">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="105" value="reads/writes" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="30" target="60">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="106" value="reads/writes" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="40" target="60">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="107" value="imports" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#666666;" edge="1" parent="1" source="20" target="50">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="108" value="imports" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#666666;" edge="1" parent="1" source="30" target="50">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="109" value="imports" style="edgeStyle=orthogonalEdgeStyle;dashed=1;strokeColor=#666666;" edge="1" parent="1" source="40" target="50">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="110" value="routes to" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="70" target="10">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

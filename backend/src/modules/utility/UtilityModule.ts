@@ -5,11 +5,15 @@
 import type { IModule, ModuleStatus } from '../../types/module.js';
 import type { ToolHandler, ToolDefinition } from '../../types/tool.js';
 import type { Logger } from 'pino';
+import * as fs from 'fs';
+import * as path from 'path';
+import { loadConfig } from '../../engine/config.js';
 
 export class UtilityModule implements IModule {
   readonly name = 'utility';
   private _status: ModuleStatus = 'initializing';
   private logger: Logger;
+  private workspace!: string;
 
   constructor(logger: Logger) {
     this.logger = logger.child({ module: this.name });
@@ -19,6 +23,8 @@ export class UtilityModule implements IModule {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing utility module');
+    const config = loadConfig();
+    this.workspace = config.workspace;
     this._status = 'ready';
   }
 

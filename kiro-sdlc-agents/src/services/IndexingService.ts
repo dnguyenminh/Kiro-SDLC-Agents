@@ -1,58 +1,101 @@
 /**
- * IndexingService — Upload documents and source files to remote backend for indexing.
+ * IndexingService — orchestrates workspace indexing with injected dependencies.
  */
-
 import * as vscode from "vscode";
-import { HttpClient } from "../proxy/HttpClient";
+import * as path from "path";
+import { IndexerHttpClient } from "./IndexerHttpClient";
+import { convertFileToMarkdown } from "../converter";
+import { discoverDocuments } from "../indexer-discovery";
+
+export interface IndexOptions {
+    code: boolean;
+    documents: boolean;
+    sync: boolean;
+}
+
+export type ProgressReporter = vscode.Progress<{ message?: string }>;
 
 export class IndexingService {
-  constructor(private readonly httpClient: HttpClient) {}
+    constructor(private readonly httpClient: IndexerHttpClient) {}
 
-  /**
-   * Index markdown/document files.
-   */
-  async indexDocuments(): Promise<{ indexed: number }> {
-    const files = await vscode.workspace.findFiles(
-      "**/*.md",
-      "{node_modules,dist,.git,build,out}/**"
-    );
-    return this.uploadFiles(files, "/api/index/documents");
-  }
+    async indexWorkspace(root: string, options: IndexOptions, token?: string): Promise<string[]> {
+        const results: string[] = [];
 
-  /**
-   * Index source code files.
-   */
-  async indexSource(): Promise<{ indexed: number }> {
-    const files = await vscode.workspace.findFiles(
-      "**/*.{ts,js,kt,java,py,go,rs,tsx,jsx}",
-      "{node_modules,dist,.git,build,out}/**"
-    );
-    return this.uploadFiles(files, "/api/index/source");
-  }
+        await vscode.window.withProgress(
+            { location: vscode.ProgressLocation.Notification, title: "Indexing workspace...", cancellable: false },
+            async (report) => {
+                if (options.code) {
+                    report.report({ message: "Scanning and uploading source code files..." });
+                    const res = await this.httpClient.uploadSourceFiles(report, token);
+                    results.push(res.summary);
+                }
+                if (options.documents) {
+                    report.report({ message: "Discovering documents..." });
+                    results.push(await this.indexDocuments(root, report, token));
+                }
+                if (options.sync) {
+                    report.report({ message: "Syncing code symbols to memory..." });
+                    results.push("✅ Code symbol sync triggered");
+                }
+            }
+        );
 
-  private async uploadFiles(
-    files: vscode.Uri[],
-    endpoint: string
-  ): Promise<{ indexed: number }> {
-    const maxSize = 1_000_000; // 1MB limit per file
-    const batch: Array<{ path: string; content: string }> = [];
-
-    for (const file of files.slice(0, 500)) {
-      const stat = await vscode.workspace.fs.stat(file);
-      if (stat.size > maxSize) { continue; }
-      const content = await vscode.workspace.fs.readFile(file);
-      const relativePath = vscode.workspace.asRelativePath(file);
-      batch.push({
-        path: relativePath,
-        content: Buffer.from(content).toString("utf-8"),
-      });
+        return results;
     }
 
-    const result = await this.httpClient.post<{ indexed: number }>(
-      endpoint,
-      { files: batch },
-      600000
-    );
-    return result;
-  }
+    async indexDocuments(root: string, report: ProgressReporter, token?: string): Promise<string> {
+        const docs = discoverDocuments(root);
+        if (docs.length === 0) { return "ℹ️ No documents found in documents/ folder"; }
+
+        const mdDocs = docs.filter(d => d.format === "markdown");
+        const nonMdDocs = docs.filter(d => d.format !== "markdown");
+        report.report({ message: `Found ${docs.length} files (${nonMdDocs.length} need conversion)` });
+
+        const convertedDocs: Array<{ path: string; type: string; ticket: string; format: string; content?: string }> = [];
+        let convertedCount = 0;
+        let skippedCount = 0;
+        const errors: Array<{ file: string; error: string }> = [];
+        const channel = vscode.window.createOutputChannel("SDLC Indexing");
+
+        for (let i = 0; i < nonMdDocs.length; i++) {
+            const doc = nonMdDocs[i];
+            report.report({ message: `Converting ${i + 1}/${nonMdDocs.length} files...` });
+            const absPath = path.join(root, doc.path);
+            const result = await convertFileToMarkdown(absPath, doc.format, token);
+            if (result.success && result.markdown && result.markdown.trim().length > 0) {
+                convertedDocs.push({ ...doc, content: result.markdown });
+                convertedCount++;
+                channel.appendLine(`  ✅ Converted: ${doc.path} (${result.conversionTime}ms)`);
+            } else {
+                skippedCount++;
+                if (!result.success) { errors.push({ file: doc.path, error: result.error || "unknown" }); }
+                channel.appendLine(`  ⏭️ Skipped: ${doc.path}`);
+            }
+        }
+
+        const allDocsForIngest = [...mdDocs, ...convertedDocs];
+        report.report({ message: `Indexing ${allDocsForIngest.length} files...` });
+        const apiResult = await this.httpClient.ingestDocuments(allDocsForIngest, report, token);
+
+        return this.buildSummary(docs.length, mdDocs.length, convertedCount, skippedCount, apiResult.summary, errors);
+    }
+
+    private buildSummary(
+        total: number, direct: number, converted: number, skipped: number,
+        apiSummary: string, errors: Array<{ file: string; error: string }>
+    ): string {
+        const summary = [
+            `✅ Documents: ${total} discovered`,
+            `   📄 Direct: ${direct}`,
+            `   🔄 Converted: ${converted}`,
+            `   ⏭️ Skipped: ${skipped}`,
+            `   ${apiSummary}`,
+        ];
+        if (errors.length > 0) {
+            summary.push(`   ⚠️ Errors:`);
+            for (const e of errors.slice(0, 5)) { summary.push(`      - ${path.basename(e.file)}: ${e.error}`); }
+            if (errors.length > 5) { summary.push(`      ... and ${errors.length - 5} more`); }
+        }
+        return summary.join("\n");
+    }
 }

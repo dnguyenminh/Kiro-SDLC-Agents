@@ -1,14 +1,14 @@
 /**
- * McpServerManager — Re-exports the in-process implementation (KSA-260).
+ * McpServerManager — Proxy class for RemoteBackendClient (KSA-293).
  *
- * Previously this file contained the child-process spawn-based server manager.
- * Now it re-exports from mcp-server-inprocess.ts which runs the MCP server
- * directly in the extension host process.
+ * Preserves the old McpServerManager class name to minimize refactoring across UI panels,
+ * but implements the new Light Client architecture connecting to the remote backend.
  *
- * Legacy implementation preserved in mcp-server-manager-legacy.ts for reference.
+ * NOTE: McpServerManager is an alias for RemoteBackendClient. New code should import
+ * RemoteBackendClient directly for clarity.
  */
 
-export { McpServerManager } from "./mcp-server-inprocess";
+export { RemoteBackendClient as McpServerManager, RemoteBackendClient } from "./remote-backend-client";
 
 // Re-export getNonce utility that some panels import from this module
 import * as crypto from "crypto";

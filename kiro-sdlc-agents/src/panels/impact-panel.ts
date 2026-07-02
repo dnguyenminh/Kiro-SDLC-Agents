@@ -106,7 +106,7 @@ vscode.postMessage({type:'openFile',file:el.dataset.file,line:parseInt(el.datase
         await this.loadData();
         break;
       case "manualRetry":
-        try { await this.mcpManager.restart(); } catch { /* ignore */ }
+        try { await this.mcpManager.reconnect(); } catch { /* ignore */ }
         break;
       default:
         await this.handleOpenFile(msg as any);

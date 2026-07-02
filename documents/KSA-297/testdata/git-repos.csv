@@ -1,0 +1,5 @@
+url,host,owner,repo,operation,expected
+https://github.com/octocat/Hello-World,github.com,octocat,Hello-World,tree,file_list
+https://github.com/octocat/Hello-World,github.com,octocat,Hello-World,readme,content
+https://gitlab.com/gitlab-org/gitlab,gitlab.com,gitlab-org,gitlab,tree,file_list
+https://github.com/nonexistent/repo-404,github.com,nonexistent,repo-404,tree,error_404

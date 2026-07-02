@@ -2,12 +2,23 @@
  * Data models for the memory engine.
  */
 
+/** KB Scope — determines visibility isolation level. */
+export type KBScope = 'USER' | 'PROJECT' | 'SHARED';
+
+/** Context passed to every tool call for scope enforcement. */
+export interface ScopeContext {
+  userId: string;
+  projectId?: string;
+}
+
 export interface KnowledgeEntry {
   id: number;
   content: string;
   summary: string;
   type: string;
   tier: string;
+  scope: KBScope;
+  user_id: string | null;
   source: string | null;
   source_ref: string | null;
   tags: string;

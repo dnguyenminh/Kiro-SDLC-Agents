@@ -14,7 +14,7 @@
 import type { ChatModelEntry } from "./message-protocol";
 
 /** Provider id as stored in kiroSdlc.llmProvider */
-export type ChatProvider = "anthropic" | "openai" | "ollama" | "onnx";
+export type ChatProvider = "anthropic" | "openai" | "ollama" | "onnx" | "lmstudio" | "openrouter";
 
 /** Default model id per provider (used when no override is configured). */
 export const DEFAULT_MODELS: Record<string, string> = {
@@ -23,6 +23,8 @@ export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o",
   ollama: "llama3.1",
   onnx: "phi-3-mini",
+  lmstudio: "local-model",
+  openrouter: "anthropic/claude-sonnet-4",
 };
 
 /** Available models per provider — static catalog (fallback when gateway is unreachable). */
@@ -72,6 +74,29 @@ export const AVAILABLE_MODELS: Record<string, ChatModelEntry[]> = {
     { id: "phi-3-mini", name: "Phi-3 Mini (3.8B)" },
     { id: "smollm2-360m", name: "SmolLM2 (360M)" },
   ],
+  lmstudio: [
+    { id: "local-model", name: "Local Model (auto-detect)" },
+    { id: "qwen2.5-coder-32b", name: "Qwen 2.5 Coder 32B" },
+    { id: "deepseek-coder-v2-lite", name: "DeepSeek Coder V2 Lite" },
+    { id: "codellama-34b", name: "Code Llama 34B" },
+    { id: "mistral-7b", name: "Mistral 7B" },
+    { id: "llama-3.1-8b", name: "Llama 3.1 8B" },
+    { id: "phi-3-medium", name: "Phi-3 Medium (14B)" },
+  ],
+  openrouter: [
+    { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4" },
+    { id: "anthropic/claude-opus-4", name: "Claude Opus 4" },
+    { id: "anthropic/claude-haiku-4", name: "Claude Haiku 4" },
+    { id: "openai/gpt-4o", name: "GPT-4o" },
+    { id: "openai/o3", name: "o3" },
+    { id: "openai/o4-mini", name: "o4 Mini" },
+    { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+    { id: "deepseek/deepseek-r1", name: "DeepSeek R1" },
+    { id: "deepseek/deepseek-v3", name: "DeepSeek V3" },
+    { id: "meta-llama/llama-4-maverick", name: "Llama 4 Maverick" },
+    { id: "qwen/qwen3-235b", name: "Qwen3 235B" },
+  ],
 };
 
 /** Get the static fallback model list for a provider (never undefined). */
@@ -94,7 +119,11 @@ export async function fetchGatewayModels(baseUrl: string): Promise<ChatModelEntr
   if (!baseUrl) {
     return null;
   }
-  const modelsUrl = `${baseUrl.replace(/\/$/, "")}/v1/models`;
+  const cleanBase = baseUrl.replace(/\/$/, "");
+  // If base URL already ends with /v1, don't double it
+  const modelsUrl = cleanBase.endsWith("/v1") 
+    ? `${cleanBase}/models`
+    : `${cleanBase}/v1/models`;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);

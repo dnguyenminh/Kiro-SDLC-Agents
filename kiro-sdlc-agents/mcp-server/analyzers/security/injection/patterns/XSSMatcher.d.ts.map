@@ -1,1 +1,0 @@
-{"version":3,"file":"XSSMatcher.d.ts","sourceRoot":"","sources":["../../../../../src/analyzers/security/injection/patterns/XSSMatcher.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,EAAE,cAAc,EAAE,MAAM,sBAAsB,CAAC;AACtD,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,gBAAgB,CAAC;AAEvD,qBAAa,UAAW,SAAQ,cAAc;IAC5C,QAAQ,CAAC,QAAQ,SAAS;IAC1B,QAAQ,CAAC,QAAQ,EAAE,gBAAgB,EAAE,CA6CnC;CACH"}

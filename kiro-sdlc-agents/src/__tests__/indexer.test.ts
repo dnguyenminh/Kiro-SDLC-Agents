@@ -73,7 +73,13 @@ describe("Document Discovery Logic", () => {
         const ext = path.extname(entry.name).toLowerCase();
         if (!INDEXABLE_EXTENSIONS.has(ext)) { continue; }
         const baseName = path.basename(entry.name, ext).toUpperCase();
-        const docType = DOCUMENT_TYPES[baseName] || "CONTEXT";
+        let docType = "CONTEXT";
+        for (const key of Object.keys(DOCUMENT_TYPES)) {
+          if (baseName === key || baseName.startsWith(key + "-") || baseName.startsWith(key + "_") || baseName.startsWith(key)) {
+            docType = DOCUMENT_TYPES[key];
+            break;
+          }
+        }
         const format = ext === ".md" ? "markdown" : ext.replace(".", "");
         results.push({ path: `${relativePath}/${entry.name}`, type: docType, ticket, format });
       }
@@ -149,6 +155,16 @@ describe("Document Discovery Logic", () => {
     fs.writeFileSync(path.join(documentsDir, "KSA-239", "BRD.md"), "#");
     const results = discoverDocumentsTest(tmpDir);
     expect(results[0]?.ticket).toBe("KSA-239");
+  });
+
+  it("UT-017: classifies files with extra suffixes correctly", () => {
+    const ticketDir = path.join(documentsDir, "TEST-1");
+    fs.mkdirSync(ticketDir);
+    fs.writeFileSync(path.join(ticketDir, "TDD-v1-KSA-26.docx"), "t");
+    fs.writeFileSync(path.join(ticketDir, "BRD_STORY_8.md"), "b");
+    const results = discoverDocumentsTest(tmpDir);
+    expect(results.find(r => r.path.includes("TDD-v1-KSA-26.docx"))?.type).toBe("ARCHITECTURE");
+    expect(results.find(r => r.path.includes("BRD_STORY_8.md"))?.type).toBe("REQUIREMENT");
   });
 
   it("IT-009: mixed structure with exclusions", () => {

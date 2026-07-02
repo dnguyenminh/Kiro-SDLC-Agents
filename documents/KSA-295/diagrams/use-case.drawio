@@ -1,0 +1,169 @@
+<mxfile host="65bd71144e">
+    <diagram name="Use Case — Multi-Scope KB" id="uc1">
+        <mxGraphModel dx="474" dy="416" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Use Case Diagram — Multi-Scope Knowledge Base (KSA-295)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="15" width="500" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="boundary" value="Multi-Scope KB System" style="shape=rectangle;dashed=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;spacingTop=10;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="60" width="580" height="720" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_dev" value="Developer" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="140" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_lead" value="Team Lead" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="310" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_admin" value="Admin" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="480" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_devops" value="DevOps" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="970" y="330" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_architect" value="Architect" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="980" y="600" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="actor_system" value="System&#10;(Background)" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="250" width="40" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc1_node" value="Ingest KB Entry&#10;(private by default)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="90" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc2_node" value="Search/List KB&#10;(scope-filtered)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="190" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc3_node" value="Auto-Detect High-Value&#10;Entries (scan)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="290" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc4_node" value="Approve/Reject&#10;Promotion" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="390" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc5_node" value="Auto-Promote&#10;on Merge/Release" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="490" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc6_node" value="Request PROJECT&#10;→ SHARED Promotion" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="590" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc7_node" value="Promote Entry&#10;(scope change)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="440" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="uc8_node" value="Demote Entry&#10;(scope change)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="560" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_dev_ingest" style="html=1;" parent="1" source="actor_dev" target="uc1_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="125"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_dev_search" style="html=1;" parent="1" source="actor_dev" target="uc2_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="225"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_lead_search" style="html=1;" parent="1" source="actor_lead" target="uc2_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_lead_scan" style="html=1;" parent="1" source="actor_lead" target="uc3_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="325"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_admin_approve" style="html=1;" parent="1" source="actor_admin" target="uc4_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="425"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_admin_promote" style="html=1;" parent="1" source="actor_admin" target="uc7_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="510"/>
+                            <mxPoint x="640" y="510"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_admin_demote" style="html=1;" parent="1" source="actor_admin" target="uc8_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="595"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_devops_merge" style="html=1;" parent="1" source="actor_devops" target="uc5_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="900" y="525"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_arch_shared" style="html=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="actor_architect" target="uc6_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1000" y="670"/>
+                            <mxPoint x="480" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_system_scan" style="html=1;" parent="1" source="actor_system" target="uc3_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="900" y="325"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_include_approve_promote" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="uc4_node" target="uc7_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_include_merge_promote" value="&lt;i&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/i&gt;" style="dashed=1;endArrow=open;html=1;fontSize=9;fontStyle=2;edgeStyle=orthogonalEdgeStyle;" parent="1" source="uc5_node" target="uc7_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend_title" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="680" width="60" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg1" value="" style="ellipse;fillColor=#dae8fc;strokeColor=#6c8ebf;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="710" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg1_txt" value="Core KB Operations" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="662" y="704" width="120" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg2" value="" style="ellipse;fillColor=#d5e8d4;strokeColor=#82b366;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="733" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg2_txt" value="Promotion Actions" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="662" y="727" width="110" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg3" value="" style="ellipse;fillColor=#fff2cc;strokeColor=#d6b656;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="756" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg3_txt" value="Admin Review" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="662" y="750" width="90" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg4" value="" style="ellipse;fillColor=#f8cecc;strokeColor=#b85450;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="710" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg4_txt" value="Auto Trigger" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="812" y="704" width="80" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg5" value="" style="ellipse;fillColor=#e1d5e7;strokeColor=#9673a6;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="733" width="16" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg5_txt" value="SHARED Scope" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="812" y="727" width="100" height="25" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

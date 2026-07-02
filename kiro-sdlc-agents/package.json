@@ -2,7 +2,7 @@
   "name": "kiro-sdlc-agents",
   "displayName": "Kiro SDLC Agents",
   "description": "Thin client for Kiro SDLC multi-agent pipeline — connects to remote backend for KB, indexing, and AI features",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "dnguyenminh",
   "license": "MIT",
   "repository": {
@@ -135,6 +135,10 @@
       {
         "command": "kiroSdlc.syncWorkspace",
         "title": "Kiro SDLC: Sync Workspace"
+      },
+      {
+        "command": "kiroSdlc.indexSalesforceProject",
+        "title": "Kiro SDLC: Index Salesforce Project"
       }
     ],
     "viewsContainers": {
@@ -192,10 +196,66 @@
           "default": 30000,
           "description": "Health check interval (ms)"
         },
+        "kiroSdlc.mcpServerPort": {
+          "type": "number",
+          "default": 9181,
+          "description": "Local MCP wrapper server port — the in-process HTTP server that the IDE connects to"
+        },
+        "kiroSdlc.enableMcpServer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable the local MCP wrapper server on startup"
+        },
+        "kiroSdlc.mcpServerUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Override URL for the local MCP wrapper server (leave empty to use mcpServerPort)"
+        },
         "kiroSdlc.configPath": {
           "type": "string",
           "default": ".code-intel/orchestration.json",
           "description": "Path to orchestration config file (relative to workspace root)"
+        },
+        "kiroSdlc.llmProvider": {
+          "type": "string",
+          "default": "anthropic",
+          "enum": ["anthropic", "openai", "ollama", "lmstudio", "openrouter", "onnx", "kiro"],
+          "description": "Active LLM provider"
+        },
+        "kiroSdlc.llmModel": {
+          "type": "string",
+          "default": "",
+          "description": "Override model for the selected provider"
+        },
+        "kiroSdlc.anthropicBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for Anthropic API (leave empty for official)"
+        },
+        "kiroSdlc.openaiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for OpenAI API"
+        },
+        "kiroSdlc.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "kiroSdlc.lmstudioBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "LM Studio server URL (default: http://localhost:1234/v1)"
+        },
+        "kiroSdlc.openrouterBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OpenRouter API base URL"
+        },
+        "kiroSdlc.kiroModel": {
+          "type": "string",
+          "default": "auto",
+          "description": "Kiro gateway model selection"
         }
       }
     },
@@ -233,10 +293,12 @@
     "test:watch": "mocha --watch"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.0.0",
     "@types/sinon": "^17.0.3",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.21.0",
@@ -245,7 +307,14 @@
     "sinon": "^17.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0",
+    "uuid": "^14.0.1",
     "vitest": "^4.1.8"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@langchain/core": "^1.2.0",
+    "@langchain/langgraph": "^1.4.4",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "filetomarkdown": "^0.6.9"
+  }
 }

@@ -8,7 +8,7 @@ const buildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
   outfile: 'out/extension.js',
-  external: ['vscode'],
+  external: ['vscode', 'onnxruntime-node'],
   format: 'cjs',
   platform: 'node',
   target: 'node18',

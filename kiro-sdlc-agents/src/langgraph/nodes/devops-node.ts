@@ -135,6 +135,7 @@ DIAGRAMS (MANDATORY):
         type: "DOCUMENT",
         source: "langgraph-devops-dpg-rln",
         tags: [state.ticketKey, "DPG", "RLN", "devops-agent", "langgraph"],
+        scope: "USER",
       });
     } catch {
       // KB ingest failure is non-blocking
@@ -160,6 +161,16 @@ DIAGRAMS (MANDATORY):
       path: `documents/${state.ticketKey}/RLN.md`,
       completedAt: new Date().toISOString(),
     } satisfies DocumentState;
+
+    // Auto-promote all ticket-related USER entries to PROJECT on deploy/release
+    try {
+      await this.callMcp("mem_promote", {
+        action: "promote_on_merge",
+        ticket_key: state.ticketKey,
+      });
+    } catch {
+      // Non-blocking — promotion failure shouldn't block deployment
+    }
 
     return {
       agentOutputs: [output],

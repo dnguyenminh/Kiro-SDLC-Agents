@@ -1,0 +1,8 @@
+method,url,body,expected_status,description
+GET,https://httpbin.org/get,,200,Basic GET
+POST,https://httpbin.org/post,{"key":"value"},200,POST JSON
+PUT,https://httpbin.org/put,{"update":"data"},200,PUT request
+DELETE,https://httpbin.org/delete,,200,DELETE request
+PATCH,https://httpbin.org/patch,{"partial":"update"},200,PATCH request
+GET,https://httpbin.org/status/404,,404,Not Found
+GET,https://httpbin.org/delay/35,,timeout,Timeout 30s

@@ -1,0 +1,16 @@
+ip,type,expected_result
+127.0.0.1,loopback,blocked
+127.0.0.255,loopback,blocked
+10.0.0.1,private-A,blocked
+10.255.255.255,private-A,blocked
+172.16.0.1,private-B,blocked
+172.31.255.255,private-B,blocked
+192.168.0.1,private-C,blocked
+192.168.255.255,private-C,blocked
+169.254.1.1,link-local,blocked
+::1,ipv6-loopback,blocked
+fd00::1,ipv6-private,blocked
+8.8.8.8,public,allowed
+1.1.1.1,public,allowed
+93.184.216.34,public,allowed
+2606:4700::6810:85e5,ipv6-public,allowed

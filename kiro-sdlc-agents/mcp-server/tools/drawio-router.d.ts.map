@@ -1,1 +1,0 @@
-{"version":3,"file":"drawio-router.d.ts","sourceRoot":"","sources":["../../src/tools/drawio-router.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,EAAE,YAAY,EAAe,MAAM,oBAAoB,CAAC;AAE/D,MAAM,WAAW,QAAQ;IAAG,CAAC,EAAE,MAAM,CAAC;IAAC,CAAC,EAAE,MAAM,CAAC;CAAE;AAEnD,uFAAuF;AACvF,wBAAgB,UAAU,CAAC,KAAK,EAAE,YAAY,GAAG,GAAG,CAAC,MAAM,EAAE,QAAQ,EAAE,CAAC,CAcvE"}

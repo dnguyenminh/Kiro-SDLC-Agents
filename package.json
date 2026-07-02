@@ -1,0 +1,23 @@
+{
+  "name": "kiro-extension",
+  "version": "0.0.1",
+  "main": "out/extension.js",
+  "scripts": {
+    "build": "node ./kiro-sdlc-agents/extension/esbuild.js",
+    "test": "vitest",
+    "check": "npm run build && npm run test"
+  },
+  "devDependencies": {
+    "@postman/postman-mcp-server": "^2.3.7",
+    "vitest": "^4.1.9",
+    "vsce": "^1.25.1"
+  },
+  "bundleDependencies": [],
+  "engines": {
+    "node": "18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "typescript": "^6.0.3"
+  }
+}

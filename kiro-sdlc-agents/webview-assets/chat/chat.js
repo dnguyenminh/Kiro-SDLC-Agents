@@ -803,7 +803,11 @@
         }
         break;
       case "chat:workingStatus":
-        setWorking(msg.working, msg.label);
+        if (msg.working) {
+          setWorking(true, msg.label);
+        } else {
+          setGraphDone();
+        }
         break;
       case "chat:nodeDetails":
         break;
@@ -888,18 +892,23 @@
   // === Working Status ===
   function setWorking(active, label) {
     if (active) {
-      // Don't re-activate if graph already signaled completion
+      // Don't re-activate if graph already signaled final completion
       if (graphDone) return;
       workingBar.classList.add("active");
       workingText.textContent = label || "Working...";
       stopBtn.style.display = "inline-flex";
       isStreaming = true;
     } else {
-      graphDone = true; // Mark done — ignore subsequent setWorking(true) calls
       workingBar.classList.remove("active");
       stopBtn.style.display = "none";
       isStreaming = false;
     }
+  }
+
+  // Called only by chat:workingStatus message — marks graph as truly done
+  function setGraphDone() {
+    graphDone = true;
+    setWorking(false);
   }
 
   // Map a node status signal to a friendly working-bar label.
@@ -1058,7 +1067,9 @@
     }
 
     if (Object.keys(streamingNodes).length === 0) {
-      setWorking(false);
+      // Don't hide working bar here — only chat:workingStatus message controls it.
+      // This prevents premature hide when verify loops back.
+      isStreaming = false;
     }
   }
 
@@ -1518,7 +1529,8 @@
       actionsDiv.appendChild(createCodeBtn("Apply", pre, function (p) {
         var code = p.querySelector("code");
         var text = code ? code.textContent : p.textContent;
-        vscode.postMessage({ type: "chat:applyCode", code: text || "" });
+        var filePath = extractFilePathFromContext(p);
+        vscode.postMessage({ type: "chat:applyCode", code: text || "", filePath: filePath || "" });
       }));
 
       actionsDiv.appendChild(createCodeBtn("Insert", pre, function (p) {
@@ -1550,6 +1562,39 @@
       return function () { handler(p); };
     })(pre));
     return btn;
+  }
+
+  // Extract file path from surrounding context of a code block
+  function extractFilePathFromContext(preEl) {
+    // Strategy 1: Check data-file attribute (set by markdown renderer)
+    if (preEl.dataset && preEl.dataset.file) return preEl.dataset.file;
+
+    // Strategy 2: Look at preceding sibling text for file path patterns
+    var prev = preEl.previousElementSibling;
+    if (prev) {
+      var text = prev.textContent || "";
+      // Match patterns like "src/index.ts:", "File: src/main.ts", "`path/to/file.ext`"
+      var pathMatch = text.match(/(?:^|\s|`)([a-zA-Z0-9_./-]+\.[a-zA-Z]{1,10})(?:`|:|$|\s)/);
+      if (pathMatch) return pathMatch[1];
+    }
+
+    // Strategy 3: Look at the lang label — sometimes it's "typescript:src/file.ts"
+    var langLabel = preEl.querySelector(".code-lang-label");
+    if (langLabel) {
+      var labelText = langLabel.textContent || "";
+      if (labelText.includes("/") || labelText.includes("\\")) return labelText;
+    }
+
+    // Strategy 4: Scan parent message for file path mentioned before this code block
+    var message = preEl.closest(".message");
+    if (message) {
+      var allText = message.textContent || "";
+      // Find paths like src/xxx.ts, backend/xxx.kt etc
+      var paths = allText.match(/(?:src|backend|lib|app)\/[\w./-]+\.\w{1,10}/g);
+      if (paths && paths.length > 0) return paths[0];
+    }
+
+    return "";
   }
 
   // === Utilities ===
