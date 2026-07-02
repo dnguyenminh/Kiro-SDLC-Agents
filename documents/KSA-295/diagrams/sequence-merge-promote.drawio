@@ -1,0 +1,110 @@
+<mxfile host="65bd71144e">
+    <diagram id="fsd_sequence-merge-promote" name="Page-1">
+        <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence — Merge/Release Auto-Promote (UC-5)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="150" y="10" width="440" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="devops_h" value="&lt;b&gt;CI/CD Pipeline&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="40" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="dispatch_h" value="&lt;b&gt;MemoryToolDispatcher&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="210" y="50" width="170" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="promo_h2" value="&lt;b&gt;ScopePromotionService&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="430" y="50" width="170" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="db_h2" value="&lt;b&gt;SQLite DB&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="660" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="devops_l" style="dashed=1;endArrow=none;html=1;strokeColor=#d6b656;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="100" y="90" as="sourcePoint"/>
+        <mxPoint x="100" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="dispatch_l" style="dashed=1;endArrow=none;html=1;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="295" y="90" as="sourcePoint"/>
+        <mxPoint x="295" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="promo_l2" style="dashed=1;endArrow=none;html=1;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="90" as="sourcePoint"/>
+        <mxPoint x="515" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="db_l2" style="dashed=1;endArrow=none;html=1;strokeColor=#666666;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="710" y="90" as="sourcePoint"/>
+        <mxPoint x="710" y="440" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s1" value="mem_promote(action=promote_on_merge, ticket_key=KSA-295)" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="100" y="120" as="sourcePoint"/>
+        <mxPoint x="295" y="120" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s2" value="handlePromote(action=promote_on_merge)" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="295" y="150" as="sourcePoint"/>
+        <mxPoint x="515" y="150" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s3" value="promoteOnMerge(ticketKey)" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="180" as="sourcePoint"/>
+        <mxPoint x="515" y="195" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="555" y="180"/>
+          <mxPoint x="555" y="195"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s4" value="SELECT * FROM knowledge_entries WHERE scope=USER AND (tags/source/summary LIKE %ticket%)" style="html=1;endArrow=classic;endSize=6;fontSize=8;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="220" as="sourcePoint"/>
+        <mxPoint x="710" y="220" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s5" value="matching entries[]" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="710" y="250" as="sourcePoint"/>
+        <mxPoint x="515" y="250" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="loop2" value="loop [for each USER entry]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontSize=10;fontStyle=2;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="440" y="270" width="330" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="s6" value="UPDATE scope=PROJECT WHERE id=?" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="300" as="sourcePoint"/>
+        <mxPoint x="710" y="300" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s7" value="INSERT INTO consolidation_log (reason=merge)" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="340" as="sourcePoint"/>
+        <mxPoint x="710" y="340" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s8" value="{promoted: N, skipped: M}" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="515" y="390" as="sourcePoint"/>
+        <mxPoint x="295" y="390" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="s9" value="promoteOnMerge(KSA-295): N promoted, M skipped" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="295" y="420" as="sourcePoint"/>
+        <mxPoint x="100" y="420" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
+    </diagram>
+</mxfile>

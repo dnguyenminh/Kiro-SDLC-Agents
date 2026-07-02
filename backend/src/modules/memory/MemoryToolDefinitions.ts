@@ -11,6 +11,7 @@ export const TIER1_TOOLS = [
         limit: { type: 'number', description: 'Max results (default 10)' },
         tier: { type: 'string', description: 'Filter by tier: WORKING, EPISODIC, SEMANTIC, PROCEDURAL' },
         type: { type: 'string', description: 'Filter by type: DECISION, ERROR_PATTERN, ARCHITECTURE, etc.' },
+        scope: { type: 'string', description: 'Filter by scope: USER, PROJECT, SHARED, all (default: auto from context)' },
         detail: { type: 'boolean', description: 'If true, include content preview (default: summary only)' },
       },
       required: ['query'],
@@ -25,6 +26,8 @@ export const TIER1_TOOLS = [
         content: { type: 'string', description: 'Full content of the knowledge entry' },
         summary: { type: 'string', description: 'Brief summary (auto-generated if omitted)' },
         type: { type: 'string', description: 'Type: DECISION, ERROR_PATTERN, ARCHITECTURE, API_DESIGN, REQUIREMENT, LESSON_LEARNED, PROCEDURE, CONTEXT' },
+        scope: { type: 'string', description: 'Visibility scope: USER (private), PROJECT (team), SHARED (company). Default: USER' },
+        user_id: { type: 'string', description: 'Owner user ID (auto from context if omitted)' },
         source: { type: 'string', description: 'Source identifier (file path, ticket, etc)' },
 
         tags: { type: 'string', description: 'Comma-separated tags' },
@@ -41,6 +44,7 @@ export const TIER1_TOOLS = [
       properties: {
         file_path: { type: 'string', description: 'Path to document file (relative to workspace or absolute)' },
         type: { type: 'string', description: 'Knowledge type: REQUIREMENT, ARCHITECTURE, DECISION, PROCEDURE, CONTEXT (default: CONTEXT)' },
+        scope: { type: 'string', description: 'Visibility scope: USER (private), PROJECT (team), SHARED (company). Default: USER' },
         format: { type: 'string', description: 'Format: markdown (default) or text' },
         content: { type: 'string', description: 'File content (injected by Light Client wrapper)' },
       },
@@ -285,6 +289,7 @@ export const TIER3_TOOLS = [
 ];
 
 export const MEMORY_TOOL_ALIASES = [
+  { name: 'mem_promote', description: 'KB scope promotion: scan candidates, list pending, approve/reject, request SHARED, or auto-promote on merge/release.', inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'Action: scan, list, approve, reject, request_shared, promote_on_merge' }, entry_id: { type: 'number', description: 'Entry ID (for approve/reject/request_shared)' }, ticket_key: { type: 'string', description: 'Ticket key (for promote_on_merge — promotes all USER entries for this ticket to PROJECT)' }, reviewer: { type: 'string' }, comment: { type: 'string' }, reason: { type: 'string' }, limit: { type: 'number' } }, required: ['action'] }, category: 'memory' },
   { name: 'mem_get', description: 'Get a knowledge entry by ID (alias for mem_crud get).', inputSchema: { type: 'object', properties: { id: { type: 'number' } }, required: ['id'] }, category: 'memory' },
   { name: 'mem_delete', description: 'Delete a knowledge entry by ID (alias for mem_crud delete).', inputSchema: { type: 'object', properties: { id: { type: 'number' } }, required: ['id'] }, category: 'memory' },
   { name: 'mem_list', description: 'List knowledge entries (alias for mem_crud list).', inputSchema: { type: 'object', properties: { limit: { type: 'number' }, tier: { type: 'string' }, type: { type: 'string' } } }, category: 'memory' },

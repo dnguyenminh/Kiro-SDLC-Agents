@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import type {
   KnowledgeEntry, SearchResult, GraphEdge,
   TierStats, ConsolidationResult, ConversationTurn, ConversationSession,
+  KBScope, ScopeContext,
 } from './models.js';
 
 export class MemoryEngine {
@@ -25,12 +26,13 @@ export class MemoryEngine {
   insert(entry: Partial<KnowledgeEntry>): number {
     const stmt = this.db.prepare(`
       INSERT INTO knowledge_entries
-      (content, summary, type, tier, source, source_ref, tags, confidence, agent_name, owner)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (content, summary, type, tier, scope, user_id, source, source_ref, tags, confidence, agent_name, owner)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       entry.content, entry.summary, entry.type,
-      entry.tier ?? 'WORKING', entry.source ?? null,
+      entry.tier ?? 'WORKING', entry.scope ?? 'USER',
+      entry.user_id ?? null, entry.source ?? null,
       entry.source_ref ?? null, entry.tags ?? '',
       entry.confidence ?? 1.0, entry.agent_name ?? null,
       entry.owner ?? null,
@@ -43,11 +45,15 @@ export class MemoryEngine {
       .get(id) as KnowledgeEntry | undefined;
   }
 
-  findFiltered(tier?: string, type?: string, limit = 20): KnowledgeEntry[] {
+  findFiltered(tier?: string, type?: string, limit = 20, scopeCtx?: ScopeContext): KnowledgeEntry[] {
     const clauses: string[] = ['archived = 0'];
     const params: unknown[] = [];
     if (tier) { clauses.push('tier = ?'); params.push(tier); }
     if (type) { clauses.push('type = ?'); params.push(type); }
+    if (scopeCtx) {
+      clauses.push(this.buildScopeClause(scopeCtx));
+      params.push(...this.buildScopeParams(scopeCtx));
+    }
     const where = `WHERE ${clauses.join(' AND ')}`;
     params.push(limit);
     return this.db.prepare(
@@ -69,35 +75,21 @@ export class MemoryEngine {
 
   // ─── FTS Search ───────────────────────────────────────────────────
 
-  search(query: string, limit = 10, tier?: string, type?: string): SearchResult[] {
+  search(query: string, limit = 10, tier?: string, type?: string, scopeCtx?: ScopeContext): SearchResult[] {
     const ftsQuery = query.replace(/[^\w\s*":.]/g, ' ').trim() || '*';
-    let sql: string;
+    const clauses: string[] = ['knowledge_fts MATCH ?', 'ke.archived = 0'];
     const params: unknown[] = [ftsQuery];
-    if (tier && type) {
-      sql = `SELECT ke.*, rank FROM knowledge_fts
-        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
-        WHERE knowledge_fts MATCH ? AND ke.tier = ? AND ke.type = ? AND ke.archived = 0
-        ORDER BY rank LIMIT ?`;
-      params.push(tier, type, limit);
-    } else if (tier) {
-      sql = `SELECT ke.*, rank FROM knowledge_fts
-        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
-        WHERE knowledge_fts MATCH ? AND ke.tier = ? AND ke.archived = 0
-        ORDER BY rank LIMIT ?`;
-      params.push(tier, limit);
-    } else if (type) {
-      sql = `SELECT ke.*, rank FROM knowledge_fts
-        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
-        WHERE knowledge_fts MATCH ? AND ke.type = ? AND ke.archived = 0
-        ORDER BY rank LIMIT ?`;
-      params.push(type, limit);
-    } else {
-      sql = `SELECT ke.*, rank FROM knowledge_fts
-        JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
-        WHERE knowledge_fts MATCH ? AND ke.archived = 0
-        ORDER BY rank LIMIT ?`;
-      params.push(limit);
+    if (tier) { clauses.push('ke.tier = ?'); params.push(tier); }
+    if (type) { clauses.push('ke.type = ?'); params.push(type); }
+    if (scopeCtx) {
+      clauses.push(this.buildScopeClause(scopeCtx, 'ke'));
+      params.push(...this.buildScopeParams(scopeCtx));
     }
+    params.push(limit);
+    const sql = `SELECT ke.*, rank FROM knowledge_fts
+      JOIN knowledge_entries ke ON knowledge_fts.rowid = ke.id
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY rank LIMIT ?`;
     try {
       const rows = this.db.prepare(sql).all(...params) as any[];
       return rows.map(row => {
@@ -170,5 +162,74 @@ export class MemoryEngine {
     return this.db.prepare(
       'SELECT * FROM memory_audit ORDER BY created_at DESC LIMIT ?'
     ).all(limit) as any[];
+  }
+
+  // ─── Scope Operations ─────────────────────────────────────────────
+
+  /**
+   * Promote entry from USER → PROJECT or PROJECT → SHARED.
+   * Validates scope transition order.
+   */
+  promoteEntry(entryId: number, targetScope: KBScope): boolean {
+    const entry = this.findById(entryId);
+    if (!entry) return false;
+
+    const validTransitions: Record<string, KBScope[]> = {
+      USER: ['PROJECT'],
+      PROJECT: ['SHARED'],
+      SHARED: [],
+    };
+
+    const currentScope = (entry.scope ?? 'USER') as KBScope;
+    if (!validTransitions[currentScope]?.includes(targetScope)) return false;
+
+    this.db.prepare(
+      `UPDATE knowledge_entries SET scope = ?, updated_at = datetime('now') WHERE id = ?`
+    ).run(targetScope, entryId);
+
+    this.db.prepare(
+      `INSERT INTO consolidation_log (entry_id, from_tier, to_tier, reason)
+       VALUES (?, ?, ?, ?)`
+    ).run(entryId, currentScope, targetScope, `Promoted: ${currentScope} → ${targetScope}`);
+
+    this.auditLog('PROMOTE', entryId);
+    return true;
+  }
+
+  /**
+   * Demote entry from SHARED → PROJECT or PROJECT → USER.
+   */
+  demoteEntry(entryId: number, targetScope: KBScope): boolean {
+    const entry = this.findById(entryId);
+    if (!entry) return false;
+
+    const validTransitions: Record<string, KBScope[]> = {
+      SHARED: ['PROJECT'],
+      PROJECT: ['USER'],
+      USER: [],
+    };
+
+    const currentScope = (entry.scope ?? 'USER') as KBScope;
+    if (!validTransitions[currentScope]?.includes(targetScope)) return false;
+
+    this.db.prepare(
+      `UPDATE knowledge_entries SET scope = ?, updated_at = datetime('now') WHERE id = ?`
+    ).run(targetScope, entryId);
+
+    this.auditLog('DEMOTE', entryId);
+    return true;
+  }
+
+  /**
+   * Build SQL WHERE clause for scope-based visibility.
+   * User sees: their own USER entries + all PROJECT entries + all SHARED entries.
+   */
+  buildScopeClause(ctx: ScopeContext, tableAlias?: string): string {
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    return `(${prefix}scope IN ('PROJECT', 'SHARED') OR (${prefix}scope = 'USER' AND ${prefix}user_id = ?))`;
+  }
+
+  buildScopeParams(ctx: ScopeContext): unknown[] {
+    return [ctx.userId];
   }
 }

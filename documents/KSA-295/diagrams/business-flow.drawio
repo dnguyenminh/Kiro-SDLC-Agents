@@ -1,0 +1,107 @@
+<mxfile host="65bd71144e">
+    <diagram id="JjnK8m2jL7eIIM2O1QSS" name="Page-1">
+        <mxGraphModel dx="474" dy="416" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;Multi-Scope KB — Business Flow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="10" width="320" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_agent" value="&lt;b&gt;Agent / User&lt;/b&gt;" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f4f8;html=1;" parent="1" vertex="1">
+                    <mxGeometry y="50" width="850" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="start" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" parent="lane_agent" vertex="1">
+                    <mxGeometry x="130" y="55" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ingest" value="Ingest Entry&#10;(scope=USER)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="lane_agent" vertex="1">
+                    <mxGeometry x="200" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="search" value="Search/List KB&#10;(scope-filtered)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="lane_agent" vertex="1">
+                    <mxGeometry x="400" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="request_shared" value="Request&#10;PROJECT→SHARED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="lane_agent" vertex="1">
+                    <mxGeometry x="600" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="lane_agent" source="start" target="ingest" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="lane_agent" source="ingest" target="search" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="lane_agent" source="search" target="request_shared" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_system" value="&lt;b&gt;System (Background)&lt;/b&gt;" style="swimlane;horizontal=0;startSize=110;fillColor=#e8f5e9;html=1;" parent="1" vertex="1">
+                    <mxGeometry y="200" width="850" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="scan" value="Periodic Scan&#10;(every 1h)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="lane_system" vertex="1">
+                    <mxGeometry x="130" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="evaluate" value="Evaluate Criteria&#10;(≥2/4 met?)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="lane_system" vertex="1">
+                    <mxGeometry x="310" y="30" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="queue" value="Queue to&#10;Promotion Table" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="lane_system" vertex="1">
+                    <mxGeometry x="500" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="merge_trigger" value="Merge/Release&#10;Trigger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="lane_system" vertex="1">
+                    <mxGeometry x="690" y="45" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="lane_system" source="scan" target="evaluate" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=10;" parent="lane_system" source="evaluate" target="queue" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" value="Auto-promote&#10;(no approval)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;fontSize=10;" parent="lane_system" source="merge_trigger" target="scan" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="755" y="20"/>
+                            <mxPoint x="200" y="20"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lane_admin" value="&lt;b&gt;Admin&lt;/b&gt;" style="swimlane;horizontal=0;startSize=110;fillColor=#fff0e6;html=1;" parent="1" vertex="1">
+                    <mxGeometry y="350" width="850" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="review" value="Review&#10;Pending Queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="lane_admin" vertex="1">
+                    <mxGeometry x="300" y="45" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="decide" value="Approve /&#10;Reject?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="lane_admin" vertex="1">
+                    <mxGeometry x="490" y="30" width="130" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="promote" value="Promote Entry&#10;(scope updated)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="lane_admin" vertex="1">
+                    <mxGeometry x="670" y="25" width="140" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="keep" value="Keep Current&#10;Scope (no cooldown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="lane_admin" vertex="1">
+                    <mxGeometry x="670" y="90" width="150" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="lane_admin" source="review" target="decide" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" value="Approve" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=10;" parent="lane_admin" source="decide" target="promote" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="Reject" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontSize=10;" parent="lane_admin" source="decide" target="keep" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="1" source="queue" target="review" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="570" y="330"/>
+                            <mxPoint x="370" y="330"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;" parent="1" source="request_shared" target="review" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="670" y="170"/>
+                            <mxPoint x="120" y="170"/>
+                            <mxPoint x="120" y="420"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

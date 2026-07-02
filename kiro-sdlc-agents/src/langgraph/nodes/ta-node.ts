@@ -61,6 +61,7 @@ export class TaNode extends BaseNode {
         type: "DOCUMENT",
         source: "langgraph-ta-fsd-enriched",
         tags: [state.ticketKey, "FSD", "ta-agent", "enriched", "langgraph"],
+        scope: "USER",
       });
     } catch {
       // KB ingest failure is non-blocking

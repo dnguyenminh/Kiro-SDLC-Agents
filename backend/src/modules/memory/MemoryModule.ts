@@ -13,6 +13,9 @@ import { MemoryToolDispatcher } from './MemoryToolDispatcher.js';
 import { MEMORY_TOOL_DEFINITIONS } from './MemoryToolDefinitions.js';
 import { loadConfig } from '../../engine/config.js';
 import { QueryLayer } from '../../engine/query/query-layer.js';
+import { migrate001AddScopeColumns } from './migrations/001-add-scope-columns.js';
+import { ScopePromotionService } from './ScopePromotionService.js';
+import type { ScopeContext } from './models.js';
 
 export class MemoryModule implements IModule {
   readonly name = 'memory';
@@ -21,6 +24,7 @@ export class MemoryModule implements IModule {
   private dbManager!: DatabaseManager;
   private engine!: MemoryEngine;
   private dispatcher!: MemoryToolDispatcher;
+  private promotionInterval: ReturnType<typeof setInterval> | null = null;
   private readonly sessionName: string;
 
   constructor(logger: Logger, sessionName?: string) {
@@ -39,12 +43,32 @@ export class MemoryModule implements IModule {
       this.dbManager = new DatabaseManager(config.dbPath);
       this.dbManager.initialize();
       
+      // Run migrations for existing DBs
+      migrate001AddScopeColumns(this.dbManager.getDb());
+
       this.engine = new MemoryEngine(this.dbManager.getDb());
       // Start session with configurable name (unique per instance)
       this.engine.startSession(this.sessionName);
       
       const queryLayer = new QueryLayer(this.dbManager);
       this.dispatcher = new MemoryToolDispatcher(this.engine, config.workspace, queryLayer);
+
+      // Initialize scope promotion service
+      const promotionService = new ScopePromotionService(this.dbManager.getDb(), this.logger);
+      this.dispatcher.setPromotionService(promotionService);
+
+      // Start periodic promotion scan (every 1 hour)
+      const SCAN_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+      this.promotionInterval = setInterval(() => {
+        try {
+          const result = promotionService.runPromotionCycle();
+          if (!result.includes('No promotion')) {
+            this.logger.info({ result }, 'Periodic promotion scan completed');
+          }
+        } catch (err) {
+          this.logger.error({ err }, 'Periodic promotion scan failed');
+        }
+      }, SCAN_INTERVAL_MS);
       
       this._status = 'ready';
     } catch (error) {
@@ -55,6 +79,10 @@ export class MemoryModule implements IModule {
 
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down memory module');
+    if (this.promotionInterval) {
+      clearInterval(this.promotionInterval);
+      this.promotionInterval = null;
+    }
     if (this.engine) {
       this.engine.endSession();
     }
@@ -74,6 +102,14 @@ export class MemoryModule implements IModule {
     for (const def of MEMORY_TOOL_DEFINITIONS) {
       handlers.set(def.name, async (args) => {
         try {
+          // Extract scope context from args (injected by HTTP layer)
+          const userId = (args as any).__userId as string | undefined;
+          if (userId) {
+            this.dispatcher.setScopeContext({ userId });
+          } else {
+            this.dispatcher.setScopeContext(undefined);
+          }
+
           const text = this.dispatcher.dispatch(def.name, args as Record<string, unknown>);
           if (text === null) {
             return {

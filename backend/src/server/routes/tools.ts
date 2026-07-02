@@ -45,6 +45,12 @@ export function createToolsRoute(router: ToolRouter, logger: Logger): Hono {
 
     const { tool_name, arguments: args } = parsed.data;
 
+    // Inject user context for scope-aware tools
+    const userId = c.req.header('X-User-Id') || c.req.header('x-user-id');
+    if (userId) {
+      (args as any).__userId = userId;
+    }
+
     // Check if tool exists
     const tools = router.listTools();
     const toolExists = tools.some(t => t.name === tool_name);

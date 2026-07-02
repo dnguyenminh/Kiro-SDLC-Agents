@@ -1,0 +1,126 @@
+<mxfile host="65bd71144e">
+    <diagram id="fsd_sequence-promotion-scan" name="Page-1">
+        <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;Sequence — Promotion Scan Flow (UC-3)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="400" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="timer_h" value="&lt;b&gt;Timer&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;" vertex="1" parent="1">
+      <mxGeometry x="60" y="50" width="100" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="promo_h" value="&lt;b&gt;ScopePromotionService&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="220" y="50" width="180" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="db_h" value="&lt;b&gt;SQLite DB&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="470" y="50" width="120" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="queue_h" value="&lt;b&gt;kb_promotion_queue&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="660" y="50" width="150" height="40" as="geometry"/>
+    </mxCell>
+    <mxCell id="timer_l" style="dashed=1;endArrow=none;html=1;strokeColor=#f57c00;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="90" as="sourcePoint"/>
+        <mxPoint x="110" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="promo_l" style="dashed=1;endArrow=none;html=1;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="90" as="sourcePoint"/>
+        <mxPoint x="310" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="db_l" style="dashed=1;endArrow=none;html=1;strokeColor=#666666;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="90" as="sourcePoint"/>
+        <mxPoint x="530" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="queue_l" style="dashed=1;endArrow=none;html=1;strokeColor=#9673a6;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="735" y="90" as="sourcePoint"/>
+        <mxPoint x="735" y="520" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m1" value="scanForPromotionCandidates()" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="110" y="120" as="sourcePoint"/>
+        <mxPoint x="310" y="120" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m2" value="SELECT USER entries WHERE age&gt;=24h, not queued" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="160" as="sourcePoint"/>
+        <mxPoint x="530" y="160" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m3" value="return eligible entries (limit 50)" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="190" as="sourcePoint"/>
+        <mxPoint x="310" y="190" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="loop_box" value="loop [for each entry]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;verticalAlign=top;fontSize=10;fontStyle=2;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="230" y="210" width="390" height="130" as="geometry"/>
+    </mxCell>
+    <mxCell id="m4" value="COUNT citations WHERE entry_id=?" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="240" as="sourcePoint"/>
+        <mxPoint x="530" y="240" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m5" value="citationCount, crossAgentCount" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="530" y="270" as="sourcePoint"/>
+        <mxPoint x="310" y="270" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m6" value="evaluateCriteria() — check 4 thresholds" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="300" as="sourcePoint"/>
+        <mxPoint x="380" y="300" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="360" y="300"/>
+          <mxPoint x="360" y="320"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m7" value="filter candidates (metCount &gt;= 2)" style="html=1;endArrow=none;endSize=6;fontSize=9;fontStyle=2;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="250" y="355" as="sourcePoint"/>
+        <mxPoint x="500" y="355" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m8" value="queueCandidates(candidates)" style="html=1;endArrow=classic;endSize=6;fontSize=10;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="380" as="sourcePoint"/>
+        <mxPoint x="310" y="400" as="targetPoint"/>
+        <Array as="points">
+          <mxPoint x="350" y="380"/>
+          <mxPoint x="350" y="400"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m9" value="INSERT INTO kb_promotion_queue (PENDING)" style="html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="420" as="sourcePoint"/>
+        <mxPoint x="735" y="420" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m10" value="queued count" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="735" y="450" as="sourcePoint"/>
+        <mxPoint x="310" y="450" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="m11" value="return summary: N candidates, X queued, Y auto-approved" style="html=1;endArrow=classic;endSize=6;dashed=1;fontSize=9;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="310" y="490" as="sourcePoint"/>
+        <mxPoint x="110" y="490" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
+    </diagram>
+</mxfile>

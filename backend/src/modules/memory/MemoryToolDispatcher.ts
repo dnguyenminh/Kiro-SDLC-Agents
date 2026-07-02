@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { MemoryEngine } from './MemoryEngine.js';
 import type { QueryLayer } from '../../engine/query/query-layer.js';
+import type { KBScope, ScopeContext } from './models.js';
+import type { ScopePromotionService } from './ScopePromotionService.js';
 
 type Args = Record<string, unknown>;
 
@@ -21,11 +23,24 @@ const ALIASES: Record<string, [string, Record<string, string>]> = {
 };
 
 export class MemoryToolDispatcher {
+  private scopeCtx: ScopeContext | undefined;
+  private promotionService: ScopePromotionService | undefined;
+
   constructor(
     private readonly engine: MemoryEngine,
     private readonly workspace: string,
     private readonly queryLayer?: QueryLayer
   ) {}
+
+  /** Set scope context for the current request (called per tool invocation). */
+  setScopeContext(ctx: ScopeContext | undefined): void {
+    this.scopeCtx = ctx;
+  }
+
+  /** Inject promotion service (set after module init). */
+  setPromotionService(svc: ScopePromotionService): void {
+    this.promotionService = svc;
+  }
 
   dispatch(name: string, args: Args): string | null {
     const [resolved, merged] = this.resolveAlias(name, args);
@@ -47,6 +62,7 @@ export class MemoryToolDispatcher {
       case 'mem_conversation': return this.handleConversation(merged);
       case 'mem_scoring': return this.handleScoring(merged);
       case 'mem_admin': return this.handleAdmin(merged);
+      case 'mem_promote': return this.handlePromote(merged);
       default: return null;
     }
   }
@@ -60,7 +76,9 @@ export class MemoryToolDispatcher {
   private handleSearch(a: Args): string {
     const query = a.query as string;
     if (!query) return 'Error: query required';
-    const results = this.engine.search(query, (a.limit as number) ?? 10, a.tier as string);
+    const scope = a.scope as string | undefined;
+    const scopeCtx = scope === 'all' ? undefined : this.scopeCtx;
+    const results = this.engine.search(query, (a.limit as number) ?? 10, a.tier as string, undefined, scopeCtx);
     this.engine.auditLog('SEARCH');
     for (const r of results) this.engine.recordAccess(r.entry.id);
     const lines: string[] = [];
@@ -68,7 +86,7 @@ export class MemoryToolDispatcher {
     lines.push(`Found ${results.length} results:\n`);
     for (const r of results) {
       lines.push(`[${r.entry.type}] ${r.entry.summary}`);
-      lines.push(`  ID: ${r.entry.id} | Tier: ${r.entry.tier} | Score: ${r.score.toFixed(3)}`);
+      lines.push(`  ID: ${r.entry.id} | Tier: ${r.entry.tier} | Scope: ${r.entry.scope ?? 'USER'} | Score: ${r.score.toFixed(3)}`);
       if (a.detail) lines.push(`  Content: ${r.entry.content.slice(0, 500)}`);
       lines.push('');
     }
@@ -83,15 +101,26 @@ export class MemoryToolDispatcher {
     const tags = Array.isArray(a.tags) ? (a.tags as string[]).join(',') : ((a.tags as string) ?? '');
     const summary = (a.summary as string) ?? (a.title as string) ?? content.slice(0, 120);
     const agentName = a.agent_name as string | undefined;
-    const id = this.engine.insert({ content, summary, type, tier: this.tierForType(type), source, tags, agent_name: agentName, owner: this.inferOwner(source) });
+    const scope = ((a.scope as string) ?? 'USER').toUpperCase() as KBScope;
+    const userId = (a.user_id as string) ?? this.scopeCtx?.userId ?? null;
+    const id = this.engine.insert({
+      content, summary, type,
+      tier: this.tierForType(type),
+      scope, user_id: userId,
+      source, tags,
+      agent_name: agentName,
+      owner: this.inferOwner(source),
+    });
     this.engine.auditLog('INGEST', id);
-    return `Knowledge entry created: id=${id}, type=${type}, tier=${this.tierForType(type)} - "${summary}"`;
+    return `Knowledge entry created: id=${id}, type=${type}, scope=${scope}, tier=${this.tierForType(type)} - "${summary}"`;
   }
 
   private handleIngestFile(a: Args): string {
     const filePath = a.file_path as string;
     if (!filePath) return 'Error: file_path required';
     const type = (a.type as string) ?? 'CONTEXT';
+    const scope = ((a.scope as string) ?? 'USER').toUpperCase() as KBScope;
+    const userId = (a.user_id as string) ?? this.scopeCtx?.userId ?? null;
     
     let text = a.content as string;
     if (!text) {
@@ -107,11 +136,11 @@ export class MemoryToolDispatcher {
     let created = 0;
     for (const sec of (sections.length > 0 ? sections : [text])) {
       const summary = sec.split('\n')[0]?.trim().slice(0, 120) || filePath;
-      this.engine.insert({ content: sec.trim(), summary, type, tier: this.tierForType(type), source: filePath, tags: '' });
+      this.engine.insert({ content: sec.trim(), summary, type, tier: this.tierForType(type), scope, user_id: userId, source: filePath, tags: '' });
       created++;
     }
     this.engine.auditLog('INGEST_FILE');
-    return `Ingested: ${created} entries from ${filePath}`;
+    return `Ingested: ${created} entries from ${filePath} (scope=${scope})`;
   }
 
   private handlePin(a: Args): string {
@@ -142,9 +171,9 @@ export class MemoryToolDispatcher {
   private handleCrud(a: Args): string {
     const action = (a.action as string) || 'list';
     switch (action) {
-      case 'get': { const id = a.id as number; if (!id) return 'Error: id required'; const e = this.engine.findById(id); if (!e) return `Not found: ${id}`; this.engine.recordAccess(id); return `#${e.id} [${e.type}] ${e.summary}\nTier: ${e.tier} | Tags: ${e.tags}\n${e.content}`; }
+      case 'get': { const id = a.id as number; if (!id) return 'Error: id required'; const e = this.engine.findById(id); if (!e) return `Not found: ${id}`; this.engine.recordAccess(id); return `#${e.id} [${e.type}] ${e.summary}\nTier: ${e.tier} | Scope: ${e.scope ?? 'USER'} | Tags: ${e.tags}\n${e.content}`; }
       case 'delete': { const id = a.id as number; if (!id) return 'Error: id required'; const e = this.engine.findById(id); if (!e) return `Not found: ${id}`; this.engine.deleteEntry(id); this.engine.auditLog('DELETE', id); return `Deleted #${id}`; }
-      case 'list': { const entries = this.engine.findFiltered(a.tier as string, a.type as string, (a.limit as number) ?? 20); return entries.length === 0 ? 'No entries' : entries.map(e => `#${e.id} [${e.type}] ${e.summary.slice(0, 80)} (${e.tier})`).join('\n'); }
+      case 'list': { const entries = this.engine.findFiltered(a.tier as string, a.type as string, (a.limit as number) ?? 20, this.scopeCtx); return entries.length === 0 ? 'No entries' : entries.map(e => `#${e.id} [${e.type}] ${e.summary.slice(0, 80)} (${e.tier}|${e.scope ?? 'USER'})`).join('\n'); }
       default: return `Unknown crud action: ${action}`;
     }
   }
@@ -261,6 +290,42 @@ export class MemoryToolDispatcher {
       case 'sessions': return this.engine.listSessions().map((s: any) => `[${s.session_id}] ${s.status}`).join('\n') || 'None';
       case 'analytics': case 'popular': return '{}';
       default: return `Admin: "${action}" via portal`;
+    }
+  }
+
+  private handlePromote(a: Args): string {
+    if (!this.promotionService) return 'Error: promotion service not available';
+    const action = (a.action as string) || 'scan';
+    switch (action) {
+      case 'scan': return this.promotionService.runPromotionCycle();
+      case 'list': return JSON.stringify(this.promotionService.listPending((a.limit as number) ?? 20));
+      case 'approve': {
+        const id = a.entry_id as number;
+        if (!id) return 'Error: entry_id required';
+        const reviewer = (a.reviewer as string) ?? this.scopeCtx?.userId ?? 'system';
+        const comment = (a.comment as string) ?? 'Approved via tool';
+        return this.promotionService.approve(id, reviewer, comment) ? `Approved #${id}` : `Not found or not pending: #${id}`;
+      }
+      case 'reject': {
+        const id = a.entry_id as number;
+        if (!id) return 'Error: entry_id required';
+        const reviewer = (a.reviewer as string) ?? this.scopeCtx?.userId ?? 'system';
+        const comment = (a.comment as string) ?? 'Rejected via tool';
+        return this.promotionService.reject(id, reviewer, comment) ? `Rejected #${id}` : `Not found or not pending: #${id}`;
+      }
+      case 'request_shared': {
+        const id = a.entry_id as number;
+        if (!id) return 'Error: entry_id required';
+        const reason = (a.reason as string) ?? 'Cross-project relevance';
+        return this.promotionService.requestSharedPromotion(id, reason) ? `SHARED promotion requested for #${id}` : `Entry not in PROJECT scope or already queued`;
+      }
+      case 'promote_on_merge': {
+        const ticketKey = a.ticket_key as string;
+        if (!ticketKey) return 'Error: ticket_key required';
+        const { promoted, skipped } = this.promotionService.promoteOnMerge(ticketKey);
+        return `promoteOnMerge(${ticketKey}): ${promoted} entries promoted to PROJECT, ${skipped} skipped.`;
+      }
+      default: return `Unknown promote action: ${action}. Valid: scan, list, approve, reject, request_shared, promote_on_merge`;
     }
   }
 

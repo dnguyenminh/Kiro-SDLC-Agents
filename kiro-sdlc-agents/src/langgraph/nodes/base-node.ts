@@ -143,12 +143,12 @@ export abstract class BaseNode {
   protected getJiraIssue(k: string) { return getJiraIssue(k, this.mcpBridge); }
   protected getJiraIssueFields(k: string, f: string) { return getJiraIssueFields(k, f, this.mcpBridge); }
   protected searchJira(jql: string) { return searchJira(jql, this.mcpBridge); }
-  protected kbSearch(query: string, limit = 10) { return this.callMcp("mem_search", { query, limit }); }
-  protected async kbIngest(content: string, type: string, source: string, tags: string[]) {
-    try { await this.callMcp("mem_ingest", { content, type, source, tags }); } catch {}
+  protected kbSearch(query: string, limit = 10, scope?: string) { return this.callMcp("mem_search", { query, limit, ...(scope ? { scope } : {}) }); }
+  protected async kbIngest(content: string, type: string, source: string, tags: string[], scope: string = 'USER') {
+    try { await this.callMcp("mem_ingest", { content, type, source, tags, scope }); } catch {}
   }
-  protected async kbIngestFile(filePath: string, type = "DOCUMENT") {
-    try { await this.callMcp("mem_ingest_file", { file_path: filePath, type }); } catch {}
+  protected async kbIngestFile(filePath: string, type = "DOCUMENT", scope: string = 'USER') {
+    try { await this.callMcp("mem_ingest_file", { file_path: filePath, type, scope }); } catch {}
   }
   protected getJiraIssueRecursive(k: string, d = 2, m = 10) {
     return getJiraIssueRecursive(k, this.mcpBridge, d, m);

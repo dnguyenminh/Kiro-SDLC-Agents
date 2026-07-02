@@ -1,0 +1,88 @@
+<mxfile host="65bd71144e">
+    <diagram id="fsd_state-scope-transitions" name="Page-1">
+        <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="title" value="&lt;b&gt;State Diagram — Scope Transitions (KSA-295)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+      <mxGeometry x="180" y="10" width="380" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="initial" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;html=1;" vertex="1" parent="1">
+      <mxGeometry x="100" y="80" width="30" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="user_state" value="&lt;b&gt;USER&lt;/b&gt;&#10;(Private - owner only)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="40" y="160" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="project_state" value="&lt;b&gt;PROJECT&lt;/b&gt;&#10;(Team-visible)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="300" y="160" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="shared_state" value="&lt;b&gt;SHARED&lt;/b&gt;&#10;(Company-wide)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="560" y="160" width="160" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="pending_promo" value="&lt;b&gt;PENDING&lt;/b&gt;&#10;(in promotion queue)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="160" y="310" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="pending_shared" value="&lt;b&gt;PENDING SHARED&lt;/b&gt;&#10;(awaiting admin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;dashed=1;" vertex="1" parent="1">
+      <mxGeometry x="420" y="310" width="160" height="50" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_init" value="ingest (default)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;" edge="1" parent="1" source="initial" target="user_state">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_scan" value="scan detects&#10;(meets 2/4 criteria)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;dashed=1;" edge="1" parent="1" source="user_state" target="pending_promo">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_approve" value="admin approve" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#388e3c;" edge="1" parent="1" source="pending_promo" target="project_state">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_reject" value="admin reject&#10;(no cooldown)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;dashed=1;" edge="1" parent="1" source="pending_promo" target="user_state">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="80" y="335"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_merge" value="merge/release event&#10;(auto, no approval)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#0288d1;strokeWidth=2;" edge="1" parent="1" source="user_state" target="project_state">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="120" y="130"/>
+          <mxPoint x="380" y="130"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_req_shared" value="request_shared" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;dashed=1;" edge="1" parent="1" source="project_state" target="pending_shared">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_approve_shared" value="admin approve" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#7b1fa2;" edge="1" parent="1" source="pending_shared" target="shared_state">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_reject_shared" value="admin reject" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;dashed=1;" edge="1" parent="1" source="pending_shared" target="project_state">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="500" y="280"/>
+          <mxPoint x="380" y="280"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_demote_sp" value="demote" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;dashed=1;" edge="1" parent="1" source="shared_state" target="project_state">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="640" y="100"/>
+          <mxPoint x="380" y="100"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="e_demote_pu" value="demote" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;fontSize=9;strokeColor=#c62828;dashed=1;" edge="1" parent="1" source="project_state" target="user_state">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="380" y="240"/>
+          <mxPoint x="120" y="240"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="note1" value="BR-7: Only 1-step transitions allowed&#10;BR-6: PROJECT-&gt;SHARED always manual" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="560" y="310" width="200" height="50" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+    </diagram>
+</mxfile>
