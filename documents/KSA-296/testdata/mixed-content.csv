@@ -1,0 +1,5 @@
+test_id,description,input,code_block_has_pii,text_has_pii,expected_code_masked
+MIX-01,"Email in code block","const email = test@dev.com",true,false,false
+MIX-02,"Email outside code","Contact user@test.com for help",false,true,false
+MIX-03,"Cred in text","api_key=sk-abc123xyz bold",false,true,false
+MIX-04,"PII in list","Email: john@corp.io Phone: 555-1234",false,true,false

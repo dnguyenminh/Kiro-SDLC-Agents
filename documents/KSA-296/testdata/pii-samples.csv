@@ -1,0 +1,13 @@
+test_id,type,input,expected_detection,expected_mask
+PII-01,email,"Contact us at user@example.com",true,"u***@e***.com"
+PII-02,email,"admin@corp.io and support@corp.io",true,"a***@c***.io"
+PII-03,email,"no-email-here just text",false,""
+PII-04,phone,"+1-234-567-8901",true,"+1-***-***-8901"
+PII-05,phone,"(234) 567-8901",true,"(***) ***-8901"
+PII-06,phone,"not a phone 12345",false,""
+PII-07,ip,"Server at 192.168.1.100",true,"192.168.*.*"
+PII-08,ip,"Version 1.2.3 released",false,""
+PII-09,credit_card,"4111-1111-1111-1111",true,"****-****-****-1111"
+PII-10,credit_card,"4111 1111 1111 1111",true,"****-****-****-1111"
+PII-11,ssn,"SSN: 123-45-6789",true,"***-**-6789"
+PII-12,ssn,"Date: 2025-01-28",false,""

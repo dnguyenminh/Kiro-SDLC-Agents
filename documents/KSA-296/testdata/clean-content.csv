@@ -1,0 +1,7 @@
+test_id,input,expected_pii,expected_cred
+CLEAN-01,"This is a normal paragraph about software development.",false,false
+CLEAN-02,"The function returns a list of items sorted by date.",false,false
+CLEAN-03,"Version 2.3.1 was released on January 28 2025.",false,false
+CLEAN-04,"Use npm install to add dependencies to your project.",false,false
+CLEAN-05,"The API response includes a status code and message.",false,false
+CLEAN-06,"const x = 42; console.log(x);",false,false
