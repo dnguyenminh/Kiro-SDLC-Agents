@@ -153,17 +153,19 @@ export class SettingsMessageHandler {
 
   private async handleTestBackend(url: string): Promise<void> {
     try {
+      const start = Date.now();
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       const response = await fetch(`${url}/health`, { signal: controller.signal });
       clearTimeout(timeout);
+      const latencyMs = Date.now() - start;
       if (response.ok) {
-        this.postMessage({ type: "backendTested", success: true });
+        this.postMessage({ type: "backendTestResult", success: true, message: "Connected", latencyMs });
       } else {
-        this.postMessage({ type: "backendTested", success: false, error: `HTTP ${response.status}` });
+        this.postMessage({ type: "backendTestResult", success: false, message: `HTTP ${response.status}`, latencyMs });
       }
     } catch (err: any) {
-      this.postMessage({ type: "backendTested", success: false, error: err.message });
+      this.postMessage({ type: "backendTestResult", success: false, message: err.message });
     }
   }
 

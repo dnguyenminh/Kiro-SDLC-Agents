@@ -46,6 +46,7 @@ invokeSubAgent(
   1. Merge branch {TICKET} vào master (--no-ff)
   2. Bump version — tạo git tag (semver: minor cho feature, patch cho bugfix)
   3. Cập nhật README.md — thêm entry mới vào changelog section
+  4. Auto-promote KB: mem_promote(action='promote_on_merge', ticket_key='{TICKET}')
   Báo cáo kết quả từng bước."
 )
 ```

@@ -135,6 +135,10 @@
       {
         "command": "kiroSdlc.syncWorkspace",
         "title": "Kiro SDLC: Sync Workspace"
+      },
+      {
+        "command": "kiroSdlc.indexSalesforceProject",
+        "title": "Kiro SDLC: Index Salesforce Project"
       }
     ],
     "viewsContainers": {

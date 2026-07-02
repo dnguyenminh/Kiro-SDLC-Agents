@@ -65,6 +65,11 @@ const AGENT_SYSTEM_PROMPT = `You are a coding assistant with access to workspace
 - After reading code: give specific feedback with line references`;
 
 function routeAgentStep(state: PipelineState): string {
+  // Circuit breaker: if pipeline already failed (e.g., LLM crash/context exceeded), stop immediately
+  if (state.pipelineStatus === "failed") {
+    debugLog(`[graph] routeAgentStep: pipeline FAILED -> verify_response (will route to __end__)`);
+    return "verify_response";
+  }
   if (state.toolCalls && state.toolCalls.length > 0) {
     debugLog(`[graph] routeAgentStep: ${state.toolCalls.length} toolCalls -> execute_tools`);
     return "execute_tools";
@@ -74,6 +79,8 @@ function routeAgentStep(state: PipelineState): string {
 }
 
 function routeAfterToolExec(state: PipelineState): string {
+  // Stop if pipeline failed (LLM crash during tool execution cycle)
+  if (state.pipelineStatus === "failed") return "synthesize";
   if ((state.agentIterations || 0) >= MAX_AGENT_ITERATIONS) return "synthesize";
   return "agent_step";
 }
