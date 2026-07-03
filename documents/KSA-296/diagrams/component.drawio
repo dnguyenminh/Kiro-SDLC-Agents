@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="&lt;b&gt;KB Masking — Component Diagram&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="100" y="0" width="350" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="pkg_masking" value="&lt;&lt;package&gt;&gt;&#10;masking" style="shape=folder;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#0288d1;fontSize=11;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+      <mxGeometry x="30" y="40" width="560" height="450" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_middleware" value="&lt;&lt;component&gt;&gt;&#10;MaskingMiddleware" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="80" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_pii" value="&lt;&lt;component&gt;&gt;&#10;PiiDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="170" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_cred" value="&lt;&lt;component&gt;&gt;&#10;CredentialDetector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="170" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_biz" value="&lt;&lt;component&gt;&gt;&#10;BusinessClassifier" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="170" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_masker" value="&lt;&lt;component&gt;&gt;&#10;ContentMasker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="260" width="160" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_config" value="&lt;&lt;component&gt;&gt;&#10;ConfigCacheService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="350" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_allow" value="&lt;&lt;component&gt;&gt;&#10;AllowlistService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="200" y="350" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_classify" value="&lt;&lt;component&gt;&gt;&#10;ClassificationService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="350" width="140" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_audit" value="&lt;&lt;component&gt;&gt;&#10;AuditService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="430" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="comp_db" value="&lt;&lt;component&gt;&gt;&#10;MaskingDb" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#388e3c;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="430" width="130" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="comp_middleware" target="comp_pii" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="comp_middleware" target="comp_cred" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="comp_middleware" target="comp_biz" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="comp_middleware" target="comp_masker" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;" edge="1" source="comp_middleware" target="comp_allow" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="comp_config" target="comp_db" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endSize=6;dashed=1;" edge="1" source="comp_audit" target="comp_db" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
