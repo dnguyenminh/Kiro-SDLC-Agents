@@ -1,5 +1,13 @@
 # Kiro SDLC Platform
 
+> **📢 Project Migrated — Enterprise Edition**
+>
+> The core modules (`backend/` and `kiro-sdlc-agents/`) have been migrated to a new dedicated repository for enterprise-focused development:
+>
+> **👉 [SDLC-Agents-4-Enterprise](https://github.com/dnguyenminh/SDLC-Agents-4-Enteprise)**
+>
+> The new repo is a clean, minimal package containing only the backend server and IDE extension — optimized for enterprise deployment. This repository remains as the development monorepo with full history, documentation, and auxiliary tools.
+
 <p align="center">
   <strong>Multi-agent SDLC pipeline with Code Intelligence backend and Kiro IDE extension.</strong><br>
   9 AI agents automate your workflow: BA → SA → DEV → QA → DevOps.

@@ -1,5 +1,8 @@
 # Code Intelligence Backend
 
+> **📢 Migrated to Enterprise repo:** [SDLC-Agents-4-Enterprise/backend](https://github.com/dnguyenminh/SDLC-Agents-4-Enteprise/tree/main/backend)
+> — Enterprise edition for production deployment. This copy remains for development reference.
+
 <p align="center">
   <strong>Standalone MCP HTTP server — the brain behind Kiro SDLC Agents extension.</strong><br>
   Code intelligence, Knowledge Base, orchestration, and 60+ MCP tools.

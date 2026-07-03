@@ -4,6 +4,9 @@
 
 <h1 align="center">Kiro SDLC Agents</h1>
 
+> **📢 Migrated to Enterprise repo:** [SDLC-Agents-4-Enterprise/extension](https://github.com/dnguyenminh/SDLC-Agents-4-Enteprise/tree/main/extension)
+> — Enterprise-focused extension for production deployment. This copy remains for development reference.
+
 <p align="center">
   <strong>Your entire software team — in one extension.</strong><br>
   9 AI agents. Full SDLC pipeline. Knowledge Base UI. Thin client for Code Intelligence backend.
